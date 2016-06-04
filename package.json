@@ -24,6 +24,7 @@
     "babel-register": "^6.9.0",
     "babel-runtime": "^6.9.2",
     "graphql": "^0.5.0",
-    "rethinkdb": "^2.3.1"
+    "rethinkdb": "^2.3.1",
+    "rethinkdbdash": "^2.3.6"
   }
 }

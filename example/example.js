@@ -11,7 +11,33 @@ let schema = {
         }
     },
     schemas: {
-
+        Users: {
+            query: {
+                users: {
+                    type: ['User'],
+                    resolve: (root, args) => {
+                        return [
+                            {
+                                id: '2133433', name: 'test', email: 'lkfsdjfsk',
+                                friends: [ {id: '098293042', name: 'friend', email: 'xyz' } ]
+                            }
+                        ]
+                    }
+                }
+            },
+            mutation: {
+                create: {
+                    type: 'User',
+                    args: {
+                        name: { type: 'String' },
+                        email: { type: 'String', nullable: true }
+                    },
+                    resolve: (obj, args, source, fieldASTs) => {
+                        
+                    }
+                }
+            }
+        }
     }
 }
 
