@@ -71,6 +71,7 @@ let schema = {
 
 let defs = factory.make(schema)
 
+/*
 let s = new graphql.GraphQLSchema({
   query: new graphql.GraphQLObjectType({
     name: 'UserQueryType',
@@ -84,8 +85,9 @@ let s = new graphql.GraphQLSchema({
     }
   })
 })
+*/
 
-graphql.graphql(s, '{ users { id, firstName, lastName, email } }').then(function (result) {
+graphql.graphql(defs.schemas.Users, '{ users { id, firstName, lastName, email } }').then(function (result) {
   _.forEach(result.errors, function (e, i) {
     result.errors[i] = e.message
   })
