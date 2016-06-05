@@ -1,3 +1,6 @@
+/*
+ * This example requires that a rethinkdb server be running locally on the default port
+ */
 import _ from 'lodash'
 import * as graphql from 'graphql'
 import CustomGraphQLDateType from 'graphql-custom-datetype'
