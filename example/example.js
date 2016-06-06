@@ -85,35 +85,35 @@ let schema = {
     },
     _ChangeLog: {
       fields: {
-        date: { type: 'DateTime', nullable: true },
-        type: { type: 'EnumChangeLogTypes', nullable: true },
-        user: { type: 'String', nullable: true},
-        message: { type: 'String', nullable: true }
+        date: { type: 'DateTime' },
+        type: { type: 'EnumChangeLogTypes' },
+        user: { type: 'String' },
+        message: { type: 'String' }
       }
     },
     _ChangeLogInput: {
       type: 'Input',
       fields: {
-        user: { type: 'String', nullable: true },
-        message: { type: 'String', nullable: true }
+        user: { type: 'String' },
+        message: { type: 'String' }
       }
     },
     _VersionMetadata: {
       fields: {
-        recordId: { type: 'String', nullable: true },
-        version: { type: 'String', nullable: true },
-        validFrom: { type: 'DateTime', nullable: true },
-        validTo: { type: 'DateTime', nullable: true },
-        changeLog: { type: ['_ChangeLog'], nullable: true }
+        recordId: { type: 'String' },
+        version: { type: 'String' },
+        validFrom: { type: 'DateTime' },
+        validTo: { type: 'DateTime' },
+        changeLog: { type: ['_ChangeLog'] }
       }
     },
     User: {
       fields: {
-        _metadata: { type: '_VersionMetadata', nullable: true },
+        _metadata: { type: '_VersionMetadata' },
         id: { type: 'String', primary: true },
-        firstName: { type: 'String' },
-        lastName: { type: 'String' },
-        email: { type: 'String', nullable: true }
+        firstName: { type: 'String', nullable: false },
+        lastName: { type: 'String', nullable: false  },
+        email: { type: 'String' }
       }
     }
   },
@@ -132,10 +132,10 @@ let schema = {
           create: {
             type: 'User',
             args: {
-              firstName: { type: 'String' },
-              lastName: { type: 'String' },
-              email: { type: 'String', nullable: true },
-              changeLog: { type: '_ChangeLogInput', nullable: true }
+              firstName: { type: 'String', nullable: false  },
+              lastName: { type: 'String', nullable: false  },
+              email: { type: 'String'},
+              changeLog: { type: '_ChangeLogInput' }
             },
             resolve: createUser
           },
