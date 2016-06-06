@@ -153,6 +153,14 @@ type FactoryTypeConfig = {
 ### Name field
 If the name field is omitted from a definition, the field key will be used for the name field value
 
+
+### Convenience Functions
+The `factory.make()` method returns an object containing all of the GraphQL objects created under `._definitions` and methods for running queries on each schema defined. To run a query simply pass the GraphQL query to the convenience function
+```
+let lib = factory.make(definition)
+lib.<Schema Name>(<GraphQL Query>)
+```
+
 ### FAQ
 **Q**: Why do I need to pass a `graphql` instance to `graphql-factory`
 
