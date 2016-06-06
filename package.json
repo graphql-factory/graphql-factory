@@ -3,19 +3,21 @@
   "version": "0.1.0",
   "description": "Compose GraphQL objects with JSON definitions",
   "license": "MIT",
-  "main": "index.js",
+  "main": "dist/index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bhoriuchi/graphql-factory.git"
   },
   "scripts": {
-    "example": "node example/index.js --harmony"
+    "example": "node example/index.js --harmony",
+    "build": "babel index.js --presets babel-preset-es2015 --out-dir dist"
   },
   "author": "Branden Horiuchi <bhoriuchi@gmail.com>",
   "dependencies": {
     "lodash": "^4.13.1"
   },
   "devDependencies": {
+    "babel-cli": "^6.0.0",
     "babel-core": "^6.0.0",
     "babel-loader": "^6.0.0",
     "babel-plugin-transform-runtime": "^6.0.0",
