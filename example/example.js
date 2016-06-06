@@ -71,64 +71,78 @@ let createUser = function (obj, args) {
 let schema = {
   types: {
     EnumChangeLogTypes: {
-      $$type: 'Enum',
-      CREATE: 'CREATE',
-      UPDATE: 'UPDATE',
-      BRANCH: 'BRANCH',
-      FORK: 'FORK',
-      MERGE: 'MERGE',
-      PUBLISH: 'PUBLISH',
-      VERSION: 'VERSION',
-      INFO: 'INFO'
+      type: 'Enum',
+      values: {
+        CREATE: 'CREATE',
+        UPDATE: 'UPDATE',
+        BRANCH: 'BRANCH',
+        FORK: 'FORK',
+        MERGE: 'MERGE',
+        PUBLISH: 'PUBLISH',
+        VERSION: 'VERSION',
+        INFO: 'INFO'
+      }
     },
     _ChangeLog: {
-      date: { type: 'DateTime', nullable: true },
-      type: { type: 'EnumChangeLogTypes', nullable: true },
-      user: { type: 'String', nullable: true},
-      message: { type: 'String', nullable: true }
+      fields: {
+        date: { type: 'DateTime', nullable: true },
+        type: { type: 'EnumChangeLogTypes', nullable: true },
+        user: { type: 'String', nullable: true},
+        message: { type: 'String', nullable: true }
+      }
     },
     _ChangeLogInput: {
-      $$type: 'Input',
-      user: { type: 'String', nullable: true },
-      message: { type: 'String', nullable: true }
+      type: 'Input',
+      fields: {
+        user: { type: 'String', nullable: true },
+        message: { type: 'String', nullable: true }
+      }
     },
     _VersionMetadata: {
-      recordId: { type: 'String', nullable: true },
-      version: { type: 'String', nullable: true },
-      validFrom: { type: 'DateTime', nullable: true },
-      validTo: { type: 'DateTime', nullable: true },
-      changeLog: { type: ['_ChangeLog'], nullable: true }
+      fields: {
+        recordId: { type: 'String', nullable: true },
+        version: { type: 'String', nullable: true },
+        validFrom: { type: 'DateTime', nullable: true },
+        validTo: { type: 'DateTime', nullable: true },
+        changeLog: { type: ['_ChangeLog'], nullable: true }
+      }
     },
     User: {
-      _metadata: { type: '_VersionMetadata', nullable: true },
-      id: { type: 'String', primary: true },
-      firstName: { type: 'String' },
-      lastName: { type: 'String' },
-      email: { type: 'String', nullable: true }
+      fields: {
+        _metadata: { type: '_VersionMetadata', nullable: true },
+        id: { type: 'String', primary: true },
+        firstName: { type: 'String' },
+        lastName: { type: 'String' },
+        email: { type: 'String', nullable: true }
+      }
     }
   },
   schemas: {
     Users: {
       query: {
-        users: {
-          type: ['User'],
-          resolve: getUsers
+        fields: {
+          users: {
+            type: ['User'],
+            resolve: getUsers
+          }
         }
       },
       mutation: {
-        create: {
-          type: 'User',
-          args: {
-            firstName: { type: 'String' },
-            lastName: { type: 'String' },
-            email: { type: 'String', nullable: true },
-            changeLog: { type: '_ChangeLogInput', nullable: true }
+        fields: {
+          create: {
+            type: 'User',
+            args: {
+              firstName: { type: 'String' },
+              lastName: { type: 'String' },
+              email: { type: 'String', nullable: true },
+              changeLog: { type: '_ChangeLogInput', nullable: true }
+            },
+            resolve: createUser
           },
-          resolve: createUser
-        },
-        purge: {
-          type: 'Int',
-          resolve: purgeUsers
+          purge: {
+            type: 'Int',
+            resolve: purgeUsers
+          }
         }
       }
     }
