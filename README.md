@@ -60,6 +60,11 @@ let definition = {
     }
   }
 }
+
+let lib = factory.make(definition)
+lib.Users('{ users { id, name, email } }').then(function (result) {
+  // do something with the result
+})
 ```
 
 ## API
