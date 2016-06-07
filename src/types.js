@@ -45,7 +45,7 @@ export default function Types (gql, customTypes, definitions) {
   //  create a GraphQLArgumentConfig
   let GraphQLArgumentConfig = function (arg) {
     return {
-      type: resolveType(arg.type),
+      type: resolveType(arg),
       defaultValue: arg.defaultValue,
       description: arg.description
     }
@@ -54,7 +54,7 @@ export default function Types (gql, customTypes, definitions) {
   //  create a InputObjectFieldConfig
   let InputObjectFieldConfig = function (field) {
     return {
-      type: resolveType(field.type),
+      type: resolveType(field),
       defaultValue: field.defaultValue,
       description: field.description
     }

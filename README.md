@@ -3,6 +3,8 @@ Compose GraphQL objects with JSON definitions
 
 **Currently Developing**
 
+[WIKI](https://github.com/bhoriuchi/graphql-factory/wiki)
+
 ## About
 
 `graphql-factory` allows you to define GraphQL objects and schemas without having to instantiate new objects in the process. The `make` method returns an object containing all of the GraphQL objects defined as well as convenience functions for calling your queries and mutations. By using JSON as the definition language you can more easily reuse pieces of configuration to build and extend object types while not worrying about type definitions.
