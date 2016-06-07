@@ -147,7 +147,7 @@ export default function Types (gql, customTypes, definitions) {
   let GraphQLInterfaceType = function (objDef, objName) {
     return new gql.GraphQLInterfaceType({
       name: objDef.name || objName,
-      fields: () =>  GraphQLFieldConfigMapThunk(objDef.fields),
+      fields: GraphQLFieldConfigMapThunk(objDef.fields),
       resolveType: _isFunction(objDef.resolveType) ? objDef.resolveType : undefined,
       description: objDef.description
     })
