@@ -64,18 +64,3 @@ export function mapValues (obj, fn) {
   }
   return newObj
 }
-
-/* author Salakar @ http://stackoverflow.com/questions/27936772/deep-object-merging-in-es6-es7 */
-export function mergeDeep(target, source) {
-  if (isHash(target) && isHash(source)) {
-    Object.keys(source).forEach(key => {
-      if (isObject(source[key])) {
-        if (!target[key]) Object.assign(target, { [key]: {} });
-        mergeDeep(target[key], source[key]);
-      } else {
-        Object.assign(target, { [key]: source[key] });
-      }
-    });
-  }
-  return target;
-}

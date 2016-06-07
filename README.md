@@ -167,13 +167,13 @@ In order to remove the depedency on `lodash` several lodash-like functions have 
 * `factory.utils.isObject` ( `object` )
 * `factory.utils.isArray` ( `object` )
 * `factory.utils.isFunction` ( `object` )
+* `factory.utils.isDate` ( `object` )
 * `factory.utils.isHash` ( `object` )
 * `factory.utils.has` ( `object`, `function(value, key)` )
 * `factory.utils.forEach` ( `object`, `function(value, key)` )
 * `factory.utils.without` ( `object`, `value1`, ... )
 * `factory.utils.map` ( `object`, `function(value, key)` )
 * `factory.utils.mapValues` ( `object`, `function(value, key)` )
-* `factory.utils.mergeDeep` ( `target`, `source` )
 
 ### FAQ
 **Q**: Why do I need to pass a `graphql` instance to `graphql-factory`

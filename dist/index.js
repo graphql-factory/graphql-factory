@@ -67,21 +67,6 @@ function mapValues (obj, fn) {
   return newObj
 }
 
-/* author Salakar @ http://stackoverflow.com/questions/27936772/deep-object-merging-in-es6-es7 */
-function mergeDeep(target, source) {
-  if (isHash(target) && isHash(source)) {
-    Object.keys(source).forEach(key => {
-      if (isObject(source[key])) {
-        if (!target[key]) Object.assign(target, { [key]: {} });
-        mergeDeep(target[key], source[key]);
-      } else {
-        Object.assign(target, { [key]: source[key] });
-      }
-    });
-  }
-  return target;
-}
-
 var utils = Object.freeze({
   isFunction: isFunction,
   isArray: isArray,
@@ -92,8 +77,7 @@ var utils = Object.freeze({
   forEach: forEach,
   without: without,
   map: map,
-  mapValues: mapValues,
-  mergeDeep: mergeDeep
+  mapValues: mapValues
 });
 
 function Types (gql, customTypes, definitions) {
