@@ -1,5 +1,6 @@
 /*
  * This example requires that a rethinkdb server be running locally on the default port
+ * Also, this example should be run with npm run example
  */
 import _ from 'lodash'
 import path from 'path'
