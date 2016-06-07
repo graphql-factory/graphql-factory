@@ -11,7 +11,10 @@ Compose GraphQL objects with JSON definitions
 
 ```
 import * as graphql from 'graphql'
-let factory = require('graphql-factory')(graphql)
+import GraphQLFactory from 'graphql-factory'
+
+let factory = GraphQLFactory(graphql)
+
 let definition = {
   types: {
     EnumUserStatus: {
@@ -169,6 +172,7 @@ In order to remove the depedency on `lodash` several lodash-like functions have 
 * `factory.utils.isFunction` ( `object` )
 * `factory.utils.isDate` ( `object` )
 * `factory.utils.isHash` ( `object` )
+* `factory.utils.includes` ( `array`, `value` )
 * `factory.utils.has` ( `object`, `function(value, key)` )
 * `factory.utils.forEach` ( `object`, `function(value, key)` )
 * `factory.utils.without` ( `object`, `value1`, ... )
