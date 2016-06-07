@@ -4,7 +4,6 @@
 import _ from 'lodash'
 import path from 'path'
 import * as graphql from 'graphql'
-// import GraphQLFactory from path.resolve(__dirname, '../dist')
 import CustomGraphQLDateType from 'graphql-custom-datetype'
 import rethinkdbdash from 'rethinkdbdash'
 

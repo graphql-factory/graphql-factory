@@ -13,12 +13,11 @@
     "build": "rollup src/index.js --output dist/index.js --format cjs"
   },
   "author": "Branden Horiuchi <bhoriuchi@gmail.com>",
-  "dependencies": {
-    "lodash": "^4.13.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "graphql": "^0.5.0",
     "graphql-custom-datetype": "^0.2.1",
+    "lodash": "^4.13.1",
     "rethinkdbdash": "^2.3.6",
     "rollup": "^0.27.0"
   },

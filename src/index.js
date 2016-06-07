@@ -1,5 +1,6 @@
-import _ from 'lodash'
 import Types from './types'
+import * as utils from './utils'
+let _forEach = utils.forEach
 
 module.exports = function (gql) {
   let definitions = { types: {}, schemas: {} }
@@ -8,7 +9,7 @@ module.exports = function (gql) {
 
   //  register custom types
   let registerTypes = function (obj) {
-    _.forEach(obj, function (type, name) {
+    _forEach(obj, function (type, name) {
       customTypes[name] = type
     })
   }
@@ -19,7 +20,7 @@ module.exports = function (gql) {
     let lib = {}
 
     //  build types first since schemas will use them
-    _.forEach(def.types, function (typeDef, typeName) {
+    _forEach(def.types, function (typeDef, typeName) {
       switch (typeDef.type) {
         case 'Enum':
           definitions.types[typeName] = t.GraphQLEnumType(typeDef, typeName)
@@ -45,7 +46,7 @@ module.exports = function (gql) {
     })
 
     //  build schemas
-    _.forEach(def.schemas, function (schemaDef, schemaName) {
+    _forEach(def.schemas, function (schemaDef, schemaName) {
       //  create a schema
       definitions.schemas[schemaName] = t.GraphQLSchema(schemaDef)
 
@@ -57,5 +58,5 @@ module.exports = function (gql) {
     lib._definitions = definitions
     return lib
   }
-  return { make, registerTypes }
+  return { make, registerTypes, utils }
 }

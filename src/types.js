@@ -1,5 +1,12 @@
-import _ from 'lodash'
-
+import {
+  has as _has,
+  isArray as _isArray,
+  isObject as _isObject,
+  isFunction as _isFunction,
+  without as _without,
+  map as _map,
+  mapValues as _mapValues
+} from './utils'
 export default function Types (gql, customTypes, definitions) {
 
   //  primitive types
@@ -13,18 +20,18 @@ export default function Types (gql, customTypes, definitions) {
 
   //  resolves the type from the schema, custom types, and graphql itself
   let resolveType = function (field) {
-    let isObject = _.has(field, 'type')
+    let isObject = _has(field, 'type')
     let type = isObject ? field.type : field
-    let isArray = _.isArray(type)
+    let isArray = _isArray(type)
     type = isArray ? type[0] : type
 
-    if (_.has(definitions.types, type)) {
+    if (_has(definitions.types, type)) {
       type = definitions.types[type]
-    } else if (_.has(typeMap, type)) {
+    } else if (_has(typeMap, type)) {
       type = typeMap[type]
-    } else if (_.has(customTypes, type)) {
+    } else if (_has(customTypes, type)) {
       type = customTypes[type]
-    } else if (_.has(gql, type)) {
+    } else if (_has(gql, type)) {
       type = gql[type]
     }
 
@@ -54,7 +61,7 @@ export default function Types (gql, customTypes, definitions) {
 
   //  create a GraphQLEnumValueConfig
   let GraphQLEnumValueConfig = function (value) {
-    if (!_.isObject(value)) return { value: value }
+    if (!_isObject(value)) return { value: value }
     return {
       value: value.value,
       deprecationReason: value.deprecationReason,
@@ -64,7 +71,7 @@ export default function Types (gql, customTypes, definitions) {
   
   //  create a GraphQLEnumValueConfigMap
   let GraphQLEnumValueConfigMap = function (values) {
-    return _.mapValues(values, function (value) {
+    return _mapValues(values, function (value) {
       return GraphQLEnumValueConfig(value)
     })
   }
@@ -72,10 +79,10 @@ export default function Types (gql, customTypes, definitions) {
   //  create a GraphQLFieldConfigMapThunk
   let GraphQLFieldConfigMapThunk = function (fields) {
     if (!fields) return
-    return () => _.mapValues(fields, function (field) {
+    return () => _mapValues(fields, function (field) {
       return {
         type: resolveType(field.type),
-        args: _.mapValues(field.args, function (arg) {
+        args: _mapValues(field.args, function (arg) {
           return GraphQLArgumentConfig(arg)
         }),
         resolve: field.resolve,
@@ -88,7 +95,7 @@ export default function Types (gql, customTypes, definitions) {
   //  create a GraphQLInterfacesThunk
   let GraphQLInterfacesThunk = function (interfaces) {
     if (!interfaces) return
-    let thunk = _.without(_.map(interfaces, function (type) {
+    let thunk = _without(_map(interfaces, function (type) {
       let i = resolveType(type)
       if (i instanceof gql.GraphQLInterfaceType) return i
       else return null
@@ -99,7 +106,7 @@ export default function Types (gql, customTypes, definitions) {
   //  create a InputObjectConfigFieldMapThunk
   let InputObjectConfigFieldMapThunk = function (fields) {
     if (!fields) return
-    return () => _.mapValues(fields, function (field) {
+    return () => _mapValues(fields, function (field) {
       return InputObjectFieldConfig(field)
     })
   }
@@ -107,7 +114,7 @@ export default function Types (gql, customTypes, definitions) {
   //  create a GraphQLTypeThunk - not officially documented
   let GraphQLTypeThunk = function (types) {
     if (!types) return
-    let thunk = _.without(_.map(types, function (t) {
+    let thunk = _without(_map(types, function (t) {
       return resolveType(t)
     }), undefined)
     return (thunk.length > 0) ? () => thunk : undefined
@@ -118,8 +125,8 @@ export default function Types (gql, customTypes, definitions) {
     return new gql.GraphQLScalarType({
       name: objDef.name || objName,
       description: objDef.description,
-      serialize: _.isFunction(objDef.serialize) ? objDef.serialize : undefined,
-      parseValue: _.isFunction(objDef.parseValue) ? objDef.parseValue : undefined,
+      serialize: _isFunction(objDef.serialize) ? objDef.serialize : undefined,
+      parseValue: _isFunction(objDef.parseValue) ? objDef.parseValue : undefined,
       parseLiteral: objDef.parseValue() ? objDef.parseLiteral : undefined
     })
   }
@@ -130,7 +137,7 @@ export default function Types (gql, customTypes, definitions) {
       name: objDef.name || objName,
       interfaces: GraphQLInterfacesThunk(objDef.interfaces),
       fields: GraphQLFieldConfigMapThunk(objDef.fields),
-      isTypeOf: _.isFunction(objDef.isTypeOf) ? objDef.isTypeOf : undefined,
+      isTypeOf: _isFunction(objDef.isTypeOf) ? objDef.isTypeOf : undefined,
       description: objDef.description
     })
   }
@@ -140,7 +147,7 @@ export default function Types (gql, customTypes, definitions) {
     return new gql.GraphQLInterfaceType({
       name: objDef.name || objName,
       fields: () =>  GraphQLFieldConfigMapThunk(objDef.fields),
-      resolveType: _.isFunction(objDef.resolveType) ? objDef.resolveType : undefined,
+      resolveType: _isFunction(objDef.resolveType) ? objDef.resolveType : undefined,
       description: objDef.description
     })
   }
@@ -168,7 +175,7 @@ export default function Types (gql, customTypes, definitions) {
     return new gql.GraphQLUnionType({
       name: objDef.name || objName,
       types: GraphQLTypeThunk(objDef.types),
-      resolveType: _.isFunction(objDef.resolveType) ? objDef.resolveType : undefined,
+      resolveType: _isFunction(objDef.resolveType) ? objDef.resolveType : undefined,
       description: objDef.description
     })
   }

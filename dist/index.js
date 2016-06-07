@@ -1,8 +1,100 @@
 'use strict';
 
-function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+/* lodash like functions to remove dependency on lodash */
 
-var _ = _interopDefault(require('lodash'));
+function isFunction (obj) {
+  return typeof obj === 'function'
+}
+function isArray (obj) {
+  return Array.isArray(obj)
+}
+function isDate (obj) {
+  return obj instanceof Date
+}
+function isObject (obj) {
+  return typeof obj === 'object'
+}
+function isHash (obj) {
+  return isObject(obj) && !isArray(obj) && !isDate(obj) && obj !== null
+}
+function has (obj, key) {
+  try {
+    return Object.keys(obj).includes(key)
+  } catch (err) {
+    return false
+  }
+}
+function forEach (obj, fn) {
+  try {
+    for (const key in obj) {
+      if (fn(obj[key], key) === false) break
+    }
+  } catch (err) {
+    return
+  }
+}
+function without () {
+  let output = []
+  let args = Array.prototype.slice.call(arguments)
+  if (args.length === 0) return output
+  else if (args.length === 1) return args[0]
+  let search = args.slice(1)
+  forEach(args[0], function (val) {
+    if (!search.includes(val)) output.push(val)
+  })
+  return output
+}
+function map (obj, fn) {
+  let output = []
+  try {
+    for (const key in obj) {
+      output.push(fn(obj[key], key))
+    }
+  } catch (err) {
+    return []
+  }
+  return output
+}
+function mapValues (obj, fn) {
+  let newObj = {}
+  try {
+    forEach(obj, function (v, k) {
+      newObj[k] = fn(v)
+    })
+  } catch (err) {
+    return obj
+  }
+  return newObj
+}
+
+/* author Salakar @ http://stackoverflow.com/questions/27936772/deep-object-merging-in-es6-es7 */
+function mergeDeep(target, source) {
+  if (isHash(target) && isHash(source)) {
+    Object.keys(source).forEach(key => {
+      if (isObject(source[key])) {
+        if (!target[key]) Object.assign(target, { [key]: {} });
+        mergeDeep(target[key], source[key]);
+      } else {
+        Object.assign(target, { [key]: source[key] });
+      }
+    });
+  }
+  return target;
+}
+
+var utils = Object.freeze({
+  isFunction: isFunction,
+  isArray: isArray,
+  isDate: isDate,
+  isObject: isObject,
+  isHash: isHash,
+  has: has,
+  forEach: forEach,
+  without: without,
+  map: map,
+  mapValues: mapValues,
+  mergeDeep: mergeDeep
+});
 
 function Types (gql, customTypes, definitions) {
 
@@ -17,23 +109,23 @@ function Types (gql, customTypes, definitions) {
 
   //  resolves the type from the schema, custom types, and graphql itself
   let resolveType = function (field) {
-    let isObject = _.has(field, 'type')
+    let isObject = has(field, 'type')
     let type = isObject ? field.type : field
-    let isArray = _.isArray(type)
-    type = isArray ? type[0] : type
+    let isArray$$ = isArray(type)
+    type = isArray$$ ? type[0] : type
 
-    if (_.has(definitions.types, type)) {
+    if (has(definitions.types, type)) {
       type = definitions.types[type]
-    } else if (_.has(typeMap, type)) {
+    } else if (has(typeMap, type)) {
       type = typeMap[type]
-    } else if (_.has(customTypes, type)) {
+    } else if (has(customTypes, type)) {
       type = customTypes[type]
-    } else if (_.has(gql, type)) {
+    } else if (has(gql, type)) {
       type = gql[type]
     }
 
     //  type modifiers for list and non-null
-    type = isArray ? new gql.GraphQLList(type) : type
+    type = isArray$$ ? new gql.GraphQLList(type) : type
     type = (isObject && (field.nullable === false || field.primary)) ? new gql.GraphQLNonNull(type) : type
     return type
   }
@@ -58,7 +150,7 @@ function Types (gql, customTypes, definitions) {
 
   //  create a GraphQLEnumValueConfig
   let GraphQLEnumValueConfig = function (value) {
-    if (!_.isObject(value)) return { value: value }
+    if (!isObject(value)) return { value: value }
     return {
       value: value.value,
       deprecationReason: value.deprecationReason,
@@ -68,7 +160,7 @@ function Types (gql, customTypes, definitions) {
   
   //  create a GraphQLEnumValueConfigMap
   let GraphQLEnumValueConfigMap = function (values) {
-    return _.mapValues(values, function (value) {
+    return mapValues(values, function (value) {
       return GraphQLEnumValueConfig(value)
     })
   }
@@ -76,10 +168,10 @@ function Types (gql, customTypes, definitions) {
   //  create a GraphQLFieldConfigMapThunk
   let GraphQLFieldConfigMapThunk = function (fields) {
     if (!fields) return
-    return () => _.mapValues(fields, function (field) {
+    return () => mapValues(fields, function (field) {
       return {
         type: resolveType(field.type),
-        args: _.mapValues(field.args, function (arg) {
+        args: mapValues(field.args, function (arg) {
           return GraphQLArgumentConfig(arg)
         }),
         resolve: field.resolve,
@@ -92,7 +184,7 @@ function Types (gql, customTypes, definitions) {
   //  create a GraphQLInterfacesThunk
   let GraphQLInterfacesThunk = function (interfaces) {
     if (!interfaces) return
-    let thunk = _.without(_.map(interfaces, function (type) {
+    let thunk = without(map(interfaces, function (type) {
       let i = resolveType(type)
       if (i instanceof gql.GraphQLInterfaceType) return i
       else return null
@@ -103,7 +195,7 @@ function Types (gql, customTypes, definitions) {
   //  create a InputObjectConfigFieldMapThunk
   let InputObjectConfigFieldMapThunk = function (fields) {
     if (!fields) return
-    return () => _.mapValues(fields, function (field) {
+    return () => mapValues(fields, function (field) {
       return InputObjectFieldConfig(field)
     })
   }
@@ -111,7 +203,7 @@ function Types (gql, customTypes, definitions) {
   //  create a GraphQLTypeThunk - not officially documented
   let GraphQLTypeThunk = function (types) {
     if (!types) return
-    let thunk = _.without(_.map(types, function (t) {
+    let thunk = without(map(types, function (t) {
       return resolveType(t)
     }), undefined)
     return (thunk.length > 0) ? () => thunk : undefined
@@ -122,8 +214,8 @@ function Types (gql, customTypes, definitions) {
     return new gql.GraphQLScalarType({
       name: objDef.name || objName,
       description: objDef.description,
-      serialize: _.isFunction(objDef.serialize) ? objDef.serialize : undefined,
-      parseValue: _.isFunction(objDef.parseValue) ? objDef.parseValue : undefined,
+      serialize: isFunction(objDef.serialize) ? objDef.serialize : undefined,
+      parseValue: isFunction(objDef.parseValue) ? objDef.parseValue : undefined,
       parseLiteral: objDef.parseValue() ? objDef.parseLiteral : undefined
     })
   }
@@ -134,7 +226,7 @@ function Types (gql, customTypes, definitions) {
       name: objDef.name || objName,
       interfaces: GraphQLInterfacesThunk(objDef.interfaces),
       fields: GraphQLFieldConfigMapThunk(objDef.fields),
-      isTypeOf: _.isFunction(objDef.isTypeOf) ? objDef.isTypeOf : undefined,
+      isTypeOf: isFunction(objDef.isTypeOf) ? objDef.isTypeOf : undefined,
       description: objDef.description
     })
   }
@@ -144,7 +236,7 @@ function Types (gql, customTypes, definitions) {
     return new gql.GraphQLInterfaceType({
       name: objDef.name || objName,
       fields: () =>  GraphQLFieldConfigMapThunk(objDef.fields),
-      resolveType: _.isFunction(objDef.resolveType) ? objDef.resolveType : undefined,
+      resolveType: isFunction(objDef.resolveType) ? objDef.resolveType : undefined,
       description: objDef.description
     })
   }
@@ -172,7 +264,7 @@ function Types (gql, customTypes, definitions) {
     return new gql.GraphQLUnionType({
       name: objDef.name || objName,
       types: GraphQLTypeThunk(objDef.types),
-      resolveType: _.isFunction(objDef.resolveType) ? objDef.resolveType : undefined,
+      resolveType: isFunction(objDef.resolveType) ? objDef.resolveType : undefined,
       description: objDef.description
     })
   }
@@ -197,6 +289,8 @@ function Types (gql, customTypes, definitions) {
   }
 }
 
+let _forEach = forEach
+
 module.exports = function (gql) {
   let definitions = { types: {}, schemas: {} }
   let customTypes = {}
@@ -204,7 +298,7 @@ module.exports = function (gql) {
 
   //  register custom types
   let registerTypes = function (obj) {
-    _.forEach(obj, function (type, name) {
+    _forEach(obj, function (type, name) {
       customTypes[name] = type
     })
   }
@@ -215,7 +309,7 @@ module.exports = function (gql) {
     let lib = {}
 
     //  build types first since schemas will use them
-    _.forEach(def.types, function (typeDef, typeName) {
+    _forEach(def.types, function (typeDef, typeName) {
       switch (typeDef.type) {
         case 'Enum':
           definitions.types[typeName] = t.GraphQLEnumType(typeDef, typeName)
@@ -241,7 +335,7 @@ module.exports = function (gql) {
     })
 
     //  build schemas
-    _.forEach(def.schemas, function (schemaDef, schemaName) {
+    _forEach(def.schemas, function (schemaDef, schemaName) {
       //  create a schema
       definitions.schemas[schemaName] = t.GraphQLSchema(schemaDef)
 
@@ -253,5 +347,5 @@ module.exports = function (gql) {
     lib._definitions = definitions
     return lib
   }
-  return { make, registerTypes }
+  return { make, registerTypes, utils }
 }

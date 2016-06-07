@@ -161,6 +161,20 @@ let lib = factory.make(definition)
 lib.<Schema Name>(<GraphQL Query>)
 ```
 
+### `factory.utils`
+In order to remove the depedency on `lodash` several lodash-like functions have been implemented and are available for use in the `factory.utils` module. They are lodash-like because some only emulate some of the functionality that their lodash equivalents provide. The methods are briefly documented below
+
+* `factory.utils.isObject` ( `object` )
+* `factory.utils.isArray` ( `object` )
+* `factory.utils.isFunction` ( `object` )
+* `factory.utils.isHash` ( `object` )
+* `factory.utils.has` ( `object`, `function(value, key)` )
+* `factory.utils.forEach` ( `object`, `function(value, key)` )
+* `factory.utils.without` ( `object`, `value1`, ... )
+* `factory.utils.map` ( `object`, `function(value, key)` )
+* `factory.utils.mapValues` ( `object`, `function(value, key)` )
+* `factory.utils.mergeDeep` ( `target`, `source` )
+
 ### FAQ
 **Q**: Why do I need to pass a `graphql` instance to `graphql-factory`
 
