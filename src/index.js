@@ -48,11 +48,16 @@ module.exports = function (gql) {
     //  build schemas
     _forEach(def.schemas, function (schemaDef, schemaName) {
       //  create a schema
-      definitions.schemas[schemaName] = t.GraphQLSchema(schemaDef)
+      try {
+        definitions.schemas[schemaName] = t.GraphQLSchema(schemaDef)
 
-      //  create a function to execute the graphql schmea
-      lib[schemaName] = function (query) {
-        return gql.graphql(definitions.schemas[schemaName], query)
+        //  create a function to execute the graphql schmea
+        lib[schemaName] = function (query) {
+          return gql.graphql(definitions.schemas[schemaName], query)
+        }
+      } catch (err) {
+        console.log(err)
+        return false
       }
     })
     lib._definitions = definitions

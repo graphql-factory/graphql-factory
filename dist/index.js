@@ -17,9 +17,16 @@ function isObject (obj) {
 function isHash (obj) {
   return isObject(obj) && !isArray(obj) && !isDate(obj) && obj !== null
 }
+function includes (obj, key) {
+  try {
+    return isArray(obj) && obj.indexOf(key) !== -1
+  } catch (err) {
+    return false
+  }
+}
 function has (obj, key) {
   try {
-    return Object.keys(obj).includes(key)
+    return includes(Object.keys(obj), key)
   } catch (err) {
     return false
   }
@@ -40,7 +47,7 @@ function without () {
   else if (args.length === 1) return args[0]
   let search = args.slice(1)
   forEach(args[0], function (val) {
-    if (!search.includes(val)) output.push(val)
+    if (!includes(search, val)) output.push(val)
   })
   return output
 }
@@ -73,6 +80,7 @@ var utils = Object.freeze({
   isDate: isDate,
   isObject: isObject,
   isHash: isHash,
+  includes: includes,
   has: has,
   forEach: forEach,
   without: without,
@@ -321,11 +329,16 @@ module.exports = function (gql) {
     //  build schemas
     _forEach(def.schemas, function (schemaDef, schemaName) {
       //  create a schema
-      definitions.schemas[schemaName] = t.GraphQLSchema(schemaDef)
+      try {
+        definitions.schemas[schemaName] = t.GraphQLSchema(schemaDef)
 
-      //  create a function to execute the graphql schmea
-      lib[schemaName] = function (query) {
-        return gql.graphql(definitions.schemas[schemaName], query)
+        //  create a function to execute the graphql schmea
+        lib[schemaName] = function (query) {
+          return gql.graphql(definitions.schemas[schemaName], query)
+        }
+      } catch (err) {
+        console.log(err)
+        return false
       }
     })
     lib._definitions = definitions

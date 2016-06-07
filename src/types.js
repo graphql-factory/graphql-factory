@@ -7,6 +7,7 @@ import {
   map as _map,
   mapValues as _mapValues
 } from './utils'
+
 export default function Types (gql, customTypes, definitions) {
 
   //  primitive types

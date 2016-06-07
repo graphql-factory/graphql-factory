@@ -15,9 +15,16 @@ export function isObject (obj) {
 export function isHash (obj) {
   return isObject(obj) && !isArray(obj) && !isDate(obj) && obj !== null
 }
+export function includes (obj, key) {
+  try {
+    return isArray(obj) && obj.indexOf(key) !== -1
+  } catch (err) {
+    return false
+  }
+}
 export function has (obj, key) {
   try {
-    return Object.keys(obj).includes(key)
+    return includes(Object.keys(obj), key)
   } catch (err) {
     return false
   }
@@ -38,7 +45,7 @@ export function without () {
   else if (args.length === 1) return args[0]
   let search = args.slice(1)
   forEach(args[0], function (val) {
-    if (!search.includes(val)) output.push(val)
+    if (!includes(search, val)) output.push(val)
   })
   return output
 }
