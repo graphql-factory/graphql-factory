@@ -3,7 +3,7 @@ Compose GraphQL objects with JSON definitions
 
 **Currently Developing**
 
-[WIKI](https://github.com/bhoriuchi/graphql-factory/wiki)
+[WIKI](https://github.com/bhoriuchi/graphql-factory/wiki) | [Examples](https://github.com/bhoriuchi/graphql-factory/wiki/Examples)
 
 ## About
 
