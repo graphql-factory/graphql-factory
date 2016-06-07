@@ -9,24 +9,41 @@
     "url": "git+https://github.com/bhoriuchi/graphql-factory.git"
   },
   "scripts": {
-    "example": "node example/index.js --harmony",
-    "build": "babel lib/index.js --presets babel-preset-es2015 --out-dir dist"
+    "example": "rollup example/example.js --output example/build.js --format cjs && node example/build.js --harmony",
+    "build": "rollup src/index.js --output dist/index.js --format cjs"
   },
   "author": "Branden Horiuchi <bhoriuchi@gmail.com>",
   "dependencies": {
     "lodash": "^4.13.1"
   },
   "devDependencies": {
-    "babel-cli": "^6.0.0",
-    "babel-core": "^6.0.0",
-    "babel-loader": "^6.0.0",
-    "babel-plugin-transform-runtime": "^6.0.0",
-    "babel-preset-es2015": "^6.0.0",
-    "babel-preset-stage-2": "^6.0.0",
-    "babel-register": "^6.9.0",
-    "babel-runtime": "^6.9.2",
     "graphql": "^0.5.0",
     "graphql-custom-datetype": "^0.2.1",
-    "rethinkdbdash": "^2.3.6"
-  }
+    "rethinkdbdash": "^2.3.6",
+    "rollup": "^0.27.0"
+  },
+  "bugs": {
+    "url": "https://github.com/bhoriuchi/graphql-factory/issues"
+  },
+  "homepage": "https://github.com/bhoriuchi/graphql-factory#readme",
+  "directories": {
+    "example": "example"
+  },
+  "keywords": [
+    "graphql",
+    "factory",
+    "types",
+    "json",
+    "schema",
+    "build",
+    "extend",
+    "merge",
+    "gql",
+    "facebook",
+    "graph",
+    "define",
+    "definition",
+    "es6",
+    "helper"
+  ]
 }

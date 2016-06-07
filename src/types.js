@@ -1,6 +1,6 @@
 import _ from 'lodash'
 
-module.exports = function (gql, customTypes, definitions) {
+export default function Types (gql, customTypes, definitions) {
 
   //  primitive types
   const typeMap = {
