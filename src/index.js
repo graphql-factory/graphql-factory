@@ -2,7 +2,7 @@ import Types from './types'
 import * as utils from './utils'
 let _forEach = utils.forEach
 
-module.exports = function (gql) {
+export default function (gql) {
   let definitions = { types: {}, schemas: {} }
   let customTypes = {}
   let t = Types(gql, customTypes, definitions)

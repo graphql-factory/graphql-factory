@@ -1,6 +1,6 @@
 {
   "name": "graphql-factory",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Compose GraphQL objects with JSON definitions",
   "license": "MIT",
   "main": "dist/index.js",
@@ -10,16 +10,18 @@
   },
   "scripts": {
     "example": "rollup example/example.js --output example/build.js --format cjs && node example/build.js --harmony",
-    "build": "rollup src/index.js --output dist/index.js --format cjs"
+    "build": "rollup -c build/rollup.config.js"
   },
   "author": "Branden Horiuchi <bhoriuchi@gmail.com>",
   "dependencies": {},
   "devDependencies": {
     "graphql": "^0.5.0",
-    "graphql-custom-datetype": "^0.2.1",
+    "graphql-custom-datetype": "^0.3.0",
     "lodash": "^4.13.1",
     "rethinkdbdash": "^2.3.6",
-    "rollup": "^0.27.0"
+    "rollup": "^0.27.0",
+    "rollup-plugin-babel": "^2.5.1",
+    "babel-preset-es2015-rollup": "^1.1.1"
   },
   "bugs": {
     "url": "https://github.com/bhoriuchi/graphql-factory/issues"
