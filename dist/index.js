@@ -295,7 +295,9 @@ function Types(gql, customTypes, definitions) {
   var GraphQLUnionType = function GraphQLUnionType(objDef, objName) {
     return new gql.GraphQLUnionType({
       name: objDef.name || objName,
-      types: objDef.types,
+      types: map(objDef.types, function (type) {
+        return resolveType(type);
+      }),
       resolveType: isFunction(objDef.resolveType) ? objDef.resolveType : undefined,
       description: objDef.description
     });

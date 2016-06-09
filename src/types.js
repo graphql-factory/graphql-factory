@@ -175,7 +175,9 @@ export default function Types (gql, customTypes, definitions) {
   let GraphQLUnionType = function (objDef, objName) {
     return new gql.GraphQLUnionType({
       name: objDef.name || objName,
-      types: objDef.types,
+      types: _map(objDef.types, function (type) {
+        return resolveType(type)
+      }),
       resolveType: _isFunction(objDef.resolveType) ? objDef.resolveType : undefined,
       description: objDef.description
     })
