@@ -79,7 +79,7 @@ export default function Types (gql, customTypes, definitions) {
       return GraphQLEnumValueConfig(value)
     })
   }
-  
+
   //  create a GraphQLFieldConfigMapThunk
   let GraphQLFieldConfigMapThunk = function (fields, type) {
     fields = _omitBy(fields, function (f) {
@@ -119,15 +119,6 @@ export default function Types (gql, customTypes, definitions) {
     return () => _mapValues(fields, function (field) {
       return InputObjectFieldConfig(field)
     })
-  }
-
-  //  create a GraphQLTypeThunk - not officially documented
-  let GraphQLTypeThunk = function (types) {
-    if (!types) return
-    let thunk = _without(_map(types, function (t) {
-      return resolveType(t)
-    }), undefined)
-    return (thunk.length > 0) ? () => thunk : undefined
   }
 
   //  create a GraphQLScalarType
@@ -184,7 +175,7 @@ export default function Types (gql, customTypes, definitions) {
   let GraphQLUnionType = function (objDef, objName) {
     return new gql.GraphQLUnionType({
       name: objDef.name || objName,
-      types: GraphQLTypeThunk(objDef.types),
+      types: objDef.types,
       resolveType: _isFunction(objDef.resolveType) ? objDef.resolveType : undefined,
       description: objDef.description
     })
@@ -200,7 +191,6 @@ export default function Types (gql, customTypes, definitions) {
 
   //  type to function map
   const typeFnMap = {
-    'Union': GraphQLUnionType,
     'Input': GraphQLInputObjectType,
     'Enum': GraphQLEnumType,
     'Interface': GraphQLInterfaceType,

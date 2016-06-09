@@ -235,7 +235,7 @@ lib.<Schema Name>(<GraphQL Query>)
 ```
 
 ### `factory.utils`
-In order to remove the depedency on `lodash` several lodash-like functions have been implemented and are available for use in the `factory.utils` module. They are lodash-like because some only emulate some of the functionality that their lodash equivalents provide. The methods are briefly documented below
+In order to remove the depedency on `lodash` several lodash-like functions have been implemented and are available for use in the `factory.utils` module. They are lodash-like because some may only provide partial functionality of their lodash equivalents. The methods are briefly documented below
 
 * `factory.utils.isObject` ( `object` )
 * `factory.utils.isArray` ( `object` )
@@ -254,6 +254,10 @@ In order to remove the depedency on `lodash` several lodash-like functions have 
 * `factory.utils.pickBy` ( `object`, `function(value, key)` )
 
 ### FAQ
-**Q**: Why do I need to pass a `graphql` instance to `graphql-factory`
+**Q**: Why do I need to pass a `graphql` instance to `graphql-factory` ?
 
 **A**: There is a known issue with running multiple versions of `graphql` in the same project. By passing in the version your project is already using we eliminate multiple version issues.
+
+**Q** How do I reuse pieces of a schema?
+
+**A** The approach I use is to create partial objects and use a utility like lodash's `_.deepMerge` to add its schema to another

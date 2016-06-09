@@ -241,17 +241,6 @@ function Types(gql, customTypes, definitions) {
     };
   };
 
-  //  create a GraphQLTypeThunk - not officially documented
-  var GraphQLTypeThunk = function GraphQLTypeThunk(types) {
-    if (!types) return;
-    var thunk = without(map(types, function (t) {
-      return resolveType(t);
-    }), undefined);
-    return thunk.length > 0 ? function () {
-      return thunk;
-    } : undefined;
-  };
-
   //  create a GraphQLScalarType
   var GraphQLScalarType = function GraphQLScalarType(objDef, objName) {
     return new gql.GraphQLScalarType({
@@ -306,7 +295,7 @@ function Types(gql, customTypes, definitions) {
   var GraphQLUnionType = function GraphQLUnionType(objDef, objName) {
     return new gql.GraphQLUnionType({
       name: objDef.name || objName,
-      types: GraphQLTypeThunk(objDef.types),
+      types: objDef.types,
       resolveType: isFunction(objDef.resolveType) ? objDef.resolveType : undefined,
       description: objDef.description
     });
@@ -322,7 +311,6 @@ function Types(gql, customTypes, definitions) {
 
   //  type to function map
   var typeFnMap = {
-    'Union': GraphQLUnionType,
     'Input': GraphQLInputObjectType,
     'Enum': GraphQLEnumType,
     'Interface': GraphQLInterfaceType,
@@ -381,13 +369,23 @@ function index (gql) {
 
     var lib = {};
 
-    //  build types first since schemas will use them
-    forEach(def.types, function (typeDef, typeName) {
+    var nonUnionDefs = omitBy(def.types, function (tDef) {
+      return tDef.type === 'Union';
+    });
+    var unionDefs = pickBy(def.types, function (tDef) {
+      return tDef.type === 'Union';
+    });
+
+    //  build types first since schemas will use them, save UnionTypes for the end
+    forEach(nonUnionDefs, function (typeDef, typeName) {
 
       var _types = {};
 
       //  default to object type
       if (!typeDef.type) typeDef.type = 'Object';
+
+      // Skip union types until all other types have been defined
+      if (typeDef.type === 'Union') return;
 
       //  if a single type is defined as a string
       if (isString(typeDef.type)) {
@@ -415,6 +413,11 @@ function index (gql) {
       forEach(_types, function (tName, tType) {
         definitions.types[tName] = typeFnMap[tType](typeDef, tName);
       });
+    });
+
+    //  add union definitions
+    forEach(unionDefs, function (unionDef, unionName) {
+      definitions.types[unionName] = t.GraphQLUnionType(uinionDef, unionName);
     });
 
     //  build schemas

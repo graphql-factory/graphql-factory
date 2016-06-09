@@ -5,7 +5,9 @@ import {
   isArray as _isArray,
   isHash as _isHash,
   isString as _isString,
-  has as _has
+  has as _has,
+  omitBy as _omitBy,
+  pickBy as _pickBy
 } from './utils'
 
 export default function (gql) {
@@ -47,13 +49,23 @@ export default function (gql) {
 
     let lib = {}
 
-    //  build types first since schemas will use them
-    _forEach(def.types, function (typeDef, typeName) {
+    let nonUnionDefs = _omitBy(def.types, function (tDef) {
+      return tDef.type === 'Union'
+    })
+    let unionDefs = _pickBy(def.types, function (tDef) {
+      return tDef.type === 'Union'
+    })
+
+    //  build types first since schemas will use them, save UnionTypes for the end
+    _forEach(nonUnionDefs, function (typeDef, typeName) {
 
       let _types = {}
 
       //  default to object type
       if (!typeDef.type) typeDef.type = 'Object'
+
+      // Skip union types until all other types have been defined
+      if (typeDef.type === 'Union') return
 
       //  if a single type is defined as a string
       if (_isString(typeDef.type)) {
@@ -82,6 +94,11 @@ export default function (gql) {
       _forEach(_types, function (tName, tType) {
         definitions.types[tName] = typeFnMap[tType](typeDef, tName)
       })
+    })
+
+    //  add union definitions
+    _forEach(unionDefs, function (unionDef, unionName) {
+      definitions.types[unionName] = t.GraphQLUnionType(uinionDef, unionName)
     })
 
     //  build schemas
