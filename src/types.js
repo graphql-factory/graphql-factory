@@ -23,7 +23,7 @@ export default function Types (gql, customTypes, definitions) {
   }
 
   //  resolves the type from the schema, custom types, and graphql itself
-  let resolveType = function (field) {
+  let getType = function (field) {
     let isObject = _has(field, 'type')
     let type = isObject ? field.type : field
     let isArray = _isArray(type)
@@ -48,7 +48,7 @@ export default function Types (gql, customTypes, definitions) {
   //  create a GraphQLArgumentConfig
   let GraphQLArgumentConfig = function (arg) {
     return {
-      type: resolveType(arg),
+      type: getType(arg),
       defaultValue: arg.defaultValue,
       description: arg.description
     }
@@ -57,7 +57,7 @@ export default function Types (gql, customTypes, definitions) {
   //  create a InputObjectFieldConfig
   let InputObjectFieldConfig = function (field) {
     return {
-      type: resolveType(field),
+      type: getType(field),
       defaultValue: field.defaultValue,
       description: field.description
     }
@@ -88,7 +88,7 @@ export default function Types (gql, customTypes, definitions) {
     if (!fields) return
     return () => _mapValues(fields, function (field) {
       return {
-        type: resolveType(field.type),
+        type: getType(field.type),
         args: _mapValues(field.args, function (arg) {
           return GraphQLArgumentConfig(arg)
         }),
@@ -103,7 +103,7 @@ export default function Types (gql, customTypes, definitions) {
   let GraphQLInterfacesThunk = function (interfaces) {
     if (!interfaces) return
     let thunk = _without(_map(interfaces, function (type) {
-      let i = resolveType(type)
+      let i = getType(type)
       if (i instanceof gql.GraphQLInterfaceType) return i
       else return null
     }), null)
@@ -176,7 +176,7 @@ export default function Types (gql, customTypes, definitions) {
     return new gql.GraphQLUnionType({
       name: objDef.name || objName,
       types: _map(objDef.types, function (type) {
-        return resolveType(type)
+        return getType(type)
       }),
       resolveType: _isFunction(objDef.resolveType) ? objDef.resolveType : undefined,
       description: objDef.description
@@ -201,7 +201,7 @@ export default function Types (gql, customTypes, definitions) {
   }
 
   return {
-    resolveType,
+    getType,
     GraphQLSchema,
     GraphQLUnionType,
     GraphQLInputObjectType,

@@ -223,6 +223,36 @@ const UserInput = new GraphQLInputObjectType({
 })
 ```
 
+### resolveType for Union/Interface
+Since Union types require the use of already created GraphQL types, they are created after all other types except `GraphQLSchema`. When returning types in your `resolveType` function you need to return the resolvedType (thanks captain obvious). The best way to do this is to reference the `this._types` array inside your `resolveType` function. The array is indexed in the order that you specified your types. See below for example
+
+```
+let definition = {
+  types: {
+    Cat: {
+      fields: {
+        catName: { type: 'String' }
+      }
+    },
+    Dog: {
+      fields: {
+        dogName: { type: 'String' }
+      }
+    },
+    Pet: {
+      type: 'Union',
+      types: [ 'Cat', 'Dog' ],
+      resolveType: function (value, info) {
+
+        // do NOT use arrow functions here to avoid lexical this
+        if (value.catName) return this._types[0]
+        else if (value.dogName) return this._types[1]
+      }
+    }
+  }
+}
+```
+
 ### Name field
 If the name field is omitted from a definition, the field key will be used for the name field value
 

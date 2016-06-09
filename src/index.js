@@ -64,9 +64,6 @@ export default function (gql) {
       //  default to object type
       if (!typeDef.type) typeDef.type = 'Object'
 
-      // Skip union types until all other types have been defined
-      if (typeDef.type === 'Union') return
-
       //  if a single type is defined as a string
       if (_isString(typeDef.type)) {
 
@@ -98,7 +95,7 @@ export default function (gql) {
 
     //  add union definitions
     _forEach(unionDefs, function (unionDef, unionName) {
-      definitions.types[unionName] = t.GraphQLUnionType(uinionDef, unionName)
+      definitions.types[unionName] = t.GraphQLUnionType(unionDef, unionName)
     })
 
     //  build schemas

@@ -138,7 +138,7 @@ function Types(gql, customTypes, definitions) {
   };
 
   //  resolves the type from the schema, custom types, and graphql itself
-  var resolveType = function resolveType(field) {
+  var getType = function getType(field) {
     var isObject = has(field, 'type');
     var type = isObject ? field.type : field;
     var isArray$$ = isArray(type);
@@ -163,7 +163,7 @@ function Types(gql, customTypes, definitions) {
   //  create a GraphQLArgumentConfig
   var GraphQLArgumentConfig = function GraphQLArgumentConfig(arg) {
     return {
-      type: resolveType(arg),
+      type: getType(arg),
       defaultValue: arg.defaultValue,
       description: arg.description
     };
@@ -172,7 +172,7 @@ function Types(gql, customTypes, definitions) {
   //  create a InputObjectFieldConfig
   var InputObjectFieldConfig = function InputObjectFieldConfig(field) {
     return {
-      type: resolveType(field),
+      type: getType(field),
       defaultValue: field.defaultValue,
       description: field.description
     };
@@ -204,7 +204,7 @@ function Types(gql, customTypes, definitions) {
     return function () {
       return mapValues(fields, function (field) {
         return {
-          type: resolveType(field.type),
+          type: getType(field.type),
           args: mapValues(field.args, function (arg) {
             return GraphQLArgumentConfig(arg);
           }),
@@ -220,7 +220,7 @@ function Types(gql, customTypes, definitions) {
   var GraphQLInterfacesThunk = function GraphQLInterfacesThunk(interfaces) {
     if (!interfaces) return;
     var thunk = without(map(interfaces, function (type) {
-      var i = resolveType(type);
+      var i = getType(type);
       if (i instanceof gql.GraphQLInterfaceType) return i;else return null;
     }), null);
     return thunk.length > 0 ? function () {
@@ -296,7 +296,7 @@ function Types(gql, customTypes, definitions) {
     return new gql.GraphQLUnionType({
       name: objDef.name || objName,
       types: map(objDef.types, function (type) {
-        return resolveType(type);
+        return getType(type);
       }),
       resolveType: isFunction(objDef.resolveType) ? objDef.resolveType : undefined,
       description: objDef.description
@@ -321,7 +321,7 @@ function Types(gql, customTypes, definitions) {
   };
 
   return {
-    resolveType: resolveType,
+    getType: getType,
     GraphQLSchema: GraphQLSchema,
     GraphQLUnionType: GraphQLUnionType,
     GraphQLInputObjectType: GraphQLInputObjectType,
@@ -386,9 +386,6 @@ function index (gql) {
       //  default to object type
       if (!typeDef.type) typeDef.type = 'Object';
 
-      // Skip union types until all other types have been defined
-      if (typeDef.type === 'Union') return;
-
       //  if a single type is defined as a string
       if (isString(typeDef.type)) {
 
@@ -419,7 +416,7 @@ function index (gql) {
 
     //  add union definitions
     forEach(unionDefs, function (unionDef, unionName) {
-      definitions.types[unionName] = t.GraphQLUnionType(uinionDef, unionName);
+      definitions.types[unionName] = t.GraphQLUnionType(unionDef, unionName);
     });
 
     //  build schemas

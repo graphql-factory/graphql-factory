@@ -15,6 +15,13 @@ factory.registerTypes({
   DateTime: CustomGraphQLDateType
 })
 
+class Title {
+  constructor (title, year) {
+    this.title = title
+    this.year = year
+  }
+}
+
 /* make sure tables exist */
 function createTable (db, name) {
   return r.db(db).tableCreate(name).run().then(function () {
@@ -26,6 +33,7 @@ function createTable (db, name) {
 let tables = {
   user: { db: 'test', table: 'user' }
 }
+
 _.forEach(tables, function (type) {
   if (type.db && type.table) createTable(type.db, type.table)
 })
@@ -71,6 +79,7 @@ let createUser = function (obj, args) {
     })
 }
 
+let lib = {}
 
 let schema = {
   types: {
@@ -115,6 +124,37 @@ let schema = {
         lastName: { type: 'String', nullable: false  },
         email: { type: 'String' }
       }
+    },
+    Type1: {
+      fields: {
+        type1: { type: 'String' }
+      }
+    },
+    Type2: {
+      fields: {
+        type2: { type: 'String' }
+      }
+    },
+    TestUnion1: {
+      type: 'Union',
+      types: [ 'Type1', 'Type2' ],
+      resolveType: function (value, info) {
+        if (value.type1) return this._types[0]
+        else if (value.type2) return this._types[1]
+      }
+    },
+    TitleInterface: {
+      type: 'Interface',
+      fields: {
+        title: { type: 'String' }
+      }
+    },
+    Title: {
+      interfaces: [ 'TitleInterface' ],
+      fields: {
+        year: { type: 'Int' }
+      },
+      isTypeOf: (value) => value instanceof Title
     }
   },
   schemas: {
@@ -124,6 +164,19 @@ let schema = {
           users: {
             type: ['User'],
             resolve: getUsers
+          },
+          union1: {
+            type: 'TestUnion1',
+            resolve: function () {
+              return { title: 'i am a title', type1: 'im a type1' }
+            }
+          },
+          interface1: {
+            type: 'Title',
+            interfaces: [ 'TitleInterface' ],
+            resolve: function () {
+              return { title: 'interface title', year: 2016 }
+            }
           }
         }
       },
@@ -149,7 +202,7 @@ let schema = {
   }
 }
 
-let lib = factory.make(schema)
+_.merge(lib, factory.make(schema))
 
 let testCreateGQL = `mutation Mutation {
   create(
@@ -184,12 +237,35 @@ let testGetGQL = `{
   }
 }`
 
+let testGetUnionGQL = `{
+  union1 {
+    title
+    ... on Type1 {
+      type1
+    }
+    ... on Type2 {
+      type2
+    }
+  }
+}`
+
+let testGetInterfaceGQL = `{
+  interface1 {
+    title,
+    year
+  }
+}`
+
 // lib.Users(testCreateGQL)
 // lib.Users(testPurgeGQL)
-lib.Users(testGetGQL)
+// lib.Users(testGetGQL)
+// lib.Users(testGetUnionGQL)
+/*
+lib.Users(testGetInterfaceGQL)
   .then(function (result) {
     _.forEach(result.errors, function (e, i) {
       result.errors[i] = e.message
     })
     console.log(JSON.stringify(result, null, '  '))
   })
+  */
