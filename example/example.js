@@ -88,16 +88,12 @@ let schema = {
       }
     },
     _ChangeLog: {
+      type: ['Object', 'Input'],
+      // type: { Object: null, Input: '_ChangeLogInput' },
+      // type: [ 'Object', { Input: '_ChangeLogInput' } ],
       fields: {
-        date: { type: 'DateTime' },
-        type: { type: 'EnumChangeLogTypes' },
-        user: { type: 'String' },
-        message: { type: 'String' }
-      }
-    },
-    _ChangeLogInput: {
-      type: 'Input',
-      fields: {
+        date: { type: 'DateTime', omitFrom: ['Input'] },
+        type: { type: 'EnumChangeLogTypes', omitFrom: ['Input'] },
         user: { type: 'String' },
         message: { type: 'String' }
       }

@@ -11,6 +11,9 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 function isFunction(obj) {
   return typeof obj === 'function';
 }
+function isString(obj) {
+  return typeof obj === 'string';
+}
 function isArray(obj) {
   return Array.isArray(obj);
 }
@@ -78,11 +81,36 @@ function mapValues(obj, fn) {
   }
   return newObj;
 }
+function filter(obj, fn) {
+  var newObj = [];
+  if (!isArray(obj)) return newObj;
+  forEach(obj, function (v, k) {
+    if (fn(v, k)) newObj.push(v);
+  });
+  return newObj;
+}
+function omitBy(obj, fn) {
+  var newObj = {};
+  if (!isHash(obj)) return newObj;
+  forEach(obj, function (v, k) {
+    if (!fn(v, k)) newObj[k] = v;
+  });
+  return newObj;
+}
+function pickBy(obj, fn) {
+  var newObj = {};
+  if (!isHash(obj)) return newObj;
+  forEach(obj, function (v, k) {
+    if (fn(v, k)) newObj[k] = v;
+  });
+  return newObj;
+}
 
 
 
 var utils = Object.freeze({
   isFunction: isFunction,
+  isString: isString,
   isArray: isArray,
   isDate: isDate,
   isObject: isObject,
@@ -92,7 +120,10 @@ var utils = Object.freeze({
   forEach: forEach,
   without: without,
   map: map,
-  mapValues: mapValues
+  mapValues: mapValues,
+  filter: filter,
+  omitBy: omitBy,
+  pickBy: pickBy
 });
 
 function Types(gql, customTypes, definitions) {
@@ -165,7 +196,10 @@ function Types(gql, customTypes, definitions) {
   };
 
   //  create a GraphQLFieldConfigMapThunk
-  var GraphQLFieldConfigMapThunk = function GraphQLFieldConfigMapThunk(fields) {
+  var GraphQLFieldConfigMapThunk = function GraphQLFieldConfigMapThunk(fields, type) {
+    fields = omitBy(fields, function (f) {
+      return has(f, 'omitFrom') && (includes(f.omitFrom, type) || f.omitFrom === type);
+    });
     if (!fields) return;
     return function () {
       return mapValues(fields, function (field) {
@@ -195,7 +229,10 @@ function Types(gql, customTypes, definitions) {
   };
 
   //  create a InputObjectConfigFieldMapThunk
-  var InputObjectConfigFieldMapThunk = function InputObjectConfigFieldMapThunk(fields) {
+  var InputObjectConfigFieldMapThunk = function InputObjectConfigFieldMapThunk(fields, type) {
+    fields = omitBy(fields, function (f) {
+      return has(f, 'omitFrom') && (includes(f.omitFrom, type) || f.omitFrom === type);
+    });
     if (!fields) return;
     return function () {
       return mapValues(fields, function (field) {
@@ -231,7 +268,7 @@ function Types(gql, customTypes, definitions) {
     return new gql.GraphQLObjectType({
       name: objDef.name || objName,
       interfaces: GraphQLInterfacesThunk(objDef.interfaces),
-      fields: GraphQLFieldConfigMapThunk(objDef.fields),
+      fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Object'),
       isTypeOf: isFunction(objDef.isTypeOf) ? objDef.isTypeOf : undefined,
       description: objDef.description
     });
@@ -241,7 +278,7 @@ function Types(gql, customTypes, definitions) {
   var GraphQLInterfaceType = function GraphQLInterfaceType(objDef, objName) {
     return new gql.GraphQLInterfaceType({
       name: objDef.name || objName,
-      fields: GraphQLFieldConfigMapThunk(objDef.fields),
+      fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Interface'),
       resolveType: isFunction(objDef.resolveType) ? objDef.resolveType : undefined,
       description: objDef.description
     });
@@ -260,7 +297,7 @@ function Types(gql, customTypes, definitions) {
   var GraphQLInputObjectType = function GraphQLInputObjectType(objDef, objName) {
     return new gql.GraphQLInputObjectType({
       name: objDef.name || objName,
-      fields: InputObjectConfigFieldMapThunk(objDef.fields),
+      fields: InputObjectConfigFieldMapThunk(objDef.fields, 'Input'),
       description: objDef.description
     });
   };
@@ -283,6 +320,16 @@ function Types(gql, customTypes, definitions) {
     });
   };
 
+  //  type to function map
+  var typeFnMap = {
+    'Union': GraphQLUnionType,
+    'Input': GraphQLInputObjectType,
+    'Enum': GraphQLEnumType,
+    'Interface': GraphQLInterfaceType,
+    'Object': GraphQLObjectType,
+    'Scalar': GraphQLScalarType
+  };
+
   return {
     resolveType: resolveType,
     GraphQLSchema: GraphQLSchema,
@@ -291,21 +338,41 @@ function Types(gql, customTypes, definitions) {
     GraphQLEnumType: GraphQLEnumType,
     GraphQLInterfaceType: GraphQLInterfaceType,
     GraphQLObjectType: GraphQLObjectType,
-    GraphQLScalarType: GraphQLScalarType
+    GraphQLScalarType: GraphQLScalarType,
+    typeFnMap: typeFnMap
   };
 }
-
-var _forEach = forEach;
 
 function index (gql) {
   var definitions = { types: {}, schemas: {} };
   var customTypes = {};
   var t = Types(gql, customTypes, definitions);
+  var typeFnMap = t.typeFnMap;
 
   //  register custom types
   var registerTypes = function registerTypes(obj) {
-    _forEach(obj, function (type, name) {
+    forEach(obj, function (type, name) {
       customTypes[name] = type;
+    });
+  };
+
+  //  check for valid types
+  var validateType = function validateType(type) {
+    if (!has(typeFnMap, type)) {
+      throw 'InvalidTypeError: "' + type + '" is not a valid object type in the current context';
+    }
+  };
+
+  //  construct a type name
+  var makeTypeName = function makeTypeName(t, typeDef, typeName, nameOverride) {
+    if (t == 'Object') return nameOverride || typeDef.name || typeName;else return nameOverride || (typeDef.name || typeName).concat(t);
+  };
+
+  //  add a hash type
+  var addTypeHash = function addTypeHash(_types, type, typeDef, typeName) {
+    forEach(type, function (tName, tType) {
+      validateType(tType);
+      _types[tType] = makeTypeName(tType, typeDef, typeName, tName);
     });
   };
 
@@ -315,33 +382,43 @@ function index (gql) {
     var lib = {};
 
     //  build types first since schemas will use them
-    _forEach(def.types, function (typeDef, typeName) {
-      switch (typeDef.type) {
-        case 'Enum':
-          definitions.types[typeName] = t.GraphQLEnumType(typeDef, typeName);
-          break;
-        case 'Input':
-          definitions.types[typeName] = t.GraphQLInputObjectType(typeDef, typeName);
-          break;
-        case 'Scalar':
-          definitions.types[typeName] = t.GraphQLScalarType(typeDef, typeName);
-          break;
-        case 'Interface':
-          definitions.types[typeName] = t.GraphQLInterfaceType(typeDef, typeName);
-          break;
-        case 'Union':
-          definitions.types[typeName] = t.GraphQLUnionType(typeDef, typeName);
-          break;
-        case 'Object':
-          definitions.types[typeName] = t.GraphQLObjectType(typeDef, typeName);
-          break;
-        default:
-          definitions.types[typeName] = t.GraphQLObjectType(typeDef, typeName);
+    forEach(def.types, function (typeDef, typeName) {
+
+      var _types = {};
+
+      //  default to object type
+      if (!typeDef.type) typeDef.type = 'Object';
+
+      //  if a single type is defined as a string
+      if (isString(typeDef.type)) {
+
+        //  validate the type and add it
+        validateType(typeDef.type);
+        _types[typeDef.type] = typeDef.name || typeName;
+      } else if (isArray(typeDef.type)) {
+
+        //  look at each type in the type definition array
+        //  support the case [ String, { Type: Name } ] with defaults
+        forEach(typeDef.type, function (t) {
+          if (isString(t)) {
+            validateType(t);
+            _types[t] = makeTypeName(t, typeDef, typeName);
+          } else if (isHash(t)) {
+            addTypeHash(_types, t, typeDef, typeName);
+          }
+        });
+      } else if (isHash(typeDef.type)) {
+        addTypeHash(_types, typeDef.type, typeDef, typeName);
       }
+
+      //  add the definitions
+      forEach(_types, function (tName, tType) {
+        definitions.types[tName] = typeFnMap[tType](typeDef, tName);
+      });
     });
 
     //  build schemas
-    _forEach(def.schemas, function (schemaDef, schemaName) {
+    forEach(def.schemas, function (schemaDef, schemaName) {
       //  create a schema
       try {
         definitions.schemas[schemaName] = t.GraphQLSchema(schemaDef);
@@ -355,6 +432,7 @@ function index (gql) {
         return false;
       }
     });
+
     lib._definitions = definitions;
     return lib;
   };

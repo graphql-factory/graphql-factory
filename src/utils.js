@@ -3,6 +3,9 @@
 export function isFunction (obj) {
   return typeof obj === 'function'
 }
+export function isString (obj) {
+  return typeof obj === 'string'
+}
 export function isArray (obj) {
   return Array.isArray(obj)
 }
@@ -69,5 +72,29 @@ export function mapValues (obj, fn) {
   } catch (err) {
     return obj
   }
+  return newObj
+}
+export function filter (obj, fn) {
+  let newObj = []
+  if (!isArray(obj)) return newObj
+  forEach(obj, function (v, k) {
+    if (fn(v, k)) newObj.push(v)
+  })
+  return newObj
+}
+export function omitBy (obj, fn) {
+  let newObj = {}
+  if (!isHash(obj)) return newObj
+  forEach(obj, function (v, k) {
+    if (!fn(v, k)) newObj[k] = v
+  })
+  return newObj
+}
+export function pickBy (obj, fn) {
+  let newObj = {}
+  if (!isHash(obj)) return newObj
+  forEach(obj, function (v, k) {
+    if (fn(v, k)) newObj[k] = v
+  })
   return newObj
 }

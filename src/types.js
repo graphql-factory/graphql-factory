@@ -2,10 +2,13 @@ import {
   has as _has,
   isArray as _isArray,
   isObject as _isObject,
+  isHash as _isHash,
   isFunction as _isFunction,
+  includes as _includes,
   without as _without,
   map as _map,
-  mapValues as _mapValues
+  mapValues as _mapValues,
+  omitBy as _omitBy
 } from './utils'
 
 export default function Types (gql, customTypes, definitions) {
@@ -76,9 +79,12 @@ export default function Types (gql, customTypes, definitions) {
       return GraphQLEnumValueConfig(value)
     })
   }
-
+  
   //  create a GraphQLFieldConfigMapThunk
-  let GraphQLFieldConfigMapThunk = function (fields) {
+  let GraphQLFieldConfigMapThunk = function (fields, type) {
+    fields = _omitBy(fields, function (f) {
+      return _has(f, 'omitFrom') && (_includes(f.omitFrom, type) || f.omitFrom === type)
+    })
     if (!fields) return
     return () => _mapValues(fields, function (field) {
       return {
@@ -105,7 +111,10 @@ export default function Types (gql, customTypes, definitions) {
   }
 
   //  create a InputObjectConfigFieldMapThunk
-  let InputObjectConfigFieldMapThunk = function (fields) {
+  let InputObjectConfigFieldMapThunk = function (fields, type) {
+    fields = _omitBy(fields, function (f) {
+      return _has(f, 'omitFrom') && (_includes(f.omitFrom, type) || f.omitFrom === type)
+    })
     if (!fields) return
     return () => _mapValues(fields, function (field) {
       return InputObjectFieldConfig(field)
@@ -137,7 +146,7 @@ export default function Types (gql, customTypes, definitions) {
     return new gql.GraphQLObjectType({
       name: objDef.name || objName,
       interfaces: GraphQLInterfacesThunk(objDef.interfaces),
-      fields: GraphQLFieldConfigMapThunk(objDef.fields),
+      fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Object'),
       isTypeOf: _isFunction(objDef.isTypeOf) ? objDef.isTypeOf : undefined,
       description: objDef.description
     })
@@ -147,7 +156,7 @@ export default function Types (gql, customTypes, definitions) {
   let GraphQLInterfaceType = function (objDef, objName) {
     return new gql.GraphQLInterfaceType({
       name: objDef.name || objName,
-      fields: GraphQLFieldConfigMapThunk(objDef.fields),
+      fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Interface'),
       resolveType: _isFunction(objDef.resolveType) ? objDef.resolveType : undefined,
       description: objDef.description
     })
@@ -166,7 +175,7 @@ export default function Types (gql, customTypes, definitions) {
   let GraphQLInputObjectType = function (objDef, objName) {
     return new gql.GraphQLInputObjectType({
       name: objDef.name || objName,
-      fields: InputObjectConfigFieldMapThunk(objDef.fields),
+      fields: InputObjectConfigFieldMapThunk(objDef.fields, 'Input'),
       description: objDef.description
     })
   }
@@ -189,6 +198,16 @@ export default function Types (gql, customTypes, definitions) {
     })
   }
 
+  //  type to function map
+  const typeFnMap = {
+    'Union': GraphQLUnionType,
+    'Input': GraphQLInputObjectType,
+    'Enum': GraphQLEnumType,
+    'Interface': GraphQLInterfaceType,
+    'Object': GraphQLObjectType,
+    'Scalar': GraphQLScalarType
+  }
+
   return {
     resolveType,
     GraphQLSchema,
@@ -197,6 +216,7 @@ export default function Types (gql, customTypes, definitions) {
     GraphQLEnumType,
     GraphQLInterfaceType,
     GraphQLObjectType,
-    GraphQLScalarType
+    GraphQLScalarType,
+    typeFnMap
   }
 }

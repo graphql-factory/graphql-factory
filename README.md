@@ -106,7 +106,7 @@ type FactorySchemaDefinitionMap = {
 
 // FactoryTypeDefinition is merged into a modified GraphQL definition, see below
 type FactoryTypeDefinition = {
-  type?: ?FactoryTypeEnum, // defaults to GraphQLObject
+  type?: FactoryTypeEnum | FactoryMultiTypeConfig, // defaults to GraphQLObject "Object"
   // ...Additional type specific fields
 }
 
@@ -118,6 +118,17 @@ type FactoryTypeEnum = {
   Interface: "Interface", // GraphQLInterfaceType
   Union: "Union"          // GraphQLUnionType
 }
+
+type FactoryMultiTypeConfig = FactoryMultiTypeMap | Array<FactoryMultiType>
+
+type FactoryMultiType = FactoryTypeEnum | FactoryMultiTypeMap
+
+type FactoryTypeMap = {
+  [typeName: FactoryTypeEnum]: FactoryTypeName
+}
+
+// defines the name of the type, null, '', and undefined use the definition key
+type FactoryTypeName = string | null | '' | undefined
 
 type FactorySchemaDefinition = {
   query: FactoryObjectDefinition
@@ -142,6 +153,7 @@ These objects follow the official [`GraphQL Type Documentation`](http://graphql.
 
 * `GraphQLList` - List types are defined by placing the type object or `ScalarTypeEnum` in an array object (see example)
 * `GraphQLNonNull` - Non-nulls are defined by providing a `FactoryTypeConfig` and setting `nullable = false`
+* `omitFrom` - Used in conjunction with a multi-type definition to exclude fields from a definition or definitions of a specific type
 
 ```
 type FactoryTypeConfigDefinition = FactorySimpleTypeConfig | FactoryTypeConfig
@@ -151,8 +163,64 @@ type FactorySimpleTypeConfig = string | Array<string> | GraphQLObject | Array<Gr
 type FactoryTypeConfig = {
   type: FactorySimpleTypeConfig,
   primary?: Boolean,
-  nullable?: Boolean
+  nullable?: Boolean,
+  omitFrom? : string | Array<string>
 }
+```
+
+### Multi-Types
+Some objects may be very similar in definition but have different types. One example is a `GraphQLInputObjectType` that has a subset of the fields in a `GraphQLObjectType` that is used for mutating that object type. In this case `graphql-factory` allows you to use a Multi-type definition in conjunction with the `omitFrom` field of a `FactoryTypeConfig` object to create both GraphQL objects from a single definition. This allows a reduction of redundant definition code but does add some complexity
+
+#### Multi-Type Example Definition
+
+
+```
+let definition = {
+  types: {
+    User: {
+      type: [ 'Object', 'Input' ]
+      // Equivalent to [ 'Object', { Input: 'UserInput' } ]
+      // Equivalent to [ { Object: 'User' }, { Input: 'UserInput' } ]
+      // Equivalent to { Object: 'User', Input: 'UserInput' },
+      // Equivalent to { Object: null, Input: null }
+      fields: {
+        id: {
+          type: 'String',
+          primary: true,
+          omitFrom: [ 'Input' ]
+        },
+        name: {
+          type: 'String',
+          nullable: false
+        },
+        email: {
+          type: 'String'
+        }
+      }
+    }
+  }
+}
+```
+
+Will create
+
+```
+const User = new GraphQLObject({
+  name: 'User',
+  fields: {
+    id: { type: new GraphQLNonNull(GraphQLString) },
+    name: { type: new GraphQLNonNull(GraphQLString) },
+    email: { type: GraphQLString }
+  }
+})
+
+const UserInput = new GraphQLInputObjectType({
+  name: 'UserInput',
+  fields: {
+    name: { type: new GraphQLNonNull(GraphQLString) },
+    email: { type: GraphQLString }
+  }
+})
 ```
 
 ### Name field
@@ -174,12 +242,16 @@ In order to remove the depedency on `lodash` several lodash-like functions have 
 * `factory.utils.isFunction` ( `object` )
 * `factory.utils.isDate` ( `object` )
 * `factory.utils.isHash` ( `object` )
+* `factory.utils.isString` ( `object` )
 * `factory.utils.includes` ( `array`, `value` )
 * `factory.utils.has` ( `object`, `function(value, key)` )
 * `factory.utils.forEach` ( `object`, `function(value, key)` )
 * `factory.utils.without` ( `object`, `value1`, ... )
 * `factory.utils.map` ( `object`, `function(value, key)` )
 * `factory.utils.mapValues` ( `object`, `function(value, key)` )
+* `factory.utils.filter` ( `object`, `function(value, key)` )
+* `factory.utils.omitBy` ( `object`, `function(value, key)` )
+* `factory.utils.pickBy` ( `object`, `function(value, key)` )
 
 ### FAQ
 **Q**: Why do I need to pass a `graphql` instance to `graphql-factory`

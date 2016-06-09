@@ -1,16 +1,44 @@
 import Types from './types'
 import * as utils from './utils'
-let _forEach = utils.forEach
+import {
+  forEach as _forEach,
+  isArray as _isArray,
+  isHash as _isHash,
+  isString as _isString,
+  has as _has
+} from './utils'
 
 export default function (gql) {
   let definitions = { types: {}, schemas: {} }
   let customTypes = {}
   let t = Types(gql, customTypes, definitions)
+  let typeFnMap = t.typeFnMap
 
   //  register custom types
   let registerTypes = function (obj) {
     _forEach(obj, function (type, name) {
       customTypes[name] = type
+    })
+  }
+
+  //  check for valid types
+  let validateType = function (type) {
+    if (!_has(typeFnMap, type)) {
+      throw `InvalidTypeError: "${type}" is not a valid object type in the current context`
+    }
+  }
+
+  //  construct a type name
+  let makeTypeName = function (t, typeDef, typeName, nameOverride) {
+    if (t == 'Object') return nameOverride || typeDef.name || typeName
+    else return nameOverride || (typeDef.name || typeName).concat(t)
+  }
+
+  //  add a hash type
+  let addTypeHash = function (_types, type, typeDef, typeName) {
+    _forEach(type, function (tName, tType) {
+      validateType(tType)
+      _types[tType] = makeTypeName(tType, typeDef, typeName, tName)
     })
   }
 
@@ -21,28 +49,39 @@ export default function (gql) {
 
     //  build types first since schemas will use them
     _forEach(def.types, function (typeDef, typeName) {
-      switch (typeDef.type) {
-        case 'Enum':
-          definitions.types[typeName] = t.GraphQLEnumType(typeDef, typeName)
-          break
-        case 'Input':
-          definitions.types[typeName] = t.GraphQLInputObjectType(typeDef, typeName)
-          break
-        case 'Scalar':
-          definitions.types[typeName] = t.GraphQLScalarType(typeDef, typeName)
-          break
-        case 'Interface':
-          definitions.types[typeName] = t.GraphQLInterfaceType(typeDef, typeName)
-          break
-        case 'Union':
-          definitions.types[typeName] = t.GraphQLUnionType(typeDef, typeName)
-          break
-        case 'Object':
-          definitions.types[typeName] = t.GraphQLObjectType(typeDef, typeName)
-          break
-        default:
-          definitions.types[typeName] = t.GraphQLObjectType(typeDef, typeName)
+
+      let _types = {}
+
+      //  default to object type
+      if (!typeDef.type) typeDef.type = 'Object'
+
+      //  if a single type is defined as a string
+      if (_isString(typeDef.type)) {
+
+        //  validate the type and add it
+        validateType(typeDef.type)
+        _types[typeDef.type] = typeDef.name || typeName
+
+      } else if (_isArray(typeDef.type)) {
+
+        //  look at each type in the type definition array
+        //  support the case [ String, { Type: Name } ] with defaults
+        _forEach(typeDef.type, function (t) {
+          if (_isString(t)) {
+            validateType(t)
+            _types[t] = makeTypeName(t, typeDef, typeName)
+          } else if (_isHash(t)) {
+            addTypeHash(_types, t, typeDef, typeName)
+          }
+        })
+      } else if (_isHash(typeDef.type)) {
+        addTypeHash(_types, typeDef.type, typeDef, typeName)
       }
+
+      //  add the definitions
+      _forEach(_types, function (tName, tType) {
+        definitions.types[tName] = typeFnMap[tType](typeDef, tName)
+      })
     })
 
     //  build schemas
@@ -60,6 +99,7 @@ export default function (gql) {
         return false
       }
     })
+
     lib._definitions = definitions
     return lib
   }
