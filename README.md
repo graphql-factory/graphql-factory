@@ -78,7 +78,7 @@ lib.Users('{ users { id, name, email } }').then(function (result) {
 Imports/registers types from other libraries for use in the factory definition
 
 **parameters**
-* `typeHash` `{RegisterTypeMap}` - A hash of custom types and their string reference
+* `typeMap` `{RegisterTypeMap}` - A hash of custom types and their string reference
 ```
 type RegisterTypeMap = {
   [typeName: string]: GraphQLObjectType
@@ -124,7 +124,7 @@ type FactoryMultiTypeConfig = FactoryMultiTypeMap | Array<FactoryMultiType>
 type FactoryMultiType = FactoryTypeEnum | FactoryMultiTypeMap
 
 type FactoryTypeMap = {
-  [typeName: FactoryTypeEnum]: FactoryTypeName
+  [typeName: string<FactoryTypeEnum>]: FactoryTypeName
 }
 
 // defines the name of the type, null, '', and undefined use the definition key
