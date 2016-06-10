@@ -137,8 +137,21 @@ function Types(gql, customTypes, definitions) {
     'ID': gql.GraphQLID
   };
 
-  //  resolves the type from the schema, custom types, and graphql itself
-  var getType = function getType(field) {
+  /*
+  let ValidCases = {
+    fieldCase1: 'MyType',
+    fieldCase2: ['MyType'],
+    fieldCase3: { type: 'MyType', nullable: false },
+    fieldCase4: { type: ['MyType'], nullable: false },
+    fieldCase5: {
+      Object: 'fieldCase1 - fieldCase4',
+      Input: 'fieldCase1 - fieldCase4'
+    }
+  }
+  */
+
+  //  determines a field type given a FactoryTypeConfig
+  var fieldType = function fieldType(field) {
     var isObject = has(field, 'type');
     var type = isObject ? field.type : field;
     var isArray$$ = isArray(type);
@@ -160,24 +173,30 @@ function Types(gql, customTypes, definitions) {
     return type;
   };
 
+  //  resolves the type from the schema, custom types, and graphql itself. supports conditional type
+  var getType = function getType(field, rootType) {
+    if (isHash(field) && !has(field, 'type') && has(field, rootType)) return fieldType(field[rootType]);
+    return fieldType(field);
+  };
+
   //  allow conditional resolve for multi-types
   var conditionalResolve = function conditionalResolve(resolve, type) {
     if (isFunction(resolve)) return resolve;else if (has(resolve, type) && isFunction(resolve[type])) return resolve[type];
   };
 
   //  create a GraphQLArgumentConfig
-  var GraphQLArgumentConfig = function GraphQLArgumentConfig(arg) {
+  var GraphQLArgumentConfig = function GraphQLArgumentConfig(arg, type) {
     return {
-      type: getType(arg),
+      type: getType(arg, type),
       defaultValue: arg.defaultValue,
       description: arg.description
     };
   };
 
   //  create a InputObjectFieldConfig
-  var InputObjectFieldConfig = function InputObjectFieldConfig(field) {
+  var InputObjectFieldConfig = function InputObjectFieldConfig(field, type) {
     return {
-      type: getType(field),
+      type: getType(field, type),
       defaultValue: field.defaultValue,
       description: field.description
     };
@@ -208,10 +227,11 @@ function Types(gql, customTypes, definitions) {
     if (!fields) return;
     return function () {
       return mapValues(fields, function (field) {
+        field = !has(field, 'type') && has(field, type) ? field[type] : field;
         return {
-          type: getType(field.type),
+          type: getType(field, type),
           args: mapValues(field.args, function (arg) {
-            return GraphQLArgumentConfig(arg);
+            return GraphQLArgumentConfig(arg, type);
           }),
           resolve: conditionalResolve(field.resolve, type),
           deprecationReason: field.deprecationReason,
@@ -241,7 +261,7 @@ function Types(gql, customTypes, definitions) {
     if (!fields) return;
     return function () {
       return mapValues(fields, function (field) {
-        return InputObjectFieldConfig(field);
+        return InputObjectFieldConfig(field, type);
       });
     };
   };

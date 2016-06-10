@@ -156,9 +156,19 @@ These objects follow the official [`GraphQL Type Documentation`](http://graphql.
 * `omitFrom` - Used in conjunction with a multi-type definition to exclude fields from a definition or definitions of a specific type
 
 ```
-type FactoryTypeConfigDefinition = FactorySimpleTypeConfig | FactoryTypeConfig
+type FactoryTypeConfigDefinition = FactorySimpleTypeConfig |
+                                   FactoryTypeConfig |
+                                   ConditionalFactoryTypeConfigMap
 
-type FactorySimpleTypeConfig = string | Array<string> | GraphQLObject | Array<GraphQLObject>
+type FactorySimpleTypeConfig = string |
+                               Array<string> |
+                               GraphQLObject |
+                               Array<GraphQLObject>
+
+type ConditionalFactoryTypeConfigMap = {
+  [typeName: FactoryTypeName]: FactorySimpleTypeConfig |
+                               FactoryTypeConfig
+}
 
 type FactoryTypeConfig = {
   type: FactorySimpleTypeConfig,
@@ -171,8 +181,8 @@ type FactoryTypeConfig = {
 ### Multi-Types
 Some objects may be very similar in definition but have different types. One example is a `GraphQLInputObjectType` that has a subset of the fields in a `GraphQLObjectType` that is used for mutating that object type. In this case `graphql-factory` allows you to use a Multi-type definition in conjunction with the `omitFrom` field of a `FactoryTypeConfig` object to create both GraphQL objects from a single definition. This allows a reduction of redundant definition code but does add some complexity
 
-Additionally, if you are using field resolves you may have different functions for different types. To do this, instead of specifying a function in the field resolve definition, specify a hash where the key is the type and the value is the resolve function. See example
-
+* **Resolves** - If you are using field resolves you may have different functions for different types. To do this, instead of specifying a function in the field resolve definition, specify a hash where the key is the type and the value is the resolve function. See example `User.email` resolve field
+* **Field Types** - You may have different requirements for the type of data that is returned for the same field name in a Multi-Type definition. To accomplish this you can use a `ConditionalFactoryTypeConfigMap` which will allow you to specify a type configuration for each of your Multi-types. This is useful in particular when you have a field that only requires an `id` string on mutation but returns a more complex object on query. See example `User.location` field definition
 
 #### Multi-Type Example Definition
 
@@ -205,6 +215,13 @@ let definition = {
             Input: function () {
               // input resolve
             }
+          }
+        },
+        location: {
+          Object: 'Location',
+          Input: {
+            type: 'String',
+            nullable: false
           }
         }
       }

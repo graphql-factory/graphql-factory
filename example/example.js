@@ -1,6 +1,7 @@
 /*
  * This example requires that a rethinkdb server be running locally on the default port
  * Also, this example should be run with npm run example
+ * Also I use this example for testing so it has a lot of extra code and comments
  */
 import _ from 'lodash'
 import path from 'path'
@@ -54,7 +55,7 @@ let purgeUsers = function () {
 
 //  create function
 let createUser = function (obj, args) {
-  let changeLog = args.changeLog || { user: 'SYSTEM', message: 'CREATED RECORD' }
+  let changeLog = args.changeLog || { user: 'SYSTEM' }
   _.merge(changeLog, { date: new Date(), type: 'CREATE' })
   return r.db(tables.user.db).table(tables.user.table)
     .insert({
@@ -104,7 +105,10 @@ let schema = {
         date: { type: 'DateTime', omitFrom: ['Input'] },
         type: { type: 'EnumChangeLogTypes', omitFrom: ['Input'] },
         user: { type: 'String' },
-        message: { type: 'String' }
+        message: {
+          Object: 'String',
+          Input: { type: 'String', nullable: false }
+        }
       }
     },
     _VersionMetadata: {
@@ -163,6 +167,7 @@ let schema = {
   schemas: {
     Users: {
       query: {
+        name: 'UsersQuery',
         fields: {
           users: {
             type: ['User'],
@@ -186,6 +191,7 @@ let schema = {
         }
       },
       mutation: {
+        name: 'UsersMutation',
         fields: {
           create: {
             type: 'User',
@@ -193,7 +199,7 @@ let schema = {
               firstName: { type: 'String', nullable: false  },
               lastName: { type: 'String', nullable: false  },
               email: { type: 'String'},
-              changeLog: { type: '_ChangeLogInput' }
+              changeLog: { type: '_ChangeLogInput', nullable: false }
             },
             resolve: createUser
           },
@@ -209,11 +215,19 @@ let schema = {
 
 _.merge(lib, factory.make(schema))
 
+// console.log(lib._definitions.types['_ChangeLogInput']._fields.message)
+// console.log(lib._definitions.schemas.Users._mutationType._fields.create.args[3].type)
+// console.log(lib._definitions.schemas.Users._mutationType._fields.create.args[3].type._fields.message.type)
+
 let testCreateGQL = `mutation Mutation {
   create(
     firstName: "john",
     lastName: "doe",
-    email: "jdoe@x.com"
+    email: "jdoe@x.com",
+    changeLog: {
+      user: "jdoe",
+      message: "new record"
+    }
   )
   {
     id, firstName, lastName, email,
@@ -262,10 +276,10 @@ let testGetInterfaceGQL = `{
   }
 }`
 
-// lib.Users(testCreateGQL)
+lib.Users(testCreateGQL)
 // lib.Users(testPurgeGQL)
 // lib.Users(testGetGQL)
-lib.Users(testGetUnionGQL)
+// lib.Users(testGetUnionGQL)
 
 // lib.Users(testGetInterfaceGQL)
   .then(function (result) {
