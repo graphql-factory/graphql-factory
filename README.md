@@ -233,6 +233,8 @@ let definition = {
 Will create
 
 ```
+const Location = new GraphQLObject({...})
+
 const User = new GraphQLObject({
   name: 'User',
   fields: {
@@ -243,6 +245,9 @@ const User = new GraphQLObject({
       resolve: function () {
         // object resolve
       }
+    },
+    location: {
+      type: Location
     }
   }
 })
@@ -256,6 +261,9 @@ const UserInput = new GraphQLInputObjectType({
       resolve: function () {
         // input resolve
       }
+    },
+    location: {
+      type: new GraphQLNonNull(GraphQLString)
     }
   }
 })
