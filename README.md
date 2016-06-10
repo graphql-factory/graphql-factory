@@ -181,7 +181,6 @@ type FactoryTypeConfig = {
 ### Multi-Types
 Some objects may be very similar in definition but have different types. One example is a `GraphQLInputObjectType` that has a subset of the fields in a `GraphQLObjectType` that is used for mutating that object type. In this case `graphql-factory` allows you to use a Multi-type definition in conjunction with the `omitFrom` field of a `FactoryTypeConfig` object to create both GraphQL objects from a single definition. This allows a reduction of redundant definition code but does add some complexity
 
-* **Resolves** - If you are using field resolves you may have different functions for different types. To do this, instead of specifying a function in the field resolve definition, specify a hash where the key is the type and the value is the resolve function. See example `User.email` resolve field
 * **Field Types** - You may have different requirements for the type of data that is returned for the same field name in a Multi-Type definition. To accomplish this you can use a `ConditionalFactoryTypeConfigMap` which will allow you to specify a type configuration for each of your Multi-types. This is useful in particular when you have a field that only requires an `id` string on mutation but returns a more complex object on query. See example `User.location` field definition
 
 #### Multi-Type Example Definition
@@ -208,13 +207,8 @@ let definition = {
         },
         email: {
           type: 'String',
-          resolve: {
-            Object: function () {
+          resolve: function () {
               // object resolve
-            },
-            Input: function () {
-              // input resolve
-            }
           }
         },
         location: {
@@ -256,12 +250,7 @@ const UserInput = new GraphQLInputObjectType({
   name: 'UserInput',
   fields: {
     name: { type: new GraphQLNonNull(GraphQLString) },
-    email: {
-      type: GraphQLString,
-      resolve: function () {
-        // input resolve
-      }
-    },
+    email: { type: GraphQLString },
     location: {
       type: new GraphQLNonNull(GraphQLString)
     }
@@ -337,3 +326,31 @@ In order to remove the depedency on `lodash` several lodash-like functions have 
 **Q** How do I reuse pieces of a schema?
 
 **A** The approach I use is to create partial objects and use a utility like lodash's `_.deepMerge` to add its schema to another
+##### Example
+```
+import _ from 'lodash'
+
+let partial = {
+  reusableField: {
+    type: 'String',
+    resolve: resolveFn
+  }
+}
+
+let definition = {
+  types: {
+    type1: {
+      fields: _.mergeDeep({
+        field1: { type: 'String' },
+        field2: { type: 'Int' }
+      }, partial)
+    },
+    type2: {
+      fields: _.mergeDeep({
+        fieldA: { type: 'Boolean' },
+        fieldB: { type: 'String' }
+      }, partial)
+    }
+  }
+}
+```

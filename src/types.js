@@ -22,19 +22,6 @@ export default function Types (gql, customTypes, definitions) {
     'ID': gql.GraphQLID
   }
 
-  /*
-  let ValidCases = {
-    fieldCase1: 'MyType',
-    fieldCase2: ['MyType'],
-    fieldCase3: { type: 'MyType', nullable: false },
-    fieldCase4: { type: ['MyType'], nullable: false },
-    fieldCase5: {
-      Object: 'fieldCase1 - fieldCase4',
-      Input: 'fieldCase1 - fieldCase4'
-    }
-  }
-  */
-
   //  determines a field type given a FactoryTypeConfig
   let fieldType = function (field) {
     let isObject = _has(field, 'type')
@@ -62,12 +49,6 @@ export default function Types (gql, customTypes, definitions) {
   let getType = function (field, rootType) {
     if (_isHash(field) && !_has(field, 'type') && _has(field, rootType)) return fieldType(field[rootType])
     return fieldType(field)
-  }
-
-  //  allow conditional resolve for multi-types
-  let conditionalResolve = function (resolve, type) {
-    if (_isFunction(resolve)) return resolve
-    else if (_has(resolve, type) && _isFunction(resolve[type])) return resolve[type]
   }
 
   //  create a GraphQLArgumentConfig
@@ -118,7 +99,7 @@ export default function Types (gql, customTypes, definitions) {
         args: _mapValues(field.args, function (arg) {
           return GraphQLArgumentConfig(arg, type)
         }),
-        resolve: conditionalResolve(field.resolve, type),
+        resolve: _isFunction(field.resolve) && type === 'Object' ? field.resolve : undefined,
         deprecationReason: field.deprecationReason,
         description: field.description
       }
