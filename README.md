@@ -88,6 +88,16 @@ type RegisterTypeMap = {
 ### `factory.make` ( `definition` )
 Creates all types and schemas. Returns an object containing the type objects as well as convenience methods for executing GraphQL queries/mutations on each schema
 
+**returns**
+```
+type FactoryDefinitionObject = {
+  globals: object,
+  definition: object,
+  types: GraphQLObjectTypeMap,
+  schemas: GraphQLSchemaMap
+}
+```
+
 **parameters**
 * `definition` `{FactoryDefinition}` - A JSON definition of all GraphQL types and schemas see official [`GraphQL Type Documentation`](http://graphql.org/docs/api-reference-type-system/) for reference
 ```
@@ -177,6 +187,23 @@ type FactoryTypeConfig = {
   omitFrom? : string | Array<string>
 }
 ```
+
+### definition.globals
+The globals property of the definition object allow you to specify data that can be consumed by extended field resolve functions. `globals` is a basic javascript object so you can add strings, numbers, functions, etc.
+
+### Extended GraphQLFieldResolveFn
+All user defined `GraphQLFieldResolveFn` objects are wrapped in a helper function to add an additional arguments when called. The additional arguments are the definitions object and the field definition with the resolve function omitted. This is useful when creating generic functions that handle many different use cases by taking advantage of parameterization. You can for example store a hash in globals that contains database table names keyed on the type name extracted from the partial field definition.
+```
+type ExtendedGraphQLFieldResolveFn = (
+  source?: any,
+  args?: {[argName: string]: any},
+  context?: any,
+  info?: GraphQLResolveInfo,
+  definitions: FactoryDefinitionsObject,
+  fieldDefPartial: object
+) => any
+```
+
 
 ### Multi-Types
 Some objects may be very similar in definition but have different types. One example is a `GraphQLInputObjectType` that has a subset of the fields in a `GraphQLObjectType` that is used for mutating that object type. In this case `graphql-factory` allows you to use a Multi-type definition in conjunction with the `omitFrom` field of a `FactoryTypeConfig` object to create both GraphQL objects from a single definition. This allows a reduction of redundant definition code but does add some complexity

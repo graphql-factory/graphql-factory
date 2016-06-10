@@ -201,8 +201,19 @@ function Types(gql, customTypes, definitions) {
     });
   };
 
+  //  add an argument to the user defined resolve function at the end
+  var ExtendedResolve = function ExtendedResolve(field) {
+    var resolve = field.resolve;
+    var f = omitBy(field, function (v, k) {
+      return k === 'resolve';
+    });
+    return function (source, args, context, info) {
+      return resolve(source, args, context, info, definitions, f);
+    };
+  };
+
   //  create a GraphQLFieldConfigMapThunk
-  var GraphQLFieldConfigMapThunk = function GraphQLFieldConfigMapThunk(fields, type) {
+  var GraphQLFieldConfigMapThunk = function GraphQLFieldConfigMapThunk(fields, type, typeName) {
     fields = omitBy(fields, function (f) {
       return has(f, 'omitFrom') && (includes(f.omitFrom, type) || f.omitFrom === type);
     });
@@ -210,12 +221,13 @@ function Types(gql, customTypes, definitions) {
     return function () {
       return mapValues(fields, function (field) {
         field = !has(field, 'type') && has(field, type) ? field[type] : field;
+        var hasResolveFn = isFunction(field.resolve) && type === 'Object';
         return {
           type: getType(field, type),
           args: mapValues(field.args, function (arg) {
             return GraphQLArgumentConfig(arg, type);
           }),
-          resolve: isFunction(field.resolve) && type === 'Object' ? field.resolve : undefined,
+          resolve: hasResolveFn ? ExtendedResolve(field) : undefined,
           deprecationReason: field.deprecationReason,
           description: field.description
         };
@@ -261,10 +273,11 @@ function Types(gql, customTypes, definitions) {
 
   //  create a GraphQLObjectType
   var GraphQLObjectType = function GraphQLObjectType(objDef, objName) {
+    var useName = objDef.name || objName;
     return new gql.GraphQLObjectType({
-      name: objDef.name || objName,
+      name: useName,
       interfaces: GraphQLInterfacesThunk(objDef.interfaces),
-      fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Object'),
+      fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Object', useName),
       isTypeOf: isFunction(objDef.isTypeOf) ? objDef.isTypeOf : undefined,
       description: objDef.description
     });
@@ -377,6 +390,12 @@ function index (gql) {
   var make = function make(def) {
 
     var lib = {};
+
+    //  add the globals and definition to the output
+    definitions.globals = def.globals || {};
+    definitions.definition = omitBy(def, function (v, k) {
+      return k === 'globals';
+    });
 
     var nonUnionDefs = omitBy(def.types, function (tDef) {
       return tDef.type === 'Union';

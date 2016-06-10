@@ -86,20 +86,32 @@ export default function Types (gql, customTypes, definitions) {
     })
   }
 
+  //  add an argument to the user defined resolve function at the end
+  let ExtendedResolve = function (field) {
+    let resolve = field.resolve
+    let f = _omitBy(field, function (v, k) {
+      return k === 'resolve'
+    })
+    return function(source, args, context, info) {
+      return resolve(source, args, context, info, definitions, f)
+    }
+  }
+
   //  create a GraphQLFieldConfigMapThunk
-  let GraphQLFieldConfigMapThunk = function (fields, type) {
+  let GraphQLFieldConfigMapThunk = function (fields, type, typeName) {
     fields = _omitBy(fields, function (f) {
       return _has(f, 'omitFrom') && (_includes(f.omitFrom, type) || f.omitFrom === type)
     })
     if (!fields) return
     return () => _mapValues(fields, function (field) {
       field = !_has(field, 'type') && _has(field, type) ? field[type] : field
+      let hasResolveFn = _isFunction(field.resolve) && type === 'Object'
       return {
         type: getType(field, type),
         args: _mapValues(field.args, function (arg) {
           return GraphQLArgumentConfig(arg, type)
         }),
-        resolve: _isFunction(field.resolve) && type === 'Object' ? field.resolve : undefined,
+        resolve: hasResolveFn ? ExtendedResolve(field) : undefined,
         deprecationReason: field.deprecationReason,
         description: field.description
       }
@@ -141,10 +153,11 @@ export default function Types (gql, customTypes, definitions) {
 
   //  create a GraphQLObjectType
   let GraphQLObjectType = function (objDef, objName) {
+    let useName = objDef.name || objName
     return new gql.GraphQLObjectType({
-      name: objDef.name || objName,
+      name: useName,
       interfaces: GraphQLInterfacesThunk(objDef.interfaces),
-      fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Object'),
+      fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Object', useName),
       isTypeOf: _isFunction(objDef.isTypeOf) ? objDef.isTypeOf : undefined,
       description: objDef.description
     })

@@ -49,6 +49,12 @@ export default function (gql) {
 
     let lib = {}
 
+    //  add the globals and definition to the output
+    definitions.globals = def.globals || {}
+    definitions.definition = _omitBy(def, function (v, k) {
+      return k === 'globals'
+    })
+
     let nonUnionDefs = _omitBy(def.types, function (tDef) {
       return tDef.type === 'Union'
     })

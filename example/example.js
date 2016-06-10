@@ -40,8 +40,10 @@ _.forEach(tables, function (type) {
 })
 
 //  get user list
-let getUsers = function () {
-  return r.db(tables.user.db).table(tables.user.table).run()
+let getUsers = function (source, args, context, info, def, field) {
+  // determine the table and db using the extended globals and field props
+  let config = def.globals[field.type[0]]
+  return r.db(config.db).table(config.table).run()
 }
 
 //  purge users
@@ -82,7 +84,10 @@ let createUser = function (obj, args) {
 
 let lib = {}
 
-let schema = {
+let definition = {
+  globals: {
+    User: tables.user
+  },
   types: {
     EnumChangeLogTypes: {
       type: 'Enum',
@@ -213,7 +218,7 @@ let schema = {
   }
 }
 
-_.merge(lib, factory.make(schema))
+_.merge(lib, factory.make(definition))
 
 // console.log(lib._definitions.types['_ChangeLogInput']._fields.message)
 // console.log(lib._definitions.schemas.Users._mutationType._fields.create.args[3].type)
@@ -276,9 +281,9 @@ let testGetInterfaceGQL = `{
   }
 }`
 
-lib.Users(testCreateGQL)
+// lib.Users(testCreateGQL)
 // lib.Users(testPurgeGQL)
-// lib.Users(testGetGQL)
+lib.Users(testGetGQL)
 // lib.Users(testGetUnionGQL)
 
 // lib.Users(testGetInterfaceGQL)
