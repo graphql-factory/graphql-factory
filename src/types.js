@@ -45,6 +45,12 @@ export default function Types (gql, customTypes, definitions) {
     return type
   }
 
+  //  allow conditional resolve for multi-types
+  let conditionalResolve = function (resolve, type) {
+    if (_isFunction(resolve)) return resolve
+    else if (_has(resolve, type) && _isFunction(resolve[type])) return resolve[type]
+  }
+
   //  create a GraphQLArgumentConfig
   let GraphQLArgumentConfig = function (arg) {
     return {
@@ -92,7 +98,7 @@ export default function Types (gql, customTypes, definitions) {
         args: _mapValues(field.args, function (arg) {
           return GraphQLArgumentConfig(arg)
         }),
-        resolve: field.resolve,
+        resolve: conditionalResolve(field.resolve, type),
         deprecationReason: field.deprecationReason,
         description: field.description
       }

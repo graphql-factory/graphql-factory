@@ -160,6 +160,11 @@ function Types(gql, customTypes, definitions) {
     return type;
   };
 
+  //  allow conditional resolve for multi-types
+  var conditionalResolve = function conditionalResolve(resolve, type) {
+    if (isFunction(resolve)) return resolve;else if (has(resolve, type) && isFunction(resolve[type])) return resolve[type];
+  };
+
   //  create a GraphQLArgumentConfig
   var GraphQLArgumentConfig = function GraphQLArgumentConfig(arg) {
     return {
@@ -208,7 +213,7 @@ function Types(gql, customTypes, definitions) {
           args: mapValues(field.args, function (arg) {
             return GraphQLArgumentConfig(arg);
           }),
-          resolve: field.resolve,
+          resolve: conditionalResolve(field.resolve, type),
           deprecationReason: field.deprecationReason,
           description: field.description
         };

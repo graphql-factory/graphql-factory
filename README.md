@@ -171,6 +171,9 @@ type FactoryTypeConfig = {
 ### Multi-Types
 Some objects may be very similar in definition but have different types. One example is a `GraphQLInputObjectType` that has a subset of the fields in a `GraphQLObjectType` that is used for mutating that object type. In this case `graphql-factory` allows you to use a Multi-type definition in conjunction with the `omitFrom` field of a `FactoryTypeConfig` object to create both GraphQL objects from a single definition. This allows a reduction of redundant definition code but does add some complexity
 
+Additionally, if you are using field resolves you may have different functions for different types. To do this, instead of specifying a function in the field resolve definition, specify a hash where the key is the type and the value is the resolve function. See example
+
+
 #### Multi-Type Example Definition
 
 
@@ -194,7 +197,15 @@ let definition = {
           nullable: false
         },
         email: {
-          type: 'String'
+          type: 'String',
+          resolve: {
+            Object: function () {
+              // object resolve
+            },
+            Input: function () {
+              // input resolve
+            }
+          }
         }
       }
     }

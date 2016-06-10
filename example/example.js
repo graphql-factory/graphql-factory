@@ -127,11 +127,13 @@ let schema = {
     },
     Type1: {
       fields: {
+        title: { type: 'String' },
         type1: { type: 'String' }
       }
     },
     Type2: {
       fields: {
+        title: { type: 'String' },
         type2: { type: 'String' }
       }
     },
@@ -152,6 +154,7 @@ let schema = {
     Title: {
       interfaces: [ 'TitleInterface' ],
       fields: {
+        title: { type: 'String' },
         year: { type: 'Int' }
       },
       isTypeOf: (value) => value instanceof Title
@@ -167,15 +170,17 @@ let schema = {
           },
           union1: {
             type: 'TestUnion1',
-            resolve: function () {
-              return { title: 'i am a title', type1: 'im a type1' }
+            resolve: {
+              Object: function () {
+                return { title: 'i am a title', type1: 'im a type1' }
+              }
             }
           },
           interface1: {
             type: 'Title',
             interfaces: [ 'TitleInterface' ],
             resolve: function () {
-              return { title: 'interface title', year: 2016 }
+              return new Title('interface title', 2016)
             }
           }
         }
@@ -239,11 +244,12 @@ let testGetGQL = `{
 
 let testGetUnionGQL = `{
   union1 {
-    title
     ... on Type1 {
+      title,
       type1
     }
     ... on Type2 {
+      title,
       type2
     }
   }
@@ -259,13 +265,12 @@ let testGetInterfaceGQL = `{
 // lib.Users(testCreateGQL)
 // lib.Users(testPurgeGQL)
 // lib.Users(testGetGQL)
-// lib.Users(testGetUnionGQL)
-/*
-lib.Users(testGetInterfaceGQL)
+lib.Users(testGetUnionGQL)
+
+// lib.Users(testGetInterfaceGQL)
   .then(function (result) {
     _.forEach(result.errors, function (e, i) {
       result.errors[i] = e.message
     })
     console.log(JSON.stringify(result, null, '  '))
   })
-  */
