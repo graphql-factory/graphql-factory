@@ -221,7 +221,12 @@ const User = new GraphQLObject({
   fields: {
     id: { type: new GraphQLNonNull(GraphQLString) },
     name: { type: new GraphQLNonNull(GraphQLString) },
-    email: { type: GraphQLString }
+    email: {
+      type: GraphQLString,
+      resolve: function () {
+        // object resolve
+      }
+    }
   }
 })
 
@@ -229,7 +234,12 @@ const UserInput = new GraphQLInputObjectType({
   name: 'UserInput',
   fields: {
     name: { type: new GraphQLNonNull(GraphQLString) },
-    email: { type: GraphQLString }
+    email: {
+      type: GraphQLString,
+      resolve: function () {
+        // input resolve
+      }
+    }
   }
 })
 ```
