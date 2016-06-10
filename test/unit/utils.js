@@ -1,6 +1,6 @@
 var utils = factory.utils
 
-describe('Util Test', function () {
+describe('Utils', function () {
 
   //  isString
   it('isString should return true for a String, false otherwise', function (done) {
