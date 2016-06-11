@@ -192,4 +192,15 @@ describe('Utils', function () {
     })).to.deep.equal({a: 1})
     done()
   })
+  
+  //  mergeDeep
+  it('mergeDeep should return a merged hash of 2 or more objects where the first hash has been mutated', function (done) {
+    var fn = utils.mergeDeep
+    expect(fn({ a: { b: 0 } }, { a: { c : 1 } })).to.deep.equal({a: { b: 0, c: 1 }})
+    expect(fn({ a: { b: 0 } }, { a: { c : 1 } }, { a: { d: 2 }, x: 10 })).to.deep.equal({a: { b: 0, c: 1, d: 2 }, x: 10 })
+    expect(fn({ a: { b: 0 } }, { a: 1 })).to.deep.equal({a: 1 })
+    expect(fn({ a: { b: [1, 2, 3] } }, { a: { b : 1 } })).to.deep.equal({a: { b: 1 }})
+    expect(fn({ a: { b: [1, 2, 3] } }, { a: { b : [4, 5, 6] } })).to.deep.equal({a: { b: [4, 5, 6] }})
+    done()
+  })
 })

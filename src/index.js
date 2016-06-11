@@ -51,6 +51,7 @@ export default function (gql) {
 
     //  add the globals and definition to the output
     definitions.globals = def.globals || {}
+    definitions.utils = utils
     definitions.definition = _omitBy(def, function (v, k) {
       return k === 'globals'
     })

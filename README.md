@@ -85,16 +85,22 @@ type RegisterTypeMap = {
 }
 ```
 
-### `factory.make` ( `definition` )
+### `factory.make` ( `definition` ) `=>` `FactoryLib`
 Creates all types and schemas. Returns an object containing the type objects as well as convenience methods for executing GraphQL queries/mutations on each schema
 
 **returns**
 ```
+type FactoryLib = {
+  _definitions: FactoryDefinitionObject,
+  [schemaQuery: string]: function
+}
+
 type FactoryDefinitionObject = {
   globals: object,
   definition: object,
   types: GraphQLObjectTypeMap,
-  schemas: GraphQLSchemaMap
+  schemas: GraphQLSchemaMap,
+  utils: factory.utils
 }
 ```
 
@@ -191,19 +197,8 @@ type FactoryTypeConfig = {
 ### definition.globals
 The globals property of the definition object allow you to specify data that can be consumed by extended field resolve functions. `globals` is a basic javascript object so you can add strings, numbers, functions, etc.
 
-### Extended GraphQLFieldResolveFn
-All user defined `GraphQLFieldResolveFn` objects are wrapped in a helper function to add an additional arguments when called. The additional arguments are the definitions object and the field definition with the resolve function omitted. This is useful when creating generic functions that handle many different use cases by taking advantage of parameterization. You can for example store a hash in globals that contains database table names keyed on the type name extracted from the partial field definition.
-```
-type ExtendedGraphQLFieldResolveFn = (
-  source?: any,
-  args?: {[argName: string]: any},
-  context?: any,
-  info?: GraphQLResolveInfo,
-  definitions: FactoryDefinitionsObject,
-  fieldDefPartial: object
-) => any
-```
-
+### GraphQLFieldResolveFn "this" property
+All user defined `GraphQLFieldResolveFn` objects are bound to the `FactoryDefinition` object so that they can access all types, schemas, globals, and the JSON definition using `this.<property>`
 
 ### Multi-Types
 Some objects may be very similar in definition but have different types. One example is a `GraphQLInputObjectType` that has a subset of the fields in a `GraphQLObjectType` that is used for mutating that object type. In this case `graphql-factory` allows you to use a Multi-type definition in conjunction with the `omitFrom` field of a `FactoryTypeConfig` object to create both GraphQL objects from a single definition. This allows a reduction of redundant definition code but does add some complexity
@@ -285,7 +280,7 @@ const UserInput = new GraphQLInputObjectType({
 })
 ```
 
-### resolveType for Union/Interface
+### resolveType for Union
 Since Union types require the use of already created GraphQL types, they are created after all other types except `GraphQLSchema`. When returning types in your `resolveType` function you need to return the resolvedType (thanks captain obvious). The best way to do this is to reference the `this._types` array inside your `resolveType` function. The array is indexed in the order that you specified your types. See below for example
 
 ```
@@ -327,23 +322,30 @@ lib.<Schema Name>(<GraphQL Query>)
 ```
 
 ### `factory.utils`
-In order to remove the depedency on `lodash` several lodash-like functions have been implemented and are available for use in the `factory.utils` module. They are lodash-like because some may only provide partial functionality of their lodash equivalents. The methods are briefly documented below
+In order to remove the depedency on `lodash` several lodash-like functions have been implemented and are available for use in the `factory.utils` module. They are lodash-like because some may only provide partial functionality of their lodash equivalents. There are also utils for use with graphql. The methods are briefly documented below
 
-* `factory.utils.isObject` ( `object` )
-* `factory.utils.isArray` ( `object` )
-* `factory.utils.isFunction` ( `object` )
-* `factory.utils.isDate` ( `object` )
-* `factory.utils.isHash` ( `object` )
-* `factory.utils.isString` ( `object` )
-* `factory.utils.includes` ( `array`, `value` )
-* `factory.utils.has` ( `object`, `function(value, key)` )
-* `factory.utils.forEach` ( `object`, `function(value, key)` )
-* `factory.utils.without` ( `object`, `value1`, ... )
-* `factory.utils.map` ( `object`, `function(value, key)` )
-* `factory.utils.mapValues` ( `object`, `function(value, key)` )
-* `factory.utils.filter` ( `object`, `function(value, key)` )
-* `factory.utils.omitBy` ( `object`, `function(value, key)` )
-* `factory.utils.pickBy` ( `object`, `function(value, key)` )
+The utils are also added to the `FactoryDefinitionObject` so that you can use them in field resolve functions by `this.utils.<Function>`
+
+* Lodash Emulation
+  * `factory.utils.isObject` ( `object` )
+  * `factory.utils.isArray` ( `object` )
+  * `factory.utils.isFunction` ( `object` )
+  * `factory.utils.isDate` ( `object` )
+  * `factory.utils.isHash` ( `object` )
+  * `factory.utils.isString` ( `object` )
+  * `factory.utils.includes` ( `array`, `value` )
+  * `factory.utils.has` ( `object`, `function(value, key)` )
+  * `factory.utils.forEach` ( `object`, `function(value, key)` )
+  * `factory.utils.without` ( `object`, `value1`, ... )
+  * `factory.utils.map` ( `object`, `function(value, key)` )
+  * `factory.utils.mapValues` ( `object`, `function(value, key)` )
+  * `factory.utils.filter` ( `object`, `function(value, key)` )
+  * `factory.utils.omitBy` ( `object`, `function(value, key)` )
+  * `factory.utils.pickBy` ( `object`, `function(value, key)` )
+  * `factory.utils.mergeDeep` ( `object`, `object`, ... )
+
+* GraphQL tools
+  * `factory.utils.getReturnTypeName` ( `GraphQLResolveInfo` )
 
 ### FAQ
 **Q**: Why do I need to pass a `graphql` instance to `graphql-factory` ?

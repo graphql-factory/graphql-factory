@@ -1,5 +1,6 @@
 import {
   has as _has,
+  isString as _isString,
   isArray as _isArray,
   isObject as _isObject,
   isHash as _isHash,
@@ -86,19 +87,8 @@ export default function Types (gql, customTypes, definitions) {
     })
   }
 
-  //  add an argument to the user defined resolve function at the end
-  let ExtendedResolve = function (field) {
-    let resolve = field.resolve
-    let f = _omitBy(field, function (v, k) {
-      return k === 'resolve'
-    })
-    return function(source, args, context, info) {
-      return resolve(source, args, context, info, definitions, f)
-    }
-  }
-
   //  create a GraphQLFieldConfigMapThunk
-  let GraphQLFieldConfigMapThunk = function (fields, type, typeName) {
+  let GraphQLFieldConfigMapThunk = function (fields, type) {
     fields = _omitBy(fields, function (f) {
       return _has(f, 'omitFrom') && (_includes(f.omitFrom, type) || f.omitFrom === type)
     })
@@ -111,7 +101,7 @@ export default function Types (gql, customTypes, definitions) {
         args: _mapValues(field.args, function (arg) {
           return GraphQLArgumentConfig(arg, type)
         }),
-        resolve: hasResolveFn ? ExtendedResolve(field) : undefined,
+        resolve: hasResolveFn ? field.resolve.bind(definitions) : undefined,
         deprecationReason: field.deprecationReason,
         description: field.description
       }
@@ -153,11 +143,10 @@ export default function Types (gql, customTypes, definitions) {
 
   //  create a GraphQLObjectType
   let GraphQLObjectType = function (objDef, objName) {
-    let useName = objDef.name || objName
     return new gql.GraphQLObjectType({
-      name: useName,
+      name: objDef.name || objName,
       interfaces: GraphQLInterfacesThunk(objDef.interfaces),
-      fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Object', useName),
+      fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Object'),
       isTypeOf: _isFunction(objDef.isTypeOf) ? objDef.isTypeOf : undefined,
       description: objDef.description
     })
@@ -206,8 +195,10 @@ export default function Types (gql, customTypes, definitions) {
   //  create a GraphQLSchema
   let GraphQLSchema = function (schema) {
     return new gql.GraphQLSchema({
-      query: GraphQLObjectType(schema.query, 'Query'),
-      mutation: schema.mutation ? GraphQLObjectType(schema.mutation, 'Mutation') : undefined
+      query: _isString(schema.query) ? getType(schema.query) : GraphQLObjectType(schema.query, 'Query'),
+      mutation: schema.mutation ?
+        _isString(schema.mutation) ?
+          getType(schema.mutation): GraphQLObjectType(schema.mutation, 'Mutation') : undefined
     })
   }
 

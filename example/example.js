@@ -32,7 +32,7 @@ function createTable (db, name) {
   })
 }
 let tables = {
-  user: { db: 'test', table: 'user' }
+  User: { db: 'test', table: 'user' }
 }
 
 _.forEach(tables, function (type) {
@@ -40,10 +40,13 @@ _.forEach(tables, function (type) {
 })
 
 //  get user list
-let getUsers = function (source, args, context, info, def, field) {
+let getUsers = function (source, args, context, info, def) {
   // determine the table and db using the extended globals and field props
-  let config = def.globals[field.type[0]]
-  return r.db(config.db).table(config.table).run()
+ // let queryName = info.schema._queryType.name
+ // let objType = def.definition.types[queryName].fields.users.type[0]
+ // let config = tables[objType]
+  console.log(this)
+  return r.db(tables.User.db).table(tables.User.table).run()
 }
 
 //  purge users
@@ -167,53 +170,56 @@ let definition = {
         year: { type: 'Int' }
       },
       isTypeOf: (value) => value instanceof Title
+    },
+    UsersQuery: {
+      name: 'UsersQuery',
+      fields: {
+        users: {
+          type: ['User'],
+          attach: { blah: 'blah' },
+          resolve: getUsers
+        },
+        union1: {
+          type: 'TestUnion1',
+          resolve: {
+            Object: function () {
+              return { title: 'i am a title', type1: 'im a type1' }
+            }
+          }
+        },
+        interface1: {
+          type: 'Title',
+          interfaces: [ 'TitleInterface' ],
+          resolve: function () {
+            return new Title('interface title', 2016)
+          }
+        }
+      }
+    },
+    UsersMutation: {
+      name: 'UsersMutation',
+      fields: {
+        create: {
+          type: 'User',
+          args: {
+            firstName: { type: 'String', nullable: false  },
+            lastName: { type: 'String', nullable: false  },
+            email: { type: 'String'},
+            changeLog: { type: '_ChangeLogInput', nullable: false }
+          },
+          resolve: createUser
+        },
+        purge: {
+          type: 'Int',
+          resolve: purgeUsers
+        }
+      }
     }
   },
   schemas: {
     Users: {
-      query: {
-        name: 'UsersQuery',
-        fields: {
-          users: {
-            type: ['User'],
-            resolve: getUsers
-          },
-          union1: {
-            type: 'TestUnion1',
-            resolve: {
-              Object: function () {
-                return { title: 'i am a title', type1: 'im a type1' }
-              }
-            }
-          },
-          interface1: {
-            type: 'Title',
-            interfaces: [ 'TitleInterface' ],
-            resolve: function () {
-              return new Title('interface title', 2016)
-            }
-          }
-        }
-      },
-      mutation: {
-        name: 'UsersMutation',
-        fields: {
-          create: {
-            type: 'User',
-            args: {
-              firstName: { type: 'String', nullable: false  },
-              lastName: { type: 'String', nullable: false  },
-              email: { type: 'String'},
-              changeLog: { type: '_ChangeLogInput', nullable: false }
-            },
-            resolve: createUser
-          },
-          purge: {
-            type: 'Int',
-            resolve: purgeUsers
-          }
-        }
-      }
+      query: 'UsersQuery',
+      mutation: 'UsersMutation'
     }
   }
 }

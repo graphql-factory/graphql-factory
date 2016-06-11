@@ -105,6 +105,63 @@ function pickBy(obj, fn) {
   });
   return newObj;
 }
+function mergeDeep() {
+  var args = Array.prototype.slice.call(arguments);
+  if (args.length === 0) return {};else if (args.length === 1) return args[0];else if (!isHash(args[0])) return {};
+  var targetObject = args[0];
+  var sources = args.slice(1);
+
+  //  define the recursive merge function
+  var merge = function merge(target, source) {
+    for (var k in source) {
+      if (!target[k] && isHash(source[k])) {
+        target[k] = merge({}, source[k]);
+      } else if (target[k] && isHash(target[k]) && isHash(source[k])) {
+        target[k] = merge(target[k], source[k]);
+      } else {
+        if (isArray(source[k])) {
+          target[k] = [];
+          for (var x in source[k]) {
+            if (isHash(source[k][x])) {
+              target[k].push(merge({}, source[k][x]));
+            } else if (isArray(source[k][x])) {
+              target[k].push(merge([], source[k][x]));
+            } else {
+              target[k].push(source[k][x]);
+            }
+          }
+        } else if (isDate(source[k])) {
+          target[k] = new Date(source[k]);
+        } else {
+          target[k] = source[k];
+        }
+      }
+    }
+    return target;
+  };
+
+  //  merge each source
+  for (var k in sources) {
+    if (isHash(sources[k])) merge(targetObject, sources[k]);
+  }
+  return targetObject;
+}
+
+function getReturnTypeName(info) {
+  try {
+    var _type = ['_', info.operation.operation, 'Type'].join('');
+    var o = info.schema[_type];
+    var selections = info.operation.selectionSet.selections;
+    var fieldName = selections[selections.length - 1].name.value;
+    var fieldObj = o._fields[fieldName];
+    var typeObj = fieldObj.type;
+    while (!typeObj.name) {
+      typeObj = typeObj.ofType;
+      if (!typeObj) break;
+    }
+    return typeObj.name;
+  } catch (err) {}
+}
 
 
 
@@ -123,7 +180,9 @@ var utils = Object.freeze({
   mapValues: mapValues,
   filter: filter,
   omitBy: omitBy,
-  pickBy: pickBy
+  pickBy: pickBy,
+  mergeDeep: mergeDeep,
+  getReturnTypeName: getReturnTypeName
 });
 
 function Types(gql, customTypes, definitions) {
@@ -201,19 +260,8 @@ function Types(gql, customTypes, definitions) {
     });
   };
 
-  //  add an argument to the user defined resolve function at the end
-  var ExtendedResolve = function ExtendedResolve(field) {
-    var resolve = field.resolve;
-    var f = omitBy(field, function (v, k) {
-      return k === 'resolve';
-    });
-    return function (source, args, context, info) {
-      return resolve(source, args, context, info, definitions, f);
-    };
-  };
-
   //  create a GraphQLFieldConfigMapThunk
-  var GraphQLFieldConfigMapThunk = function GraphQLFieldConfigMapThunk(fields, type, typeName) {
+  var GraphQLFieldConfigMapThunk = function GraphQLFieldConfigMapThunk(fields, type) {
     fields = omitBy(fields, function (f) {
       return has(f, 'omitFrom') && (includes(f.omitFrom, type) || f.omitFrom === type);
     });
@@ -227,7 +275,7 @@ function Types(gql, customTypes, definitions) {
           args: mapValues(field.args, function (arg) {
             return GraphQLArgumentConfig(arg, type);
           }),
-          resolve: hasResolveFn ? ExtendedResolve(field) : undefined,
+          resolve: hasResolveFn ? field.resolve.bind(definitions) : undefined,
           deprecationReason: field.deprecationReason,
           description: field.description
         };
@@ -273,11 +321,10 @@ function Types(gql, customTypes, definitions) {
 
   //  create a GraphQLObjectType
   var GraphQLObjectType = function GraphQLObjectType(objDef, objName) {
-    var useName = objDef.name || objName;
     return new gql.GraphQLObjectType({
-      name: useName,
+      name: objDef.name || objName,
       interfaces: GraphQLInterfacesThunk(objDef.interfaces),
-      fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Object', useName),
+      fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Object'),
       isTypeOf: isFunction(objDef.isTypeOf) ? objDef.isTypeOf : undefined,
       description: objDef.description
     });
@@ -326,8 +373,8 @@ function Types(gql, customTypes, definitions) {
   //  create a GraphQLSchema
   var GraphQLSchema = function GraphQLSchema(schema) {
     return new gql.GraphQLSchema({
-      query: GraphQLObjectType(schema.query, 'Query'),
-      mutation: schema.mutation ? GraphQLObjectType(schema.mutation, 'Mutation') : undefined
+      query: isString(schema.query) ? getType(schema.query) : GraphQLObjectType(schema.query, 'Query'),
+      mutation: schema.mutation ? isString(schema.mutation) ? getType(schema.mutation) : GraphQLObjectType(schema.mutation, 'Mutation') : undefined
     });
   };
 
@@ -393,6 +440,7 @@ function index (gql) {
 
     //  add the globals and definition to the output
     definitions.globals = def.globals || {};
+    definitions.utils = utils;
     definitions.definition = omitBy(def, function (v, k) {
       return k === 'globals';
     });
