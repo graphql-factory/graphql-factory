@@ -203,4 +203,37 @@ describe('Utils', function () {
     expect(fn({ a: { b: [1, 2, 3] } }, { a: { b : [4, 5, 6] } })).to.deep.equal({a: { b: [4, 5, 6] }})
     done()
   })
+
+  //  get
+  it('get should return the value specified by the path or array path and undefined or defaultValue if not found', function (done) {
+    var fn = utils.get
+    var obj1 = {
+      a: {
+        b: {
+          c: 'ok'
+        },
+        d: [
+          {
+            x: 1
+          },
+          {
+            x: 2
+          }
+        ],
+        'e.f': {
+          g: [1, 2],
+          h: {
+            i: 'eye'
+          }
+        }
+      }
+    }
+    expect(fn(obj1, 'a.b.c')).to.equal('ok')
+    expect(fn(obj1, 'a[b].c')).to.equal('ok')
+    expect(fn(obj1, ['a', 'b', 'c'])).to.equal('ok')
+    expect(fn(obj1, 'x.y.z', 'ok')).to.equal('ok')
+    expect(fn(obj1, 'x.y.z')).to.equal(undefined)
+    expect(fn(obj1, 'a[e.f].g[0]')).to.equal(1)
+    done()
+  })
 })

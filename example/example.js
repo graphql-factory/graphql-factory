@@ -40,13 +40,13 @@ _.forEach(tables, function (type) {
 })
 
 //  get user list
-let getUsers = function (source, args, context, info, def) {
-  // determine the table and db using the extended globals and field props
- // let queryName = info.schema._queryType.name
- // let objType = def.definition.types[queryName].fields.users.type[0]
- // let config = tables[objType]
-  console.log(this)
-  return r.db(tables.User.db).table(tables.User.table).run()
+let getUsers = function (source, args, context, info) {
+  let typeName = this.utils.getReturnTypeName(info)
+  let db = this.globals.db.main
+  let config = db.tables[typeName]
+  let cursor = db.cursor
+
+  return cursor.db(config.db).table(config.table).run()
 }
 
 //  purge users
@@ -59,19 +59,25 @@ let purgeUsers = function () {
 }
 
 //  create function
-let createUser = function (obj, args) {
+let createUser = function (obj, args, context, info) {
+
+  let typeName = this.utils.getReturnTypeName(info)
+  let db = this.globals.db.main
+  let config = db.tables[typeName]
+  let cursor = db.cursor
+
   let changeLog = args.changeLog || { user: 'SYSTEM' }
   _.merge(changeLog, { date: new Date(), type: 'CREATE' })
-  return r.db(tables.user.db).table(tables.user.table)
+  return cursor.db(config.db).table(config.table)
     .insert({
       _metadata: {
-        recordId: r.uuid(),
+        recordId: cursor.uuid(),
         version: null,
         validFrom: null,
         validTo: null,
         changeLog: [changeLog]
       },
-      id: r.uuid(),
+      id: cursor.uuid(),
       firstName: args.firstName,
       lastName: args.lastName,
       email: args.email
@@ -89,7 +95,12 @@ let lib = {}
 
 let definition = {
   globals: {
-    User: tables.user
+    db: {
+      main: {
+        cursor: r,
+        tables: tables
+      }
+    }
   },
   types: {
     EnumChangeLogTypes: {
@@ -287,9 +298,9 @@ let testGetInterfaceGQL = `{
   }
 }`
 
-// lib.Users(testCreateGQL)
+lib.Users(testCreateGQL)
 // lib.Users(testPurgeGQL)
-lib.Users(testGetGQL)
+// lib.Users(testGetGQL)
 // lib.Users(testGetUnionGQL)
 
 // lib.Users(testGetInterfaceGQL)

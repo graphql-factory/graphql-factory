@@ -98,6 +98,40 @@ export function pickBy (obj, fn) {
   })
   return newObj
 }
+
+export function get (obj, path, defaultValue) {
+  let value = obj
+  let fields = isArray(path) ? path : []
+  if (isString(path)) {
+    let open = false
+    let str = ''
+
+    let addPath = function (s, isOpen) {
+      if (isNaN(s) && s.length > 0) fields.push(s)
+      else if (s.length > 0) fields.push(Number(s))
+      open = isOpen
+      str = ''
+    }
+
+    //  parse the path
+    for (let i in path) {
+      let c = path[i]
+      if (c === '[') addPath(str, true)
+      else if (open && c === ']') addPath(str, false)
+      else if (!open && c === '.') addPath(str, false)
+      else str += c
+    }
+    addPath(str, false)
+  }
+
+  //  loop though each field and attempt to get it
+  for (let f in fields) {
+    if (!value[fields[f]]) return defaultValue
+    else value = value[fields[f]]
+  }
+  return value
+}
+
 export function mergeDeep () {
   let args = Array.prototype.slice.call(arguments)
   if (args.length === 0) return {}
@@ -156,5 +190,6 @@ export function getReturnTypeName (info) {
     }
     return typeObj.name
   } catch (err) {
+    console.error(err.message)
   }
 }

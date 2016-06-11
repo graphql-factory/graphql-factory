@@ -200,6 +200,8 @@ The globals property of the definition object allow you to specify data that can
 ### GraphQLFieldResolveFn "this" property
 All user defined `GraphQLFieldResolveFn` objects are bound to the `FactoryDefinition` object so that they can access all types, schemas, globals, and the JSON definition using `this.<property>`
 
+**NOTE** if you are using the `this` property inside your field resolve, the function itself or any functions it is nested under cannot be defined as arrow functions due to [Lexical This](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions). Instead define them using non-arrow syntax `function (arg1, ...) {}`. Using arrow functions will result in the `this` property being `undefined`
+
 ### Multi-Types
 Some objects may be very similar in definition but have different types. One example is a `GraphQLInputObjectType` that has a subset of the fields in a `GraphQLObjectType` that is used for mutating that object type. In this case `graphql-factory` allows you to use a Multi-type definition in conjunction with the `omitFrom` field of a `FactoryTypeConfig` object to create both GraphQL objects from a single definition. This allows a reduction of redundant definition code but does add some complexity
 
