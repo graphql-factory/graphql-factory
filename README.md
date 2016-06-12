@@ -271,7 +271,7 @@ UserMutation: {
       resolve: updateUser
     },
     create: {
-      type: 'String',
+      type: 'User',
       args: {...},
       resolve: createUser
     },
@@ -411,6 +411,7 @@ In order to remove the depedency on `lodash` several lodash-like functions have 
 The utils are also added to the `FactoryDefinitionObject` so that you can use them in field resolve functions by `this.utils.<Function>`
 
 * Lodash Emulation
+  * `factory.utils.keys` ( `object` )
   * `factory.utils.isObject` ( `object` )
   * `factory.utils.isArray` ( `object` )
   * `factory.utils.isFunction` ( `object` )
@@ -439,7 +440,7 @@ The utils are also added to the `FactoryDefinitionObject` so that you can use th
 
 **Q** How do I reuse pieces of a schema?
 
-**A** The approach I use is to create partial objects and use a utility like lodash's `_.merge` to add its schema to another. You can additionally use the provided `factory.utils.merge` function
+**A** The approach I use is to create partial objects and use a utility like lodash's `_.merge` to add its schema to another. You can additionally use the provided `factory.utils.merge` function. Or you can use the `extendFields` property in combination with `FactoryFieldBundle` definitions
 ##### Example
 ```
 import _ from 'lodash'
