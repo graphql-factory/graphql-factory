@@ -50,7 +50,8 @@ let getUsers = function (source, args, context, info) {
 }
 
 //  purge users
-let purgeUsers = function () {
+let purgeUsers = function (source, args, context, info) {
+  console.log('Type Config', this.utils.getTypeConfig(info))
   return r.db(tables.User.db).table(tables.User.table).delete().run().then(function () {
     return 200
   }).catch(function (err) {
@@ -226,6 +227,9 @@ let definition = {
       }
     },
     UsersMutation: {
+      customStuff: {
+        v: 1
+      },
       extendFields: {
         'Create': { create: { type: 'User' } },
         'Purge': { purge: { type: 'String' } }

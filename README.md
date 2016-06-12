@@ -179,6 +179,15 @@ type ScalarTypeEnum = {
 }
 ```
 
+### `utils.getTypeConfig` ( `info`, [`path`] ) `=>` `any`
+Returns field config data. You can define custom fields in you object and access them via this function
+
+**parameters**
+* `info` `{GraphQLResolveInfo}` - The info object from a `GraphQLFieldResolveFn`
+* [`path`] - The path in a `GraphQLResolveInfo` object to get
+
+## Supporting Documentation
+
 ### FactoryObjectDefinition and FactoryTypeDefinition
 These objects follow the official [`GraphQL Type Documentation`](http://graphql.org/docs/api-reference-type-system/) closely. One difference is that instead of supplying a GraphQL type object in the `type` field, you should instead specify a `FactoryTypeConfigDefinition`
 

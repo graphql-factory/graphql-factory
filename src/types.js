@@ -183,13 +183,13 @@ export default function Types (gql, customTypes, definitions) {
 
   //  create a GraphQLObjectType
   let GraphQLObjectType = function (objDef, objName) {
-    return new gql.GraphQLObjectType({
+    return new gql.GraphQLObjectType(_merge({}, objDef, {
       name: objDef.name || objName,
       interfaces: GraphQLInterfacesThunk(objDef.interfaces),
       fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Object', objDef),
       isTypeOf: _isFunction(objDef.isTypeOf) ? objDef.isTypeOf : undefined,
       description: objDef.description
-    })
+    }))
   }
 
   //  create a GraphQLInterfaceType

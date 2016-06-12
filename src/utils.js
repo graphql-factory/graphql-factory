@@ -110,12 +110,13 @@ export function get (obj, path, defaultValue) {
   let value = obj
   let fields = isArray(path) ? path : []
   if (isString(path)) {
+    path = String(path)
     let open = false
     let str = ''
 
     let addPath = function (s, isOpen) {
       if (isNaN(s) && s.length > 0) fields.push(s)
-      else if (s.length > 0) fields.push(Number(s))
+      else if (!isNaN(s) && s.length > 0) fields.push(Number(s))
       open = isOpen
       str = ''
     }
@@ -123,6 +124,7 @@ export function get (obj, path, defaultValue) {
     //  parse the path
     for (let i in path) {
       let c = path[i]
+      if (!isString(c)) continue
       if (c === '[') addPath(str, true)
       else if (open && c === ']') addPath(str, false)
       else if (!open && c === '.') addPath(str, false)
@@ -183,6 +185,9 @@ export function merge () {
   return targetObject
 }
 
+/*
+ * Gets the return type name of a query (returns shortened GraphQL primitive type names)
+ */
 export function getReturnTypeName (info) {
   try {
     let _type = ['_', info.operation.operation, 'Type'].join('')
@@ -199,4 +204,16 @@ export function getReturnTypeName (info) {
   } catch (err) {
     console.error(err.message)
   }
+}
+
+/*
+ * Returns the _typeConfig object of the schema operation (query/mutation)
+ * Can be used to pass variables to resolve functions which use this function
+ * to access those variables
+ */
+export function getTypeConfig (info, path) {
+  let _type = ['_', get(info, 'operation.operation'), 'Type'].join('')
+  let pathArray = ['schema', _type, '_typeConfig']
+  if (path) pathArray.push(path)
+  return get(info, pathArray.join('.'), {})
 }

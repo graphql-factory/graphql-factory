@@ -117,11 +117,12 @@ function get(obj, path, defaultValue) {
   var value = obj;
   var fields = isArray(path) ? path : [];
   if (isString(path)) {
+    path = String(path);
     var open = false;
     var str = '';
 
     var addPath = function addPath(s, isOpen) {
-      if (isNaN(s) && s.length > 0) fields.push(s);else if (s.length > 0) fields.push(Number(s));
+      if (isNaN(s) && s.length > 0) fields.push(s);else if (!isNaN(s) && s.length > 0) fields.push(Number(s));
       open = isOpen;
       str = '';
     };
@@ -129,6 +130,7 @@ function get(obj, path, defaultValue) {
     //  parse the path
     for (var i in path) {
       var c = path[i];
+      if (!isString(c)) continue;
       if (c === '[') addPath(str, true);else if (open && c === ']') addPath(str, false);else if (!open && c === '.') addPath(str, false);else str += c;
     }
     addPath(str, false);
@@ -183,6 +185,9 @@ function merge() {
   return targetObject;
 }
 
+/*
+ * Gets the return type name of a query (returns shortened GraphQL primitive type names)
+ */
 function getReturnTypeName(info) {
   try {
     var _type = ['_', info.operation.operation, 'Type'].join('');
@@ -199,6 +204,18 @@ function getReturnTypeName(info) {
   } catch (err) {
     console.error(err.message);
   }
+}
+
+/*
+ * Returns the _typeConfig object of the schema operation (query/mutation)
+ * Can be used to pass variables to resolve functions which use this function
+ * to access those variables
+ */
+function getTypeConfig(info, path) {
+  var _type = ['_', get(info, 'operation.operation'), 'Type'].join('');
+  var pathArray = ['schema', _type, '_typeConfig'];
+  if (path) pathArray.push(path);
+  return get(info, pathArray.join('.'), {});
 }
 
 
@@ -222,7 +239,8 @@ var utils = Object.freeze({
   pickBy: pickBy,
   get: get,
   merge: merge,
-  getReturnTypeName: getReturnTypeName
+  getReturnTypeName: getReturnTypeName,
+  getTypeConfig: getTypeConfig
 });
 
 function Types(gql, customTypes, definitions) {
@@ -394,13 +412,13 @@ function Types(gql, customTypes, definitions) {
 
   //  create a GraphQLObjectType
   var GraphQLObjectType = function GraphQLObjectType(objDef, objName) {
-    return new gql.GraphQLObjectType({
+    return new gql.GraphQLObjectType(merge({}, objDef, {
       name: objDef.name || objName,
       interfaces: GraphQLInterfacesThunk(objDef.interfaces),
       fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Object', objDef),
       isTypeOf: isFunction(objDef.isTypeOf) ? objDef.isTypeOf : undefined,
       description: objDef.description
-    });
+    }));
   };
 
   //  create a GraphQLInterfaceType
