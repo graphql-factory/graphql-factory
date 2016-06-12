@@ -108,8 +108,22 @@ type FactoryDefinitionObject = {
 * `definition` `{FactoryDefinition}` - A JSON definition of all GraphQL types and schemas see official [`GraphQL Type Documentation`](http://graphql.org/docs/api-reference-type-system/) for reference
 ```
 type FactoryDefinition = {
+  globals?: object,
+  fields?: FactoryFieldBundleMap,
   types: FactoryTypeDefinitionMap,
   schemas: FactorySchemaDefinitionMap
+}
+
+type FactoryFieldBundleMap = {
+  [bundleName: string]: FactoryFieldConfigMap
+}
+
+type FactoryFieldConfig = {
+  type: FactoryTypeDefinitionMap;
+  args?: GraphQLFieldConfigArgumentMap;
+  resolve?: GraphQLFieldResolveFn;
+  deprecationReason?: string;
+  description?: ?string;
 }
 
 type FactoryTypeDefinitionMap = {
@@ -123,6 +137,7 @@ type FactorySchemaDefinitionMap = {
 // FactoryTypeDefinition is merged into a modified GraphQL definition, see below
 type FactoryTypeDefinition = {
   type?: FactoryTypeEnum | FactoryMultiTypeConfig, // defaults to GraphQLObject "Object"
+  extendFields?: string | Array<string> | FieldOverrideMap // re-usable fields to merge
   // ...Additional type specific fields
 }
 
@@ -201,6 +216,73 @@ The globals property of the definition object allow you to specify data that can
 All user defined `GraphQLFieldResolveFn` objects are bound to the `FactoryDefinition` object so that they can access all types, schemas, globals, and the JSON definition using `this.<property>`
 
 **NOTE** if you are using the `this` property inside your field resolve, the function itself or any functions it is nested under cannot be defined as arrow functions due to [Lexical This](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions). Instead define them using non-arrow syntax `function (arg1, ...) {}`. Using arrow functions will result in the `this` property being `undefined`
+
+### extendFields
+To maximize resusability, you can define a `FactoryFieldBundleMap` in the `fields` property of your `definition` object. Bundles contain one or more field definitions and are merged into the fields of a definition with an `extendFields` value pointing to one or more bundles with optional override values.
+
+Override values allow you to pass in parameters that can build dynamic extended fields
+
+##### Field Bundle/extendFields Example
+```
+let definition = {
+  fields: {
+    BasicMutation: {
+      create: {
+        type: 'String',
+        args: {...},
+        resolve: createResolve
+      },
+      delete: {
+        type: 'String',
+        args: {...},
+        resolve: deleteResolve
+      }
+    }
+  },
+  types: {
+    UserQuery: {...}
+    UserMutation: {
+      extendFields: {
+        BasicMutation: {
+          create: { type: 'User' },
+          delete: { type: 'String' }
+        }
+      },
+      fields: {
+        update: {
+          type: 'User',
+          args: {...},
+          resolve: updateUser
+        }
+      }
+    }
+  }
+}
+```
+
+Creates `UserMutation` as
+
+```
+UserMutation: {
+  fields: {
+    update: {
+      type: 'User',
+      args: {...},
+      resolve: updateUser
+    },
+    create: {
+      type: 'String',
+      args: {...},
+      resolve: createUser
+    },
+    delete: {
+      type: 'String',
+      args: {...},
+      resolve: deleteUser
+    }
+  }
+}
+```
 
 ### Multi-Types
 Some objects may be very similar in definition but have different types. One example is a `GraphQLInputObjectType` that has a subset of the fields in a `GraphQLObjectType` that is used for mutating that object type. In this case `graphql-factory` allows you to use a Multi-type definition in conjunction with the `omitFrom` field of a `FactoryTypeConfig` object to create both GraphQL objects from a single definition. This allows a reduction of redundant definition code but does add some complexity
@@ -336,15 +418,16 @@ The utils are also added to the `FactoryDefinitionObject` so that you can use th
   * `factory.utils.isHash` ( `object` )
   * `factory.utils.isString` ( `object` )
   * `factory.utils.includes` ( `array`, `value` )
-  * `factory.utils.has` ( `object`, `function(value, key)` )
+  * `factory.utils.has` ( `object`, `key` )
+  * `factory.utils.get` ( `object`, `path` )
   * `factory.utils.forEach` ( `object`, `function(value, key)` )
-  * `factory.utils.without` ( `object`, `value1`, ... )
+  * `factory.utils.without` ( `array`, `value1`, ... )
   * `factory.utils.map` ( `object`, `function(value, key)` )
   * `factory.utils.mapValues` ( `object`, `function(value, key)` )
   * `factory.utils.filter` ( `object`, `function(value, key)` )
   * `factory.utils.omitBy` ( `object`, `function(value, key)` )
   * `factory.utils.pickBy` ( `object`, `function(value, key)` )
-  * `factory.utils.mergeDeep` ( `object`, `object`, ... )
+  * `factory.utils.merge` ( `object`, `object`, ... )
 
 * GraphQL tools
   * `factory.utils.getReturnTypeName` ( `GraphQLResolveInfo` )
@@ -356,7 +439,7 @@ The utils are also added to the `FactoryDefinitionObject` so that you can use th
 
 **Q** How do I reuse pieces of a schema?
 
-**A** The approach I use is to create partial objects and use a utility like lodash's `_.deepMerge` to add its schema to another
+**A** The approach I use is to create partial objects and use a utility like lodash's `_.merge` to add its schema to another. You can additionally use the provided `factory.utils.merge` function
 ##### Example
 ```
 import _ from 'lodash'
@@ -371,13 +454,13 @@ let partial = {
 let definition = {
   types: {
     type1: {
-      fields: _.mergeDeep({
+      fields: _.merge({
         field1: { type: 'String' },
         field2: { type: 'Int' }
       }, partial)
     },
     type2: {
-      fields: _.mergeDeep({
+      fields: _.merge({
         fieldA: { type: 'Boolean' },
         fieldB: { type: 'String' }
       }, partial)

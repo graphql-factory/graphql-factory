@@ -10,7 +10,7 @@ import {
   pickBy as _pickBy
 } from './utils'
 
-export default function (gql) {
+let factory = function (gql) {
   let definitions = { types: {}, schemas: {} }
   let customTypes = {}
   let t = Types(gql, customTypes, definitions)
@@ -48,9 +48,11 @@ export default function (gql) {
   let make = function (def) {
 
     let lib = {}
+    def.globals = def.globals || {}
+    def.fields = def.fields || {}
 
     //  add the globals and definition to the output
-    definitions.globals = def.globals || {}
+    definitions.globals = def.globals
     definitions.utils = utils
     definitions.definition = _omitBy(def, function (v, k) {
       return k === 'globals'
@@ -126,3 +128,6 @@ export default function (gql) {
   }
   return { make, registerTypes, utils }
 }
+
+factory.utils = utils
+export default factory

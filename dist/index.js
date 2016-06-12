@@ -21,7 +21,7 @@ function isDate(obj) {
   return obj instanceof Date;
 }
 function isObject(obj) {
-  return (typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object';
+  return (typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object' && obj !== null;
 }
 function isHash(obj) {
   return isObject(obj) && !isArray(obj) && !isDate(obj) && obj !== null;
@@ -31,6 +31,13 @@ function includes(obj, key) {
     return isArray(obj) && obj.indexOf(key) !== -1;
   } catch (err) {
     return false;
+  }
+}
+function keys(obj) {
+  try {
+    return Object.keys(obj);
+  } catch (err) {
+    return [];
   }
 }
 function has(obj, key) {
@@ -134,17 +141,17 @@ function get(obj, path, defaultValue) {
   return value;
 }
 
-function mergeDeep() {
+function merge() {
   var args = Array.prototype.slice.call(arguments);
   if (args.length === 0) return {};else if (args.length === 1) return args[0];else if (!isHash(args[0])) return {};
   var targetObject = args[0];
   var sources = args.slice(1);
 
   //  define the recursive merge function
-  var merge = function merge(target, source) {
+  var _merge = function _merge(target, source) {
     for (var k in source) {
       if (!target[k] && isHash(source[k])) {
-        target[k] = merge({}, source[k]);
+        target[k] = _merge({}, source[k]);
       } else if (target[k] && isHash(target[k]) && isHash(source[k])) {
         target[k] = merge(target[k], source[k]);
       } else {
@@ -152,9 +159,9 @@ function mergeDeep() {
           target[k] = [];
           for (var x in source[k]) {
             if (isHash(source[k][x])) {
-              target[k].push(merge({}, source[k][x]));
+              target[k].push(_merge({}, source[k][x]));
             } else if (isArray(source[k][x])) {
-              target[k].push(merge([], source[k][x]));
+              target[k].push(_merge([], source[k][x]));
             } else {
               target[k].push(source[k][x]);
             }
@@ -171,7 +178,7 @@ function mergeDeep() {
 
   //  merge each source
   for (var k in sources) {
-    if (isHash(sources[k])) merge(targetObject, sources[k]);
+    if (isHash(sources[k])) _merge(targetObject, sources[k]);
   }
   return targetObject;
 }
@@ -204,6 +211,7 @@ var utils = Object.freeze({
   isObject: isObject,
   isHash: isHash,
   includes: includes,
+  keys: keys,
   has: has,
   forEach: forEach,
   without: without,
@@ -213,7 +221,7 @@ var utils = Object.freeze({
   omitBy: omitBy,
   pickBy: pickBy,
   get: get,
-  mergeDeep: mergeDeep,
+  merge: merge,
   getReturnTypeName: getReturnTypeName
 });
 
@@ -257,6 +265,39 @@ function Types(gql, customTypes, definitions) {
     return fieldType(field);
   };
 
+  //  extend fields using a definition
+  var extendFields = function extendFields(fields, exts) {
+    var extKeys = [];
+    var customProps = {};
+    var defFields = definitions.definition.fields;
+    fields = fields || {};
+
+    //  check for valid extend config
+    if (!exts || isArray(exts) && exts.length === 0 || isHash(exts) && keys(exts).length === 0 || !isString(exts) && !isHash(exts) && !isArray(exts)) return fields;
+
+    //  get the bundle keys
+    if (isString(exts)) extKeys = [exts];else if (isHash(exts)) extKeys = keys(exts);else if (isArray(exts)) extKeys = exts;
+
+    //  merge bundles and existing fields
+    var newFields = merge({}, fields);
+    forEach(extKeys, function (v) {
+      if (has(defFields, v)) {
+        merge(newFields, defFields[v]);
+
+        //  merge custom props
+        if (isHash(exts) && isHash(exts[v])) merge(customProps, exts[v]);
+      }
+    });
+
+    //  merge any custom props
+    forEach(customProps, function (prop, name) {
+      if (has(newFields, name)) merge(newFields[name], prop);
+    });
+
+    //  finally return the merged fields
+    return newFields;
+  };
+
   //  create a GraphQLArgumentConfig
   var GraphQLArgumentConfig = function GraphQLArgumentConfig(arg, type) {
     return {
@@ -293,8 +334,8 @@ function Types(gql, customTypes, definitions) {
   };
 
   //  create a GraphQLFieldConfigMapThunk
-  var GraphQLFieldConfigMapThunk = function GraphQLFieldConfigMapThunk(fields, type) {
-    fields = omitBy(fields, function (f) {
+  var GraphQLFieldConfigMapThunk = function GraphQLFieldConfigMapThunk(fields, type, objDef) {
+    fields = omitBy(extendFields(fields, objDef.extendFields), function (f) {
       return has(f, 'omitFrom') && (includes(f.omitFrom, type) || f.omitFrom === type);
     });
     if (!fields) return;
@@ -328,8 +369,8 @@ function Types(gql, customTypes, definitions) {
   };
 
   //  create a InputObjectConfigFieldMapThunk
-  var InputObjectConfigFieldMapThunk = function InputObjectConfigFieldMapThunk(fields, type) {
-    fields = omitBy(fields, function (f) {
+  var InputObjectConfigFieldMapThunk = function InputObjectConfigFieldMapThunk(fields, type, objDef) {
+    fields = omitBy(extendFields(fields, objDef.extendFields), function (f) {
       return has(f, 'omitFrom') && (includes(f.omitFrom, type) || f.omitFrom === type);
     });
     if (!fields) return;
@@ -356,7 +397,7 @@ function Types(gql, customTypes, definitions) {
     return new gql.GraphQLObjectType({
       name: objDef.name || objName,
       interfaces: GraphQLInterfacesThunk(objDef.interfaces),
-      fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Object'),
+      fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Object', objDef),
       isTypeOf: isFunction(objDef.isTypeOf) ? objDef.isTypeOf : undefined,
       description: objDef.description
     });
@@ -385,7 +426,7 @@ function Types(gql, customTypes, definitions) {
   var GraphQLInputObjectType = function GraphQLInputObjectType(objDef, objName) {
     return new gql.GraphQLInputObjectType({
       name: objDef.name || objName,
-      fields: InputObjectConfigFieldMapThunk(objDef.fields, 'Input'),
+      fields: InputObjectConfigFieldMapThunk(objDef.fields, 'Input', objDef),
       description: objDef.description
     });
   };
@@ -432,7 +473,7 @@ function Types(gql, customTypes, definitions) {
   };
 }
 
-function index (gql) {
+var factory = function factory(gql) {
   var definitions = { types: {}, schemas: {} };
   var customTypes = {};
   var t = Types(gql, customTypes, definitions);
@@ -469,9 +510,11 @@ function index (gql) {
   var make = function make(def) {
 
     var lib = {};
+    def.globals = def.globals || {};
+    def.fields = def.fields || {};
 
     //  add the globals and definition to the output
-    definitions.globals = def.globals || {};
+    definitions.globals = def.globals;
     definitions.utils = utils;
     definitions.definition = omitBy(def, function (v, k) {
       return k === 'globals';
@@ -545,6 +588,8 @@ function index (gql) {
     return lib;
   };
   return { make: make, registerTypes: registerTypes, utils: utils };
-}
+};
 
-module.exports = index;
+factory.utils = utils;
+
+module.exports = factory;

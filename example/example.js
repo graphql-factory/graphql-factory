@@ -51,7 +51,7 @@ let getUsers = function (source, args, context, info) {
 
 //  purge users
 let purgeUsers = function () {
-  return r.db(tables.user.db).table(tables.user.table).delete().run().then(function () {
+  return r.db(tables.User.db).table(tables.User.table).delete().run().then(function () {
     return 200
   }).catch(function (err) {
     return 500
@@ -99,6 +99,26 @@ let definition = {
       main: {
         cursor: r,
         tables: tables
+      }
+    }
+  },
+  fields: {
+    Create: {
+      create: {
+        type: 'User',
+        args: {
+          firstName: { type: 'String', nullable: false  },
+          lastName: { type: 'String', nullable: false  },
+          email: { type: 'String'},
+          changeLog: { type: '_ChangeLogInput', nullable: false }
+        },
+        resolve: createUser
+      }
+    },
+    Purge: {
+      purge: {
+        type: 'Int',
+        resolve: purgeUsers
       }
     }
   },
@@ -183,11 +203,9 @@ let definition = {
       isTypeOf: (value) => value instanceof Title
     },
     UsersQuery: {
-      name: 'UsersQuery',
       fields: {
         users: {
           type: ['User'],
-          attach: { blah: 'blah' },
           resolve: getUsers
         },
         union1: {
@@ -208,22 +226,9 @@ let definition = {
       }
     },
     UsersMutation: {
-      name: 'UsersMutation',
-      fields: {
-        create: {
-          type: 'User',
-          args: {
-            firstName: { type: 'String', nullable: false  },
-            lastName: { type: 'String', nullable: false  },
-            email: { type: 'String'},
-            changeLog: { type: '_ChangeLogInput', nullable: false }
-          },
-          resolve: createUser
-        },
-        purge: {
-          type: 'Int',
-          resolve: purgeUsers
-        }
+      extendFields: {
+        'Create': { create: { type: 'User' } },
+        'Purge': { purge: { type: 'String' } }
       }
     }
   },
@@ -298,8 +303,8 @@ let testGetInterfaceGQL = `{
   }
 }`
 
-lib.Users(testCreateGQL)
-// lib.Users(testPurgeGQL)
+// lib.Users(testCreateGQL)
+lib.Users(testPurgeGQL)
 // lib.Users(testGetGQL)
 // lib.Users(testGetUnionGQL)
 

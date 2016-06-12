@@ -1,5 +1,7 @@
 import {
   has as _has,
+  keys as _keys,
+  forEach as _forEach,
   isString as _isString,
   isArray as _isArray,
   isObject as _isObject,
@@ -9,7 +11,8 @@ import {
   without as _without,
   map as _map,
   mapValues as _mapValues,
-  omitBy as _omitBy
+  omitBy as _omitBy,
+  merge as _merge
 } from './utils'
 
 export default function Types (gql, customTypes, definitions) {
@@ -52,6 +55,43 @@ export default function Types (gql, customTypes, definitions) {
     return fieldType(field)
   }
 
+  //  extend fields using a definition
+  let extendFields = function (fields, exts) {
+    let extKeys = []
+    let customProps = {}
+    let defFields = definitions.definition.fields
+    fields = fields || {}
+
+    //  check for valid extend config
+    if (!exts || (_isArray(exts) && exts.length === 0) ||
+      (_isHash(exts) && _keys(exts).length === 0) ||
+      (!_isString(exts) && !_isHash(exts) && !_isArray(exts))) return fields
+
+    //  get the bundle keys
+    if (_isString(exts)) extKeys = [exts]
+    else if (_isHash(exts)) extKeys = _keys(exts)
+    else if (_isArray(exts)) extKeys = exts
+
+    //  merge bundles and existing fields
+    let newFields = _merge({}, fields)
+    _forEach(extKeys, function (v) {
+      if (_has(defFields, v)) {
+        _merge(newFields, defFields[v])
+
+        //  merge custom props
+        if (_isHash(exts) && _isHash(exts[v])) _merge(customProps, exts[v])
+      }
+    })
+
+    //  merge any custom props
+    _forEach(customProps, function (prop, name) {
+      if (_has(newFields, name)) _merge(newFields[name], prop)
+    })
+
+    //  finally return the merged fields
+    return newFields
+  }
+
   //  create a GraphQLArgumentConfig
   let GraphQLArgumentConfig = function (arg, type) {
     return {
@@ -88,8 +128,8 @@ export default function Types (gql, customTypes, definitions) {
   }
 
   //  create a GraphQLFieldConfigMapThunk
-  let GraphQLFieldConfigMapThunk = function (fields, type) {
-    fields = _omitBy(fields, function (f) {
+  let GraphQLFieldConfigMapThunk = function (fields, type, objDef) {
+    fields = _omitBy(extendFields(fields, objDef.extendFields), function (f) {
       return _has(f, 'omitFrom') && (_includes(f.omitFrom, type) || f.omitFrom === type)
     })
     if (!fields) return
@@ -120,8 +160,8 @@ export default function Types (gql, customTypes, definitions) {
   }
 
   //  create a InputObjectConfigFieldMapThunk
-  let InputObjectConfigFieldMapThunk = function (fields, type) {
-    fields = _omitBy(fields, function (f) {
+  let InputObjectConfigFieldMapThunk = function (fields, type, objDef) {
+    fields = _omitBy(extendFields(fields, objDef.extendFields), function (f) {
       return _has(f, 'omitFrom') && (_includes(f.omitFrom, type) || f.omitFrom === type)
     })
     if (!fields) return
@@ -146,7 +186,7 @@ export default function Types (gql, customTypes, definitions) {
     return new gql.GraphQLObjectType({
       name: objDef.name || objName,
       interfaces: GraphQLInterfacesThunk(objDef.interfaces),
-      fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Object'),
+      fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Object', objDef),
       isTypeOf: _isFunction(objDef.isTypeOf) ? objDef.isTypeOf : undefined,
       description: objDef.description
     })
@@ -175,7 +215,7 @@ export default function Types (gql, customTypes, definitions) {
   let GraphQLInputObjectType = function (objDef, objName) {
     return new gql.GraphQLInputObjectType({
       name: objDef.name || objName,
-      fields: InputObjectConfigFieldMapThunk(objDef.fields, 'Input'),
+      fields: InputObjectConfigFieldMapThunk(objDef.fields, 'Input', objDef),
       description: objDef.description
     })
   }

@@ -13,7 +13,7 @@ export function isDate (obj) {
   return obj instanceof Date
 }
 export function isObject (obj) {
-  return typeof obj === 'object'
+  return typeof obj === 'object' && obj !== null
 }
 export function isHash (obj) {
   return isObject(obj) && !isArray(obj) && !isDate(obj) && obj !== null
@@ -23,6 +23,13 @@ export function includes (obj, key) {
     return isArray(obj) && obj.indexOf(key) !== -1
   } catch (err) {
     return false
+  }
+}
+export function keys (obj) {
+  try {
+    return Object.keys(obj)
+  } catch (err) {
+    return []
   }
 }
 export function has (obj, key) {
@@ -132,7 +139,7 @@ export function get (obj, path, defaultValue) {
   return value
 }
 
-export function mergeDeep () {
+export function merge () {
   let args = Array.prototype.slice.call(arguments)
   if (args.length === 0) return {}
   else if (args.length === 1) return args[0]
@@ -141,10 +148,10 @@ export function mergeDeep () {
   let sources = args.slice(1)
 
   //  define the recursive merge function
-  let merge = function (target, source) {
+  let _merge = function (target, source) {
     for (let k in source) {
       if (!target[k] && isHash(source[k])) {
-        target[k] = merge({}, source[k])
+        target[k] = _merge({}, source[k])
       } else if (target[k] && isHash(target[k]) && isHash(source[k])) {
         target[k] = merge(target[k], source[k])
       } else {
@@ -152,9 +159,9 @@ export function mergeDeep () {
           target[k] = []
           for (let x in source[k]) {
             if (isHash(source[k][x])) {
-              target[k].push(merge({}, source[k][x]))
+              target[k].push(_merge({}, source[k][x]))
             } else if (isArray(source[k][x])) {
-              target[k].push(merge([], source[k][x]))
+              target[k].push(_merge([], source[k][x]))
             } else {
               target[k].push(source[k][x])
             }
@@ -171,7 +178,7 @@ export function mergeDeep () {
 
   //  merge each source
   for (let k in sources) {
-    if (isHash(sources[k])) merge(targetObject, sources[k])
+    if (isHash(sources[k])) _merge(targetObject, sources[k])
   }
   return targetObject
 }

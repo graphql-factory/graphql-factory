@@ -1,6 +1,6 @@
 {
   "name": "graphql-factory",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Compose GraphQL objects with JSON definitions",
   "license": "MIT",
   "main": "dist/index.js",
@@ -12,7 +12,7 @@
     "buildexample": "npm run build && rollup example/example.js --output example/build.js --format cjs && node example/build.js --harmony",
     "example": "rollup example/example.js --output example/build.js --format cjs && node example/build.js --harmony",
     "build": "rollup -c build/rollup.config.js",
-    "test": "mocha test/index.js"
+    "test": "npm run build && mocha test/index.js"
   },
   "author": "Branden Horiuchi <bhoriuchi@gmail.com>",
   "dependencies": {},

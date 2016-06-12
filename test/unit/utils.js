@@ -64,7 +64,7 @@ describe('Utils', function () {
     var fn = utils.isObject
     expect(fn({})).to.equal(true)
     expect(fn(new Date())).to.equal(true)
-    expect(fn(null)).to.equal(true)
+    expect(fn(null)).to.equal(false)
     expect(fn(undefined)).to.equal(false)
     expect(fn(1)).to.equal(false)
     expect(fn([])).to.equal(true)
@@ -193,9 +193,9 @@ describe('Utils', function () {
     done()
   })
   
-  //  mergeDeep
-  it('mergeDeep should return a merged hash of 2 or more objects where the first hash has been mutated', function (done) {
-    var fn = utils.mergeDeep
+  //  merge
+  it('merge should return a merged hash of 2 or more objects where the first hash has been mutated', function (done) {
+    var fn = utils.merge
     expect(fn({ a: { b: 0 } }, { a: { c : 1 } })).to.deep.equal({a: { b: 0, c: 1 }})
     expect(fn({ a: { b: 0 } }, { a: { c : 1 } }, { a: { d: 2 }, x: 10 })).to.deep.equal({a: { b: 0, c: 1, d: 2 }, x: 10 })
     expect(fn({ a: { b: 0 } }, { a: 1 })).to.deep.equal({a: 1 })
