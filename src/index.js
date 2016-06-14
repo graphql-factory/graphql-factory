@@ -11,16 +11,20 @@ import {
 } from './utils'
 
 let factory = function (gql) {
-  let definitions = { types: {}, schemas: {} }
-  let customTypes = {}
-  let t = Types(gql, customTypes, definitions)
+  let definitions = {
+    globals: {},
+    fields: {},
+    functions: {},
+    externalTypes: {},
+    types: {},
+    schemas: {}
+  }
+  let t = Types(gql, definitions)
   let typeFnMap = t.typeFnMap
 
   //  register custom types
   let registerTypes = function (obj) {
-    _forEach(obj, function (type, name) {
-      customTypes[name] = type
-    })
+    Object.assign(definitions.externalTypes, obj)
   }
 
   //  check for valid types
@@ -51,6 +55,10 @@ let factory = function (gql) {
     def.globals = def.globals || {}
     def.fields = def.fields || {}
 
+    //  merge the externalTypes and functions before make
+    Object.assign(definitions.externalTypes, def.externalTypes || {})
+    Object.assign(definitions.functions, def.functions)
+    
     //  add the globals and definition to the output
     definitions.globals = def.globals
     definitions.utils = utils

@@ -243,7 +243,7 @@ var utils = Object.freeze({
   getTypeConfig: getTypeConfig
 });
 
-function Types(gql, customTypes, definitions) {
+function Types(gql, definitions) {
 
   //  primitive types
   var typeMap = {
@@ -252,6 +252,13 @@ function Types(gql, customTypes, definitions) {
     'Boolean': gql.GraphQLBoolean,
     'Float': gql.GraphQLFloat,
     'ID': gql.GraphQLID
+  };
+
+  //  used to return the function from definitions if a string key is provided
+  var getFunction = function getFunction(fn) {
+    if (!fn) return;
+    fn = isString(fn) ? get(definitions.functions, fn) : fn;
+    if (isFunction(fn)) return fn.bind(definitions);
   };
 
   //  determines a field type given a FactoryTypeConfig
@@ -265,8 +272,8 @@ function Types(gql, customTypes, definitions) {
       type = definitions.types[type];
     } else if (has(typeMap, type)) {
       type = typeMap[type];
-    } else if (has(customTypes, type)) {
-      type = customTypes[type];
+    } else if (has(definitions.externalTypes, type)) {
+      type = definitions.externalTypes[type];
     } else if (has(gql, type)) {
       type = gql[type];
     }
@@ -360,13 +367,12 @@ function Types(gql, customTypes, definitions) {
     return function () {
       return mapValues(fields, function (field) {
         field = !has(field, 'type') && has(field, type) ? field[type] : field;
-        var hasResolveFn = isFunction(field.resolve) && type === 'Object';
         return {
           type: getType(field, type),
           args: mapValues(field.args, function (arg) {
             return GraphQLArgumentConfig(arg, type);
           }),
-          resolve: hasResolveFn ? field.resolve.bind(definitions) : undefined,
+          resolve: getFunction(field.resolve),
           deprecationReason: field.deprecationReason,
           description: field.description
         };
@@ -404,9 +410,9 @@ function Types(gql, customTypes, definitions) {
     return new gql.GraphQLScalarType({
       name: objDef.name || objName,
       description: objDef.description,
-      serialize: isFunction(objDef.serialize) ? objDef.serialize : undefined,
-      parseValue: isFunction(objDef.parseValue) ? objDef.parseValue : undefined,
-      parseLiteral: objDef.parseValue() ? objDef.parseLiteral : undefined
+      serialize: getFunction(objDef.serialize),
+      parseValue: getFunction(objDef.parseValue),
+      parseLiteral: getFunction(objDef.parseLiteral)
     });
   };
 
@@ -416,7 +422,7 @@ function Types(gql, customTypes, definitions) {
       name: objDef.name || objName,
       interfaces: GraphQLInterfacesThunk(objDef.interfaces),
       fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Object', objDef),
-      isTypeOf: isFunction(objDef.isTypeOf) ? objDef.isTypeOf : undefined,
+      isTypeOf: getFunction(objDef.isTypeOf),
       description: objDef.description
     }));
   };
@@ -426,7 +432,7 @@ function Types(gql, customTypes, definitions) {
     return new gql.GraphQLInterfaceType({
       name: objDef.name || objName,
       fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Interface'),
-      resolveType: isFunction(objDef.resolveType) ? objDef.resolveType : undefined,
+      resolveType: getFunction(objDef.resolveType),
       description: objDef.description
     });
   };
@@ -456,7 +462,7 @@ function Types(gql, customTypes, definitions) {
       types: map(objDef.types, function (type) {
         return getType(type);
       }),
-      resolveType: isFunction(objDef.resolveType) ? objDef.resolveType : undefined,
+      resolveType: getFunction(objDef.resolveType),
       description: objDef.description
     });
   };
@@ -492,16 +498,20 @@ function Types(gql, customTypes, definitions) {
 }
 
 var factory = function factory(gql) {
-  var definitions = { types: {}, schemas: {} };
-  var customTypes = {};
-  var t = Types(gql, customTypes, definitions);
+  var definitions = {
+    globals: {},
+    fields: {},
+    functions: {},
+    externalTypes: {},
+    types: {},
+    schemas: {}
+  };
+  var t = Types(gql, definitions);
   var typeFnMap = t.typeFnMap;
 
   //  register custom types
   var registerTypes = function registerTypes(obj) {
-    forEach(obj, function (type, name) {
-      customTypes[name] = type;
-    });
+    Object.assign(definitions.externalTypes, obj);
   };
 
   //  check for valid types
@@ -530,6 +540,10 @@ var factory = function factory(gql) {
     var lib = {};
     def.globals = def.globals || {};
     def.fields = def.fields || {};
+
+    //  merge the externalTypes and functions before make
+    Object.assign(definitions.externalTypes, def.externalTypes || {});
+    Object.assign(definitions.functions, def.functions);
 
     //  add the globals and definition to the output
     definitions.globals = def.globals;

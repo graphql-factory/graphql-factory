@@ -12,10 +12,11 @@ import {
   map as _map,
   mapValues as _mapValues,
   omitBy as _omitBy,
-  merge as _merge
+  merge as _merge,
+  get as _get
 } from './utils'
 
-export default function Types (gql, customTypes, definitions) {
+export default function Types (gql, definitions) {
 
   //  primitive types
   const typeMap = {
@@ -24,6 +25,13 @@ export default function Types (gql, customTypes, definitions) {
     'Boolean': gql.GraphQLBoolean,
     'Float': gql.GraphQLFloat,
     'ID': gql.GraphQLID
+  }
+
+  //  used to return the function from definitions if a string key is provided
+  let getFunction = function (fn) {
+    if (!fn) return
+    fn = _isString(fn) ? _get(definitions.functions, fn) : fn
+    if (_isFunction(fn)) return fn.bind(definitions)
   }
 
   //  determines a field type given a FactoryTypeConfig
@@ -37,8 +45,8 @@ export default function Types (gql, customTypes, definitions) {
       type = definitions.types[type]
     } else if (_has(typeMap, type)) {
       type = typeMap[type]
-    } else if (_has(customTypes, type)) {
-      type = customTypes[type]
+    } else if (_has(definitions.externalTypes, type)) {
+      type = definitions.externalTypes[type]
     } else if (_has(gql, type)) {
       type = gql[type]
     }
@@ -135,13 +143,12 @@ export default function Types (gql, customTypes, definitions) {
     if (!fields) return
     return () => _mapValues(fields, function (field) {
       field = !_has(field, 'type') && _has(field, type) ? field[type] : field
-      let hasResolveFn = _isFunction(field.resolve) && type === 'Object'
       return {
         type: getType(field, type),
         args: _mapValues(field.args, function (arg) {
           return GraphQLArgumentConfig(arg, type)
         }),
-        resolve: hasResolveFn ? field.resolve.bind(definitions) : undefined,
+        resolve: getFunction(field.resolve),
         deprecationReason: field.deprecationReason,
         description: field.description
       }
@@ -175,9 +182,9 @@ export default function Types (gql, customTypes, definitions) {
     return new gql.GraphQLScalarType({
       name: objDef.name || objName,
       description: objDef.description,
-      serialize: _isFunction(objDef.serialize) ? objDef.serialize : undefined,
-      parseValue: _isFunction(objDef.parseValue) ? objDef.parseValue : undefined,
-      parseLiteral: objDef.parseValue() ? objDef.parseLiteral : undefined
+      serialize: getFunction(objDef.serialize),
+      parseValue: getFunction(objDef.parseValue),
+      parseLiteral: getFunction(objDef.parseLiteral)
     })
   }
 
@@ -187,7 +194,7 @@ export default function Types (gql, customTypes, definitions) {
       name: objDef.name || objName,
       interfaces: GraphQLInterfacesThunk(objDef.interfaces),
       fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Object', objDef),
-      isTypeOf: _isFunction(objDef.isTypeOf) ? objDef.isTypeOf : undefined,
+      isTypeOf: getFunction(objDef.isTypeOf),
       description: objDef.description
     }))
   }
@@ -197,7 +204,7 @@ export default function Types (gql, customTypes, definitions) {
     return new gql.GraphQLInterfaceType({
       name: objDef.name || objName,
       fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Interface'),
-      resolveType: _isFunction(objDef.resolveType) ? objDef.resolveType : undefined,
+      resolveType: getFunction(objDef.resolveType),
       description: objDef.description
     })
   }
@@ -227,7 +234,7 @@ export default function Types (gql, customTypes, definitions) {
       types: _map(objDef.types, function (type) {
         return getType(type)
       }),
-      resolveType: _isFunction(objDef.resolveType) ? objDef.resolveType : undefined,
+      resolveType: getFunction(objDef.resolveType),
       description: objDef.description
     })
   }

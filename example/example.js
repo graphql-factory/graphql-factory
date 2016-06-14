@@ -12,9 +12,11 @@ import rethinkdbdash from 'rethinkdbdash'
 let r = rethinkdbdash()
 let factory = require(path.resolve(__dirname, '../dist'))(graphql)
 
+/*
 factory.registerTypes({
   DateTime: CustomGraphQLDateType
 })
+*/
 
 class Title {
   constructor (title, year) {
@@ -103,6 +105,11 @@ let definition = {
       }
     }
   },
+  functions: {
+    createUser,
+    purgeUsers,
+    getUsers
+  },
   fields: {
     Create: {
       create: {
@@ -113,15 +120,18 @@ let definition = {
           email: { type: 'String'},
           changeLog: { type: '_ChangeLogInput', nullable: false }
         },
-        resolve: createUser
+        resolve: 'createUser'
       }
     },
     Purge: {
       purge: {
         type: 'Int',
-        resolve: purgeUsers
+        resolve: 'purgeUsers'
       }
     }
+  },
+  externalTypes: {
+    DateTime: CustomGraphQLDateType
   },
   types: {
     EnumChangeLogTypes: {
@@ -139,8 +149,6 @@ let definition = {
     },
     _ChangeLog: {
       type: ['Object', 'Input'],
-      // type: { Object: null, Input: '_ChangeLogInput' },
-      // type: [ 'Object', { Input: '_ChangeLogInput' } ],
       fields: {
         date: { type: 'DateTime', omitFrom: ['Input'] },
         type: { type: 'EnumChangeLogTypes', omitFrom: ['Input'] },
@@ -207,14 +215,12 @@ let definition = {
       fields: {
         users: {
           type: ['User'],
-          resolve: getUsers
+          resolve: 'getUsers'
         },
         union1: {
           type: 'TestUnion1',
-          resolve: {
-            Object: function () {
-              return { title: 'i am a title', type1: 'im a type1' }
-            }
+          resolve: function () {
+            return { title: 'i am a title', type1: 'im a type1' }
           }
         },
         interface1: {
