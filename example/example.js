@@ -43,7 +43,7 @@ _.forEach(tables, function (type) {
 
 //  get user list
 let getUsers = function (source, args, context, info) {
-  // console.log(this.utils.getFieldDef(info, '_tableName'))
+  console.log(this.utils.getRootFieldDef(info, '_tableName'))
 
   let typeName = this.utils.getReturnTypeName(info)
   let db = this.globals.db.main

@@ -119,7 +119,7 @@ let factory = function (gql) {
     _forEach(def.schemas, function (schemaDef, schemaName) {
       //  create a schema
       try {
-        definitions.schemas[schemaName] = t.GraphQLSchema(schemaDef)
+        definitions.schemas[schemaName] = t.GraphQLSchema(schemaDef, schemaName)
 
         //  create a function to execute the graphql schmea
         lib[schemaName] = function (query) {

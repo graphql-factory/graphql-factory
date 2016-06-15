@@ -146,9 +146,14 @@ export function get (obj, path, defaultValue) {
   let value = obj
   let fields = isArray(path) ? path : stringToPathArray(path)
   if (fields.length === 0) return defaultValue
-  for (let f in fields) {
-    if (!value[fields[f]]) return defaultValue
-    else value = value[fields[f]]
+
+  try {
+    for (let f in fields) {
+      if (!value[fields[f]]) return defaultValue
+      else value = value[fields[f]]
+    }
+  } catch (err) {
+   return defaultValue
   }
   return value
 }
@@ -197,46 +202,6 @@ export function merge () {
   return targetObject
 }
 
-export function getSchemaOperation (info) {
-  var _type = ['_', get(info, 'operation.operation'), 'Type'].join('');
-  return get(info, ['schema', _type].join('.'), {});
-}
-
-/*
- * Gets the return type name of a query (returns shortened GraphQL primitive type names)
- */
-export function getReturnTypeName (info) {
-  try {
-    var typeObj = get(getSchemaOperation(info), '_fields["' + info.fieldName + '"].type', {})
-
-    while (!typeObj.name) {
-      typeObj = typeObj.ofType;
-      if (!typeObj) break;
-    }
-    return typeObj.name;
-  } catch (err) {
-    console.error(err.message);
-  }
-}
-
-/*
- * Gets the field definition
- */
-export function getFieldDef (info, path) {
-  let fieldDef = get(getSchemaOperation(info), '_factoryDef.fields["' + info.fieldName + '"]', {})
-  return path ? get(fieldDef, path, {}) : fieldDef
-}
-
-/*
- * Returns the _typeConfig object of the schema operation (query/mutation)
- * Can be used to pass variables to resolve functions which use this function
- * to access those variables
- */
-export function getTypeConfig (info, path) {
-  path = path ? '_typeConfig.'.concat(path) : '_typeConfig'
-  return get(getSchemaOperation(info), path, {});
-}
-
 /*
  * Gets the path of a value by getting the location of the field and traversing the selectionSet
  */
@@ -263,4 +228,56 @@ export function getExecPath (info, maxDepth) {
   }
   if (!info.operation.selectionSet.selections || isNaN(loc.start) || isNaN(loc.end)) return
   return traverseExecPath(info.operation.selectionSet.selections, loc.start, loc.end)
+}
+
+
+export function getSchemaOperation (info) {
+  var _type = ['_', get(info, 'operation.operation'), 'Type'].join('');
+  return get(info, ['schema', _type].join('.'), {});
+}
+
+/*
+ * Gets the return type name of a query (returns shortened GraphQL primitive type names)
+ */
+export function getReturnTypeName (info) {
+  try {
+    var typeObj = get(getSchemaOperation(info), '_fields["' + info.fieldName + '"].type', {})
+
+    while (!typeObj.name) {
+      typeObj = typeObj.ofType;
+      if (!typeObj) break;
+    }
+    return typeObj.name;
+  } catch (err) {
+    console.error(err.message);
+  }
+}
+
+/*
+ * Gets the field definition
+ */
+export function getRootFieldDef (info, path) {
+  let exPath = getExecPath(info)
+  let queryType = info.operation.operation
+  let opDef = get(info, 'schema._factory.' + queryType + 'Def', {})
+  let fieldDef = get(opDef, 'fields["' + exPath[0] + '"]', undefined)
+
+  //  if a field def cannot be found, try to find it in the extendFields
+  if (!fieldDef && has(opDef, 'extendFields')) {
+    forEach(opDef.extendFields, function (v) {
+      if (has(v, exPath[0])) fieldDef = get(v, '["' + exPath[0] + '"]', {})
+    })
+  }
+
+  return path ? get(fieldDef, path, {}) : fieldDef
+}
+
+/*
+ * Returns the _typeConfig object of the schema operation (query/mutation)
+ * Can be used to pass variables to resolve functions which use this function
+ * to access those variables
+ */
+export function getTypeConfig (info, path) {
+  path = path ? '_typeConfig.'.concat(path) : '_typeConfig'
+  return get(getSchemaOperation(info), path, {});
 }

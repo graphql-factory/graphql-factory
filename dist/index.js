@@ -152,8 +152,13 @@ function get(obj, path, defaultValue) {
   var value = obj;
   var fields = isArray(path) ? path : stringToPathArray(path);
   if (fields.length === 0) return defaultValue;
-  for (var f in fields) {
-    if (!value[fields[f]]) return defaultValue;else value = value[fields[f]];
+
+  try {
+    for (var f in fields) {
+      if (!value[fields[f]]) return defaultValue;else value = value[fields[f]];
+    }
+  } catch (err) {
+    return defaultValue;
   }
   return value;
 }
@@ -200,46 +205,6 @@ function merge() {
   return targetObject;
 }
 
-function getSchemaOperation(info) {
-  var _type = ['_', get(info, 'operation.operation'), 'Type'].join('');
-  return get(info, ['schema', _type].join('.'), {});
-}
-
-/*
- * Gets the return type name of a query (returns shortened GraphQL primitive type names)
- */
-function getReturnTypeName(info) {
-  try {
-    var typeObj = get(getSchemaOperation(info), '_fields["' + info.fieldName + '"].type', {});
-
-    while (!typeObj.name) {
-      typeObj = typeObj.ofType;
-      if (!typeObj) break;
-    }
-    return typeObj.name;
-  } catch (err) {
-    console.error(err.message);
-  }
-}
-
-/*
- * Gets the field definition
- */
-function getFieldDef(info, path) {
-  var fieldDef = get(getSchemaOperation(info), '_factoryDef.fields["' + info.fieldName + '"]', {});
-  return path ? get(fieldDef, path, {}) : fieldDef;
-}
-
-/*
- * Returns the _typeConfig object of the schema operation (query/mutation)
- * Can be used to pass variables to resolve functions which use this function
- * to access those variables
- */
-function getTypeConfig(info, path) {
-  path = path ? '_typeConfig.'.concat(path) : '_typeConfig';
-  return get(getSchemaOperation(info), path, {});
-}
-
 /*
  * Gets the path of a value by getting the location of the field and traversing the selectionSet
  */
@@ -268,6 +233,57 @@ function getExecPath(info, maxDepth) {
   return traverseExecPath(info.operation.selectionSet.selections, loc.start, loc.end);
 }
 
+function getSchemaOperation(info) {
+  var _type = ['_', get(info, 'operation.operation'), 'Type'].join('');
+  return get(info, ['schema', _type].join('.'), {});
+}
+
+/*
+ * Gets the return type name of a query (returns shortened GraphQL primitive type names)
+ */
+function getReturnTypeName(info) {
+  try {
+    var typeObj = get(getSchemaOperation(info), '_fields["' + info.fieldName + '"].type', {});
+
+    while (!typeObj.name) {
+      typeObj = typeObj.ofType;
+      if (!typeObj) break;
+    }
+    return typeObj.name;
+  } catch (err) {
+    console.error(err.message);
+  }
+}
+
+/*
+ * Gets the field definition
+ */
+function getRootFieldDef(info, path) {
+  var exPath = getExecPath(info);
+  var queryType = info.operation.operation;
+  var opDef = get(info, 'schema._factory.' + queryType + 'Def', {});
+  var fieldDef = get(opDef, 'fields["' + exPath[0] + '"]', undefined);
+
+  //  if a field def cannot be found, try to find it in the extendFields
+  if (!fieldDef && has(opDef, 'extendFields')) {
+    forEach(opDef.extendFields, function (v) {
+      if (has(v, exPath[0])) fieldDef = get(v, '["' + exPath[0] + '"]', {});
+    });
+  }
+
+  return path ? get(fieldDef, path, {}) : fieldDef;
+}
+
+/*
+ * Returns the _typeConfig object of the schema operation (query/mutation)
+ * Can be used to pass variables to resolve functions which use this function
+ * to access those variables
+ */
+function getTypeConfig(info, path) {
+  path = path ? '_typeConfig.'.concat(path) : '_typeConfig';
+  return get(getSchemaOperation(info), path, {});
+}
+
 
 
 var utils = Object.freeze({
@@ -290,11 +306,11 @@ var utils = Object.freeze({
   pickBy: pickBy,
   get: get,
   merge: merge,
+  getExecPath: getExecPath,
   getSchemaOperation: getSchemaOperation,
   getReturnTypeName: getReturnTypeName,
-  getFieldDef: getFieldDef,
-  getTypeConfig: getTypeConfig,
-  getExecPath: getExecPath
+  getRootFieldDef: getRootFieldDef,
+  getTypeConfig: getTypeConfig
 });
 
 function Types(gql, definitions) {
@@ -522,18 +538,27 @@ function Types(gql, definitions) {
   };
 
   //  create a GraphQLSchema
-  var GraphQLSchema = function GraphQLSchema(schema) {
+  var GraphQLSchema = function GraphQLSchema(schema, schemaKey) {
     var queryDef = isString(schema.query) ? get(definitions.definition.types, schema.query) : schema.query;
     var mutationDef = isString(schema.mutation) ? get(definitions.definition.types, schema.mutation) : schema.mutation;
     var query = isString(schema.query) ? getType(schema.query) : GraphQLObjectType(schema.query, 'Query');
     var mutation = schema.mutation ? isString(schema.mutation) ? getType(schema.mutation) : GraphQLObjectType(schema.mutation, 'Mutation') : undefined;
-    query._factoryDef = queryDef;
-    mutation._factoryDef = mutationDef;
 
-    return new gql.GraphQLSchema({
+    //  create a new factory object
+    var gqlSchema = new gql.GraphQLSchema({
       query: query,
       mutation: mutation
     });
+
+    //  add a _factory property the schema object
+    gqlSchema._factory = {
+      key: schemaKey,
+      queryDef: queryDef,
+      mutationDef: mutationDef
+    };
+
+    //  return the modified object
+    return gqlSchema;
   };
 
   //  type to function map
@@ -665,7 +690,7 @@ var factory = function factory(gql) {
     forEach(def.schemas, function (schemaDef, schemaName) {
       //  create a schema
       try {
-        definitions.schemas[schemaName] = t.GraphQLSchema(schemaDef);
+        definitions.schemas[schemaName] = t.GraphQLSchema(schemaDef, schemaName);
 
         //  create a function to execute the graphql schmea
         lib[schemaName] = function (query) {
