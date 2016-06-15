@@ -241,11 +241,18 @@ export default function Types (gql, definitions) {
 
   //  create a GraphQLSchema
   let GraphQLSchema = function (schema) {
+    let queryDef = _isString(schema.query) ? _get(definitions.definition.types, schema.query) : schema.query
+    let mutationDef = _isString(schema.mutation) ? _get(definitions.definition.types, schema.mutation) : schema.mutation
+    let query = _isString(schema.query) ? getType(schema.query) : GraphQLObjectType(schema.query, 'Query')
+    let mutation = schema.mutation ?
+      _isString(schema.mutation) ?
+        getType(schema.mutation) : GraphQLObjectType(schema.mutation, 'Mutation') : undefined
+    query._factoryDef = queryDef
+    mutation._factoryDef = mutationDef
+
     return new gql.GraphQLSchema({
-      query: _isString(schema.query) ? getType(schema.query) : GraphQLObjectType(schema.query, 'Query'),
-      mutation: schema.mutation ?
-        _isString(schema.mutation) ?
-          getType(schema.mutation): GraphQLObjectType(schema.mutation, 'Mutation') : undefined
+      query: query,
+      mutation: mutation
     })
   }
 

@@ -102,10 +102,25 @@ describe('Utils', function () {
   //  has
   it('has should return true if a key exists, false otherwise', function (done) {
     var fn = utils.has
-    expect(fn({a: 1, b: 2}, 'a')).to.equal(true)
-    expect(fn({a: 1, b: 2}, 'c')).to.equal(false)
-    expect(fn({a: 1, b: 2}, null)).to.equal(false)
-    expect(fn()).to.equal(false)
+    var obj = {
+      a: 1,
+      b: 2,
+      c: {
+        d: 3,
+        e: [
+          {
+            x: {
+              y: 1
+            }
+          }
+        ]
+      }
+    }
+    expect(fn(obj, 'a')).to.equal(true)
+    expect(fn(obj, 'q')).to.equal(false)
+    expect(fn(obj, null)).to.equal(false)
+    expect(fn(obj, 'c.e[0].x["y"]')).to.equal(true)
+    expect(fn({}, '')).to.equal(false)
     done()
   })
 
@@ -233,7 +248,7 @@ describe('Utils', function () {
     expect(fn(obj1, ['a', 'b', 'c'])).to.equal('ok')
     expect(fn(obj1, 'x.y.z', 'ok')).to.equal('ok')
     expect(fn(obj1, 'x.y.z')).to.equal(undefined)
-    expect(fn(obj1, 'a[e.f].g[0]')).to.equal(1)
+    expect(fn(obj1, 'a["e.f"].g[0]')).to.equal(1)
     done()
   })
 })

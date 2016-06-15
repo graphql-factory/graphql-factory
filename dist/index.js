@@ -11,21 +11,27 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 function isFunction(obj) {
   return typeof obj === 'function';
 }
+
 function isString(obj) {
   return typeof obj === 'string';
 }
+
 function isArray(obj) {
   return Array.isArray(obj);
 }
+
 function isDate(obj) {
   return obj instanceof Date;
 }
+
 function isObject(obj) {
   return (typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object' && obj !== null;
 }
+
 function isHash(obj) {
   return isObject(obj) && !isArray(obj) && !isDate(obj) && obj !== null;
 }
+
 function includes(obj, key) {
   try {
     return isArray(obj) && obj.indexOf(key) !== -1;
@@ -33,6 +39,7 @@ function includes(obj, key) {
     return false;
   }
 }
+
 function keys(obj) {
   try {
     return Object.keys(obj);
@@ -40,13 +47,35 @@ function keys(obj) {
     return [];
   }
 }
-function has(obj, key) {
+
+function stringToPathArray(pathString) {
+  // taken from lodash - https://github.com/lodash/lodash
+  var pathRx = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(\.|\[\])(?:\4|$))/g;
+  var pathArray = [];
+
+  if (isString(pathString)) {
+    pathString.replace(pathRx, function (match, number, quote, string) {
+      pathArray.push(quote ? string : number !== undefined ? Number(number) : match);
+      return pathArray[pathArray.length - 1];
+    });
+  }
+  return pathArray;
+}
+
+function has(obj, path) {
+  var value = obj;
+  var fields = isArray(path) ? path : stringToPathArray(path);
+  if (fields.length === 0) return false;
   try {
-    return includes(Object.keys(obj), key);
+    for (var f in fields) {
+      if (!value[fields[f]]) return false;else value = value[fields[f]];
+    }
   } catch (err) {
     return false;
   }
+  return true;
 }
+
 function forEach(obj, fn) {
   try {
     for (var key in obj) {
@@ -56,6 +85,7 @@ function forEach(obj, fn) {
     return;
   }
 }
+
 function without() {
   var output = [];
   var args = Array.prototype.slice.call(arguments);
@@ -66,6 +96,7 @@ function without() {
   });
   return output;
 }
+
 function map(obj, fn) {
   var output = [];
   try {
@@ -77,6 +108,7 @@ function map(obj, fn) {
   }
   return output;
 }
+
 function mapValues(obj, fn) {
   var newObj = {};
   try {
@@ -88,6 +120,7 @@ function mapValues(obj, fn) {
   }
   return newObj;
 }
+
 function filter(obj, fn) {
   var newObj = [];
   if (!isArray(obj)) return newObj;
@@ -96,6 +129,7 @@ function filter(obj, fn) {
   });
   return newObj;
 }
+
 function omitBy(obj, fn) {
   var newObj = {};
   if (!isHash(obj)) return newObj;
@@ -104,6 +138,7 @@ function omitBy(obj, fn) {
   });
   return newObj;
 }
+
 function pickBy(obj, fn) {
   var newObj = {};
   if (!isHash(obj)) return newObj;
@@ -115,28 +150,8 @@ function pickBy(obj, fn) {
 
 function get(obj, path, defaultValue) {
   var value = obj;
-  var fields = isArray(path) ? path : [];
-  if (isString(path)) {
-    path = String(path);
-    var open = false;
-    var str = '';
-
-    var addPath = function addPath(s, isOpen) {
-      if (isNaN(s) && s.length > 0) fields.push(s);else if (!isNaN(s) && s.length > 0) fields.push(Number(s));
-      open = isOpen;
-      str = '';
-    };
-
-    //  parse the path
-    for (var i in path) {
-      var c = path[i];
-      if (!isString(c)) continue;
-      if (c === '[') addPath(str, true);else if (open && c === ']') addPath(str, false);else if (!open && c === '.') addPath(str, false);else str += c;
-    }
-    addPath(str, false);
-  }
-
-  //  loop though each field and attempt to get it
+  var fields = isArray(path) ? path : stringToPathArray(path);
+  if (fields.length === 0) return defaultValue;
   for (var f in fields) {
     if (!value[fields[f]]) return defaultValue;else value = value[fields[f]];
   }
@@ -185,17 +200,18 @@ function merge() {
   return targetObject;
 }
 
+function getSchemaOperation(info) {
+  var _type = ['_', get(info, 'operation.operation'), 'Type'].join('');
+  return get(info, ['schema', _type].join('.'), {});
+}
+
 /*
  * Gets the return type name of a query (returns shortened GraphQL primitive type names)
  */
 function getReturnTypeName(info) {
   try {
-    var _type = ['_', info.operation.operation, 'Type'].join('');
-    var o = info.schema[_type];
-    var selections = info.operation.selectionSet.selections;
-    var fieldName = selections[selections.length - 1].name.value;
-    var fieldObj = o._fields[fieldName];
-    var typeObj = fieldObj.type;
+    var typeObj = get(getSchemaOperation(info), '_fields["' + info.fieldName + '"].type', {});
+
     while (!typeObj.name) {
       typeObj = typeObj.ofType;
       if (!typeObj) break;
@@ -207,15 +223,49 @@ function getReturnTypeName(info) {
 }
 
 /*
+ * Gets the field definition
+ */
+function getFieldDef(info, path) {
+  var fieldDef = get(getSchemaOperation(info), '_factoryDef.fields["' + info.fieldName + '"]', {});
+  return path ? get(fieldDef, path, {}) : fieldDef;
+}
+
+/*
  * Returns the _typeConfig object of the schema operation (query/mutation)
  * Can be used to pass variables to resolve functions which use this function
  * to access those variables
  */
 function getTypeConfig(info, path) {
-  var _type = ['_', get(info, 'operation.operation'), 'Type'].join('');
-  var pathArray = ['schema', _type, '_typeConfig'];
-  if (path) pathArray.push(path);
-  return get(info, pathArray.join('.'), {});
+  path = path ? '_typeConfig.'.concat(path) : '_typeConfig';
+  return get(getSchemaOperation(info), path, {});
+}
+
+/*
+ * Gets the path of a value by getting the location of the field and traversing the selectionSet
+ */
+function getExecPath(info, maxDepth) {
+  maxDepth = maxDepth || 50;
+
+  var loc = get(info, 'fieldASTs[0].loc');
+  var stackCount = 0;
+
+  var traverseExecPath = function traverseExecPath(selections, start, end, execPath) {
+    execPath = execPath || [];
+
+    var sel = get(filter(selections, function (s) {
+      return s.loc.start <= start && s.loc.end >= end;
+    }), '[0]');
+    if (sel) {
+      execPath.push(sel.name.value);
+      if (sel.name.loc.start !== start && sel.name.loc.end !== end && stackCount < maxDepth) {
+        stackCount++;
+        traverseExecPath(sel.selectionSet.selections, start, end, execPath);
+      }
+    }
+    return execPath;
+  };
+  if (!info.operation.selectionSet.selections || isNaN(loc.start) || isNaN(loc.end)) return;
+  return traverseExecPath(info.operation.selectionSet.selections, loc.start, loc.end);
 }
 
 
@@ -229,6 +279,7 @@ var utils = Object.freeze({
   isHash: isHash,
   includes: includes,
   keys: keys,
+  stringToPathArray: stringToPathArray,
   has: has,
   forEach: forEach,
   without: without,
@@ -239,8 +290,11 @@ var utils = Object.freeze({
   pickBy: pickBy,
   get: get,
   merge: merge,
+  getSchemaOperation: getSchemaOperation,
   getReturnTypeName: getReturnTypeName,
-  getTypeConfig: getTypeConfig
+  getFieldDef: getFieldDef,
+  getTypeConfig: getTypeConfig,
+  getExecPath: getExecPath
 });
 
 function Types(gql, definitions) {
@@ -469,9 +523,16 @@ function Types(gql, definitions) {
 
   //  create a GraphQLSchema
   var GraphQLSchema = function GraphQLSchema(schema) {
+    var queryDef = isString(schema.query) ? get(definitions.definition.types, schema.query) : schema.query;
+    var mutationDef = isString(schema.mutation) ? get(definitions.definition.types, schema.mutation) : schema.mutation;
+    var query = isString(schema.query) ? getType(schema.query) : GraphQLObjectType(schema.query, 'Query');
+    var mutation = schema.mutation ? isString(schema.mutation) ? getType(schema.mutation) : GraphQLObjectType(schema.mutation, 'Mutation') : undefined;
+    query._factoryDef = queryDef;
+    mutation._factoryDef = mutationDef;
+
     return new gql.GraphQLSchema({
-      query: isString(schema.query) ? getType(schema.query) : GraphQLObjectType(schema.query, 'Query'),
-      mutation: schema.mutation ? isString(schema.mutation) ? getType(schema.mutation) : GraphQLObjectType(schema.mutation, 'Mutation') : undefined
+      query: query,
+      mutation: mutation
     });
   };
 

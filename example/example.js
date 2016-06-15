@@ -43,6 +43,8 @@ _.forEach(tables, function (type) {
 
 //  get user list
 let getUsers = function (source, args, context, info) {
+  // console.log(this.utils.getFieldDef(info, '_tableName'))
+
   let typeName = this.utils.getReturnTypeName(info)
   let db = this.globals.db.main
   let config = db.tables[typeName]
@@ -215,7 +217,8 @@ let definition = {
       fields: {
         users: {
           type: ['User'],
-          resolve: 'getUsers'
+          resolve: 'getUsers',
+          _tableName: 'stuff'
         },
         union1: {
           type: 'TestUnion1',
@@ -314,8 +317,8 @@ let testGetInterfaceGQL = `{
 }`
 
 // lib.Users(testCreateGQL)
-lib.Users(testPurgeGQL)
-// lib.Users(testGetGQL)
+// lib.Users(testPurgeGQL)
+lib.Users(testGetGQL)
 // lib.Users(testGetUnionGQL)
 
 // lib.Users(testGetInterfaceGQL)

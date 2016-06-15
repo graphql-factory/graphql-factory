@@ -3,21 +3,27 @@
 export function isFunction (obj) {
   return typeof obj === 'function'
 }
+
 export function isString (obj) {
   return typeof obj === 'string'
 }
+
 export function isArray (obj) {
   return Array.isArray(obj)
 }
+
 export function isDate (obj) {
   return obj instanceof Date
 }
+
 export function isObject (obj) {
   return typeof obj === 'object' && obj !== null
 }
+
 export function isHash (obj) {
   return isObject(obj) && !isArray(obj) && !isDate(obj) && obj !== null
 }
+
 export function includes (obj, key) {
   try {
     return isArray(obj) && obj.indexOf(key) !== -1
@@ -25,6 +31,7 @@ export function includes (obj, key) {
     return false
   }
 }
+
 export function keys (obj) {
   try {
     return Object.keys(obj)
@@ -32,13 +39,36 @@ export function keys (obj) {
     return []
   }
 }
-export function has (obj, key) {
+
+export function stringToPathArray (pathString) {
+  // taken from lodash - https://github.com/lodash/lodash
+  let pathRx = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(\.|\[\])(?:\4|$))/g
+  let pathArray = []
+
+  if (isString(pathString)) {
+    pathString.replace(pathRx, function (match, number, quote, string) {
+      pathArray.push(quote ? string : (number !== undefined) ? Number(number) : match)
+      return pathArray[pathArray.length - 1]
+    })
+  }
+  return pathArray
+}
+
+export function has (obj, path) {
+  let value = obj
+  let fields = isArray(path) ? path : stringToPathArray(path)
+  if (fields.length === 0) return false
   try {
-    return includes(Object.keys(obj), key)
+    for (let f in fields) {
+      if (!value[fields[f]]) return false
+      else value = value[fields[f]]
+    }
   } catch (err) {
     return false
   }
+  return true
 }
+
 export function forEach (obj, fn) {
   try {
     for (const key in obj) {
@@ -48,6 +78,7 @@ export function forEach (obj, fn) {
     return
   }
 }
+
 export function without () {
   let output = []
   let args = Array.prototype.slice.call(arguments)
@@ -59,6 +90,7 @@ export function without () {
   })
   return output
 }
+
 export function map (obj, fn) {
   let output = []
   try {
@@ -70,6 +102,7 @@ export function map (obj, fn) {
   }
   return output
 }
+
 export function mapValues (obj, fn) {
   let newObj = {}
   try {
@@ -81,6 +114,7 @@ export function mapValues (obj, fn) {
   }
   return newObj
 }
+
 export function filter (obj, fn) {
   let newObj = []
   if (!isArray(obj)) return newObj
@@ -89,6 +123,7 @@ export function filter (obj, fn) {
   })
   return newObj
 }
+
 export function omitBy (obj, fn) {
   let newObj = {}
   if (!isHash(obj)) return newObj
@@ -97,6 +132,7 @@ export function omitBy (obj, fn) {
   })
   return newObj
 }
+
 export function pickBy (obj, fn) {
   let newObj = {}
   if (!isHash(obj)) return newObj
@@ -108,32 +144,8 @@ export function pickBy (obj, fn) {
 
 export function get (obj, path, defaultValue) {
   let value = obj
-  let fields = isArray(path) ? path : []
-  if (isString(path)) {
-    path = String(path)
-    let open = false
-    let str = ''
-
-    let addPath = function (s, isOpen) {
-      if (isNaN(s) && s.length > 0) fields.push(s)
-      else if (!isNaN(s) && s.length > 0) fields.push(Number(s))
-      open = isOpen
-      str = ''
-    }
-
-    //  parse the path
-    for (let i in path) {
-      let c = path[i]
-      if (!isString(c)) continue
-      if (c === '[') addPath(str, true)
-      else if (open && c === ']') addPath(str, false)
-      else if (!open && c === '.') addPath(str, false)
-      else str += c
-    }
-    addPath(str, false)
-  }
-
-  //  loop though each field and attempt to get it
+  let fields = isArray(path) ? path : stringToPathArray(path)
+  if (fields.length === 0) return defaultValue
   for (let f in fields) {
     if (!value[fields[f]]) return defaultValue
     else value = value[fields[f]]
@@ -185,25 +197,34 @@ export function merge () {
   return targetObject
 }
 
+export function getSchemaOperation (info) {
+  var _type = ['_', get(info, 'operation.operation'), 'Type'].join('');
+  return get(info, ['schema', _type].join('.'), {});
+}
+
 /*
  * Gets the return type name of a query (returns shortened GraphQL primitive type names)
  */
 export function getReturnTypeName (info) {
   try {
-    let _type = ['_', info.operation.operation, 'Type'].join('')
-    let o = info.schema[_type]
-    let selections = info.operation.selectionSet.selections
-    let fieldName = selections[selections.length - 1].name.value
-    let fieldObj = o._fields[fieldName]
-    let typeObj = fieldObj.type
+    var typeObj = get(getSchemaOperation(info), '_fields["' + info.fieldName + '"].type', {})
+
     while (!typeObj.name) {
-      typeObj = typeObj.ofType
-      if (!typeObj) break
+      typeObj = typeObj.ofType;
+      if (!typeObj) break;
     }
-    return typeObj.name
+    return typeObj.name;
   } catch (err) {
-    console.error(err.message)
+    console.error(err.message);
   }
+}
+
+/*
+ * Gets the field definition
+ */
+export function getFieldDef (info, path) {
+  let fieldDef = get(getSchemaOperation(info), '_factoryDef.fields["' + info.fieldName + '"]', {})
+  return path ? get(fieldDef, path, {}) : fieldDef
 }
 
 /*
@@ -212,8 +233,34 @@ export function getReturnTypeName (info) {
  * to access those variables
  */
 export function getTypeConfig (info, path) {
-  let _type = ['_', get(info, 'operation.operation'), 'Type'].join('')
-  let pathArray = ['schema', _type, '_typeConfig']
-  if (path) pathArray.push(path)
-  return get(info, pathArray.join('.'), {})
+  path = path ? '_typeConfig.'.concat(path) : '_typeConfig'
+  return get(getSchemaOperation(info), path, {});
+}
+
+/*
+ * Gets the path of a value by getting the location of the field and traversing the selectionSet
+ */
+export function getExecPath (info, maxDepth) {
+  maxDepth = maxDepth || 50
+
+  let loc = get(info, 'fieldASTs[0].loc')
+  let stackCount = 0
+
+  let traverseExecPath = function (selections, start, end, execPath) {
+    execPath = execPath || []
+
+    let sel = get(filter(selections, function (s) {
+      return s.loc.start <= start && s.loc.end >= end
+    }), '[0]')
+    if (sel) {
+      execPath.push(sel.name.value)
+      if (sel.name.loc.start !== start && sel.name.loc.end !== end && stackCount < maxDepth) {
+        stackCount++
+        traverseExecPath(sel.selectionSet.selections, start, end, execPath)
+      }
+    }
+    return execPath
+  }
+  if (!info.operation.selectionSet.selections || isNaN(loc.start) || isNaN(loc.end)) return
+  return traverseExecPath(info.operation.selectionSet.selections, loc.start, loc.end)
 }
