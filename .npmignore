@@ -3,6 +3,7 @@ example
 node_modules
 src
 test
+dist
 .babelrc
 .DS_Store
 .idea

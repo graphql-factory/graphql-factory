@@ -10,7 +10,7 @@ import CustomGraphQLDateType from 'graphql-custom-datetype'
 import rethinkdbdash from 'rethinkdbdash'
 
 let r = rethinkdbdash()
-let factory = require(path.resolve(__dirname, '../dist'))(graphql)
+let factory = require(path.resolve(__dirname, '../index'))(graphql)
 
 /*
 factory.registerTypes({

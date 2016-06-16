@@ -208,29 +208,29 @@ function merge() {
 /*
  * Gets the path of a value by getting the location of the field and traversing the selectionSet
  */
-function getExecPath(info, maxDepth) {
+function getFieldPath(info, maxDepth) {
   maxDepth = maxDepth || 50;
 
   var loc = get(info, 'fieldASTs[0].loc');
   var stackCount = 0;
 
-  var traverseExecPath = function traverseExecPath(selections, start, end, execPath) {
-    execPath = execPath || [];
+  var traverseFieldPath = function traverseFieldPath(selections, start, end, fieldPath) {
+    fieldPath = fieldPath || [];
 
     var sel = get(filter(selections, function (s) {
       return s.loc.start <= start && s.loc.end >= end;
     }), '[0]');
     if (sel) {
-      execPath.push(sel.name.value);
+      fieldPath.push(sel.name.value);
       if (sel.name.loc.start !== start && sel.name.loc.end !== end && stackCount < maxDepth) {
         stackCount++;
-        traverseExecPath(sel.selectionSet.selections, start, end, execPath);
+        traverseFieldPath(sel.selectionSet.selections, start, end, fieldPath);
       }
     }
-    return execPath;
+    return fieldPath;
   };
   if (!info.operation.selectionSet.selections || isNaN(loc.start) || isNaN(loc.end)) return;
-  return traverseExecPath(info.operation.selectionSet.selections, loc.start, loc.end);
+  return traverseFieldPath(info.operation.selectionSet.selections, loc.start, loc.end);
 }
 
 function getSchemaOperation(info) {
@@ -259,15 +259,15 @@ function getReturnTypeName(info) {
  * Gets the field definition
  */
 function getRootFieldDef(info, path) {
-  var exPath = getExecPath(info);
+  var fldPath = get(getFieldPath(info), '[0]');
   var queryType = info.operation.operation;
   var opDef = get(info, 'schema._factory.' + queryType + 'Def', {});
-  var fieldDef = get(opDef, 'fields["' + exPath[0] + '"]', undefined);
+  var fieldDef = get(opDef, 'fields["' + fldPath + '"]', undefined);
 
   //  if a field def cannot be found, try to find it in the extendFields
   if (!fieldDef && has(opDef, 'extendFields')) {
-    forEach(opDef.extendFields, function (v) {
-      if (has(v, exPath[0])) fieldDef = get(v, '["' + exPath[0] + '"]', {});
+    forEach(opDef.extendFields, function (v, k) {
+      if (has(v, fldPath)) fieldDef = get(v, '["' + fldPath + '"]', {});
     });
   }
 
@@ -306,7 +306,7 @@ var utils = Object.freeze({
   pickBy: pickBy,
   get: get,
   merge: merge,
-  getExecPath: getExecPath,
+  getFieldPath: getFieldPath,
   getSchemaOperation: getSchemaOperation,
   getReturnTypeName: getReturnTypeName,
   getRootFieldDef: getRootFieldDef,

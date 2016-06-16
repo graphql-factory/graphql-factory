@@ -205,29 +205,29 @@ export function merge () {
 /*
  * Gets the path of a value by getting the location of the field and traversing the selectionSet
  */
-export function getExecPath (info, maxDepth) {
+export function getFieldPath (info, maxDepth) {
   maxDepth = maxDepth || 50
 
   let loc = get(info, 'fieldASTs[0].loc')
   let stackCount = 0
 
-  let traverseExecPath = function (selections, start, end, execPath) {
-    execPath = execPath || []
+  let traverseFieldPath = function (selections, start, end, fieldPath) {
+    fieldPath = fieldPath || []
 
     let sel = get(filter(selections, function (s) {
       return s.loc.start <= start && s.loc.end >= end
     }), '[0]')
     if (sel) {
-      execPath.push(sel.name.value)
+      fieldPath.push(sel.name.value)
       if (sel.name.loc.start !== start && sel.name.loc.end !== end && stackCount < maxDepth) {
         stackCount++
-        traverseExecPath(sel.selectionSet.selections, start, end, execPath)
+        traverseFieldPath(sel.selectionSet.selections, start, end, fieldPath)
       }
     }
-    return execPath
+    return fieldPath
   }
   if (!info.operation.selectionSet.selections || isNaN(loc.start) || isNaN(loc.end)) return
-  return traverseExecPath(info.operation.selectionSet.selections, loc.start, loc.end)
+  return traverseFieldPath(info.operation.selectionSet.selections, loc.start, loc.end)
 }
 
 
@@ -257,15 +257,15 @@ export function getReturnTypeName (info) {
  * Gets the field definition
  */
 export function getRootFieldDef (info, path) {
-  let exPath = getExecPath(info)
+  let fldPath = get(getFieldPath(info), '[0]')
   let queryType = info.operation.operation
   let opDef = get(info, 'schema._factory.' + queryType + 'Def', {})
-  let fieldDef = get(opDef, 'fields["' + exPath[0] + '"]', undefined)
+  let fieldDef = get(opDef, 'fields["' + fldPath + '"]', undefined)
 
   //  if a field def cannot be found, try to find it in the extendFields
   if (!fieldDef && has(opDef, 'extendFields')) {
-    forEach(opDef.extendFields, function (v) {
-      if (has(v, exPath[0])) fieldDef = get(v, '["' + exPath[0] + '"]', {})
+    forEach(opDef.extendFields, function (v, k) {
+      if (has(v, fldPath)) fieldDef = get(v, '["' + fldPath + '"]', {})
     })
   }
 

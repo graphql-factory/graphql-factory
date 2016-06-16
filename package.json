@@ -1,9 +1,9 @@
 {
   "name": "graphql-factory",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Compose GraphQL objects with JSON definitions",
   "license": "MIT",
-  "main": "dist/index.js",
+  "main": "index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bhoriuchi/graphql-factory.git"
