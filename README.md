@@ -1,7 +1,5 @@
 # graphql-factory
 
-[![Join the chat at https://gitter.im/bhoriuchi/graphql-factory](https://badges.gitter.im/bhoriuchi/graphql-factory.svg)](https://gitter.im/bhoriuchi/graphql-factory?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
 Compose GraphQL objects with JSON definitions
 
 ---
@@ -10,7 +8,7 @@ Compose GraphQL objects with JSON definitions
 
 [![npm version](https://badge.fury.io/js/graphql-factory.svg)](https://badge.fury.io/js/graphql-factory) [![Build Status](https://travis-ci.org/bhoriuchi/graphql-factory.svg?branch=master)](https://travis-ci.org/bhoriuchi/graphql-factory) [![Dependency Status](https://david-dm.org/bhoriuchi/graphql-factory.svg)](https://david-dm.org/bhoriuchi/graphql-factory) [![devDependency Status](https://david-dm.org/bhoriuchi/graphql-factory/dev-status.svg)](https://david-dm.org/bhoriuchi/graphql-factory#info=devDependencies) [![Known Vulnerabilities](https://snyk.io/test/github/bhoriuchi/graphql-factory/badge.svg)](https://snyk.io/test/github/bhoriuchi/graphql-factory)
 
-[![Gitter Chat](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/bhoriuchi/graphql-factory)
+[![Join the chat at https://gitter.im/bhoriuchi/graphql-factory](https://badges.gitter.im/bhoriuchi/graphql-factory.svg)](https://gitter.im/bhoriuchi/graphql-factory?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ## Usage
 
