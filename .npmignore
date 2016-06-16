@@ -9,3 +9,5 @@ dist
 .idea
 npm-debug.log
 .npmignore
+.travis.yml
+.*

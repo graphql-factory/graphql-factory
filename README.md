@@ -6,6 +6,8 @@ Compose GraphQL objects with JSON definitions
 
 `graphql-factory` is a JavaScript library that helps you build GraphQL Types and Schemas using JSON. The library follows the GraphQL spec as closely as possible and adds additional control fields to make type definition easier and more modular.
 
+[![npm version](https://badge.fury.io/js/graphql-factory.svg)](https://badge.fury.io/js/graphql-factory)
+
 ## Usage
 
 ```
