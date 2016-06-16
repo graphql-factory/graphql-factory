@@ -1,5 +1,7 @@
 # graphql-factory
 
+[![Join the chat at https://gitter.im/bhoriuchi/graphql-factory](https://badges.gitter.im/bhoriuchi/graphql-factory.svg)](https://gitter.im/bhoriuchi/graphql-factory?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Compose GraphQL objects with JSON definitions
 
 ---
