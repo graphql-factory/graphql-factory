@@ -1,6 +1,7 @@
 import {
   has as _has,
   keys as _keys,
+  capitalize as _capitalize,
   forEach as _forEach,
   isString as _isString,
   isArray as _isArray,
@@ -241,24 +242,30 @@ export default function Types (gql, definitions) {
 
   //  create a GraphQLSchema
   let GraphQLSchema = function (schema, schemaKey) {
-    let queryDef = _isString(schema.query) ? _get(definitions.definition.types, schema.query) : schema.query
-    let mutationDef = _isString(schema.mutation) ? _get(definitions.definition.types, schema.mutation) : schema.mutation
-    let query = _isString(schema.query) ? getType(schema.query) : GraphQLObjectType(schema.query, 'Query')
-    let mutation = schema.mutation ?
-      _isString(schema.mutation) ?
-        getType(schema.mutation) : GraphQLObjectType(schema.mutation, 'Mutation') : undefined
+    let getDef = function (op) {
+      let type = _get(schema, op, {})
+      return _isString(type) ? _get(definitions.definition.types, type, {}) : type
+    }
+    let getObj = function (op) {
+      let obj = _get(schema, op, undefined)
+      return _isString(obj) ?
+        getType(schema.query) : _isObject(obj) ?
+        GraphQLObjectType(obj, _capitalize(op)) : undefined
+    }
 
     //  create a new factory object
     let gqlSchema = new gql.GraphQLSchema({
-      query: query,
-      mutation: mutation
+      query: getObj('query'),
+      mutation: getObj('mutation'),
+      subscription: getObj('subscription')
     })
 
     //  add a _factory property the schema object
     gqlSchema._factory = {
       key: schemaKey,
-      queryDef: queryDef,
-      mutationDef: mutationDef
+      queryDef: getDef('query'),
+      mutationDef: getDef('mutation'),
+      subscriptionDef: getDef('subscription')
     }
 
     //  return the modified object

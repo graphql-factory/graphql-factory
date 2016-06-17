@@ -48,6 +48,15 @@ function keys(obj) {
   }
 }
 
+function capitalize(str) {
+  if (isString(str) && str.length > 0) {
+    var first = str[0];
+    var rest = str.length > 1 ? str.substring(1) : '';
+    str = [first.toUpperCase(), rest.toLowerCase()].join('');
+  }
+  return str;
+}
+
 function stringToPathArray(pathString) {
   // taken from lodash - https://github.com/lodash/lodash
   var pathRx = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(\.|\[\])(?:\4|$))/g;
@@ -295,6 +304,7 @@ var utils = Object.freeze({
   isHash: isHash,
   includes: includes,
   keys: keys,
+  capitalize: capitalize,
   stringToPathArray: stringToPathArray,
   has: has,
   forEach: forEach,
@@ -539,22 +549,28 @@ function Types(gql, definitions) {
 
   //  create a GraphQLSchema
   var GraphQLSchema = function GraphQLSchema(schema, schemaKey) {
-    var queryDef = isString(schema.query) ? get(definitions.definition.types, schema.query) : schema.query;
-    var mutationDef = isString(schema.mutation) ? get(definitions.definition.types, schema.mutation) : schema.mutation;
-    var query = isString(schema.query) ? getType(schema.query) : GraphQLObjectType(schema.query, 'Query');
-    var mutation = schema.mutation ? isString(schema.mutation) ? getType(schema.mutation) : GraphQLObjectType(schema.mutation, 'Mutation') : undefined;
+    var getDef = function getDef(op) {
+      var type = get(schema, op, {});
+      return isString(type) ? get(definitions.definition.types, type, {}) : type;
+    };
+    var getObj = function getObj(op) {
+      var obj = get(schema, op, undefined);
+      return isString(obj) ? getType(schema.query) : isObject(obj) ? GraphQLObjectType(obj, capitalize(op)) : undefined;
+    };
 
     //  create a new factory object
     var gqlSchema = new gql.GraphQLSchema({
-      query: query,
-      mutation: mutation
+      query: getObj('query'),
+      mutation: getObj('mutation'),
+      subscription: getObj('subscription')
     });
 
     //  add a _factory property the schema object
     gqlSchema._factory = {
       key: schemaKey,
-      queryDef: queryDef,
-      mutationDef: mutationDef
+      queryDef: getDef('query'),
+      mutationDef: getDef('mutation'),
+      subscriptionDef: getDef('subscription')
     };
 
     //  return the modified object

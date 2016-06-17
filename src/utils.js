@@ -40,6 +40,15 @@ export function keys (obj) {
   }
 }
 
+export function capitalize (str) {
+  if (isString(str) && str.length > 0) {
+    let first = str[0]
+    let rest = str.length > 1 ? str.substring(1) : ''
+    str = [first.toUpperCase(), rest.toLowerCase()].join('')
+  }
+  return str
+}
+
 export function stringToPathArray (pathString) {
   // taken from lodash - https://github.com/lodash/lodash
   let pathRx = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(\.|\[\])(?:\4|$))/g
