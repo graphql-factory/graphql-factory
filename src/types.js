@@ -14,7 +14,9 @@ import {
   mapValues as _mapValues,
   omitBy as _omitBy,
   merge as _merge,
-  get as _get
+  get as _get,
+  remap as _remap,
+  clone as _clone
 } from './utils'
 
 export default function Types (gql, definitions) {
@@ -74,7 +76,11 @@ export default function Types (gql, definitions) {
     //  check for valid extend config
     if (!exts || (_isArray(exts) && exts.length === 0) ||
       (_isHash(exts) && _keys(exts).length === 0) ||
-      (!_isString(exts) && !_isHash(exts) && !_isArray(exts))) return fields
+      (!_isString(exts) && !_isHash(exts) && !_isArray(exts))) {
+      return _remap(fields, function (value, key) {
+        return { key: value.name ? value.name : key, value }
+      })
+    }
 
     //  get the bundle keys
     if (_isString(exts)) extKeys = [exts]
@@ -82,23 +88,41 @@ export default function Types (gql, definitions) {
     else if (_isArray(exts)) extKeys = exts
 
     //  merge bundles and existing fields
-    let newFields = _merge({}, fields)
+    let newFields = _clone(fields)
     _forEach(extKeys, function (v) {
       if (_has(defFields, v)) {
-        _merge(newFields, defFields[v])
+        let fieldTemplate = defFields[v]
 
-        //  merge custom props
-        if (_isHash(exts) && _isHash(exts[v])) _merge(customProps, exts[v])
+        if (!_isHash(exts)) {
+          //  if a string or array merge the fields
+          _merge(newFields, fieldTemplate)
+        } else {
+          //  otherwise look for overrides for each field
+          let currentExt = exts[v]
+          _forEach(fieldTemplate, function (ftVal, ftKey) {
+            if (_has(currentExt, ftKey)) {
+              let extField = currentExt[ftKey]
+              if (_isArray(extField)) {
+                _forEach(extField, function (efVal, efIdx) {
+                  if (_isHash(efVal) && efVal.name) {
+                    newFields[efVal.name] = _merge({}, ftVal, efVal)
+                  } else {
+                    newFields[`${ftKey}${efIdx}`] = _merge({}, ftVal, efVal)
+                  }
+                })
+              } else {
+                newFields[extField.name || ftKey] = _merge({}, ftVal, extField)
+              }
+            }
+          })
+        }
       }
     })
 
-    //  merge any custom props
-    _forEach(customProps, function (prop, name) {
-      if (_has(newFields, name)) _merge(newFields[name], prop)
+    //  finally return the merged fields and remap the keys
+    return _remap(newFields, function (value, key) {
+      return { key: value.name ? value.name : key, value }
     })
-
-    //  finally return the merged fields
-    return newFields
   }
 
   //  create a GraphQLArgumentConfig
@@ -249,7 +273,7 @@ export default function Types (gql, definitions) {
     let getObj = function (op) {
       let obj = _get(schema, op, undefined)
       return _isString(obj) ?
-        getType(schema.query) : _isObject(obj) ?
+        getType(obj) : _isObject(obj) ?
         GraphQLObjectType(obj, _capitalize(op)) : undefined
     }
 

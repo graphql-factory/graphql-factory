@@ -240,7 +240,7 @@ let definition = {
         v: 1
       },
       extendFields: {
-        'Create': { create: { type: 'User' } },
+        'Create': { create: [{ type: 'User' }, { name: 'createUser', type: 'User' }] },
         'Purge': { purge: { type: 'String' } }
       }
     }
@@ -260,7 +260,7 @@ _.merge(lib, factory.make(definition))
 // console.log(lib._definitions.schemas.Users._mutationType._fields.create.args[3].type._fields.message.type)
 
 let testCreateGQL = `mutation Mutation {
-  create(
+  createUser(
     firstName: "john",
     lastName: "doe",
     email: "jdoe@x.com",
@@ -316,9 +316,9 @@ let testGetInterfaceGQL = `{
   }
 }`
 
-// lib.Users(testCreateGQL)
+lib.Users(testCreateGQL)
 // lib.Users(testPurgeGQL)
-lib.Users(testGetGQL)
+// lib.Users(testGetGQL)
 // lib.Users(testGetUnionGQL)
 
 // lib.Users(testGetInterfaceGQL)

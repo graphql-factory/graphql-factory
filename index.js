@@ -87,8 +87,37 @@ function has(obj, path) {
 
 function forEach(obj, fn) {
   try {
-    for (var key in obj) {
-      if (fn(obj[key], key) === false) break;
+    if (Array.isArray(obj)) {
+      var idx = 0;
+      var _iteratorNormalCompletion = true;
+      var _didIteratorError = false;
+      var _iteratorError = undefined;
+
+      try {
+        for (var _iterator = obj[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          var val = _step.value;
+
+          if (fn(val, idx) === false) break;
+          idx++;
+        }
+      } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion && _iterator.return) {
+            _iterator.return();
+          }
+        } finally {
+          if (_didIteratorError) {
+            throw _iteratorError;
+          }
+        }
+      }
+    } else {
+      for (var key in obj) {
+        if (fn(obj[key], key) === false) break;
+      }
     }
   } catch (err) {
     return;
@@ -127,6 +156,15 @@ function mapValues(obj, fn) {
   } catch (err) {
     return obj;
   }
+  return newObj;
+}
+
+function remap(obj, fn) {
+  var newObj = {};
+  forEach(obj, function (v, k) {
+    var newMap = fn(v, k);
+    if (has(newMap, 'key') && has(newMap, 'value')) newObj[newMap.key] = newMap.value;else newMap[k] = v;
+  });
   return newObj;
 }
 
@@ -172,6 +210,17 @@ function get(obj, path, defaultValue) {
   return value;
 }
 
+function set(obj, path, val) {
+  var value = obj;
+  var fields = isArray(path) ? path : stringToPathArray(path);
+  for (var f in fields) {
+    var idx = Number(f);
+    var p = fields[idx];
+    if (idx === fields.length - 1) value[p] = val;else if (!value[p]) value[p] = isNumber(p) ? [] : {};
+    value = value[p];
+  }
+}
+
 function merge() {
   var args = Array.prototype.slice.call(arguments);
   if (args.length === 0) return {};else if (args.length === 1) return args[0];else if (!isHash(args[0])) return {};
@@ -212,6 +261,10 @@ function merge() {
     if (isHash(sources[k])) _merge(targetObject, sources[k]);
   }
   return targetObject;
+}
+
+function clone(obj) {
+  return merge({}, obj);
 }
 
 /*
@@ -311,11 +364,14 @@ var utils = Object.freeze({
   without: without,
   map: map,
   mapValues: mapValues,
+  remap: remap,
   filter: filter,
   omitBy: omitBy,
   pickBy: pickBy,
   get: get,
+  set: set,
   merge: merge,
+  clone: clone,
   getFieldPath: getFieldPath,
   getSchemaOperation: getSchemaOperation,
   getReturnTypeName: getReturnTypeName,
@@ -378,29 +434,53 @@ function Types(gql, definitions) {
     fields = fields || {};
 
     //  check for valid extend config
-    if (!exts || isArray(exts) && exts.length === 0 || isHash(exts) && keys(exts).length === 0 || !isString(exts) && !isHash(exts) && !isArray(exts)) return fields;
+    if (!exts || isArray(exts) && exts.length === 0 || isHash(exts) && keys(exts).length === 0 || !isString(exts) && !isHash(exts) && !isArray(exts)) {
+      return remap(fields, function (value, key) {
+        return { key: value.name ? value.name : key, value: value };
+      });
+    }
 
     //  get the bundle keys
     if (isString(exts)) extKeys = [exts];else if (isHash(exts)) extKeys = keys(exts);else if (isArray(exts)) extKeys = exts;
 
     //  merge bundles and existing fields
-    var newFields = merge({}, fields);
+    var newFields = clone(fields);
     forEach(extKeys, function (v) {
       if (has(defFields, v)) {
-        merge(newFields, defFields[v]);
+        var fieldTemplate = defFields[v];
 
-        //  merge custom props
-        if (isHash(exts) && isHash(exts[v])) merge(customProps, exts[v]);
+        if (!isHash(exts)) {
+          //  if a string or array merge the fields
+          merge(newFields, fieldTemplate);
+        } else {
+          (function () {
+            //  otherwise look for overrides for each field
+            var currentExt = exts[v];
+            forEach(fieldTemplate, function (ftVal, ftKey) {
+              if (has(currentExt, ftKey)) {
+                var extField = currentExt[ftKey];
+                if (isArray(extField)) {
+                  forEach(extField, function (efVal, efIdx) {
+                    if (isHash(efVal) && efVal.name) {
+                      newFields[efVal.name] = merge({}, ftVal, efVal);
+                    } else {
+                      newFields['' + ftKey + efIdx] = merge({}, ftVal, efVal);
+                    }
+                  });
+                } else {
+                  newFields[extField.name || ftKey] = merge({}, ftVal, extField);
+                }
+              }
+            });
+          })();
+        }
       }
     });
 
-    //  merge any custom props
-    forEach(customProps, function (prop, name) {
-      if (has(newFields, name)) merge(newFields[name], prop);
+    //  finally return the merged fields and remap the keys
+    return remap(newFields, function (value, key) {
+      return { key: value.name ? value.name : key, value: value };
     });
-
-    //  finally return the merged fields
-    return newFields;
   };
 
   //  create a GraphQLArgumentConfig
@@ -555,7 +635,7 @@ function Types(gql, definitions) {
     };
     var getObj = function getObj(op) {
       var obj = get(schema, op, undefined);
-      return isString(obj) ? getType(schema.query) : isObject(obj) ? GraphQLObjectType(obj, capitalize(op)) : undefined;
+      return isString(obj) ? getType(obj) : isObject(obj) ? GraphQLObjectType(obj, capitalize(op)) : undefined;
     };
 
     //  create a new factory object

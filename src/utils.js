@@ -80,8 +80,16 @@ export function has (obj, path) {
 
 export function forEach (obj, fn) {
   try {
-    for (const key in obj) {
-      if (fn(obj[key], key) === false) break
+    if (Array.isArray(obj)) {
+      let idx = 0
+      for (let val of obj) {
+        if (fn(val, idx) === false) break
+        idx++
+      }
+    } else {
+      for (const key in obj) {
+        if (fn(obj[key], key) === false) break
+      }
     }
   } catch (err) {
     return
@@ -121,6 +129,16 @@ export function mapValues (obj, fn) {
   } catch (err) {
     return obj
   }
+  return newObj
+}
+
+export function remap (obj, fn) {
+  let newObj = {}
+  forEach(obj, (v, k) => {
+    let newMap = fn(v, k)
+    if (has(newMap, 'key') && has(newMap, 'value')) newObj[newMap.key] = newMap.value
+    else newMap[k] = v
+  })
   return newObj
 }
 
@@ -167,6 +185,18 @@ export function get (obj, path, defaultValue) {
   return value
 }
 
+export function set (obj, path, val) {
+  let value = obj
+  let fields = isArray(path) ? path : stringToPathArray(path)
+  for (let f in fields) {
+    let idx = Number(f)
+    let p = fields[idx]
+    if (idx === fields.length - 1) value[p] = val
+    else if (!value[p]) value[p] = isNumber(p) ? [] : {}
+    value = value[p]
+  }
+}
+
 export function merge () {
   let args = Array.prototype.slice.call(arguments)
   if (args.length === 0) return {}
@@ -209,6 +239,10 @@ export function merge () {
     if (isHash(sources[k])) _merge(targetObject, sources[k])
   }
   return targetObject
+}
+
+export function clone (obj) {
+  return merge({}, obj)
 }
 
 /*
