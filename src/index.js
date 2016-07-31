@@ -8,9 +8,11 @@ import {
   has as _has,
   omitBy as _omitBy,
   pickBy as _pickBy
+  merge as _merge
 } from './utils'
 
 let factory = function (gql) {
+  let plugins = {}
   let definitions = {
     globals: {},
     fields: {},
@@ -48,9 +50,17 @@ let factory = function (gql) {
     })
   }
 
+  //  add plugin
+  let plugin = function (p) {
+    p = isArray(p) ? p : [p]
+    _forEach(p, (h) => {
+      if (_isHash(h)) plugins = Object.assign(plugins, h)
+    })
+  }
+
   //  make all graphql objects
   let make = function (def) {
-
+    def = Object.assign(def, plugins)
     let lib = {}
     def.globals = def.globals || {}
     def.fields = def.fields || {}
@@ -134,7 +144,7 @@ let factory = function (gql) {
     lib._definitions = definitions
     return lib
   }
-  return { make, registerTypes, utils }
+  return { make, plugin, registerTypes, utils }
 }
 
 factory.utils = utils
