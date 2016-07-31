@@ -8,7 +8,6 @@ import {
   has as _has,
   omitBy as _omitBy,
   pickBy as _pickBy
-  merge as _merge
 } from './utils'
 
 let factory = function (gql) {
