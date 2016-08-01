@@ -16,7 +16,7 @@ function isString(obj) {
   return typeof obj === 'string';
 }
 
-function isArray$1(obj) {
+function isArray(obj) {
   return Array.isArray(obj);
 }
 
@@ -28,13 +28,17 @@ function isObject(obj) {
   return (typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object' && obj !== null;
 }
 
+function isNumber(obj) {
+  return !isNaN(obj);
+}
+
 function isHash(obj) {
-  return isObject(obj) && !isArray$1(obj) && !isDate(obj) && obj !== null;
+  return isObject(obj) && !isArray(obj) && !isDate(obj) && obj !== null;
 }
 
 function includes(obj, key) {
   try {
-    return isArray$1(obj) && obj.indexOf(key) !== -1;
+    return isArray(obj) && obj.indexOf(key) !== -1;
   } catch (err) {
     return false;
   }
@@ -73,7 +77,7 @@ function stringToPathArray(pathString) {
 
 function has(obj, path) {
   var value = obj;
-  var fields = isArray$1(path) ? path : stringToPathArray(path);
+  var fields = isArray(path) ? path : stringToPathArray(path);
   if (fields.length === 0) return false;
   try {
     for (var f in fields) {
@@ -170,7 +174,7 @@ function remap(obj, fn) {
 
 function filter(obj, fn) {
   var newObj = [];
-  if (!isArray$1(obj)) return newObj;
+  if (!isArray(obj)) return newObj;
   forEach(obj, function (v, k) {
     if (fn(v, k)) newObj.push(v);
   });
@@ -197,7 +201,7 @@ function pickBy(obj, fn) {
 
 function get(obj, path, defaultValue) {
   var value = obj;
-  var fields = isArray$1(path) ? path : stringToPathArray(path);
+  var fields = isArray(path) ? path : stringToPathArray(path);
   if (fields.length === 0) return defaultValue;
 
   try {
@@ -212,13 +216,11 @@ function get(obj, path, defaultValue) {
 
 function set(obj, path, val) {
   var value = obj;
-  var fields = isArray$1(path) ? path : stringToPathArray(path);
-  for (var f in fields) {
-    var idx = Number(f);
-    var p = fields[idx];
+  var fields = isArray(path) ? path : stringToPathArray(path);
+  forEach(fields, function (p, idx) {
     if (idx === fields.length - 1) value[p] = val;else if (!value[p]) value[p] = isNumber(p) ? [] : {};
     value = value[p];
-  }
+  });
 }
 
 function merge() {
@@ -235,12 +237,12 @@ function merge() {
       } else if (target[k] && isHash(target[k]) && isHash(source[k])) {
         target[k] = merge(target[k], source[k]);
       } else {
-        if (isArray$1(source[k])) {
+        if (isArray(source[k])) {
           target[k] = [];
           for (var x in source[k]) {
             if (isHash(source[k][x])) {
               target[k].push(_merge({}, source[k][x]));
-            } else if (isArray$1(source[k][x])) {
+            } else if (isArray(source[k][x])) {
               target[k].push(_merge([], source[k][x]));
             } else {
               target[k].push(source[k][x]);
@@ -351,9 +353,10 @@ function getTypeConfig(info, path) {
 var utils = Object.freeze({
   isFunction: isFunction,
   isString: isString,
-  isArray: isArray$1,
+  isArray: isArray,
   isDate: isDate,
   isObject: isObject,
+  isNumber: isNumber,
   isHash: isHash,
   includes: includes,
   keys: keys,
@@ -401,8 +404,8 @@ function Types(gql, definitions) {
   var fieldType = function fieldType(field) {
     var isObject = has(field, 'type');
     var type = isObject ? field.type : field;
-    var isArray = isArray$1(type);
-    type = isArray ? type[0] : type;
+    var isArray$$ = isArray(type);
+    type = isArray$$ ? type[0] : type;
 
     if (has(definitions.types, type)) {
       type = definitions.types[type];
@@ -415,7 +418,7 @@ function Types(gql, definitions) {
     }
 
     //  type modifiers for list and non-null
-    type = isArray ? new gql.GraphQLList(type) : type;
+    type = isArray$$ ? new gql.GraphQLList(type) : type;
     type = isObject && (field.nullable === false || field.primary) ? new gql.GraphQLNonNull(type) : type;
     return type;
   };
@@ -434,14 +437,14 @@ function Types(gql, definitions) {
     fields = fields || {};
 
     //  check for valid extend config
-    if (!exts || isArray$1(exts) && exts.length === 0 || isHash(exts) && keys(exts).length === 0 || !isString(exts) && !isHash(exts) && !isArray$1(exts)) {
+    if (!exts || isArray(exts) && exts.length === 0 || isHash(exts) && keys(exts).length === 0 || !isString(exts) && !isHash(exts) && !isArray(exts)) {
       return remap(fields, function (value, key) {
         return { key: value.name ? value.name : key, value: value };
       });
     }
 
     //  get the bundle keys
-    if (isString(exts)) extKeys = [exts];else if (isHash(exts)) extKeys = keys(exts);else if (isArray$1(exts)) extKeys = exts;
+    if (isString(exts)) extKeys = [exts];else if (isHash(exts)) extKeys = keys(exts);else if (isArray(exts)) extKeys = exts;
 
     //  merge bundles and existing fields
     var newFields = clone(fields);
@@ -459,7 +462,7 @@ function Types(gql, definitions) {
             forEach(fieldTemplate, function (ftVal, ftKey) {
               if (has(currentExt, ftKey)) {
                 var extField = currentExt[ftKey];
-                if (isArray$1(extField)) {
+                if (isArray(extField)) {
                   forEach(extField, function (efVal, efIdx) {
                     if (isHash(efVal) && efVal.name) {
                       newFields[efVal.name] = merge({}, ftVal, efVal);
@@ -692,11 +695,6 @@ var factory = function factory(gql) {
   var t = Types(gql, definitions);
   var typeFnMap = t.typeFnMap;
 
-  //  register custom types
-  var registerTypes = function registerTypes(obj) {
-    Object.assign(definitions.externalTypes, obj);
-  };
-
   //  check for valid types
   var validateType = function validateType(type) {
     if (!has(typeFnMap, type)) {
@@ -721,13 +719,13 @@ var factory = function factory(gql) {
   var plugin = function plugin(p) {
     p = isArray(p) ? p : [p];
     forEach(p, function (h) {
-      if (isHash(h)) plugins = Object.assign(plugins, h);
+      if (isHash(h)) plugins = merge(plugins, h);
     });
   };
 
   //  make all graphql objects
   var make = function make(def) {
-    def = Object.assign(def, plugins);
+    def = merge(def, plugins);
     var lib = {};
     def.globals = def.globals || {};
     def.fields = def.fields || {};
@@ -764,7 +762,7 @@ var factory = function factory(gql) {
         //  validate the type and add it
         validateType(typeDef.type);
         _types[typeDef.type] = typeDef.name || typeName;
-      } else if (isArray$1(typeDef.type)) {
+      } else if (isArray(typeDef.type)) {
 
         //  look at each type in the type definition array
         //  support the case [ String, { Type: Name } ] with defaults
@@ -798,8 +796,8 @@ var factory = function factory(gql) {
         definitions.schemas[schemaName] = t.GraphQLSchema(schemaDef, schemaName);
 
         //  create a function to execute the graphql schmea
-        lib[schemaName] = function (query) {
-          return gql.graphql(definitions.schemas[schemaName], query);
+        lib[schemaName] = function (query, rootValue, ctxValue, varValues, opName) {
+          return gql.graphql(definitions.schemas[schemaName], query, rootValue, ctxValue, varValues, opName);
         };
       } catch (err) {
         console.log(err);
@@ -810,7 +808,7 @@ var factory = function factory(gql) {
     lib._definitions = definitions;
     return lib;
   };
-  return { make: make, plugin: plugin, registerTypes: registerTypes, utils: utils };
+  return { make: make, plugin: plugin, utils: utils };
 };
 
 factory.utils = utils;

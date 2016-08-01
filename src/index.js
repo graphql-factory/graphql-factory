@@ -7,7 +7,8 @@ import {
   isString as _isString,
   has as _has,
   omitBy as _omitBy,
-  pickBy as _pickBy
+  pickBy as _pickBy,
+  merge as _merge
 } from './utils'
 
 let factory = function (gql) {
@@ -22,11 +23,6 @@ let factory = function (gql) {
   }
   let t = Types(gql, definitions)
   let typeFnMap = t.typeFnMap
-
-  //  register custom types
-  let registerTypes = function (obj) {
-    Object.assign(definitions.externalTypes, obj)
-  }
 
   //  check for valid types
   let validateType = function (type) {
@@ -51,15 +47,15 @@ let factory = function (gql) {
 
   //  add plugin
   let plugin = function (p) {
-    p = isArray(p) ? p : [p]
+    p = _isArray(p) ? p : [p]
     _forEach(p, (h) => {
-      if (_isHash(h)) plugins = Object.assign(plugins, h)
+      if (_isHash(h)) plugins = _merge(plugins, h)
     })
   }
 
   //  make all graphql objects
   let make = function (def) {
-    def = Object.assign(def, plugins)
+    def = _merge(def, plugins)
     let lib = {}
     def.globals = def.globals || {}
     def.fields = def.fields || {}
@@ -131,8 +127,8 @@ let factory = function (gql) {
         definitions.schemas[schemaName] = t.GraphQLSchema(schemaDef, schemaName)
 
         //  create a function to execute the graphql schmea
-        lib[schemaName] = function (query) {
-          return gql.graphql(definitions.schemas[schemaName], query)
+        lib[schemaName] = function (query, rootValue, ctxValue, varValues, opName) {
+          return gql.graphql(definitions.schemas[schemaName], query, rootValue, ctxValue, varValues, opName)
         }
       } catch (err) {
         console.log(err)
@@ -143,7 +139,7 @@ let factory = function (gql) {
     lib._definitions = definitions
     return lib
   }
-  return { make, plugin, registerTypes, utils }
+  return { make, plugin, utils }
 }
 
 factory.utils = utils

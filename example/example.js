@@ -4,19 +4,14 @@
  * Also I use this example for testing so it has a lot of extra code and comments
  */
 import _ from 'lodash'
-import path from 'path'
 import * as graphql from 'graphql'
 import CustomGraphQLDateType from 'graphql-custom-datetype'
 import rethinkdbdash from 'rethinkdbdash'
+// import GraphQLFactory from '../src'
+import GraphQLFactory from '../index'
 
 let r = rethinkdbdash()
-let factory = require(path.resolve(__dirname, '../index'))(graphql)
-
-/*
-factory.registerTypes({
-  DateTime: CustomGraphQLDateType
-})
-*/
+let factory = GraphQLFactory(graphql)
 
 class Title {
   constructor (title, year) {
@@ -43,7 +38,7 @@ _.forEach(tables, function (type) {
 
 //  get user list
 let getUsers = function (source, args, context, info) {
-  console.log(this.utils.getRootFieldDef(info, '_tableName'))
+  // console.log(this.utils.getRootFieldDef(info, '_tableName'))
 
   let typeName = this.utils.getReturnTypeName(info)
   let db = this.globals.db.main
@@ -316,6 +311,11 @@ let testGetInterfaceGQL = `{
   }
 }`
 
+lib.Users(testGetGQL).then((res) => {
+  console.log(res)
+  process.exit()
+})
+/*
 lib.Users(testCreateGQL)
 // lib.Users(testPurgeGQL)
 // lib.Users(testGetGQL)
@@ -328,3 +328,5 @@ lib.Users(testCreateGQL)
     })
     console.log(JSON.stringify(result, null, '  '))
   })
+
+  */

@@ -20,6 +20,10 @@ export function isObject (obj) {
   return typeof obj === 'object' && obj !== null
 }
 
+export function isNumber (obj) {
+  return !isNaN(obj)
+}
+
 export function isHash (obj) {
   return isObject(obj) && !isArray(obj) && !isDate(obj) && obj !== null
 }
@@ -188,13 +192,11 @@ export function get (obj, path, defaultValue) {
 export function set (obj, path, val) {
   let value = obj
   let fields = isArray(path) ? path : stringToPathArray(path)
-  for (let f in fields) {
-    let idx = Number(f)
-    let p = fields[idx]
+  forEach(fields, (p, idx) => {
     if (idx === fields.length - 1) value[p] = val
     else if (!value[p]) value[p] = isNumber(p) ? [] : {}
     value = value[p]
-  }
+  })
 }
 
 export function merge () {
