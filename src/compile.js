@@ -10,18 +10,8 @@ import * as _ from './utils'
 
 export const HAS_FIELDS = [ 'Object', 'Input', 'Interface' ]
 
-export default function (definition) {
-  let def = _.clone(definition)
-  let c = {
-    globals: def.globals,
-    fields: def.fields,
-    functions: def.functions,
-    externalTypes: def.externalTypes,
-    types: {},
-    schemas: {}
-  }
-
-  // first check if schema fields are objects, if they are, move them to the types
+// moves objects defined on the schema to the types section and references the type
+function moveSchemaObjects (def, c) {
   _.forEach(def.schemas, (schema, schemaName) => {
     let schemaDef = {}
     _.forEach(schema, (field, fieldName) => {
@@ -35,8 +25,11 @@ export default function (definition) {
     })
     c.schemas[schemaName] = schemaDef
   })
+}
 
-  // expand multi-types
+
+// expands multi types into their own definitions
+function expandMultiTypes (def, c) {
   _.forEach(def.types, (typeDef, typeName) => {
     if (!typeDef.type) {
       c.types[typeName] = { type: 'Object', _typeDef: typeDef }
@@ -71,10 +64,14 @@ export default function (definition) {
       })
     }
   })
+}
 
-  // merge extended fields and base configs
+// merges extended fields with base config
+function mergeExtendedWithBase (def, c) {
   _.forEach(c.types, (obj) => {
+
     let typeDef = _.omit(obj._typeDef, 'type')
+
     if (_.includes(HAS_FIELDS, obj.type)) {
       obj.fields = obj.fields || {}
 
@@ -97,6 +94,18 @@ export default function (definition) {
       } else if (_.isHash(ext)) {
         _.forEach(ext, (eObj, eName) => {
           let e = _.get(def, `fields["${eName}"]`, {})
+          _.forEach(eObj, (oField, oName) => {
+            let extCfg = _.get(e, oName)
+            if (extCfg) {
+              if (_.isArray(oField) && oField.length > 1) {
+                _.forEach(oField, (v, i) => {
+                  _.merge(oField[i], extCfg, v)
+                })
+              } else {
+                _.merge(oField, e)
+              }
+            }
+          })
           _.merge(obj.fields, e, eObj)
         })
       }
@@ -104,25 +113,33 @@ export default function (definition) {
       _.merge(obj, typeDef)
     }
   })
+}
 
-  // extend field templates
+function extendFieldTemplates (c) {
   _.forEach(c.types, (obj, name) => {
     if (obj.fields) {
       let omits = []
       _.forEach(obj.fields, (field, fieldName) => {
         if (_.isArray(field) && field.length > 1) {
           omits.push(fieldName)
+          // get the field template
           _.forEach(field, (type, idx) => {
-            if (type.name) obj.fields[type.name] = _.omit(type, 'name')
-            else obj.fields[`${fieldName}${idx}`] = type
+            if (type.name) {
+              let fieldBase = _.get(obj, `fields["${type.name}"]`, {})
+              obj.fields[type.name] = _.merge({}, fieldBase, _.omit(type, 'name'))
+            } else {
+              let fieldBase = _.get(obj, `fields["${idx}"]`, {})
+              obj.fields[`${fieldName}${idx}`] = _.merge({}, fieldBase, type)
+            }
           })
         }
       })
       obj.fields = _.omit(obj.fields, omits)
     }
   })
+}
 
-  // omit fields and set conditional types
+function setConditionalTypes (c) {
   _.forEach(c.types, (obj) => {
     if (obj.fields) {
       let omits = []
@@ -143,6 +160,34 @@ export default function (definition) {
       obj.fields = _.omit(obj.fields, omits)
     }
   })
+}
+
+
+export default function (definition) {
+  let def = _.clone(definition)
+  let c = {
+    globals: def.globals,
+    fields: def.fields,
+    functions: def.functions,
+    externalTypes: def.externalTypes,
+    types: {},
+    schemas: {}
+  }
+
+  // first check if schema fields are objects, if they are, move them to the types
+  moveSchemaObjects(def, c)
+
+  // expand multi-types
+  expandMultiTypes(def, c)
+
+  // merge extended fields and base configs
+  mergeExtendedWithBase(def, c)
+
+  // extend field templates
+  extendFieldTemplates(c)
+
+  // omit fields and set conditional types
+  setConditionalTypes(c)
 
   return c
 }

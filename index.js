@@ -696,18 +696,8 @@ function Types(gql, definitions) {
 
 var HAS_FIELDS = ['Object', 'Input', 'Interface'];
 
-function compile (definition) {
-  var def = clone(definition);
-  var c = {
-    globals: def.globals,
-    fields: def.fields,
-    functions: def.functions,
-    externalTypes: def.externalTypes,
-    types: {},
-    schemas: {}
-  };
-
-  // first check if schema fields are objects, if they are, move them to the types
+// moves objects defined on the schema to the types section and references the type
+function moveSchemaObjects(def, c) {
   forEach(def.schemas, function (schema, schemaName) {
     var schemaDef = {};
     forEach(schema, function (field, fieldName) {
@@ -721,8 +711,10 @@ function compile (definition) {
     });
     c.schemas[schemaName] = schemaDef;
   });
+}
 
-  // expand multi-types
+// expands multi types into their own definitions
+function expandMultiTypes(def, c) {
   forEach(def.types, function (typeDef, typeName) {
     if (!typeDef.type) {
       c.types[typeName] = { type: 'Object', _typeDef: typeDef };
@@ -757,10 +749,14 @@ function compile (definition) {
       });
     }
   });
+}
 
-  // merge extended fields and base configs
+// merges extended fields with base config
+function mergeExtendedWithBase(def, c) {
   forEach(c.types, function (obj) {
+
     var typeDef = omit(obj._typeDef, 'type');
+
     if (includes(HAS_FIELDS, obj.type)) {
       obj.fields = obj.fields || {};
 
@@ -783,6 +779,18 @@ function compile (definition) {
       } else if (isHash(ext)) {
         forEach(ext, function (eObj, eName) {
           var e = get(def, 'fields["' + eName + '"]', {});
+          forEach(eObj, function (oField, oName) {
+            var extCfg = get(e, oName);
+            if (extCfg) {
+              if (isArray(oField) && oField.length > 1) {
+                forEach(oField, function (v, i) {
+                  merge(oField[i], extCfg, v);
+                });
+              } else {
+                merge(oField, e);
+              }
+            }
+          });
           merge(obj.fields, e, eObj);
         });
       }
@@ -790,8 +798,9 @@ function compile (definition) {
       merge(obj, typeDef);
     }
   });
+}
 
-  // extend field templates
+function extendFieldTemplates(c) {
   forEach(c.types, function (obj, name) {
     if (obj.fields) {
       (function () {
@@ -799,8 +808,15 @@ function compile (definition) {
         forEach(obj.fields, function (field, fieldName) {
           if (isArray(field) && field.length > 1) {
             omits.push(fieldName);
+            // get the field template
             forEach(field, function (type, idx) {
-              if (type.name) obj.fields[type.name] = omit(type, 'name');else obj.fields['' + fieldName + idx] = type;
+              if (type.name) {
+                var fieldBase = get(obj, 'fields["' + type.name + '"]', {});
+                obj.fields[type.name] = merge({}, fieldBase, omit(type, 'name'));
+              } else {
+                var _fieldBase = get(obj, 'fields["' + idx + '"]', {});
+                obj.fields['' + fieldName + idx] = merge({}, _fieldBase, type);
+              }
             });
           }
         });
@@ -808,8 +824,9 @@ function compile (definition) {
       })();
     }
   });
+}
 
-  // omit fields and set conditional types
+function setConditionalTypes(c) {
   forEach(c.types, function (obj) {
     if (obj.fields) {
       (function () {
@@ -830,6 +847,33 @@ function compile (definition) {
       })();
     }
   });
+}
+
+function compile (definition) {
+  var def = clone(definition);
+  var c = {
+    globals: def.globals,
+    fields: def.fields,
+    functions: def.functions,
+    externalTypes: def.externalTypes,
+    types: {},
+    schemas: {}
+  };
+
+  // first check if schema fields are objects, if they are, move them to the types
+  moveSchemaObjects(def, c);
+
+  // expand multi-types
+  expandMultiTypes(def, c);
+
+  // merge extended fields and base configs
+  mergeExtendedWithBase(def, c);
+
+  // extend field templates
+  extendFieldTemplates(c);
+
+  // omit fields and set conditional types
+  setConditionalTypes(c);
 
   return c;
 }
@@ -960,7 +1004,7 @@ var factory = function factory(gql) {
     lib._definitions = definitions;
     return lib;
   };
-  return { make: make, plugin: plugin, utils: utils };
+  return { make: make, plugin: plugin, utils: utils, compile: compile };
 };
 
 factory.utils = utils;

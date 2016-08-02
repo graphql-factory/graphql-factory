@@ -140,7 +140,7 @@ let factory = function (gql) {
     lib._definitions = definitions
     return lib
   }
-  return { make, plugin, utils }
+  return { make, plugin, utils, compile }
 }
 
 factory.utils = utils
