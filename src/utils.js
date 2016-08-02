@@ -164,6 +164,15 @@ export function omitBy (obj, fn) {
   return newObj
 }
 
+export function omit (obj, omits = []) {
+  let newObj = {}
+  omits = isArray(omits) ? omits : [omits]
+  forEach(obj, (v, k) => {
+    if (!includes(omits, k)) newObj[k] = v
+  })
+  return newObj
+}
+
 export function pickBy (obj, fn) {
   let newObj = {}
   if (!isHash(obj)) return newObj

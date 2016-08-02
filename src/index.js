@@ -1,4 +1,5 @@
 import Types from './types'
+import compile from './compile'
 import * as utils from './utils'
 import {
   forEach as _forEach,
@@ -55,7 +56,7 @@ let factory = function (gql) {
 
   //  make all graphql objects
   let make = function (def) {
-    def = _merge(def, plugins)
+    def = compile(_merge(def, plugins))
     let lib = {}
     def.globals = def.globals || {}
     def.fields = def.fields || {}

@@ -9,6 +9,7 @@ import CustomGraphQLDateType from 'graphql-custom-datetype'
 import rethinkdbdash from 'rethinkdbdash'
 // import GraphQLFactory from '../src'
 import GraphQLFactory from '../index'
+import preCompile from '../src/compile'
 
 let r = rethinkdbdash()
 let factory = GraphQLFactory(graphql)
@@ -229,7 +230,7 @@ let definition = {
           }
         }
       }
-    },
+    } /* ,
     UsersMutation: {
       customStuff: {
         v: 1
@@ -238,17 +239,25 @@ let definition = {
         'Create': { create: [{ type: 'User' }, { name: 'createUser', type: 'User' }] },
         'Purge': { purge: { type: 'String' } }
       }
-    }
+    } */
   },
   schemas: {
     Users: {
       query: 'UsersQuery',
-      mutation: 'UsersMutation'
+      // mutation: 'UsersMutation'
+      mutation: {
+        customStuff: {
+          v: 1
+        },
+        extendFields: {
+          'Create': { create: [{ type: 'User' }, { name: 'createUser', type: 'User' }] },
+          'Purge': { purge: { type: 'String' } }
+        }
+      }
     }
   }
 }
 
-_.merge(lib, factory.make(definition))
 
 // console.log(lib._definitions.types['_ChangeLogInput']._fields.message)
 // console.log(lib._definitions.schemas.Users._mutationType._fields.create.args[3].type)
@@ -311,10 +320,27 @@ let testGetInterfaceGQL = `{
   }
 }`
 
+// make lib
+_.merge(lib, factory.make(definition))
+// let compiled = preCompile(definition)
+// console.log(JSON.stringify(compiled, null, '  '))
+// console.log(compiled.types)
+
+/*
+_.forEach(compiled.types, (v, k) => {
+  console.log(k, JSON.stringify(_.omit(v, '_typeDef'), null, '  '))
+})
+console.log('===========SCHEMAS')
+console.log(compiled.schemas)
+
+process.exit()
+*/
+
 lib.Users(testGetGQL).then((res) => {
-  console.log(res)
+  console.log(JSON.stringify(res, null, '  '))
   process.exit()
 })
+
 /*
 lib.Users(testCreateGQL)
 // lib.Users(testPurgeGQL)
