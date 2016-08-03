@@ -44,6 +44,27 @@ function includes(obj, key) {
   }
 }
 
+function toLower(str) {
+  if (typeof str === 'string') return str.toLocaleLowerCase();
+  return '';
+}
+
+function toUpper(str) {
+  if (typeof str === 'string') return str.toUpperCase();
+  return '';
+}
+
+function ensureArray() {
+  var obj = arguments.length <= 0 || arguments[0] === undefined ? [] : arguments[0];
+
+  return isArray(obj) ? obj : [obj];
+}
+
+function isEmpty(obj) {
+  if (!obj) return true;else if (isArray(obj) && !obj.length) return true;else if (isHash(obj) && !keys(obj).length) return true;
+  return false;
+}
+
 function keys(obj) {
   try {
     return Object.keys(obj);
@@ -194,7 +215,7 @@ function omit(obj) {
   var omits = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
 
   var newObj = {};
-  omits = isArray(omits) ? omits : [omits];
+  omits = ensureArray(omits);
   forEach(obj, function (v, k) {
     if (!includes(omits, k)) newObj[k] = v;
   });
@@ -206,6 +227,17 @@ function pickBy(obj, fn) {
   if (!isHash(obj)) return newObj;
   forEach(obj, function (v, k) {
     if (fn(v, k)) newObj[k] = v;
+  });
+  return newObj;
+}
+
+function pick(obj) {
+  var picks = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
+
+  var newObj = {};
+  picks = ensureArray(picks);
+  forEach(obj, function (v, k) {
+    if (includes(picks, k)) newObj[k] = v;
   });
   return newObj;
 }
@@ -370,6 +402,10 @@ var utils = Object.freeze({
   isNumber: isNumber,
   isHash: isHash,
   includes: includes,
+  toLower: toLower,
+  toUpper: toUpper,
+  ensureArray: ensureArray,
+  isEmpty: isEmpty,
   keys: keys,
   capitalize: capitalize,
   stringToPathArray: stringToPathArray,
@@ -383,6 +419,7 @@ var utils = Object.freeze({
   omitBy: omitBy,
   omit: omit,
   pickBy: pickBy,
+  pick: pick,
   get: get,
   set: set,
   merge: merge,
@@ -696,6 +733,35 @@ function Types(gql, definitions) {
 
 var HAS_FIELDS = ['Object', 'Input', 'Interface'];
 
+var TYPE_MAP = {
+  Schema: 'Schema',
+  GraphQLSchema: 'Schema',
+  Scalar: 'Scalar',
+  GraphQLScalarType: 'Scalar',
+  Object: 'Object',
+  GraphQLObjectType: 'Object',
+  Interface: 'Interface',
+  GraphQLInterfaceType: 'Interface',
+  Union: 'Union',
+  GraphQLUnionType: 'Union',
+  Enum: 'Enum',
+  GraphQLEnumtype: 'Enum',
+  Input: 'Input',
+  GraphQLInputObjectType: 'Input',
+  List: 'List',
+  GraphQLList: 'List',
+  NonNull: 'NonNull',
+  GraphQLNonNull: 'NonNull'
+};
+
+function getShortType(type) {
+  return get(TYPE_MAP, type, null);
+}
+
+function hasFields(type) {
+  return includes(HAS_FIELDS, getShortType(type));
+}
+
 // moves objects defined on the schema to the types section and references the type
 function moveSchemaObjects(def, c) {
   forEach(def.schemas, function (schema, schemaName) {
@@ -714,7 +780,7 @@ function moveSchemaObjects(def, c) {
 }
 
 // expands multi types into their own definitions
-function expandMultiTypes(def, c) {
+function expandMultiTypes(def, c, debug) {
   forEach(def.types, function (typeDef, typeName) {
     if (!typeDef.type) {
       c.types[typeName] = { type: 'Object', _typeDef: typeDef };
@@ -740,11 +806,11 @@ function expandMultiTypes(def, c) {
     } else {
       forEach(typeDef.type, function (multiVal, multiName) {
         if (multiName === 'Object' && !multiVal) {
-          c[typeName] = { type: multiName, _typeDef: typeDef };
+          c.types[typeName] = { type: multiName, _typeDef: typeDef };
         } else if (multiName !== 'Object' && !multiVal) {
-          c[typeName + multiName] = { type: multiName, _typeDef: typeDef };
+          c.types[typeName + multiName] = { type: multiName, _typeDef: typeDef };
         } else {
-          c[multiVal] = { type: multiName, _typeDef: typeDef };
+          c.types[multiVal] = { type: multiName, _typeDef: typeDef };
         }
       });
     }
@@ -752,12 +818,12 @@ function expandMultiTypes(def, c) {
 }
 
 // merges extended fields with base config
-function mergeExtendedWithBase(def, c) {
+function mergeExtendedWithBase(def, c, debug) {
   forEach(c.types, function (obj) {
 
     var typeDef = omit(obj._typeDef, 'type');
 
-    if (includes(HAS_FIELDS, obj.type)) {
+    if (hasFields(obj.type)) {
       obj.fields = obj.fields || {};
 
       // get the extend fields and the base definition
@@ -796,11 +862,18 @@ function mergeExtendedWithBase(def, c) {
       }
     } else {
       merge(obj, typeDef);
+
+      // create a hash for enum values specified as strings
+      if (getShortType(obj.type) === 'Enum') {
+        forEach(obj.values, function (v, k) {
+          if (!isHash(v)) obj.values[k] = { value: v };
+        });
+      }
     }
   });
 }
 
-function extendFieldTemplates(c) {
+function extendFieldTemplates(c, debug) {
   forEach(c.types, function (obj, name) {
     if (obj.fields) {
       (function () {
@@ -826,7 +899,7 @@ function extendFieldTemplates(c) {
   });
 }
 
-function setConditionalTypes(c) {
+function setConditionalTypes(c, debug) {
   forEach(c.types, function (obj) {
     if (obj.fields) {
       (function () {
@@ -849,31 +922,31 @@ function setConditionalTypes(c) {
   });
 }
 
-function compile (definition) {
+function compile (definition, debug) {
   var def = clone(definition);
   var c = {
-    globals: def.globals,
-    fields: def.fields,
-    functions: def.functions,
-    externalTypes: def.externalTypes,
+    globals: def.globals || {},
+    fields: def.fields || {},
+    functions: def.functions || {},
+    externalTypes: def.externalTypes || {},
     types: {},
     schemas: {}
   };
 
   // first check if schema fields are objects, if they are, move them to the types
-  moveSchemaObjects(def, c);
+  moveSchemaObjects(def, c, debug);
 
   // expand multi-types
-  expandMultiTypes(def, c);
+  expandMultiTypes(def, c, debug);
 
   // merge extended fields and base configs
-  mergeExtendedWithBase(def, c);
+  mergeExtendedWithBase(def, c, debug);
 
   // extend field templates
-  extendFieldTemplates(c);
+  extendFieldTemplates(c, debug);
 
   // omit fields and set conditional types
-  setConditionalTypes(c);
+  setConditionalTypes(c, debug);
 
   return c;
 }

@@ -8,7 +8,36 @@
  */
 import * as _ from './utils'
 
-export const HAS_FIELDS = [ 'Object', 'Input', 'Interface' ]
+export const HAS_FIELDS = ['Object', 'Input', 'Interface']
+
+export const TYPE_MAP = {
+  Schema: 'Schema',
+  GraphQLSchema: 'Schema',
+  Scalar: 'Scalar',
+  GraphQLScalarType: 'Scalar',
+  Object: 'Object',
+  GraphQLObjectType: 'Object',
+  Interface: 'Interface',
+  GraphQLInterfaceType: 'Interface',
+  Union: 'Union',
+  GraphQLUnionType: 'Union',
+  Enum: 'Enum',
+  GraphQLEnumtype: 'Enum',
+  Input: 'Input',
+  GraphQLInputObjectType: 'Input',
+  List: 'List',
+  GraphQLList: 'List',
+  NonNull: 'NonNull',
+  GraphQLNonNull: 'NonNull'
+}
+
+function getShortType (type) {
+  return _.get(TYPE_MAP, type, null)
+}
+
+function hasFields (type) {
+  return _.includes(HAS_FIELDS, getShortType(type))
+}
 
 // moves objects defined on the schema to the types section and references the type
 function moveSchemaObjects (def, c) {
@@ -29,7 +58,7 @@ function moveSchemaObjects (def, c) {
 
 
 // expands multi types into their own definitions
-function expandMultiTypes (def, c) {
+function expandMultiTypes (def, c, debug) {
   _.forEach(def.types, (typeDef, typeName) => {
     if (!typeDef.type) {
       c.types[typeName] = { type: 'Object', _typeDef: typeDef }
@@ -55,11 +84,11 @@ function expandMultiTypes (def, c) {
     } else {
       _.forEach(typeDef.type, (multiVal, multiName) => {
         if (multiName === 'Object' && !multiVal) {
-          c[typeName] = { type: multiName, _typeDef: typeDef }
+          c.types[typeName] = { type: multiName, _typeDef: typeDef }
         } else if (multiName !== 'Object' && !multiVal) {
-          c[typeName + multiName] = { type: multiName, _typeDef: typeDef }
+          c.types[typeName + multiName] = { type: multiName, _typeDef: typeDef }
         } else {
-          c[multiVal] = { type: multiName, _typeDef: typeDef }
+          c.types[multiVal] = { type: multiName, _typeDef: typeDef }
         }
       })
     }
@@ -67,12 +96,12 @@ function expandMultiTypes (def, c) {
 }
 
 // merges extended fields with base config
-function mergeExtendedWithBase (def, c) {
+function mergeExtendedWithBase (def, c, debug) {
   _.forEach(c.types, (obj) => {
 
     let typeDef = _.omit(obj._typeDef, 'type')
 
-    if (_.includes(HAS_FIELDS, obj.type)) {
+    if (hasFields(obj.type)) {
       obj.fields = obj.fields || {}
 
       // get the extend fields and the base definition
@@ -111,11 +140,18 @@ function mergeExtendedWithBase (def, c) {
       }
     } else {
       _.merge(obj, typeDef)
+
+      // create a hash for enum values specified as strings
+      if (getShortType(obj.type) === 'Enum') {
+        _.forEach(obj.values, (v, k) => {
+          if (!_.isHash(v)) obj.values[k] = { value: v }
+        })
+      }
     }
   })
 }
 
-function extendFieldTemplates (c) {
+function extendFieldTemplates (c, debug) {
   _.forEach(c.types, (obj, name) => {
     if (obj.fields) {
       let omits = []
@@ -139,7 +175,7 @@ function extendFieldTemplates (c) {
   })
 }
 
-function setConditionalTypes (c) {
+function setConditionalTypes (c, debug) {
   _.forEach(c.types, (obj) => {
     if (obj.fields) {
       let omits = []
@@ -163,31 +199,31 @@ function setConditionalTypes (c) {
 }
 
 
-export default function (definition) {
+export default function (definition, debug) {
   let def = _.clone(definition)
   let c = {
-    globals: def.globals,
-    fields: def.fields,
-    functions: def.functions,
-    externalTypes: def.externalTypes,
+    globals: def.globals || {},
+    fields: def.fields || {},
+    functions: def.functions || {},
+    externalTypes: def.externalTypes || {},
     types: {},
     schemas: {}
   }
 
   // first check if schema fields are objects, if they are, move them to the types
-  moveSchemaObjects(def, c)
+  moveSchemaObjects(def, c, debug)
 
   // expand multi-types
-  expandMultiTypes(def, c)
+  expandMultiTypes(def, c, debug)
 
   // merge extended fields and base configs
-  mergeExtendedWithBase(def, c)
+  mergeExtendedWithBase(def, c, debug)
 
   // extend field templates
-  extendFieldTemplates(c)
+  extendFieldTemplates(c, debug)
 
   // omit fields and set conditional types
-  setConditionalTypes(c)
+  setConditionalTypes(c, debug)
 
   return c
 }
