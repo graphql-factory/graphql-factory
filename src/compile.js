@@ -239,10 +239,7 @@ function setConditionalTypes (c, debug) {
 export default function (definition, debug) {
   let def = _.clone(definition)
   let c = {
-    globals: def.globals || {},
     fields: def.fields || {},
-    functions: def.functions || {},
-    externalTypes: def.externalTypes || {},
     types: {},
     schemas: {}
   }

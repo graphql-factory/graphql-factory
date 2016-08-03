@@ -7,10 +7,10 @@ import _ from 'lodash'
 import * as graphql from 'graphql'
 import CustomGraphQLDateType from 'graphql-custom-datetype'
 import rethinkdbdash from 'rethinkdbdash'
-// import GraphQLFactory from '../src'
-import GraphQLFactory from '../index'
-import preCompile from '../src/compile'
-import access from './access'
+import GraphQLFactory from '../src'
+// import GraphQLFactory from '../index'
+// import preCompile from '../src/compile'
+// import access from './access'
 
 let r = rethinkdbdash()
 let factory = GraphQLFactory(graphql)
@@ -322,11 +322,11 @@ let testGetInterfaceGQL = `{
 }`
 
 // make lib
-// _.merge(lib, factory.make(definition))
-let compiled = preCompile(access)
+_.merge(lib, factory.make(definition))
+// let compiled = preCompile(access)
 // console.log(JSON.stringify(compiled, null, '  '))
 // console.log(compiled.types)
-console.log(compiled.types.AccessMutation.fields)
+// console.log(compiled.types.AccessMutation.fields)
 /*
 _.forEach(compiled.types, (v, k) => {
   console.log(k, JSON.stringify(_.omit(v, '_typeDef'), null, '  '))
@@ -334,15 +334,15 @@ _.forEach(compiled.types, (v, k) => {
 console.log('===========SCHEMAS')
 console.log(compiled.schemas)
 */
-process.exit()
+// process.exit()
 
 
-/*
+
 lib.Users(testGetGQL).then((res) => {
   console.log(JSON.stringify(res, null, '  '))
   process.exit()
 })
-*/
+
 
 /*
 lib.Users(testCreateGQL)
