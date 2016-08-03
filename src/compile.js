@@ -39,6 +39,16 @@ function hasFields (type) {
   return _.includes(HAS_FIELDS, getShortType(type))
 }
 
+function toTypeDef (obj) {
+  return _.isHash(obj) ? obj : { type: obj }
+}
+
+function argsToTypeDef (field) {
+  _.forEach(field.args, (arg, argName) => {
+    field.args[argName] = toTypeDef(arg)
+  })
+}
+
 // moves objects defined on the schema to the types section and references the type
 function moveSchemaObjects (def, c) {
   _.forEach(def.schemas, (schema, schemaName) => {
@@ -101,6 +111,9 @@ function mergeExtendedWithBase (def, c, debug) {
 
     let typeDef = _.omit(obj._typeDef, 'type')
 
+    // at this point we can remove the typedef
+    delete obj._typeDef
+
     if (hasFields(obj.type)) {
       obj.fields = obj.fields || {}
 
@@ -121,17 +134,28 @@ function mergeExtendedWithBase (def, c, debug) {
           _.merge(obj.fields, e)
         })
       } else if (_.isHash(ext)) {
+
         _.forEach(ext, (eObj, eName) => {
+
+          // get the correct field bundle
           let e = _.get(def, `fields["${eName}"]`, {})
+
+          // loop through each field
           _.forEach(eObj, (oField, oName) => {
+
+            // look for the field config in the field bundle
             let extCfg = _.get(e, oName)
+
             if (extCfg) {
+              extCfg = toTypeDef(extCfg)
+
+              // check for field templates
               if (_.isArray(oField) && oField.length > 1) {
                 _.forEach(oField, (v, i) => {
-                  _.merge(oField[i], extCfg, v)
+                  oField[i] = _.merge({}, extCfg, toTypeDef(v))
                 })
               } else {
-                _.merge(oField, e)
+                eObj[oName] = _.merge({}, extCfg, toTypeDef(oField))
               }
             }
           })
@@ -160,11 +184,14 @@ function extendFieldTemplates (c, debug) {
           omits.push(fieldName)
           // get the field template
           _.forEach(field, (type, idx) => {
+            argsToTypeDef(type)
             if (type.name) {
               let fieldBase = _.get(obj, `fields["${type.name}"]`, {})
+              argsToTypeDef(fieldBase)
               obj.fields[type.name] = _.merge({}, fieldBase, _.omit(type, 'name'))
             } else {
               let fieldBase = _.get(obj, `fields["${idx}"]`, {})
+              argsToTypeDef(fieldBase)
               obj.fields[`${fieldName}${idx}`] = _.merge({}, fieldBase, type)
             }
           })
@@ -182,12 +209,22 @@ function setConditionalTypes (c, debug) {
       _.forEach(obj.fields, (field, fieldName) => {
         if (_.isHash(field)) {
           if (!field.type) {
-            if (field[obj.type]) obj.fields[fieldName] = field[obj.type]
-            else omits.push(fieldName)
+            if (field[obj.type]) {
+              let typeDef = field[obj.type]
+              typeDef = toTypeDef(typeDef)
+              argsToTypeDef(typeDef)
+              obj.fields[fieldName] = typeDef
+            } else {
+              omits.push(fieldName)
+            }
           } else if (field.omitFrom) {
             let omitFrom = _.isArray(field.omitFrom) ? field.omitFrom : [field.omitFrom]
-            if (_.includes(omitFrom, obj.type)) omits.push(fieldName)
-            else obj.fields[fieldName] = _.omit(obj.fields[fieldName], 'omitFrom')
+            if (_.includes(omitFrom, obj.type)) {
+              omits.push(fieldName)
+            } else {
+              obj.fields[fieldName] = _.omit(obj.fields[fieldName], 'omitFrom')
+              argsToTypeDef(obj.fields[fieldName])
+            }
           }
         } else {
           obj.fields[fieldName] = { type: field }

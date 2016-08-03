@@ -762,6 +762,16 @@ function hasFields(type) {
   return includes(HAS_FIELDS, getShortType(type));
 }
 
+function toTypeDef(obj) {
+  return isHash(obj) ? obj : { type: obj };
+}
+
+function argsToTypeDef(field) {
+  forEach(field.args, function (arg, argName) {
+    field.args[argName] = toTypeDef(arg);
+  });
+}
+
 // moves objects defined on the schema to the types section and references the type
 function moveSchemaObjects(def, c) {
   forEach(def.schemas, function (schema, schemaName) {
@@ -823,6 +833,9 @@ function mergeExtendedWithBase(def, c, debug) {
 
     var typeDef = omit(obj._typeDef, 'type');
 
+    // at this point we can remove the typedef
+    delete obj._typeDef;
+
     if (hasFields(obj.type)) {
       obj.fields = obj.fields || {};
 
@@ -843,17 +856,28 @@ function mergeExtendedWithBase(def, c, debug) {
           merge(obj.fields, e);
         });
       } else if (isHash(ext)) {
+
         forEach(ext, function (eObj, eName) {
+
+          // get the correct field bundle
           var e = get(def, 'fields["' + eName + '"]', {});
+
+          // loop through each field
           forEach(eObj, function (oField, oName) {
+
+            // look for the field config in the field bundle
             var extCfg = get(e, oName);
+
             if (extCfg) {
+              extCfg = toTypeDef(extCfg);
+
+              // check for field templates
               if (isArray(oField) && oField.length > 1) {
                 forEach(oField, function (v, i) {
-                  merge(oField[i], extCfg, v);
+                  oField[i] = merge({}, extCfg, toTypeDef(v));
                 });
               } else {
-                merge(oField, e);
+                eObj[oName] = merge({}, extCfg, toTypeDef(oField));
               }
             }
           });
@@ -883,11 +907,14 @@ function extendFieldTemplates(c, debug) {
             omits.push(fieldName);
             // get the field template
             forEach(field, function (type, idx) {
+              argsToTypeDef(type);
               if (type.name) {
                 var fieldBase = get(obj, 'fields["' + type.name + '"]', {});
+                argsToTypeDef(fieldBase);
                 obj.fields[type.name] = merge({}, fieldBase, omit(type, 'name'));
               } else {
                 var _fieldBase = get(obj, 'fields["' + idx + '"]', {});
+                argsToTypeDef(_fieldBase);
                 obj.fields['' + fieldName + idx] = merge({}, _fieldBase, type);
               }
             });
@@ -907,10 +934,22 @@ function setConditionalTypes(c, debug) {
         forEach(obj.fields, function (field, fieldName) {
           if (isHash(field)) {
             if (!field.type) {
-              if (field[obj.type]) obj.fields[fieldName] = field[obj.type];else omits.push(fieldName);
+              if (field[obj.type]) {
+                var typeDef = field[obj.type];
+                typeDef = toTypeDef(typeDef);
+                argsToTypeDef(typeDef);
+                obj.fields[fieldName] = typeDef;
+              } else {
+                omits.push(fieldName);
+              }
             } else if (field.omitFrom) {
               var omitFrom = isArray(field.omitFrom) ? field.omitFrom : [field.omitFrom];
-              if (includes(omitFrom, obj.type)) omits.push(fieldName);else obj.fields[fieldName] = omit(obj.fields[fieldName], 'omitFrom');
+              if (includes(omitFrom, obj.type)) {
+                omits.push(fieldName);
+              } else {
+                obj.fields[fieldName] = omit(obj.fields[fieldName], 'omitFrom');
+                argsToTypeDef(obj.fields[fieldName]);
+              }
             }
           } else {
             obj.fields[fieldName] = { type: field };
