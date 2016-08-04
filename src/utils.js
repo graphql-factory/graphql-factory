@@ -36,6 +36,27 @@ export function includes (obj, key) {
   }
 }
 
+export function toLower (str) {
+  if (typeof str === 'string') return str.toLocaleLowerCase()
+  return ''
+}
+
+export function toUpper (str) {
+  if (typeof str === 'string') return str.toUpperCase()
+  return ''
+}
+
+export function ensureArray (obj = []) {
+  return isArray(obj) ? obj : [obj]
+}
+
+export function isEmpty (obj) {
+  if (!obj) return true
+  else if (isArray(obj) && !obj.length) return true
+  else if (isHash(obj) && !keys(obj).length) return true
+  return false
+}
+
 export function keys (obj) {
   try {
     return Object.keys(obj)
@@ -164,11 +185,29 @@ export function omitBy (obj, fn) {
   return newObj
 }
 
+export function omit (obj, omits = []) {
+  let newObj = {}
+  omits = ensureArray(omits)
+  forEach(obj, (v, k) => {
+    if (!includes(omits, k)) newObj[k] = v
+  })
+  return newObj
+}
+
 export function pickBy (obj, fn) {
   let newObj = {}
   if (!isHash(obj)) return newObj
   forEach(obj, function (v, k) {
     if (fn(v, k)) newObj[k] = v
+  })
+  return newObj
+}
+
+export function pick (obj, picks = []) {
+  let newObj = {}
+  picks = ensureArray(picks)
+  forEach(obj, (v, k) => {
+    if (includes(picks, k)) newObj[k] = v
   })
   return newObj
 }

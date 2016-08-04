@@ -1,15 +1,7 @@
 import Types from './types'
+import compile from './compile'
 import * as utils from './utils'
-import {
-  forEach as _forEach,
-  isArray as _isArray,
-  isHash as _isHash,
-  isString as _isString,
-  has as _has,
-  omitBy as _omitBy,
-  pickBy as _pickBy,
-  merge as _merge
-} from './utils'
+let _ = utils
 
 let factory = function (gql) {
   let plugins = {}
@@ -26,7 +18,7 @@ let factory = function (gql) {
 
   //  check for valid types
   let validateType = function (type) {
-    if (!_has(typeFnMap, type)) {
+    if (!_.has(typeFnMap, type)) {
       throw `InvalidTypeError: "${type}" is not a valid object type in the current context`
     }
   }
@@ -39,7 +31,7 @@ let factory = function (gql) {
 
   //  add a hash type
   let addTypeHash = function (_types, type, typeDef, typeName) {
-    _forEach(type, function (tName, tType) {
+    _.forEach(type, (tName, tType) => {
       validateType(tType)
       _types[tType] = makeTypeName(tType, typeDef, typeName, tName)
     })
@@ -47,39 +39,40 @@ let factory = function (gql) {
 
   //  add plugin
   let plugin = function (p) {
-    p = _isArray(p) ? p : [p]
-    _forEach(p, (h) => {
-      if (_isHash(h)) plugins = _merge(plugins, h)
+    p = _.isArray(p) ? p : [p]
+    _.forEach(p, (h) => {
+      if (_.isHash(h)) plugins = _.merge(plugins, h)
     })
   }
 
   //  make all graphql objects
-  let make = function (def) {
-    def = _merge(def, plugins)
+  let make = function (def = {}, opts = {}) {
     let lib = {}
+    _.merge(def, plugins)
+    if (opts.compile !== false) _.merge(def, compile(def))
     def.globals = def.globals || {}
     def.fields = def.fields || {}
 
     //  merge the externalTypes and functions before make
     Object.assign(definitions.externalTypes, def.externalTypes || {})
-    Object.assign(definitions.functions, def.functions)
+    Object.assign(definitions.functions, def.functions || {})
     
     //  add the globals and definition to the output
     definitions.globals = def.globals
     definitions.utils = utils
-    definitions.definition = _omitBy(def, function (v, k) {
+    definitions.definition = _.omitBy(def, (v, k) => {
       return k === 'globals'
     })
 
-    let nonUnionDefs = _omitBy(def.types, function (tDef) {
+    let nonUnionDefs = _.omitBy(def.types, (tDef) => {
       return tDef.type === 'Union'
     })
-    let unionDefs = _pickBy(def.types, function (tDef) {
+    let unionDefs = _.pickBy(def.types, (tDef) => {
       return tDef.type === 'Union'
     })
 
     //  build types first since schemas will use them, save UnionTypes for the end
-    _forEach(nonUnionDefs, function (typeDef, typeName) {
+    _.forEach(nonUnionDefs, (typeDef, typeName) => {
 
       let _types = {}
 
@@ -87,41 +80,41 @@ let factory = function (gql) {
       if (!typeDef.type) typeDef.type = 'Object'
 
       //  if a single type is defined as a string
-      if (_isString(typeDef.type)) {
+      if (_.isString(typeDef.type)) {
 
         //  validate the type and add it
         validateType(typeDef.type)
         _types[typeDef.type] = typeDef.name || typeName
 
-      } else if (_isArray(typeDef.type)) {
+      } else if (_.isArray(typeDef.type)) {
 
         //  look at each type in the type definition array
         //  support the case [ String, { Type: Name } ] with defaults
-        _forEach(typeDef.type, function (t) {
-          if (_isString(t)) {
+        _.forEach(typeDef.type, (t) => {
+          if (_.isString(t)) {
             validateType(t)
             _types[t] = makeTypeName(t, typeDef, typeName)
-          } else if (_isHash(t)) {
+          } else if (_.isHash(t)) {
             addTypeHash(_types, t, typeDef, typeName)
           }
         })
-      } else if (_isHash(typeDef.type)) {
+      } else if (_.isHash(typeDef.type)) {
         addTypeHash(_types, typeDef.type, typeDef, typeName)
       }
 
       //  add the definitions
-      _forEach(_types, function (tName, tType) {
+      _.forEach(_types, (tName, tType) => {
         definitions.types[tName] = typeFnMap[tType](typeDef, tName)
       })
     })
 
     //  add union definitions
-    _forEach(unionDefs, function (unionDef, unionName) {
+    _.forEach(unionDefs, (unionDef, unionName) => {
       definitions.types[unionName] = t.GraphQLUnionType(unionDef, unionName)
     })
 
     //  build schemas
-    _forEach(def.schemas, function (schemaDef, schemaName) {
+    _.forEach(def.schemas, (schemaDef, schemaName) => {
       //  create a schema
       try {
         definitions.schemas[schemaName] = t.GraphQLSchema(schemaDef, schemaName)
@@ -139,7 +132,7 @@ let factory = function (gql) {
     lib._definitions = definitions
     return lib
   }
-  return { make, plugin, utils }
+  return { make, plugin, utils, compile }
 }
 
 factory.utils = utils
