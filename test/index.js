@@ -17,4 +17,4 @@ var unitTests = require('./unit')
 var tests = (opt.options.test || 'all').split(',')
 
 // run appropriate tests
-if (utils.hasTest(tests, 'unit')) unitTests(tests)
+if (utils.hasTest(tests, /^unit/)) unitTests(tests)
