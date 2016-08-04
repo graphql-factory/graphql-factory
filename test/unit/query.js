@@ -177,8 +177,8 @@ describe('Query', function () {
                 type: ['User'],
                 _typeName: 'User',
                 resolve: function (source, args, context, info) {
-                  let rootDef = this.utils.getRootFieldDef(info)
-                  let rootPath = this.utils.getFieldPath(info)
+                  var rootDef = this.utils.getRootFieldDef(info)
+                  var rootPath = this.utils.getFieldPath(info)
 
                   expect(rootDef).to.deep.equal({
                     type: ['User'],
