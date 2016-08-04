@@ -12,7 +12,7 @@ describe('Compile', function () {
    })
    */
 
-  it('Should create basic types in standard factory format', function () {
+  it('Should create basic types in standard factory format', function (done) {
     var input = {
       types: {
         EnumType: {
@@ -70,9 +70,10 @@ describe('Compile', function () {
     }
     var result = utils.pick(compile(input), ['types'])
     expect(result).to.deep.equal(output)
+    done()
   })
 
-  it('Should expand multi-types into separate definitions', function () {
+  it('Should expand multi-types into separate definitions', function (done) {
     var input = {
       types: {
         User1: {
@@ -127,9 +128,10 @@ describe('Compile', function () {
     }
     var result = utils.pick(compile(input), ['types'])
     expect(result).to.deep.equal(output)
+    done()
   })
 
-  it('Should produce conditional field types', function () {
+  it('Should produce conditional field types', function (done) {
     var input = {
       types: {
         ConditionalField: {
@@ -165,9 +167,10 @@ describe('Compile', function () {
     }
     var result = utils.pick(compile(input), ['types'])
     expect(result).to.deep.equal(output)
+    done()
   })
 
-  it('Should exclude specified fields from types', function () {
+  it('Should exclude specified fields from types', function (done) {
     var input = {
       types: {
         ExcludeField: {
@@ -201,9 +204,10 @@ describe('Compile', function () {
     }
     var result = utils.pick(compile(input), ['types'])
     expect(result).to.deep.equal(output)
+    done()
   })
 
-  it('Should do a basic field extend for 1 or more field bundles', function () {
+  it('Should do a basic field extend for 1 or more field bundles', function (done) {
     var input = {
       fields: {
         ExtendableFields1: {
@@ -248,9 +252,10 @@ describe('Compile', function () {
     }
     var result = utils.pick(compile(input), ['types'])
     expect(result).to.deep.equal(output)
+    done()
   })
 
-  it('Should override extended fields', function () {
+  it('Should override extended fields', function (done) {
     var input = {
       fields: {
         ExtendableFields1: {
@@ -286,9 +291,10 @@ describe('Compile', function () {
     }
     var result = utils.pick(compile(input), ['types'])
     expect(result).to.deep.equal(output)
+    done()
   })
 
-  it('Should expand fields in a field template', function () {
+  it('Should expand fields in a field template', function (done) {
     var input = {
       fields: {
         FieldTemplate: {
@@ -348,9 +354,10 @@ describe('Compile', function () {
     }
     var result = utils.pick(compile(input), ['types'])
     expect(result).to.deep.equal(output)
+    done()
   })
 
-  it('Should expand complex extended fields', function () {
+  it('Should expand complex extended fields', function (done) {
     var input = {
       fields: {
         AclMutation: {
@@ -413,5 +420,6 @@ describe('Compile', function () {
     }
     var result = utils.pick(compile(input), ['types'])
     expect(result).to.deep.equal(output)
+    done()
   })
 })
