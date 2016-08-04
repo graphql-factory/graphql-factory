@@ -111,13 +111,13 @@ describe('Query', function () {
         }
       })
       done()
-    }).catch(function () {
-      done()
+    }).catch(function (err) {
+      done(err)
     })
   })
 
   it('Should return nested results from a query', function (done) {
-    lib.UserSchema(groupQuery).then(function (result) {
+    lib.GroupSchema(groupQuery).then(function (result) {
       expect(result).to.deep.equal({
         data: {
           getGroups: [
@@ -140,8 +140,8 @@ describe('Query', function () {
         }
       })
       done()
-    }).catch(function () {
-      done()
+    }).catch(function (err) {
+      done(err)
     })
   })
 
@@ -196,8 +196,8 @@ describe('Query', function () {
     var thisLib = factory.make(factoryDef)
     thisLib.UserSchema(getQuery).then(function () {
       done()
-    }).catch(function () {
-      done()
+    }).catch(function (err) {
+      done(err)
     })
   })
 })
