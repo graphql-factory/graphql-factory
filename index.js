@@ -1024,6 +1024,7 @@ var factory = function factory(gql) {
 
   //  add plugin
   var plugin = function plugin(p) {
+    if (!p) return;
     p = _.isArray(p) ? p : [p];
     _.forEach(p, function (h) {
       if (_.isHash(h)) plugins = _.merge(plugins, h);
@@ -1036,8 +1037,17 @@ var factory = function factory(gql) {
     var opts = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
     var lib = {};
+
+    // allow plugins to be added with a make option
+    plugin(opts.plugin);
+
+    // now merge all plugins into the def
     _.merge(def, plugins);
+
+    // compile the def if no option to suppress
     if (opts.compile !== false) _.merge(def, compile(def));
+
+    // ensure globals and fields have objects
     def.globals = def.globals || {};
     def.fields = def.fields || {};
 
@@ -1048,9 +1058,10 @@ var factory = function factory(gql) {
     //  add the globals and definition to the output
     definitions.globals = def.globals;
     definitions.utils = utils;
-    definitions.definition = _.omitBy(def, function (v, k) {
-      return k === 'globals';
-    });
+
+    // before building types, clone the compiled schemaDef
+    // and store it in the definition
+    definitions.definition = _.clone(_.omit(def, 'globals'));
 
     var nonUnionDefs = _.omitBy(def.types, function (tDef) {
       return tDef.type === 'Union';

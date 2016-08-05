@@ -20,18 +20,45 @@ describe('Query', function () {
 
   // def
   var def = {
+    functions: {
+      resolveUser: function (source, args, context, info) {
+        return db.tables.user
+      },
+      mutateUser: function (source, args, context, info) {
+        var newUser = _.merge({ id: 3 }, args)
+        db2.tables.user.push(newUser)
+        return db2.tables.user[db2.tables.user.length - 1]
+      },
+      resolveGroups: function (source, args, context, info) {
+        var result = []
+        _.forEach(db.tables.group, function (group) {
+          var groupObj = _.cloneDeep(group)
+          var users = []
+          _.forEach(groupObj.users, function (userId) {
+            users.push(_.find(db.tables.user, {id: userId}))
+          })
+          groupObj.users = users
+          result.push(groupObj)
+        })
+        return result
+      }
+    },
+    fields: {
+      Entity: {
+        id: 'Int',
+        name: 'String'
+      }
+    },
     types: {
       User: {
+        extendFields: 'Entity',
         fields: {
-          id: 'Int',
-          name: 'String',
           email: 'String'
         }
       },
       Group: {
+        extendFields: 'Entity',
         fields: {
-          id: 'Int',
-          name: 'String',
           users: ['User']
         }
       }
@@ -43,9 +70,7 @@ describe('Query', function () {
             getUsers: {
               type: ['User'],
               _typeName: 'User',
-              resolve: function (source, args, context, info) {
-                return db.tables.user
-              }
+              resolve: 'resolveUser'
             }
           }
         },
@@ -57,11 +82,7 @@ describe('Query', function () {
                 name: 'String',
                 email: 'String'
               },
-              resolve: function (source, args, context, info) {
-                var newUser = _.merge({ id: 3 }, args)
-                db2.tables.user.push(newUser)
-                return db2.tables.user[db2.tables.user.length - 1]
-              }
+              resolve: 'mutateUser'
             }
           }
         }
@@ -71,19 +92,7 @@ describe('Query', function () {
           fields: {
             getGroups: {
               type: ['Group'],
-              resolve: function (source, args, context, info) {
-                var result = []
-                _.forEach(db.tables.group, function (group) {
-                  var groupObj = _.cloneDeep(group)
-                  var users = []
-                  _.forEach(groupObj.users, function (userId) {
-                    users.push(_.find(db.tables.user, {id: userId}))
-                  })
-                  groupObj.users = users
-                  result.push(groupObj)
-                })
-                return result
-              }
+              resolve: 'resolveGroups'
             }
           }
         }
@@ -153,48 +162,90 @@ describe('Query', function () {
         }
       })
       done()
-    }).catch(function () {
-      done()
+    }).catch(function (err) {
+      done(err)
     })
   })
 
-  it('Should resolve the field definition and path', function (done) {
+  it('Should resolve the field definition and path and contain a compiled definiton', function (done) {
     var factoryDef = {
+      functions: {
+        resolveUsers: function (source, args, context, info) {
+          var rootDef = this.utils.getRootFieldDef(info)
+          var rootPath = this.utils.getFieldPath(info)
+
+          expect(info.schema._factory).to.deep.equal({
+            key: 'UserSchema1',
+            queryDef: {
+              type: 'Object',
+              fields: {
+                getUsers: {
+                  resolve: 'resolveUsers',
+                  type: ['User'],
+                  _typeName: 'User'
+                },
+                get1: {
+                  resolve: 'resolveUsers',
+                  type: ['User'],
+                  _typeName: 'User'
+                }
+              }
+            },
+            mutationDef: {},
+            subscriptionDef: {}
+          })
+          expect(rootDef).to.deep.equal({
+            type: ['User'],
+            _typeName: 'User'
+          })
+          expect(rootPath).to.deep.equal(['getUsers'])
+          return db.tables.user
+        }
+      },
+      fields: {
+        Entity: {
+          id: 'Int',
+          name: 'String',
+        },
+        SchemaQuery: {
+          get: {
+            resolve: 'resolveUsers'
+          }
+        }
+      },
       types: {
         User: {
+          extendFields: 'Entity',
           fields: {
-            id: 'Int',
-            name: 'String',
             email: 'String'
           }
         }
       },
       schemas: {
-        UserSchema: {
+        UserSchema1: {
           query: {
-            fields: {
-              getUsers: {
-                type: ['User'],
-                _typeName: 'User',
-                resolve: function (source, args, context, info) {
-                  var rootDef = this.utils.getRootFieldDef(info)
-                  var rootPath = this.utils.getFieldPath(info)
-
-                  expect(rootDef).to.deep.equal({
+            extendFields: {
+              SchemaQuery: {
+                get: [
+                  {
+                    name: 'getUsers',
                     type: ['User'],
                     _typeName: 'User'
-                  })
-                  expect(rootPath).to.deep.equal(['getUsers'])
-                  return db.tables.user
-                }
+                  },
+                  {
+                    type: ['User'],
+                    _typeName: 'User'
+                  }
+                ]
               }
-            }
+            },
+            fields: {}
           }
         }
       }
     }
     var thisLib = factory.make(factoryDef)
-    thisLib.UserSchema(getQuery).then(function () {
+    thisLib.UserSchema1(getQuery).then(function () {
       done()
     }).catch(function (err) {
       done(err)

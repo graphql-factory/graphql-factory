@@ -39,6 +39,7 @@ let factory = function (gql) {
 
   //  add plugin
   let plugin = function (p) {
+    if (!p) return
     p = _.isArray(p) ? p : [p]
     _.forEach(p, (h) => {
       if (_.isHash(h)) plugins = _.merge(plugins, h)
@@ -48,8 +49,17 @@ let factory = function (gql) {
   //  make all graphql objects
   let make = function (def = {}, opts = {}) {
     let lib = {}
+
+    // allow plugins to be added with a make option
+    plugin(opts.plugin)
+
+    // now merge all plugins into the def
     _.merge(def, plugins)
+
+    // compile the def if no option to suppress
     if (opts.compile !== false) _.merge(def, compile(def))
+
+    // ensure globals and fields have objects
     def.globals = def.globals || {}
     def.fields = def.fields || {}
 
@@ -60,9 +70,10 @@ let factory = function (gql) {
     //  add the globals and definition to the output
     definitions.globals = def.globals
     definitions.utils = utils
-    definitions.definition = _.omitBy(def, (v, k) => {
-      return k === 'globals'
-    })
+
+    // before building types, clone the compiled schemaDef
+    // and store it in the definition
+    definitions.definition = _.clone(_.omit(def, 'globals'))
 
     let nonUnionDefs = _.omitBy(def.types, (tDef) => {
       return tDef.type === 'Union'
