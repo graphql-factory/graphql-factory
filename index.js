@@ -1027,7 +1027,8 @@ var factory = function factory(gql) {
     if (!p) return;
     p = _.isArray(p) ? p : [p];
     _.forEach(p, function (h) {
-      if (_.isHash(h)) plugins = _.merge(plugins, h);
+      plugins = _.merge(plugins, _.omit(h, 'externalTypes'));
+      plugins.externalTypes = Object.assign(plugins.externalTypes || {}, h.externalTypes);
     });
   };
 
@@ -1042,7 +1043,8 @@ var factory = function factory(gql) {
     plugin(opts.plugin);
 
     // now merge all plugins into the def
-    _.merge(def, plugins);
+    _.merge(def, _.omit(plugins, 'externalTypes'));
+    def.externalTypes = Object.assign(def.externalTypes || {}, plugins.externalTypes || {});
 
     // compile the def if no option to suppress
     if (opts.compile !== false) _.merge(def, compile(def));

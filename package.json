@@ -1,6 +1,6 @@
 {
   "name": "graphql-factory",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Compose GraphQL objects with JSON definitions",
   "license": "MIT",
   "main": "index.js",
