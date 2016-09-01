@@ -731,6 +731,14 @@ function Types(gql, definitions) {
   };
 }
 
+/*
+ * Expand all definitions. The goal is to omit the fields
+ * property from the final definition leaving definitions
+ * that stand on their own and can be referenced more easily
+ * by utils. This also makes troubleshooting types easier
+ * a side effect is also a more well defined schema as some
+ * omitted properties will be filled in
+ */
 var HAS_FIELDS = ['Object', 'Input', 'Interface'];
 
 var TYPE_MAP = {
@@ -1057,9 +1065,10 @@ var factory = function factory(gql) {
     Object.assign(definitions.externalTypes, def.externalTypes || {});
     Object.assign(definitions.functions, def.functions || {});
 
-    //  add the globals and definition to the output
+    //  add the globals, utils, and graphql reference
     definitions.globals = def.globals;
     definitions.utils = utils;
+    definitions.graphql = gql;
 
     // before building types, clone the compiled schemaDef
     // and store it in the definition
@@ -1130,6 +1139,7 @@ var factory = function factory(gql) {
     });
 
     lib._definitions = definitions;
+
     return lib;
   };
   return { make: make, plugin: plugin, utils: utils, compile: compile };

@@ -69,9 +69,10 @@ let factory = function (gql) {
     Object.assign(definitions.externalTypes, def.externalTypes || {})
     Object.assign(definitions.functions, def.functions || {})
     
-    //  add the globals and definition to the output
+    //  add the globals, utils, and graphql reference
     definitions.globals = def.globals
     definitions.utils = utils
+    definitions.graphql = gql
 
     // before building types, clone the compiled schemaDef
     // and store it in the definition
@@ -143,6 +144,7 @@ let factory = function (gql) {
     })
 
     lib._definitions = definitions
+
     return lib
   }
   return { make, plugin, utils, compile }

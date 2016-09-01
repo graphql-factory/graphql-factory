@@ -1,12 +1,12 @@
 {
   "name": "graphql-factory",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Compose GraphQL objects with JSON definitions",
   "license": "MIT",
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bhoriuchi/graphql-factory.git"
+    "url": "git+https://github.com/graphql-factory/graphql-factory.git"
   },
   "scripts": {
     "build:copybrc": "cp build/.build.babelrc src/.babelrc",
@@ -43,9 +43,9 @@
     "babel-preset-es2015-rollup": "^1.1.0"
   },
   "bugs": {
-    "url": "https://github.com/bhoriuchi/graphql-factory/issues"
+    "url": "https://github.com/graphql-factory/graphql-factory/issues"
   },
-  "homepage": "https://github.com/bhoriuchi/graphql-factory#readme",
+  "homepage": "https://github.com/graphql-factory/graphql-factory#readme",
   "directories": {
     "example": "example"
   },
