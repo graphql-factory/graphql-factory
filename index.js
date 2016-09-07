@@ -8,6 +8,16 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 /* lodash like functions to remove dependency on lodash */
 
+// enum type for use with toObjectString function
+function Enum(value) {
+  if (!(this instanceof Enum)) return new Enum(value);
+  this.value = value;
+}
+
+function isEnum(obj) {
+  return obj instanceof Enum;
+}
+
 function isFunction(obj) {
   return typeof obj === 'function';
 }
@@ -391,9 +401,55 @@ function getTypeConfig(info, path) {
   return get(getSchemaOperation(info), path, {});
 }
 
+// removes circular references
+function circular(obj) {
+  var value = arguments.length <= 1 || arguments[1] === undefined ? '[Circular]' : arguments[1];
+
+  var circularEx = function circularEx(_obj) {
+    var key = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+    var seen = arguments.length <= 2 || arguments[2] === undefined ? [] : arguments[2];
+
+    seen.push(_obj);
+    if (isObject(_obj)) {
+      forEach(_obj, function (o, i) {
+        if (includes(seen, o)) _obj[i] = isFunction(value) ? value(_obj, key, seen.slice(0)) : value;else circularEx(o, i, seen.slice(0));
+      });
+    }
+    return _obj;
+  };
+
+  if (!obj) throw new Error('circular requires an object to examine');
+  return circularEx(obj, value);
+}
+
+function toObjectString(obj) {
+  var toLiteralEx = function toLiteralEx(o) {
+    if (isEnum(o)) {
+      return o.value;
+    } else if (isArray(o)) {
+      return '[' + map(o, function (v) {
+        return toLiteralEx(v);
+      }).join(',') + ']';
+    } else if (isString(o)) {
+      return '"' + o + '"';
+    } else if (isDate(o)) {
+      return '"' + o.toISOString() + '"';
+    } else if (isObject(o)) {
+      return '{' + map(o, function (v, k) {
+        return k + ':' + toLiteralEx(v);
+      }).join(',') + '}';
+    } else {
+      return o;
+    }
+  };
+  return toLiteralEx(circular(obj));
+}
+
 
 
 var utils = Object.freeze({
+  Enum: Enum,
+  isEnum: isEnum,
   isFunction: isFunction,
   isString: isString,
   isArray: isArray,
@@ -428,7 +484,9 @@ var utils = Object.freeze({
   getSchemaOperation: getSchemaOperation,
   getReturnTypeName: getReturnTypeName,
   getRootFieldDef: getRootFieldDef,
-  getTypeConfig: getTypeConfig
+  getTypeConfig: getTypeConfig,
+  circular: circular,
+  toObjectString: toObjectString
 });
 
 function Types(gql, definitions) {

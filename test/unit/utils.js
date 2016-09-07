@@ -251,4 +251,35 @@ describe('Utils', function () {
     expect(fn(obj1, 'a["e.f"].g[0]')).to.equal(1)
     done()
   })
+
+  // toGraphQLObject
+  it('convert an object to an acceptable GraphQL formatted string', function (done) {
+    var Enum = utils.Enum
+    var fn = utils.toObjectString
+    var obj1 = {
+      id: '1',
+      bool: true,
+      enum: Enum('ENUM_TYPE'),
+      a: [
+        1,
+        [2, 3],
+        {demo: 'gorgan'}
+      ]
+    }
+    var obj2 = [
+      1,
+      true,
+      { demo: 'gorgan' }
+    ]
+    var obj3 = {
+      id: '1',
+      obj: {}
+    }
+    obj3.obj = obj3
+
+    expect(fn(obj1)).to.equal('{id:"1",bool:true,enum:ENUM_TYPE,a:[1,[2,3],{demo:"gorgan"}]}')
+    expect(fn(obj2)).to.equal('[1,true,{demo:"gorgan"}]')
+    expect(fn(obj3)).to.equal('{id:"1",obj:"[Circular]"}')
+    done()
+  })
 })

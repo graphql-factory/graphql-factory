@@ -1,5 +1,15 @@
 /* lodash like functions to remove dependency on lodash */
 
+// enum type for use with toObjectString function
+export function Enum (value) {
+  if (!(this instanceof Enum)) return new Enum(value)
+  this.value = value
+}
+
+export function isEnum (obj) {
+  return obj instanceof Enum
+}
+
 export function isFunction (obj) {
   return typeof obj === 'function'
 }
@@ -364,4 +374,40 @@ export function getRootFieldDef (info, path) {
 export function getTypeConfig (info, path) {
   path = path ? '_typeConfig.'.concat(path) : '_typeConfig'
   return get(getSchemaOperation(info), path, {});
+}
+
+// removes circular references
+export function circular (obj, value = '[Circular]') {
+  let circularEx = (_obj, key = null, seen = []) => {
+    seen.push(_obj)
+    if (isObject(_obj)) {
+      forEach(_obj, (o, i) => {
+        if (includes(seen, o)) _obj[i] = isFunction(value) ? value(_obj, key, seen.slice(0)) : value
+        else circularEx(o, i, seen.slice(0))
+      })
+    }
+    return _obj
+  }
+
+  if (!obj) throw new Error('circular requires an object to examine')
+  return circularEx(obj, value)
+}
+
+export function toObjectString (obj) {
+  let toLiteralEx = (o) => {
+    if (isEnum(o)) {
+      return o.value
+    } else if (isArray(o)) {
+      return `[${map(o, (v) => toLiteralEx(v)).join(',')}]`
+    } else if (isString(o)) {
+      return `"${o}"`
+    } else if (isDate(o)) {
+      return `"${o.toISOString()}"`
+    } else if (isObject(o)) {
+      return `{${map(o, (v, k) => `${k}:${toLiteralEx(v)}`).join(',')}}`
+    } else {
+      return o
+    }
+  }
+  return toLiteralEx(circular(obj))
 }
