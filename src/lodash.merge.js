@@ -1,11 +1,3 @@
-'use strict';
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
-  return typeof obj;
-} : function (obj) {
-  return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj;
-};
-
 /**
  * lodash (Custom Build) <https://lodash.com/>
  * Build: `lodash modularize exports="npm" -o ./`
@@ -25,33 +17,35 @@ var HASH_UNDEFINED = '__lodash_hash_undefined__';
 var MAX_SAFE_INTEGER = 9007199254740991;
 
 /** `Object#toString` result references. */
-var argsTag = '[object Arguments]';
-var arrayTag = '[object Array]';
-var boolTag = '[object Boolean]';
-var dateTag = '[object Date]';
-var errorTag = '[object Error]';
-var funcTag = '[object Function]';
-var genTag = '[object GeneratorFunction]';
-var mapTag = '[object Map]';
-var numberTag = '[object Number]';
-var objectTag = '[object Object]';
-var promiseTag = '[object Promise]';
-var regexpTag = '[object RegExp]';
-var setTag = '[object Set]';
-var stringTag = '[object String]';
-var symbolTag = '[object Symbol]';
-var weakMapTag = '[object WeakMap]';
-var arrayBufferTag = '[object ArrayBuffer]';
-var dataViewTag = '[object DataView]';
-var float32Tag = '[object Float32Array]';
-var float64Tag = '[object Float64Array]';
-var int8Tag = '[object Int8Array]';
-var int16Tag = '[object Int16Array]';
-var int32Tag = '[object Int32Array]';
-var uint8Tag = '[object Uint8Array]';
-var uint8ClampedTag = '[object Uint8ClampedArray]';
-var uint16Tag = '[object Uint16Array]';
-var uint32Tag = '[object Uint32Array]';
+var argsTag = '[object Arguments]',
+    arrayTag = '[object Array]',
+    boolTag = '[object Boolean]',
+    dateTag = '[object Date]',
+    errorTag = '[object Error]',
+    funcTag = '[object Function]',
+    genTag = '[object GeneratorFunction]',
+    mapTag = '[object Map]',
+    numberTag = '[object Number]',
+    objectTag = '[object Object]',
+    promiseTag = '[object Promise]',
+    regexpTag = '[object RegExp]',
+    setTag = '[object Set]',
+    stringTag = '[object String]',
+    symbolTag = '[object Symbol]',
+    weakMapTag = '[object WeakMap]';
+
+var arrayBufferTag = '[object ArrayBuffer]',
+    dataViewTag = '[object DataView]',
+    float32Tag = '[object Float32Array]',
+    float64Tag = '[object Float64Array]',
+    int8Tag = '[object Int8Array]',
+    int16Tag = '[object Int16Array]',
+    int32Tag = '[object Int32Array]',
+    uint8Tag = '[object Uint8Array]',
+    uint8ClampedTag = '[object Uint8ClampedArray]',
+    uint16Tag = '[object Uint16Array]',
+    uint32Tag = '[object Uint32Array]';
+
 /**
  * Used to match `RegExp`
  * [syntax characters](http://ecma-international.org/ecma-262/7.0/#sec-patterns).
@@ -69,28 +63,50 @@ var reIsUint = /^(?:0|[1-9]\d*)$/;
 
 /** Used to identify `toStringTag` values of typed arrays. */
 var typedArrayTags = {};
-typedArrayTags[float32Tag] = typedArrayTags[float64Tag] = typedArrayTags[int8Tag] = typedArrayTags[int16Tag] = typedArrayTags[int32Tag] = typedArrayTags[uint8Tag] = typedArrayTags[uint8ClampedTag] = typedArrayTags[uint16Tag] = typedArrayTags[uint32Tag] = true;
-typedArrayTags[argsTag] = typedArrayTags[arrayTag] = typedArrayTags[arrayBufferTag] = typedArrayTags[boolTag] = typedArrayTags[dataViewTag] = typedArrayTags[dateTag] = typedArrayTags[errorTag] = typedArrayTags[funcTag] = typedArrayTags[mapTag] = typedArrayTags[numberTag] = typedArrayTags[objectTag] = typedArrayTags[regexpTag] = typedArrayTags[setTag] = typedArrayTags[stringTag] = typedArrayTags[weakMapTag] = false;
+typedArrayTags[float32Tag] = typedArrayTags[float64Tag] =
+typedArrayTags[int8Tag] = typedArrayTags[int16Tag] =
+typedArrayTags[int32Tag] = typedArrayTags[uint8Tag] =
+typedArrayTags[uint8ClampedTag] = typedArrayTags[uint16Tag] =
+typedArrayTags[uint32Tag] = true;
+typedArrayTags[argsTag] = typedArrayTags[arrayTag] =
+typedArrayTags[arrayBufferTag] = typedArrayTags[boolTag] =
+typedArrayTags[dataViewTag] = typedArrayTags[dateTag] =
+typedArrayTags[errorTag] = typedArrayTags[funcTag] =
+typedArrayTags[mapTag] = typedArrayTags[numberTag] =
+typedArrayTags[objectTag] = typedArrayTags[regexpTag] =
+typedArrayTags[setTag] = typedArrayTags[stringTag] =
+typedArrayTags[weakMapTag] = false;
 
 /** Used to identify `toStringTag` values supported by `_.clone`. */
 var cloneableTags = {};
-cloneableTags[argsTag] = cloneableTags[arrayTag] = cloneableTags[arrayBufferTag] = cloneableTags[dataViewTag] = cloneableTags[boolTag] = cloneableTags[dateTag] = cloneableTags[float32Tag] = cloneableTags[float64Tag] = cloneableTags[int8Tag] = cloneableTags[int16Tag] = cloneableTags[int32Tag] = cloneableTags[mapTag] = cloneableTags[numberTag] = cloneableTags[objectTag] = cloneableTags[regexpTag] = cloneableTags[setTag] = cloneableTags[stringTag] = cloneableTags[symbolTag] = cloneableTags[uint8Tag] = cloneableTags[uint8ClampedTag] = cloneableTags[uint16Tag] = cloneableTags[uint32Tag] = true;
-cloneableTags[errorTag] = cloneableTags[funcTag] = cloneableTags[weakMapTag] = false;
+cloneableTags[argsTag] = cloneableTags[arrayTag] =
+cloneableTags[arrayBufferTag] = cloneableTags[dataViewTag] =
+cloneableTags[boolTag] = cloneableTags[dateTag] =
+cloneableTags[float32Tag] = cloneableTags[float64Tag] =
+cloneableTags[int8Tag] = cloneableTags[int16Tag] =
+cloneableTags[int32Tag] = cloneableTags[mapTag] =
+cloneableTags[numberTag] = cloneableTags[objectTag] =
+cloneableTags[regexpTag] = cloneableTags[setTag] =
+cloneableTags[stringTag] = cloneableTags[symbolTag] =
+cloneableTags[uint8Tag] = cloneableTags[uint8ClampedTag] =
+cloneableTags[uint16Tag] = cloneableTags[uint32Tag] = true;
+cloneableTags[errorTag] = cloneableTags[funcTag] =
+cloneableTags[weakMapTag] = false;
 
 /** Detect free variable `global` from Node.js. */
-var freeGlobal = (typeof global === 'undefined' ? 'undefined' : _typeof(global)) == 'object' && global && global.Object === Object && global;
+var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
 
 /** Detect free variable `self`. */
-var freeSelf = (typeof self === 'undefined' ? 'undefined' : _typeof(self)) == 'object' && self && self.Object === Object && self;
+var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
 
 /** Used as a reference to the global object. */
 var root = freeGlobal || freeSelf || Function('return this')();
 
 /** Detect free variable `exports`. */
-var freeExports = (typeof exports === 'undefined' ? 'undefined' : _typeof(exports)) == 'object' && exports && !exports.nodeType && exports;
+var freeExports = typeof exports == 'object' && exports && !exports.nodeType && exports;
 
 /** Detect free variable `module`. */
-var freeModule = freeExports && (typeof module === 'undefined' ? 'undefined' : _typeof(module)) == 'object' && module && !module.nodeType && module;
+var freeModule = freeExports && typeof module == 'object' && module && !module.nodeType && module;
 
 /** Detect the popular CommonJS extension `module.exports`. */
 var moduleExports = freeModule && freeModule.exports === freeExports;
@@ -99,11 +115,11 @@ var moduleExports = freeModule && freeModule.exports === freeExports;
 var freeProcess = moduleExports && freeGlobal.process;
 
 /** Used to access faster Node.js helpers. */
-var nodeUtil = function () {
+var nodeUtil = (function() {
   try {
     return freeProcess && freeProcess.binding('util');
   } catch (e) {}
-}();
+}());
 
 /* Node.js helper references. */
 var nodeIsTypedArray = nodeUtil && nodeUtil.isTypedArray;
@@ -148,14 +164,10 @@ function addSetEntry(set, value) {
  */
 function apply(func, thisArg, args) {
   switch (args.length) {
-    case 0:
-      return func.call(thisArg);
-    case 1:
-      return func.call(thisArg, args[0]);
-    case 2:
-      return func.call(thisArg, args[0], args[1]);
-    case 3:
-      return func.call(thisArg, args[0], args[1], args[2]);
+    case 0: return func.call(thisArg);
+    case 1: return func.call(thisArg, args[0]);
+    case 2: return func.call(thisArg, args[0], args[1]);
+    case 3: return func.call(thisArg, args[0], args[1], args[2]);
   }
   return func.apply(thisArg, args);
 }
@@ -252,7 +264,7 @@ function baseTimes(n, iteratee) {
  * @returns {Function} Returns the new capped function.
  */
 function baseUnary(func) {
-  return function (value) {
+  return function(value) {
     return func(value);
   };
 }
@@ -299,7 +311,7 @@ function mapToArray(map) {
   var index = -1,
       result = Array(map.size);
 
-  map.forEach(function (value, key) {
+  map.forEach(function(value, key) {
     result[++index] = [key, value];
   });
   return result;
@@ -314,7 +326,7 @@ function mapToArray(map) {
  * @returns {Function} Returns the new function.
  */
 function overArg(func, transform) {
-  return function (arg) {
+  return function(arg) {
     return func(transform(arg));
   };
 }
@@ -330,24 +342,25 @@ function setToArray(set) {
   var index = -1,
       result = Array(set.size);
 
-  set.forEach(function (value) {
+  set.forEach(function(value) {
     result[++index] = value;
   });
   return result;
 }
 
 /** Used for built-in method references. */
-var arrayProto = Array.prototype;
-var funcProto = Function.prototype;
-var objectProto = Object.prototype;
+var arrayProto = Array.prototype,
+    funcProto = Function.prototype,
+    objectProto = Object.prototype;
+
 /** Used to detect overreaching core-js shims. */
 var coreJsData = root['__core-js_shared__'];
 
 /** Used to detect methods masquerading as native. */
-var maskSrcKey = function () {
+var maskSrcKey = (function() {
   var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
-  return uid ? 'Symbol(src)_1.' + uid : '';
-}();
+  return uid ? ('Symbol(src)_1.' + uid) : '';
+}());
 
 /** Used to resolve the decompiled source of functions. */
 var funcToString = funcProto.toString;
@@ -366,33 +379,45 @@ var objectCtorString = funcToString.call(Object);
 var objectToString = objectProto.toString;
 
 /** Used to detect if a method is native. */
-var reIsNative = RegExp('^' + funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&').replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$');
+var reIsNative = RegExp('^' +
+  funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&')
+  .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
+);
 
 /** Built-in value references. */
-var Buffer = moduleExports ? root.Buffer : undefined;
-var _Symbol = root.Symbol;
-var Uint8Array = root.Uint8Array;
-var getPrototype = overArg(Object.getPrototypeOf, Object);
-var objectCreate = Object.create;
-var propertyIsEnumerable = objectProto.propertyIsEnumerable;
-var splice = arrayProto.splice;
-var nativeGetSymbols = Object.getOwnPropertySymbols;
-var nativeIsBuffer = Buffer ? Buffer.isBuffer : undefined;
-var nativeKeys = overArg(Object.keys, Object);
-var nativeMax = Math.max;
-var DataView = getNative(root, 'DataView');
-var Map = getNative(root, 'Map');
-var Promise$1 = getNative(root, 'Promise');
-var Set = getNative(root, 'Set');
-var WeakMap = getNative(root, 'WeakMap');
-var nativeCreate = getNative(Object, 'create');
-var dataViewCtorString = toSource(DataView);
-var mapCtorString = toSource(Map);
-var promiseCtorString = toSource(Promise$1);
-var setCtorString = toSource(Set);
-var weakMapCtorString = toSource(WeakMap);
-var symbolProto = _Symbol ? _Symbol.prototype : undefined;
-var symbolValueOf = symbolProto ? symbolProto.valueOf : undefined;
+var Buffer = moduleExports ? root.Buffer : undefined,
+    Symbol = root.Symbol,
+    Uint8Array = root.Uint8Array,
+    getPrototype = overArg(Object.getPrototypeOf, Object),
+    objectCreate = Object.create,
+    propertyIsEnumerable = objectProto.propertyIsEnumerable,
+    splice = arrayProto.splice;
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeGetSymbols = Object.getOwnPropertySymbols,
+    nativeIsBuffer = Buffer ? Buffer.isBuffer : undefined,
+    nativeKeys = overArg(Object.keys, Object),
+    nativeMax = Math.max;
+
+/* Built-in method references that are verified to be native. */
+var DataView = getNative(root, 'DataView'),
+    Map = getNative(root, 'Map'),
+    Promise = getNative(root, 'Promise'),
+    Set = getNative(root, 'Set'),
+    WeakMap = getNative(root, 'WeakMap'),
+    nativeCreate = getNative(Object, 'create');
+
+/** Used to detect maps, sets, and weakmaps. */
+var dataViewCtorString = toSource(DataView),
+    mapCtorString = toSource(Map),
+    promiseCtorString = toSource(Promise),
+    setCtorString = toSource(Set),
+    weakMapCtorString = toSource(WeakMap);
+
+/** Used to convert symbols to primitives and strings. */
+var symbolProto = Symbol ? Symbol.prototype : undefined,
+    symbolValueOf = symbolProto ? symbolProto.valueOf : undefined;
+
 /**
  * Creates a hash object.
  *
@@ -480,7 +505,7 @@ function hashHas(key) {
  */
 function hashSet(key, value) {
   var data = this.__data__;
-  data[key] = nativeCreate && value === undefined ? HASH_UNDEFINED : value;
+  data[key] = (nativeCreate && value === undefined) ? HASH_UNDEFINED : value;
   return this;
 }
 
@@ -630,9 +655,9 @@ function MapCache(entries) {
  */
 function mapCacheClear() {
   this.__data__ = {
-    'hash': new Hash(),
-    'map': new (Map || ListCache)(),
-    'string': new Hash()
+    'hash': new Hash,
+    'map': new (Map || ListCache),
+    'string': new Hash
   };
 }
 
@@ -716,7 +741,7 @@ function Stack(entries) {
  * @memberOf Stack
  */
 function stackClear() {
-  this.__data__ = new ListCache();
+  this.__data__ = new ListCache;
 }
 
 /**
@@ -772,7 +797,7 @@ function stackSet(key, value) {
   var cache = this.__data__;
   if (cache instanceof ListCache) {
     var pairs = cache.__data__;
-    if (!Map || pairs.length < LARGE_ARRAY_SIZE - 1) {
+    if (!Map || (pairs.length < LARGE_ARRAY_SIZE - 1)) {
       pairs.push([key, value]);
       return this;
     }
@@ -800,13 +825,16 @@ Stack.prototype.set = stackSet;
 function arrayLikeKeys(value, inherited) {
   // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
   // Safari 9 makes `arguments.length` enumerable in strict mode.
-  var result = isArray$1(value) || isArguments(value) ? baseTimes(value.length, String) : [];
+  var result = (isArray(value) || isArguments(value))
+    ? baseTimes(value.length, String)
+    : [];
 
   var length = result.length,
       skipIndexes = !!length;
 
   for (var key in value) {
-    if ((inherited || hasOwnProperty.call(value, key)) && !(skipIndexes && (key == 'length' || isIndex(key, length)))) {
+    if ((inherited || hasOwnProperty.call(value, key)) &&
+        !(skipIndexes && (key == 'length' || isIndex(key, length)))) {
       result.push(key);
     }
   }
@@ -823,7 +851,8 @@ function arrayLikeKeys(value, inherited) {
  * @param {*} value The value to assign.
  */
 function assignMergeValue(object, key, value) {
-  if (value !== undefined && !eq(object[key], value) || typeof key == 'number' && value === undefined && !(key in object)) {
+  if ((value !== undefined && !eq(object[key], value)) ||
+      (typeof key == 'number' && value === undefined && !(key in object))) {
     object[key] = value;
   }
 }
@@ -840,7 +869,8 @@ function assignMergeValue(object, key, value) {
  */
 function assignValue(object, key, value) {
   var objValue = object[key];
-  if (!(hasOwnProperty.call(object, key) && eq(objValue, value)) || value === undefined && !(key in object)) {
+  if (!(hasOwnProperty.call(object, key) && eq(objValue, value)) ||
+      (value === undefined && !(key in object))) {
     object[key] = value;
   }
 }
@@ -873,7 +903,7 @@ function assocIndexOf(array, key) {
  * @returns {Object} Returns `object`.
  */
 function baseAssign(object, source) {
-  return object && copyObject(source, keys$1(source), object);
+  return object && copyObject(source, keys(source), object);
 }
 
 /**
@@ -898,10 +928,10 @@ function baseClone(value, isDeep, isFull, customizer, key, object, stack) {
   if (result !== undefined) {
     return result;
   }
-  if (!isObject$1(value)) {
+  if (!isObject(value)) {
     return value;
   }
-  var isArr = isArray$1(value);
+  var isArr = isArray(value);
   if (isArr) {
     result = initCloneArray(value);
     if (!isDeep) {
@@ -914,7 +944,7 @@ function baseClone(value, isDeep, isFull, customizer, key, object, stack) {
     if (isBuffer(value)) {
       return cloneBuffer(value, isDeep);
     }
-    if (tag == objectTag || tag == argsTag || isFunc && !object) {
+    if (tag == objectTag || tag == argsTag || (isFunc && !object)) {
       if (isHostObject(value)) {
         return object ? value : {};
       }
@@ -930,7 +960,7 @@ function baseClone(value, isDeep, isFull, customizer, key, object, stack) {
     }
   }
   // Check for circular references and return its corresponding clone.
-  stack || (stack = new Stack());
+  stack || (stack = new Stack);
   var stacked = stack.get(value);
   if (stacked) {
     return stacked;
@@ -938,9 +968,9 @@ function baseClone(value, isDeep, isFull, customizer, key, object, stack) {
   stack.set(value, result);
 
   if (!isArr) {
-    var props = isFull ? getAllKeys(value) : keys$1(value);
+    var props = isFull ? getAllKeys(value) : keys(value);
   }
-  arrayEach(props || value, function (subValue, key) {
+  arrayEach(props || value, function(subValue, key) {
     if (props) {
       key = subValue;
       subValue = value[key];
@@ -960,7 +990,7 @@ function baseClone(value, isDeep, isFull, customizer, key, object, stack) {
  * @returns {Object} Returns the new object.
  */
 function baseCreate(proto) {
-  return isObject$1(proto) ? objectCreate(proto) : {};
+  return isObject(proto) ? objectCreate(proto) : {};
 }
 
 /**
@@ -976,7 +1006,7 @@ function baseCreate(proto) {
  */
 function baseGetAllKeys(object, keysFunc, symbolsFunc) {
   var result = keysFunc(object);
-  return isArray$1(object) ? result : arrayPush(result, symbolsFunc(object));
+  return isArray(object) ? result : arrayPush(result, symbolsFunc(object));
 }
 
 /**
@@ -999,10 +1029,10 @@ function baseGetTag(value) {
  *  else `false`.
  */
 function baseIsNative(value) {
-  if (!isObject$1(value) || isMasked(value)) {
+  if (!isObject(value) || isMasked(value)) {
     return false;
   }
-  var pattern = isFunction$1(value) || isHostObject(value) ? reIsNative : reIsHostCtor;
+  var pattern = (isFunction(value) || isHostObject(value)) ? reIsNative : reIsHostCtor;
   return pattern.test(toSource(value));
 }
 
@@ -1014,7 +1044,8 @@ function baseIsNative(value) {
  * @returns {boolean} Returns `true` if `value` is a typed array, else `false`.
  */
 function baseIsTypedArray(value) {
-  return isObjectLike(value) && isLength(value.length) && !!typedArrayTags[objectToString.call(value)];
+  return isObjectLike(value) &&
+    isLength(value.length) && !!typedArrayTags[objectToString.call(value)];
 }
 
 /**
@@ -1045,7 +1076,7 @@ function baseKeys(object) {
  * @returns {Array} Returns the array of property names.
  */
 function baseKeysIn(object) {
-  if (!isObject$1(object)) {
+  if (!isObject(object)) {
     return nativeKeysIn(object);
   }
   var isProto = isPrototype(object),
@@ -1074,19 +1105,22 @@ function baseMerge(object, source, srcIndex, customizer, stack) {
   if (object === source) {
     return;
   }
-  if (!(isArray$1(source) || isTypedArray(source))) {
+  if (!(isArray(source) || isTypedArray(source))) {
     var props = baseKeysIn(source);
   }
-  arrayEach(props || source, function (srcValue, key) {
+  arrayEach(props || source, function(srcValue, key) {
     if (props) {
       key = srcValue;
       srcValue = source[key];
     }
-    if (isObject$1(srcValue)) {
-      stack || (stack = new Stack());
+    if (isObject(srcValue)) {
+      stack || (stack = new Stack);
       baseMergeDeep(object, source, key, srcIndex, baseMerge, customizer, stack);
-    } else {
-      var newValue = customizer ? customizer(object[key], srcValue, key + '', object, source, stack) : undefined;
+    }
+    else {
+      var newValue = customizer
+        ? customizer(object[key], srcValue, (key + ''), object, source, stack)
+        : undefined;
 
       if (newValue === undefined) {
         newValue = srcValue;
@@ -1120,31 +1154,39 @@ function baseMergeDeep(object, source, key, srcIndex, mergeFunc, customizer, sta
     assignMergeValue(object, key, stacked);
     return;
   }
-  var newValue = customizer ? customizer(objValue, srcValue, key + '', object, source, stack) : undefined;
+  var newValue = customizer
+    ? customizer(objValue, srcValue, (key + ''), object, source, stack)
+    : undefined;
 
   var isCommon = newValue === undefined;
 
   if (isCommon) {
     newValue = srcValue;
-    if (isArray$1(srcValue) || isTypedArray(srcValue)) {
-      if (isArray$1(objValue)) {
+    if (isArray(srcValue) || isTypedArray(srcValue)) {
+      if (isArray(objValue)) {
         newValue = objValue;
-      } else if (isArrayLikeObject(objValue)) {
+      }
+      else if (isArrayLikeObject(objValue)) {
         newValue = copyArray(objValue);
-      } else {
+      }
+      else {
         isCommon = false;
         newValue = baseClone(srcValue, true);
       }
-    } else if (isPlainObject(srcValue) || isArguments(srcValue)) {
+    }
+    else if (isPlainObject(srcValue) || isArguments(srcValue)) {
       if (isArguments(objValue)) {
         newValue = toPlainObject(objValue);
-      } else if (!isObject$1(objValue) || srcIndex && isFunction$1(objValue)) {
+      }
+      else if (!isObject(objValue) || (srcIndex && isFunction(objValue))) {
         isCommon = false;
         newValue = baseClone(srcValue, true);
-      } else {
+      }
+      else {
         newValue = objValue;
       }
-    } else {
+    }
+    else {
       isCommon = false;
     }
   }
@@ -1166,8 +1208,8 @@ function baseMergeDeep(object, source, key, srcIndex, mergeFunc, customizer, sta
  * @returns {Function} Returns the new function.
  */
 function baseRest(func, start) {
-  start = nativeMax(start === undefined ? func.length - 1 : start, 0);
-  return function () {
+  start = nativeMax(start === undefined ? (func.length - 1) : start, 0);
+  return function() {
     var args = arguments,
         index = -1,
         length = nativeMax(args.length - start, 0),
@@ -1240,7 +1282,7 @@ function cloneDataView(dataView, isDeep) {
  */
 function cloneMap(map, isDeep, cloneFunc) {
   var array = isDeep ? cloneFunc(mapToArray(map), true) : mapToArray(map);
-  return arrayReduce(array, addMapEntry, new map.constructor());
+  return arrayReduce(array, addMapEntry, new map.constructor);
 }
 
 /**
@@ -1267,7 +1309,7 @@ function cloneRegExp(regexp) {
  */
 function cloneSet(set, isDeep, cloneFunc) {
   var array = isDeep ? cloneFunc(setToArray(set), true) : setToArray(set);
-  return arrayReduce(array, addSetEntry, new set.constructor());
+  return arrayReduce(array, addSetEntry, new set.constructor);
 }
 
 /**
@@ -1332,7 +1374,9 @@ function copyObject(source, props, object, customizer) {
   while (++index < length) {
     var key = props[index];
 
-    var newValue = customizer ? customizer(object[key], source[key], key, object, source) : undefined;
+    var newValue = customizer
+      ? customizer(object[key], source[key], key, object, source)
+      : undefined;
 
     assignValue(object, key, newValue === undefined ? source[key] : newValue);
   }
@@ -1359,13 +1403,15 @@ function copySymbols(source, object) {
  * @returns {Function} Returns the new assigner function.
  */
 function createAssigner(assigner) {
-  return baseRest(function (object, sources) {
+  return baseRest(function(object, sources) {
     var index = -1,
         length = sources.length,
         customizer = length > 1 ? sources[length - 1] : undefined,
         guard = length > 2 ? sources[2] : undefined;
 
-    customizer = assigner.length > 3 && typeof customizer == 'function' ? (length--, customizer) : undefined;
+    customizer = (assigner.length > 3 && typeof customizer == 'function')
+      ? (length--, customizer)
+      : undefined;
 
     if (guard && isIterateeCall(sources[0], sources[1], guard)) {
       customizer = length < 3 ? undefined : customizer;
@@ -1390,7 +1436,7 @@ function createAssigner(assigner) {
  * @returns {Array} Returns the array of property names and symbols.
  */
 function getAllKeys(object) {
-  return baseGetAllKeys(object, keys$1, getSymbols);
+  return baseGetAllKeys(object, keys, getSymbols);
 }
 
 /**
@@ -1403,7 +1449,9 @@ function getAllKeys(object) {
  */
 function getMapData(map, key) {
   var data = map.__data__;
-  return isKeyable(key) ? data[typeof key == 'string' ? 'string' : 'hash'] : data.map;
+  return isKeyable(key)
+    ? data[typeof key == 'string' ? 'string' : 'hash']
+    : data.map;
 }
 
 /**
@@ -1439,24 +1487,23 @@ var getTag = baseGetTag;
 
 // Fallback for data views, maps, sets, and weak maps in IE 11,
 // for data views in Edge < 14, and promises in Node.js.
-if (DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag || Map && getTag(new Map()) != mapTag || Promise$1 && getTag(Promise$1.resolve()) != promiseTag || Set && getTag(new Set()) != setTag || WeakMap && getTag(new WeakMap()) != weakMapTag) {
-  getTag = function getTag(value) {
+if ((DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag) ||
+    (Map && getTag(new Map) != mapTag) ||
+    (Promise && getTag(Promise.resolve()) != promiseTag) ||
+    (Set && getTag(new Set) != setTag) ||
+    (WeakMap && getTag(new WeakMap) != weakMapTag)) {
+  getTag = function(value) {
     var result = objectToString.call(value),
         Ctor = result == objectTag ? value.constructor : undefined,
         ctorString = Ctor ? toSource(Ctor) : undefined;
 
     if (ctorString) {
       switch (ctorString) {
-        case dataViewCtorString:
-          return dataViewTag;
-        case mapCtorString:
-          return mapTag;
-        case promiseCtorString:
-          return promiseTag;
-        case setCtorString:
-          return setTag;
-        case weakMapCtorString:
-          return weakMapTag;
+        case dataViewCtorString: return dataViewTag;
+        case mapCtorString: return mapTag;
+        case promiseCtorString: return promiseTag;
+        case setCtorString: return setTag;
+        case weakMapCtorString: return weakMapTag;
       }
     }
     return result;
@@ -1490,7 +1537,9 @@ function initCloneArray(array) {
  * @returns {Object} Returns the initialized clone.
  */
 function initCloneObject(object) {
-  return typeof object.constructor == 'function' && !isPrototype(object) ? baseCreate(getPrototype(object)) : {};
+  return (typeof object.constructor == 'function' && !isPrototype(object))
+    ? baseCreate(getPrototype(object))
+    : {};
 }
 
 /**
@@ -1519,9 +1568,9 @@ function initCloneByTag(object, tag, cloneFunc, isDeep) {
     case dataViewTag:
       return cloneDataView(object, isDeep);
 
-    case float32Tag:case float64Tag:
-    case int8Tag:case int16Tag:case int32Tag:
-    case uint8Tag:case uint8ClampedTag:case uint16Tag:case uint32Tag:
+    case float32Tag: case float64Tag:
+    case int8Tag: case int16Tag: case int32Tag:
+    case uint8Tag: case uint8ClampedTag: case uint16Tag: case uint32Tag:
       return cloneTypedArray(object, isDeep);
 
     case mapTag:
@@ -1552,7 +1601,9 @@ function initCloneByTag(object, tag, cloneFunc, isDeep) {
  */
 function isIndex(value, length) {
   length = length == null ? MAX_SAFE_INTEGER : length;
-  return !!length && (typeof value == 'number' || reIsUint.test(value)) && value > -1 && value % 1 == 0 && value < length;
+  return !!length &&
+    (typeof value == 'number' || reIsUint.test(value)) &&
+    (value > -1 && value % 1 == 0 && value < length);
 }
 
 /**
@@ -1566,11 +1617,14 @@ function isIndex(value, length) {
  *  else `false`.
  */
 function isIterateeCall(value, index, object) {
-  if (!isObject$1(object)) {
+  if (!isObject(object)) {
     return false;
   }
-  var type = typeof index === 'undefined' ? 'undefined' : _typeof(index);
-  if (type == 'number' ? isArrayLike(object) && isIndex(index, object.length) : type == 'string' && index in object) {
+  var type = typeof index;
+  if (type == 'number'
+        ? (isArrayLike(object) && isIndex(index, object.length))
+        : (type == 'string' && index in object)
+      ) {
     return eq(object[index], value);
   }
   return false;
@@ -1584,8 +1638,10 @@ function isIterateeCall(value, index, object) {
  * @returns {boolean} Returns `true` if `value` is suitable, else `false`.
  */
 function isKeyable(value) {
-  var type = typeof value === 'undefined' ? 'undefined' : _typeof(value);
-  return type == 'string' || type == 'number' || type == 'symbol' || type == 'boolean' ? value !== '__proto__' : value === null;
+  var type = typeof value;
+  return (type == 'string' || type == 'number' || type == 'symbol' || type == 'boolean')
+    ? (value !== '__proto__')
+    : (value === null);
 }
 
 /**
@@ -1596,7 +1652,7 @@ function isKeyable(value) {
  * @returns {boolean} Returns `true` if `func` is masked, else `false`.
  */
 function isMasked(func) {
-  return !!maskSrcKey && maskSrcKey in func;
+  return !!maskSrcKey && (maskSrcKey in func);
 }
 
 /**
@@ -1608,7 +1664,7 @@ function isMasked(func) {
  */
 function isPrototype(value) {
   var Ctor = value && value.constructor,
-      proto = typeof Ctor == 'function' && Ctor.prototype || objectProto;
+      proto = (typeof Ctor == 'function' && Ctor.prototype) || objectProto;
 
   return value === proto;
 }
@@ -1645,7 +1701,7 @@ function toSource(func) {
       return funcToString.call(func);
     } catch (e) {}
     try {
-      return func + '';
+      return (func + '');
     } catch (e) {}
   }
   return '';
@@ -1684,7 +1740,7 @@ function toSource(func) {
  * // => true
  */
 function eq(value, other) {
-  return value === other || value !== value && other !== other;
+  return value === other || (value !== value && other !== other);
 }
 
 /**
@@ -1707,7 +1763,8 @@ function eq(value, other) {
  */
 function isArguments(value) {
   // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
-  return isArrayLikeObject(value) && hasOwnProperty.call(value, 'callee') && (!propertyIsEnumerable.call(value, 'callee') || objectToString.call(value) == argsTag);
+  return isArrayLikeObject(value) && hasOwnProperty.call(value, 'callee') &&
+    (!propertyIsEnumerable.call(value, 'callee') || objectToString.call(value) == argsTag);
 }
 
 /**
@@ -1733,7 +1790,7 @@ function isArguments(value) {
  * _.isArray(_.noop);
  * // => false
  */
-var isArray$1 = Array.isArray;
+var isArray = Array.isArray;
 
 /**
  * Checks if `value` is array-like. A value is considered array-like if it's
@@ -1761,7 +1818,7 @@ var isArray$1 = Array.isArray;
  * // => false
  */
 function isArrayLike(value) {
-  return value != null && isLength(value.length) && !isFunction$1(value);
+  return value != null && isLength(value.length) && !isFunction(value);
 }
 
 /**
@@ -1829,10 +1886,10 @@ var isBuffer = nativeIsBuffer || stubFalse;
  * _.isFunction(/abc/);
  * // => false
  */
-function isFunction$1(value) {
+function isFunction(value) {
   // The use of `Object#toString` avoids issues with the `typeof` operator
   // in Safari 8-9 which returns 'object' for typed array and other constructors.
-  var tag = isObject$1(value) ? objectToString.call(value) : '';
+  var tag = isObject(value) ? objectToString.call(value) : '';
   return tag == funcTag || tag == genTag;
 }
 
@@ -1863,7 +1920,8 @@ function isFunction$1(value) {
  * // => false
  */
 function isLength(value) {
-  return typeof value == 'number' && value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
+  return typeof value == 'number' &&
+    value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
 }
 
 /**
@@ -1891,8 +1949,8 @@ function isLength(value) {
  * _.isObject(null);
  * // => false
  */
-function isObject$1(value) {
-  var type = typeof value === 'undefined' ? 'undefined' : _typeof(value);
+function isObject(value) {
+  var type = typeof value;
   return !!value && (type == 'object' || type == 'function');
 }
 
@@ -1921,7 +1979,7 @@ function isObject$1(value) {
  * // => false
  */
 function isObjectLike(value) {
-  return !!value && (typeof value === 'undefined' ? 'undefined' : _typeof(value)) == 'object';
+  return !!value && typeof value == 'object';
 }
 
 /**
@@ -1953,7 +2011,8 @@ function isObjectLike(value) {
  * // => true
  */
 function isPlainObject(value) {
-  if (!isObjectLike(value) || objectToString.call(value) != objectTag || isHostObject(value)) {
+  if (!isObjectLike(value) ||
+      objectToString.call(value) != objectTag || isHostObject(value)) {
     return false;
   }
   var proto = getPrototype(value);
@@ -1961,7 +2020,8 @@ function isPlainObject(value) {
     return true;
   }
   var Ctor = hasOwnProperty.call(proto, 'constructor') && proto.constructor;
-  return typeof Ctor == 'function' && Ctor instanceof Ctor && funcToString.call(Ctor) == objectCtorString;
+  return (typeof Ctor == 'function' &&
+    Ctor instanceof Ctor && funcToString.call(Ctor) == objectCtorString);
 }
 
 /**
@@ -2039,7 +2099,7 @@ function toPlainObject(value) {
  * _.keys('hi');
  * // => ['0', '1']
  */
-function keys$1(object) {
+function keys(object) {
   return isArrayLike(object) ? arrayLikeKeys(object) : baseKeys(object);
 }
 
@@ -2101,7 +2161,7 @@ function keysIn(object) {
  * _.merge(object, other);
  * // => { 'a': [{ 'b': 2, 'c': 3 }, { 'd': 4, 'e': 5 }] }
  */
-var merge = createAssigner(function (object, source, srcIndex) {
+var merge = createAssigner(function(object, source, srcIndex) {
   baseMerge(object, source, srcIndex);
 });
 
@@ -2144,1193 +2204,4 @@ function stubFalse() {
   return false;
 }
 
-/* lodash like functions to remove dependency on lodash accept lodash.merge */
-// enum type for use with toObjectString function
-function Enum(value) {
-  if (!(this instanceof Enum)) return new Enum(value);
-  this.value = value;
-}
-
-function isEnum(obj) {
-  return obj instanceof Enum;
-}
-
-function isFunction(obj) {
-  return typeof obj === 'function';
-}
-
-function isString(obj) {
-  return typeof obj === 'string';
-}
-
-function isArray(obj) {
-  return Array.isArray(obj);
-}
-
-function isDate(obj) {
-  return obj instanceof Date;
-}
-
-function isObject(obj) {
-  return (typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object' && obj !== null;
-}
-
-function isNumber(obj) {
-  return !isNaN(obj);
-}
-
-function isHash(obj) {
-  return isObject(obj) && !isArray(obj) && !isDate(obj) && obj !== null;
-}
-
-function includes(obj, key) {
-  try {
-    return isArray(obj) && obj.indexOf(key) !== -1;
-  } catch (err) {
-    return false;
-  }
-}
-
-function toLower(str) {
-  if (typeof str === 'string') return str.toLocaleLowerCase();
-  return '';
-}
-
-function toUpper(str) {
-  if (typeof str === 'string') return str.toUpperCase();
-  return '';
-}
-
-function ensureArray() {
-  var obj = arguments.length <= 0 || arguments[0] === undefined ? [] : arguments[0];
-
-  return isArray(obj) ? obj : [obj];
-}
-
-function isEmpty(obj) {
-  if (!obj) return true;else if (isArray(obj) && !obj.length) return true;else if (isHash(obj) && !keys(obj).length) return true;
-  return false;
-}
-
-function keys(obj) {
-  try {
-    return Object.keys(obj);
-  } catch (err) {
-    return [];
-  }
-}
-
-function capitalize(str) {
-  if (isString(str) && str.length > 0) {
-    var first = str[0];
-    var rest = str.length > 1 ? str.substring(1) : '';
-    str = [first.toUpperCase(), rest.toLowerCase()].join('');
-  }
-  return str;
-}
-
-function stringToPathArray(pathString) {
-  // taken from lodash - https://github.com/lodash/lodash
-  var pathRx = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(\.|\[\])(?:\4|$))/g;
-  var pathArray = [];
-
-  if (isString(pathString)) {
-    pathString.replace(pathRx, function (match, number, quote, string) {
-      pathArray.push(quote ? string : number !== undefined ? Number(number) : match);
-      return pathArray[pathArray.length - 1];
-    });
-  }
-  return pathArray;
-}
-
-function has(obj, path) {
-  var value = obj;
-  var fields = isArray(path) ? path : stringToPathArray(path);
-  if (fields.length === 0) return false;
-  try {
-    for (var f in fields) {
-      if (!value[fields[f]]) return false;else value = value[fields[f]];
-    }
-  } catch (err) {
-    return false;
-  }
-  return true;
-}
-
-function forEach(obj, fn) {
-  try {
-    if (Array.isArray(obj)) {
-      var idx = 0;
-      var _iteratorNormalCompletion = true;
-      var _didIteratorError = false;
-      var _iteratorError = undefined;
-
-      try {
-        for (var _iterator = obj[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-          var val = _step.value;
-
-          if (fn(val, idx) === false) break;
-          idx++;
-        }
-      } catch (err) {
-        _didIteratorError = true;
-        _iteratorError = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion && _iterator.return) {
-            _iterator.return();
-          }
-        } finally {
-          if (_didIteratorError) {
-            throw _iteratorError;
-          }
-        }
-      }
-    } else {
-      for (var key in obj) {
-        if (fn(obj[key], key) === false) break;
-      }
-    }
-  } catch (err) {
-    return;
-  }
-}
-
-function without() {
-  var output = [];
-  var args = Array.prototype.slice.call(arguments);
-  if (args.length === 0) return output;else if (args.length === 1) return args[0];
-  var search = args.slice(1);
-  forEach(args[0], function (val) {
-    if (!includes(search, val)) output.push(val);
-  });
-  return output;
-}
-
-function map(obj, fn) {
-  var output = [];
-  try {
-    for (var key in obj) {
-      output.push(fn(obj[key], key));
-    }
-  } catch (err) {
-    return [];
-  }
-  return output;
-}
-
-function mapValues(obj, fn) {
-  var newObj = {};
-  try {
-    forEach(obj, function (v, k) {
-      newObj[k] = fn(v);
-    });
-  } catch (err) {
-    return obj;
-  }
-  return newObj;
-}
-
-function remap(obj, fn) {
-  var newObj = {};
-  forEach(obj, function (v, k) {
-    var newMap = fn(v, k);
-    if (has(newMap, 'key') && has(newMap, 'value')) newObj[newMap.key] = newMap.value;else newMap[k] = v;
-  });
-  return newObj;
-}
-
-function filter(obj, fn) {
-  var newObj = [];
-  if (!isArray(obj)) return newObj;
-  forEach(obj, function (v, k) {
-    if (fn(v, k)) newObj.push(v);
-  });
-  return newObj;
-}
-
-function omitBy(obj, fn) {
-  var newObj = {};
-  if (!isHash(obj)) return newObj;
-  forEach(obj, function (v, k) {
-    if (!fn(v, k)) newObj[k] = v;
-  });
-  return newObj;
-}
-
-function omit(obj) {
-  var omits = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
-
-  var newObj = {};
-  omits = ensureArray(omits);
-  forEach(obj, function (v, k) {
-    if (!includes(omits, k)) newObj[k] = v;
-  });
-  return newObj;
-}
-
-function pickBy(obj, fn) {
-  var newObj = {};
-  if (!isHash(obj)) return newObj;
-  forEach(obj, function (v, k) {
-    if (fn(v, k)) newObj[k] = v;
-  });
-  return newObj;
-}
-
-function pick(obj) {
-  var picks = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
-
-  var newObj = {};
-  picks = ensureArray(picks);
-  forEach(obj, function (v, k) {
-    if (includes(picks, k)) newObj[k] = v;
-  });
-  return newObj;
-}
-
-function get(obj, path, defaultValue) {
-  var value = obj;
-  var fields = isArray(path) ? path : stringToPathArray(path);
-  if (fields.length === 0) return defaultValue;
-
-  try {
-    for (var f in fields) {
-      if (!value[fields[f]]) return defaultValue;else value = value[fields[f]];
-    }
-  } catch (err) {
-    return defaultValue;
-  }
-  return value;
-}
-
-function set(obj, path, val) {
-  var value = obj;
-  var fields = isArray(path) ? path : stringToPathArray(path);
-  forEach(fields, function (p, idx) {
-    if (idx === fields.length - 1) value[p] = val;else if (!value[p]) value[p] = isNumber(p) ? [] : {};
-    value = value[p];
-  });
-}
-
-/* revisit to remove lodash.merge from project
-export function merge () {
-  let args = Array.prototype.slice.call(arguments)
-  if (args.length === 0) return {}
-  else if (args.length === 1) return args[0]
-  else if (!isHash(args[0])) return {}
-  let targetObject = args[0]
-  let sources = args.slice(1)
-
-  //  define the recursive merge function
-  let _merge = function (target, source) {
-    for (let k in source) {
-      if (!target[k] && isHash(source[k])) {
-        target[k] = _merge({}, source[k])
-      } else if (target[k] && isHash(target[k]) && isHash(source[k])) {
-        target[k] = merge(target[k], source[k])
-      } else {
-        if (isArray(source[k])) {
-          target[k] = []
-          for (let x in source[k]) {
-            if (isHash(source[k][x])) {
-              target[k].push(_merge({}, source[k][x]))
-            } else if (isArray(source[k][x])) {
-              target[k].push(_merge([], source[k][x]))
-            } else {
-              target[k].push(source[k][x])
-            }
-          }
-        } else if (isDate(source[k])) {
-          target[k] = new Date(source[k])
-        } else {
-          target[k] = source[k]
-        }
-      }
-    }
-    return target
-  }
-
-  //  merge each source
-  for (let k in sources) {
-    if (isHash(sources[k])) _merge(targetObject, sources[k])
-  }
-  return targetObject
-}
-*/
-
-function clone(obj) {
-  return merge({}, obj);
-}
-
-/*
- * Gets the path of a value by getting the location of the field and traversing the selectionSet
- */
-function getFieldPath(info, maxDepth) {
-  maxDepth = maxDepth || 50;
-
-  var loc = get(info, 'fieldASTs[0].loc');
-  var stackCount = 0;
-
-  var traverseFieldPath = function traverseFieldPath(selections, start, end, fieldPath) {
-    fieldPath = fieldPath || [];
-
-    var sel = get(filter(selections, function (s) {
-      return s.loc.start <= start && s.loc.end >= end;
-    }), '[0]');
-    if (sel) {
-      fieldPath.push(sel.name.value);
-      if (sel.name.loc.start !== start && sel.name.loc.end !== end && stackCount < maxDepth) {
-        stackCount++;
-        traverseFieldPath(sel.selectionSet.selections, start, end, fieldPath);
-      }
-    }
-    return fieldPath;
-  };
-  if (!info.operation.selectionSet.selections || isNaN(loc.start) || isNaN(loc.end)) return;
-  return traverseFieldPath(info.operation.selectionSet.selections, loc.start, loc.end);
-}
-
-function getSchemaOperation(info) {
-  var _type = ['_', get(info, 'operation.operation'), 'Type'].join('');
-  return get(info, ['schema', _type].join('.'), {});
-}
-
-/*
- * Gets the return type name of a query (returns shortened GraphQL primitive type names)
- */
-function getReturnTypeName(info) {
-  try {
-    var typeObj = get(getSchemaOperation(info), '_fields["' + info.fieldName + '"].type', {});
-
-    while (!typeObj.name) {
-      typeObj = typeObj.ofType;
-      if (!typeObj) break;
-    }
-    return typeObj.name;
-  } catch (err) {
-    console.error(err.message);
-  }
-}
-
-/*
- * Gets the field definition
- */
-function getRootFieldDef(info, path) {
-  var fldPath = get(getFieldPath(info), '[0]');
-  var queryType = info.operation.operation;
-  var opDef = get(info, 'schema._factory.' + queryType + 'Def', {});
-  var fieldDef = get(opDef, 'fields["' + fldPath + '"]', undefined);
-
-  //  if a field def cannot be found, try to find it in the extendFields
-  if (!fieldDef && has(opDef, 'extendFields')) {
-    forEach(opDef.extendFields, function (v, k) {
-      if (has(v, fldPath)) fieldDef = get(v, '["' + fldPath + '"]', {});
-    });
-  }
-
-  return path ? get(fieldDef, path, {}) : fieldDef;
-}
-
-/*
- * Returns the _typeConfig object of the schema operation (query/mutation)
- * Can be used to pass variables to resolve functions which use this function
- * to access those variables
- */
-function getTypeConfig(info, path) {
-  path = path ? '_typeConfig.'.concat(path) : '_typeConfig';
-  return get(getSchemaOperation(info), path, {});
-}
-
-// removes circular references
-function circular(obj) {
-  var value = arguments.length <= 1 || arguments[1] === undefined ? '[Circular]' : arguments[1];
-
-  var circularEx = function circularEx(_obj) {
-    var key = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
-    var seen = arguments.length <= 2 || arguments[2] === undefined ? [] : arguments[2];
-
-    seen.push(_obj);
-    if (isObject(_obj)) {
-      forEach(_obj, function (o, i) {
-        if (includes(seen, o)) _obj[i] = isFunction(value) ? value(_obj, key, seen.slice(0)) : value;else circularEx(o, i, seen.slice(0));
-      });
-    }
-    return _obj;
-  };
-
-  if (!obj) throw new Error('circular requires an object to examine');
-  return circularEx(obj, value);
-}
-
-function toObjectString(obj) {
-  var toLiteralEx = function toLiteralEx(o) {
-    if (isEnum(o)) {
-      return o.value;
-    } else if (isArray(o)) {
-      return '[' + map(o, function (v) {
-        return toLiteralEx(v);
-      }).join(',') + ']';
-    } else if (isString(o)) {
-      return '"' + o + '"';
-    } else if (isDate(o)) {
-      return '"' + o.toISOString() + '"';
-    } else if (isObject(o)) {
-      return '{' + map(o, function (v, k) {
-        return k + ':' + toLiteralEx(v);
-      }).join(',') + '}';
-    } else {
-      return o;
-    }
-  };
-  return toLiteralEx(circular(obj));
-}
-
-
-
-var utils = Object.freeze({
-  merge: merge,
-  Enum: Enum,
-  isEnum: isEnum,
-  isFunction: isFunction,
-  isString: isString,
-  isArray: isArray,
-  isDate: isDate,
-  isObject: isObject,
-  isNumber: isNumber,
-  isHash: isHash,
-  includes: includes,
-  toLower: toLower,
-  toUpper: toUpper,
-  ensureArray: ensureArray,
-  isEmpty: isEmpty,
-  keys: keys,
-  capitalize: capitalize,
-  stringToPathArray: stringToPathArray,
-  has: has,
-  forEach: forEach,
-  without: without,
-  map: map,
-  mapValues: mapValues,
-  remap: remap,
-  filter: filter,
-  omitBy: omitBy,
-  omit: omit,
-  pickBy: pickBy,
-  pick: pick,
-  get: get,
-  set: set,
-  clone: clone,
-  getFieldPath: getFieldPath,
-  getSchemaOperation: getSchemaOperation,
-  getReturnTypeName: getReturnTypeName,
-  getRootFieldDef: getRootFieldDef,
-  getTypeConfig: getTypeConfig,
-  circular: circular,
-  toObjectString: toObjectString
-});
-
-function Types(gql, definitions) {
-
-  //  primitive types
-  var typeMap = {
-    'String': gql.GraphQLString,
-    'Int': gql.GraphQLInt,
-    'Boolean': gql.GraphQLBoolean,
-    'Float': gql.GraphQLFloat,
-    'ID': gql.GraphQLID
-  };
-
-  //  used to return the function from definitions if a string key is provided
-  var getFunction = function getFunction(fn) {
-    if (!fn) return;
-    fn = isString(fn) ? get(definitions.functions, fn) : fn;
-    if (isFunction(fn)) return fn.bind(definitions);
-  };
-
-  //  determines a field type given a FactoryTypeConfig
-  var fieldType = function fieldType(field) {
-    var isObject = has(field, 'type');
-    var type = isObject ? field.type : field;
-    var isArray$$ = isArray(type);
-    type = isArray$$ ? type[0] : type;
-
-    if (has(definitions.types, type)) {
-      type = definitions.types[type];
-    } else if (has(typeMap, type)) {
-      type = typeMap[type];
-    } else if (has(definitions.externalTypes, type)) {
-      type = definitions.externalTypes[type];
-    } else if (has(gql, type)) {
-      type = gql[type];
-    }
-
-    //  type modifiers for list and non-null
-    type = isArray$$ ? new gql.GraphQLList(type) : type;
-    type = isObject && (field.nullable === false || field.primary) ? new gql.GraphQLNonNull(type) : type;
-    return type;
-  };
-
-  //  resolves the type from the schema, custom types, and graphql itself. supports conditional type
-  var getType = function getType(field, rootType) {
-    if (isHash(field) && !has(field, 'type') && has(field, rootType)) return fieldType(field[rootType]);
-    return fieldType(field);
-  };
-
-  //  extend fields using a definition
-  var extendFields = function extendFields(fields, exts) {
-    var extKeys = [];
-    var customProps = {};
-    var defFields = definitions.definition.fields;
-    fields = fields || {};
-
-    //  check for valid extend config
-    if (!exts || isArray(exts) && exts.length === 0 || isHash(exts) && keys(exts).length === 0 || !isString(exts) && !isHash(exts) && !isArray(exts)) {
-      return remap(fields, function (value, key) {
-        return { key: value.name ? value.name : key, value: value };
-      });
-    }
-
-    //  get the bundle keys
-    if (isString(exts)) extKeys = [exts];else if (isHash(exts)) extKeys = keys(exts);else if (isArray(exts)) extKeys = exts;
-
-    //  merge bundles and existing fields
-    var newFields = clone(fields);
-    forEach(extKeys, function (v) {
-      if (has(defFields, v)) {
-        var fieldTemplate = defFields[v];
-
-        if (!isHash(exts)) {
-          //  if a string or array merge the fields
-          merge(newFields, fieldTemplate);
-        } else {
-          (function () {
-            //  otherwise look for overrides for each field
-            var currentExt = exts[v];
-            forEach(fieldTemplate, function (ftVal, ftKey) {
-              if (has(currentExt, ftKey)) {
-                var extField = currentExt[ftKey];
-                if (isArray(extField)) {
-                  forEach(extField, function (efVal, efIdx) {
-                    if (isHash(efVal) && efVal.name) {
-                      newFields[efVal.name] = merge({}, ftVal, efVal);
-                    } else {
-                      newFields['' + ftKey + efIdx] = merge({}, ftVal, efVal);
-                    }
-                  });
-                } else {
-                  newFields[extField.name || ftKey] = merge({}, ftVal, extField);
-                }
-              }
-            });
-          })();
-        }
-      }
-    });
-
-    //  finally return the merged fields and remap the keys
-    return remap(newFields, function (value, key) {
-      return { key: value.name ? value.name : key, value: value };
-    });
-  };
-
-  //  create a GraphQLArgumentConfig
-  var GraphQLArgumentConfig = function GraphQLArgumentConfig(arg, type) {
-    return {
-      type: getType(arg, type),
-      defaultValue: arg.defaultValue,
-      description: arg.description
-    };
-  };
-
-  //  create a InputObjectFieldConfig
-  var InputObjectFieldConfig = function InputObjectFieldConfig(field, type) {
-    return {
-      type: getType(field, type),
-      defaultValue: field.defaultValue,
-      description: field.description
-    };
-  };
-
-  //  create a GraphQLEnumValueConfig
-  var GraphQLEnumValueConfig = function GraphQLEnumValueConfig(value) {
-    if (!isObject(value)) return { value: value };
-    return {
-      value: value.value,
-      deprecationReason: value.deprecationReason,
-      description: value.description
-    };
-  };
-
-  //  create a GraphQLEnumValueConfigMap
-  var GraphQLEnumValueConfigMap = function GraphQLEnumValueConfigMap(values) {
-    return mapValues(values, function (value) {
-      return GraphQLEnumValueConfig(value);
-    });
-  };
-
-  //  create a GraphQLFieldConfigMapThunk
-  var GraphQLFieldConfigMapThunk = function GraphQLFieldConfigMapThunk(fields, type, objDef) {
-    fields = omitBy(extendFields(fields, objDef.extendFields), function (f) {
-      return has(f, 'omitFrom') && (includes(f.omitFrom, type) || f.omitFrom === type);
-    });
-    if (!fields) return;
-    return function () {
-      return mapValues(fields, function (field) {
-        field = !has(field, 'type') && has(field, type) ? field[type] : field;
-        return {
-          type: getType(field, type),
-          args: mapValues(field.args, function (arg) {
-            return GraphQLArgumentConfig(arg, type);
-          }),
-          resolve: getFunction(field.resolve),
-          deprecationReason: field.deprecationReason,
-          description: field.description
-        };
-      });
-    };
-  };
-
-  //  create a GraphQLInterfacesThunk
-  var GraphQLInterfacesThunk = function GraphQLInterfacesThunk(interfaces) {
-    if (!interfaces) return;
-    var thunk = without(map(interfaces, function (type) {
-      var i = getType(type);
-      if (i instanceof gql.GraphQLInterfaceType) return i;else return null;
-    }), null);
-    return thunk.length > 0 ? function () {
-      return thunk;
-    } : undefined;
-  };
-
-  //  create a InputObjectConfigFieldMapThunk
-  var InputObjectConfigFieldMapThunk = function InputObjectConfigFieldMapThunk(fields, type, objDef) {
-    fields = omitBy(extendFields(fields, objDef.extendFields), function (f) {
-      return has(f, 'omitFrom') && (includes(f.omitFrom, type) || f.omitFrom === type);
-    });
-    if (!fields) return;
-    return function () {
-      return mapValues(fields, function (field) {
-        return InputObjectFieldConfig(field, type);
-      });
-    };
-  };
-
-  //  create a GraphQLScalarType
-  var GraphQLScalarType = function GraphQLScalarType(objDef, objName) {
-    return new gql.GraphQLScalarType({
-      name: objDef.name || objName,
-      description: objDef.description,
-      serialize: getFunction(objDef.serialize),
-      parseValue: getFunction(objDef.parseValue),
-      parseLiteral: getFunction(objDef.parseLiteral)
-    });
-  };
-
-  //  create a GraphQLObjectType
-  var GraphQLObjectType = function GraphQLObjectType(objDef, objName) {
-    return new gql.GraphQLObjectType(merge({}, objDef, {
-      name: objDef.name || objName,
-      interfaces: GraphQLInterfacesThunk(objDef.interfaces),
-      fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Object', objDef),
-      isTypeOf: getFunction(objDef.isTypeOf),
-      description: objDef.description
-    }));
-  };
-
-  //  create a GraphQLInterfaceType
-  var GraphQLInterfaceType = function GraphQLInterfaceType(objDef, objName) {
-    return new gql.GraphQLInterfaceType({
-      name: objDef.name || objName,
-      fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Interface'),
-      resolveType: getFunction(objDef.resolveType),
-      description: objDef.description
-    });
-  };
-
-  //  create a GraphQLEnumType
-  var GraphQLEnumType = function GraphQLEnumType(objDef, objName) {
-    return new gql.GraphQLEnumType({
-      name: objDef.name || objName,
-      values: GraphQLEnumValueConfigMap(objDef.values),
-      description: objDef.description
-    });
-  };
-
-  //  create a GraphQLInputObjectType
-  var GraphQLInputObjectType = function GraphQLInputObjectType(objDef, objName) {
-    return new gql.GraphQLInputObjectType({
-      name: objDef.name || objName,
-      fields: InputObjectConfigFieldMapThunk(objDef.fields, 'Input', objDef),
-      description: objDef.description
-    });
-  };
-
-  //  create a GraphQLUnionType
-  var GraphQLUnionType = function GraphQLUnionType(objDef, objName) {
-    return new gql.GraphQLUnionType({
-      name: objDef.name || objName,
-      types: map(objDef.types, function (type) {
-        return getType(type);
-      }),
-      resolveType: getFunction(objDef.resolveType),
-      description: objDef.description
-    });
-  };
-
-  //  create a GraphQLSchema
-  var GraphQLSchema = function GraphQLSchema(schema, schemaKey) {
-    var getDef = function getDef(op) {
-      var type = get(schema, op, {});
-      return isString(type) ? get(definitions.definition.types, type, {}) : type;
-    };
-    var getObj = function getObj(op) {
-      var obj = get(schema, op, undefined);
-      return isString(obj) ? getType(obj) : isObject(obj) ? GraphQLObjectType(obj, capitalize(op)) : undefined;
-    };
-
-    //  create a new factory object
-    var gqlSchema = new gql.GraphQLSchema({
-      query: getObj('query'),
-      mutation: getObj('mutation'),
-      subscription: getObj('subscription')
-    });
-
-    //  add a _factory property the schema object
-    gqlSchema._factory = {
-      key: schemaKey,
-      queryDef: getDef('query'),
-      mutationDef: getDef('mutation'),
-      subscriptionDef: getDef('subscription')
-    };
-
-    //  return the modified object
-    return gqlSchema;
-  };
-
-  //  type to function map
-  var typeFnMap = {
-    'Input': GraphQLInputObjectType,
-    'Enum': GraphQLEnumType,
-    'Interface': GraphQLInterfaceType,
-    'Object': GraphQLObjectType,
-    'Scalar': GraphQLScalarType
-  };
-
-  return {
-    getType: getType,
-    GraphQLSchema: GraphQLSchema,
-    GraphQLUnionType: GraphQLUnionType,
-    GraphQLInputObjectType: GraphQLInputObjectType,
-    GraphQLEnumType: GraphQLEnumType,
-    GraphQLInterfaceType: GraphQLInterfaceType,
-    GraphQLObjectType: GraphQLObjectType,
-    GraphQLScalarType: GraphQLScalarType,
-    typeFnMap: typeFnMap
-  };
-}
-
-/*
- * Expand all definitions. The goal is to omit the fields
- * property from the final definition leaving definitions
- * that stand on their own and can be referenced more easily
- * by utils. This also makes troubleshooting types easier
- * a side effect is also a more well defined schema as some
- * omitted properties will be filled in
- */
-var HAS_FIELDS = ['Object', 'Input', 'Interface'];
-
-var TYPE_MAP = {
-  Schema: 'Schema',
-  GraphQLSchema: 'Schema',
-  Scalar: 'Scalar',
-  GraphQLScalarType: 'Scalar',
-  Object: 'Object',
-  GraphQLObjectType: 'Object',
-  Interface: 'Interface',
-  GraphQLInterfaceType: 'Interface',
-  Union: 'Union',
-  GraphQLUnionType: 'Union',
-  Enum: 'Enum',
-  GraphQLEnumtype: 'Enum',
-  Input: 'Input',
-  GraphQLInputObjectType: 'Input',
-  List: 'List',
-  GraphQLList: 'List',
-  NonNull: 'NonNull',
-  GraphQLNonNull: 'NonNull'
-};
-
-function getShortType(type) {
-  return get(TYPE_MAP, type, null);
-}
-
-function hasFields(type) {
-  return includes(HAS_FIELDS, getShortType(type));
-}
-
-function toTypeDef(obj) {
-  return isHash(obj) ? obj : { type: obj };
-}
-
-function argsToTypeDef(field) {
-  forEach(field.args, function (arg, argName) {
-    field.args[argName] = toTypeDef(arg);
-  });
-}
-
-// moves objects defined on the schema to the types section and references the type
-function moveSchemaObjects(def, c) {
-  forEach(def.schemas, function (schema, schemaName) {
-    var schemaDef = {};
-    forEach(schema, function (field, fieldName) {
-      if (isHash(field)) {
-        var name = field.name || '' + schemaName + capitalize(fieldName);
-        def.types[name] = field;
-        schemaDef[fieldName] = name;
-      } else {
-        schemaDef[fieldName] = field;
-      }
-    });
-    c.schemas[schemaName] = schemaDef;
-  });
-}
-
-// expands multi types into their own definitions
-function expandMultiTypes(def, c, debug) {
-  forEach(def.types, function (typeDef, typeName) {
-    if (!typeDef.type) {
-      c.types[typeName] = { type: 'Object', _typeDef: typeDef };
-    } else if (isString(typeDef.type)) {
-      c.types[typeName] = { type: typeDef.type, _typeDef: typeDef };
-    } else if (isArray(typeDef.type)) {
-      forEach(typeDef.type, function (multiVal) {
-        if (isString(multiVal)) {
-          var name = multiVal === 'Object' ? typeName : typeName + multiVal;
-          c.types[name] = { type: multiVal, _typeDef: typeDef };
-        } else {
-          forEach(multiVal, function (v, k) {
-            if (k === 'Object' && !v) {
-              c.types[typeName] = { type: 'Object', _typeDef: typeDef };
-            } else if (k !== 'Object' && !v) {
-              c.types[typeName + k] = { type: k, _typeDef: typeDef };
-            } else {
-              c.types[v] = { type: k, _typeDef: typeDef };
-            }
-          });
-        }
-      });
-    } else {
-      forEach(typeDef.type, function (multiVal, multiName) {
-        if (multiName === 'Object' && !multiVal) {
-          c.types[typeName] = { type: multiName, _typeDef: typeDef };
-        } else if (multiName !== 'Object' && !multiVal) {
-          c.types[typeName + multiName] = { type: multiName, _typeDef: typeDef };
-        } else {
-          c.types[multiVal] = { type: multiName, _typeDef: typeDef };
-        }
-      });
-    }
-  });
-}
-
-// merges extended fields with base config
-function mergeExtendedWithBase(def, c, debug) {
-  forEach(c.types, function (obj) {
-
-    var typeDef = omit(obj._typeDef, 'type');
-
-    // at this point we can remove the typedef
-    delete obj._typeDef;
-
-    if (hasFields(obj.type)) {
-      obj.fields = obj.fields || {};
-
-      // get the extend fields and the base definition
-      var ext = typeDef.extendFields;
-      var baseDef = omit(typeDef, 'extendFields');
-
-      // create a base by merging the current type obj with the base definition
-      merge(obj, baseDef);
-
-      // examine the extend fields
-      if (isString(ext)) {
-        var e = get(def, 'fields["' + ext + '"]', {});
-        merge(obj.fields, e);
-      } else if (isArray(ext)) {
-        forEach(ext, function (eName) {
-          var e = get(def, 'fields["' + eName + '"]', {});
-          merge(obj.fields, e);
-        });
-      } else if (isHash(ext)) {
-
-        forEach(ext, function (eObj, eName) {
-
-          // get the correct field bundle
-          var e = get(def, 'fields["' + eName + '"]', {});
-
-          // loop through each field
-          forEach(eObj, function (oField, oName) {
-
-            // look for the field config in the field bundle
-            var extCfg = get(e, oName);
-
-            if (extCfg) {
-              extCfg = toTypeDef(extCfg);
-
-              // check for field templates
-              if (isArray(oField) && oField.length > 1) {
-                forEach(oField, function (v, i) {
-                  oField[i] = merge({}, extCfg, toTypeDef(v));
-                });
-              } else {
-                eObj[oName] = merge({}, extCfg, toTypeDef(oField));
-              }
-            }
-          });
-          merge(obj.fields, e, eObj);
-        });
-      }
-    } else {
-      merge(obj, typeDef);
-
-      // create a hash for enum values specified as strings
-      if (getShortType(obj.type) === 'Enum') {
-        forEach(obj.values, function (v, k) {
-          if (!isHash(v)) obj.values[k] = { value: v };
-        });
-      }
-    }
-  });
-}
-
-function extendFieldTemplates(c, debug) {
-  forEach(c.types, function (obj, name) {
-    if (obj.fields) {
-      (function () {
-        var omits = [];
-        forEach(obj.fields, function (field, fieldName) {
-          if (isArray(field) && field.length > 1) {
-            omits.push(fieldName);
-            // get the field template
-            forEach(field, function (type, idx) {
-              argsToTypeDef(type);
-              if (type.name) {
-                var fieldBase = get(obj, 'fields["' + type.name + '"]', {});
-                argsToTypeDef(fieldBase);
-                obj.fields[type.name] = merge({}, fieldBase, omit(type, 'name'));
-              } else {
-                var _fieldBase = get(obj, 'fields["' + idx + '"]', {});
-                argsToTypeDef(_fieldBase);
-                obj.fields['' + fieldName + idx] = merge({}, _fieldBase, type);
-              }
-            });
-          }
-        });
-        obj.fields = omit(obj.fields, omits);
-      })();
-    }
-  });
-}
-
-function setConditionalTypes(c, debug) {
-  forEach(c.types, function (obj) {
-    if (obj.fields) {
-      (function () {
-        var omits = [];
-        forEach(obj.fields, function (field, fieldName) {
-          if (isHash(field)) {
-            if (!field.type) {
-              if (field[obj.type]) {
-                var typeDef = field[obj.type];
-                typeDef = toTypeDef(typeDef);
-                argsToTypeDef(typeDef);
-                obj.fields[fieldName] = typeDef;
-              } else {
-                omits.push(fieldName);
-              }
-            } else if (field.omitFrom) {
-              var omitFrom = isArray(field.omitFrom) ? field.omitFrom : [field.omitFrom];
-              if (includes(omitFrom, obj.type)) {
-                omits.push(fieldName);
-              } else {
-                obj.fields[fieldName] = omit(obj.fields[fieldName], 'omitFrom');
-                argsToTypeDef(obj.fields[fieldName]);
-              }
-            }
-          } else {
-            obj.fields[fieldName] = { type: field };
-          }
-        });
-        obj.fields = omit(obj.fields, omits);
-      })();
-    }
-  });
-}
-
-function compile (definition, debug) {
-  var def = clone(definition);
-  var c = {
-    fields: def.fields || {},
-    types: {},
-    schemas: {}
-  };
-
-  // first check if schema fields are objects, if they are, move them to the types
-  moveSchemaObjects(def, c, debug);
-
-  // expand multi-types
-  expandMultiTypes(def, c, debug);
-
-  // merge extended fields and base configs
-  mergeExtendedWithBase(def, c, debug);
-
-  // extend field templates
-  extendFieldTemplates(c, debug);
-
-  // omit fields and set conditional types
-  setConditionalTypes(c, debug);
-
-  return c;
-}
-
-var _ = utils;
-
-var factory = function factory(gql) {
-  var plugins = {};
-  var definitions = { globals: {}, fields: {}, functions: {}, externalTypes: {}, types: {}, schemas: {} };
-  var t = Types(gql, definitions);
-  var typeFnMap = t.typeFnMap;
-
-  //  check for valid types
-  var validateType = function validateType(type) {
-    if (!_.has(typeFnMap, type)) throw 'InvalidTypeError: "' + type + '" is not a valid object type in the current context';
-  };
-
-  //  construct a type name
-  var makeTypeName = function makeTypeName(t, typeDef, typeName, nameOverride) {
-    if (t == 'Object') return nameOverride || typeDef.name || typeName;else return nameOverride || (typeDef.name || typeName).concat(t);
-  };
-
-  //  add a hash type
-  var addTypeHash = function addTypeHash(_types, type, typeDef, typeName) {
-    _.forEach(type, function (tName, tType) {
-      validateType(tType);
-      _types[tType] = makeTypeName(tType, typeDef, typeName, tName);
-    });
-  };
-
-  //  add plugin
-  var plugin = function plugin(p) {
-    if (!p) return;
-    _.forEach(_.ensureArray(p), function (h) {
-      return plugins = _.merge(plugins, h);
-    });
-  };
-
-  //  make all graphql objects
-  var make = function make() {
-    var def = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-    var opts = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-    var lib = {};
-
-    // allow plugins to be added with a make option
-    plugin(opts.plugin);
-
-    // now merge all plugins into the def
-    _.merge(def, plugins);
-
-    // compile the def if no option to suppress
-    if (opts.compile !== false) _.merge(def, compile(def));
-
-    // ensure globals and fields have objects
-    def.globals = def.globals || {};
-    def.fields = def.fields || {};
-
-    //  merge the externalTypes and functions before make
-    _.merge(definitions.externalTypes, def.externalTypes || {});
-    _.merge(definitions.functions, def.functions || {});
-
-    //  add the globals, utils, and graphql reference
-    definitions.globals = def.globals;
-    definitions.utils = utils;
-    definitions.graphql = gql;
-
-    // before building types, clone the compiled schemaDef
-    // and store it in the definition
-    definitions.definition = _.clone(_.omit(def, 'globals'));
-
-    var nonUnionDefs = _.omitBy(def.types, function (tDef) {
-      return tDef.type === 'Union';
-    });
-    var unionDefs = _.pickBy(def.types, function (tDef) {
-      return tDef.type === 'Union';
-    });
-
-    //  build types first since schemas will use them, save UnionTypes for the end
-    _.forEach(nonUnionDefs, function (typeDef, typeName) {
-
-      var _types = {};
-
-      //  default to object type
-      if (!typeDef.type) typeDef.type = 'Object';
-
-      //  if a single type is defined as a string
-      if (_.isString(typeDef.type)) {
-
-        //  validate the type and add it
-        validateType(typeDef.type);
-        _types[typeDef.type] = typeDef.name || typeName;
-      } else if (_.isArray(typeDef.type)) {
-
-        //  look at each type in the type definition array
-        //  support the case [ String, { Type: Name } ] with defaults
-        _.forEach(typeDef.type, function (t) {
-          if (_.isString(t)) {
-            validateType(t);
-            _types[t] = makeTypeName(t, typeDef, typeName);
-          } else if (_.isHash(t)) {
-            addTypeHash(_types, t, typeDef, typeName);
-          }
-        });
-      } else if (_.isHash(typeDef.type)) {
-        addTypeHash(_types, typeDef.type, typeDef, typeName);
-      }
-
-      //  add the definitions
-      _.forEach(_types, function (tName, tType) {
-        definitions.types[tName] = typeFnMap[tType](typeDef, tName);
-      });
-    });
-
-    //  add union definitions
-    _.forEach(unionDefs, function (unionDef, unionName) {
-      definitions.types[unionName] = t.GraphQLUnionType(unionDef, unionName);
-    });
-
-    //  build schemas
-    _.forEach(def.schemas, function (schemaDef, schemaName) {
-      //  create a schema
-      try {
-        definitions.schemas[schemaName] = t.GraphQLSchema(schemaDef, schemaName);
-
-        //  create a function to execute the graphql schmea
-        lib[schemaName] = function (query, rootValue, ctxValue, varValues, opName) {
-          return gql.graphql(definitions.schemas[schemaName], query, rootValue, ctxValue, varValues, opName);
-        };
-      } catch (err) {
-        console.log(err);
-        return false;
-      }
-    });
-
-    lib._definitions = definitions;
-    return lib;
-  };
-  return { make: make, plugin: plugin, utils: utils, compile: compile };
-};
-
-factory.utils = utils;
-
-module.exports = factory;
+export default merge;

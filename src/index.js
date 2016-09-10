@@ -5,22 +5,13 @@ let _ = utils
 
 let factory = function (gql) {
   let plugins = {}
-  let definitions = {
-    globals: {},
-    fields: {},
-    functions: {},
-    externalTypes: {},
-    types: {},
-    schemas: {}
-  }
+  let definitions = { globals: {}, fields: {}, functions: {}, externalTypes: {}, types: {}, schemas: {} }
   let t = Types(gql, definitions)
   let typeFnMap = t.typeFnMap
 
   //  check for valid types
   let validateType = function (type) {
-    if (!_.has(typeFnMap, type)) {
-      throw `InvalidTypeError: "${type}" is not a valid object type in the current context`
-    }
+    if (!_.has(typeFnMap, type))  throw `InvalidTypeError: "${type}" is not a valid object type in the current context`
   }
 
   //  construct a type name
@@ -40,11 +31,7 @@ let factory = function (gql) {
   //  add plugin
   let plugin = function (p) {
     if (!p) return
-    p = _.isArray(p) ? p : [p]
-    _.forEach(p, (h) => {
-      plugins = _.merge(plugins, _.omit(h, 'externalTypes'));
-      plugins.externalTypes = Object.assign(plugins.externalTypes || {}, h.externalTypes)
-    })
+    _.forEach(_.ensureArray(p), (h) => plugins = _.merge(plugins, h))
   }
 
   //  make all graphql objects
@@ -55,8 +42,7 @@ let factory = function (gql) {
     plugin(opts.plugin)
 
     // now merge all plugins into the def
-    _.merge(def, _.omit(plugins, 'externalTypes'));
-    def.externalTypes = Object.assign(def.externalTypes || {}, plugins.externalTypes || {})
+    _.merge(def, plugins)
 
     // compile the def if no option to suppress
     if (opts.compile !== false) _.merge(def, compile(def))
@@ -66,8 +52,8 @@ let factory = function (gql) {
     def.fields = def.fields || {}
 
     //  merge the externalTypes and functions before make
-    Object.assign(definitions.externalTypes, def.externalTypes || {})
-    Object.assign(definitions.functions, def.functions || {})
+    _.merge(definitions.externalTypes, def.externalTypes || {})
+    _.merge(definitions.functions, def.functions || {})
     
     //  add the globals, utils, and graphql reference
     definitions.globals = def.globals
@@ -78,12 +64,8 @@ let factory = function (gql) {
     // and store it in the definition
     definitions.definition = _.clone(_.omit(def, 'globals'))
 
-    let nonUnionDefs = _.omitBy(def.types, (tDef) => {
-      return tDef.type === 'Union'
-    })
-    let unionDefs = _.pickBy(def.types, (tDef) => {
-      return tDef.type === 'Union'
-    })
+    let nonUnionDefs = _.omitBy(def.types, (tDef) => tDef.type === 'Union')
+    let unionDefs = _.pickBy(def.types, (tDef) => tDef.type === 'Union')
 
     //  build types first since schemas will use them, save UnionTypes for the end
     _.forEach(nonUnionDefs, (typeDef, typeName) => {
@@ -144,7 +126,6 @@ let factory = function (gql) {
     })
 
     lib._definitions = definitions
-
     return lib
   }
   return { make, plugin, utils, compile }

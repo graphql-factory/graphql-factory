@@ -1,4 +1,5 @@
 var utils = factory.utils
+var GraphQLCustomDateType = require('graphql-custom-datetype')
 
 describe('Utils', function () {
 
@@ -216,6 +217,7 @@ describe('Utils', function () {
     expect(fn({ a: { b: 0 } }, { a: 1 })).to.deep.equal({a: 1 })
     expect(fn({ a: { b: [1, 2, 3] } }, { a: { b : 1 } })).to.deep.equal({a: { b: 1 }})
     expect(fn({ a: { b: [1, 2, 3] } }, { a: { b : [4, 5, 6] } })).to.deep.equal({a: { b: [4, 5, 6] }})
+    expect(fn({}, {type: GraphQLCustomDateType})).to.deep.equal({type: GraphQLCustomDateType})
     done()
   })
 

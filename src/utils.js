@@ -1,4 +1,6 @@
-/* lodash like functions to remove dependency on lodash */
+/* lodash like functions to remove dependency on lodash accept lodash.merge */
+import merge from './lodash.merge'
+export { merge }
 
 // enum type for use with toObjectString function
 export function Enum (value) {
@@ -248,6 +250,7 @@ export function set (obj, path, val) {
   })
 }
 
+/* revisit to remove lodash.merge from project
 export function merge () {
   let args = Array.prototype.slice.call(arguments)
   if (args.length === 0) return {}
@@ -291,6 +294,7 @@ export function merge () {
   }
   return targetObject
 }
+*/
 
 export function clone (obj) {
   return merge({}, obj)
