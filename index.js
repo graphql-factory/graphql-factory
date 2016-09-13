@@ -2298,7 +2298,7 @@ function forEach(obj, fn) {
 
 function without() {
   var output = [];
-  var args = Array.prototype.slice.call(arguments);
+  var args = [].concat(Array.prototype.slice.call(arguments));
   if (args.length === 0) return output;else if (args.length === 1) return args[0];
   var search = args.slice(1);
   forEach(args[0], function (val) {
@@ -2564,26 +2564,39 @@ function circular(obj) {
 }
 
 function toObjectString(obj) {
+  var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+
+  // filter out nulls by default since graphql doesnt currently support them
+  var keepNulls = options.keepNulls === true ? true : false;
+  var noOuterBraces = options.noOuterBraces === true ? true : false;
+
   var toLiteralEx = function toLiteralEx(o) {
     if (isEnum(o)) {
       return o.value;
     } else if (isArray(o)) {
-      return '[' + map(o, function (v) {
+      var arrVals = map(o, function (v) {
         return toLiteralEx(v);
-      }).join(',') + ']';
+      });
+      if (!keepNulls) arrVals = without(arrVals, null);
+      return '[' + arrVals.join(',') + ']';
     } else if (isString(o)) {
       return '"' + o + '"';
     } else if (isDate(o)) {
       return '"' + o.toISOString() + '"';
     } else if (isObject(o)) {
-      return '{' + map(o, function (v, k) {
+      var objVals = map(o, function (v, k) {
+        if (v === null && !keepNulls) return null;
         return k + ':' + toLiteralEx(v);
-      }).join(',') + '}';
+      });
+      objVals = without(objVals, null);
+      return '{' + objVals.join(',') + '}';
     } else {
       return o;
     }
   };
-  return toLiteralEx(circular(obj));
+  var objStr = toLiteralEx(circular(obj));
+  return noOuterBraces ? objStr.replace(/^{|^\[|\]$|}$/g, '') : objStr;
 }
 
 

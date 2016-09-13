@@ -279,9 +279,27 @@ describe('Utils', function () {
     }
     obj3.obj = obj3
 
+    var obj4 = {
+      id: 1,
+      name: null,
+      fields: {
+        name: null
+      },
+      fields2: {
+        name: null,
+        sname: 'Doe'
+      },
+      arr: [1, null]
+    }
+    var obj5 = [1,2,3]
+
     expect(fn(obj1)).to.equal('{id:"1",bool:true,enum:ENUM_TYPE,a:[1,[2,3],{demo:"gorgan"}]}')
     expect(fn(obj2)).to.equal('[1,true,{demo:"gorgan"}]')
     expect(fn(obj3)).to.equal('{id:"1",obj:"[Circular]"}')
+    expect(fn(obj4)).to.equal('{id:1,fields:{},fields2:{sname:"Doe"},arr:[1]}')
+    expect(fn(obj4, {keepNulls:true})).to.equal('{id:1,name:null,fields:{name:null},fields2:{name:null,sname:"Doe"},arr:[1,]}')
+    expect(fn(obj4, {noOuterBraces:true})).to.equal('id:1,fields:{},fields2:{sname:"Doe"},arr:[1]')
+    expect(fn(obj5, {noOuterBraces:true})).to.equal('1,2,3')
     done()
   })
 })

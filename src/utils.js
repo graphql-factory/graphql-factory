@@ -135,7 +135,7 @@ export function forEach (obj, fn) {
 
 export function without () {
   let output = []
-  let args = Array.prototype.slice.call(arguments)
+  let args = [...arguments]
   if (args.length === 0) return output
   else if (args.length === 1) return args[0]
   let search = args.slice(1)
@@ -397,21 +397,34 @@ export function circular (obj, value = '[Circular]') {
   return circularEx(obj, value)
 }
 
-export function toObjectString (obj) {
+export function toObjectString (obj, options = {}) {
+
+  // filter out nulls by default since graphql doesnt currently support them
+  let keepNulls = options.keepNulls === true ? true : false
+  let noOuterBraces = options.noOuterBraces === true ? true : false
+
   let toLiteralEx = (o) => {
     if (isEnum(o)) {
       return o.value
     } else if (isArray(o)) {
-      return `[${map(o, (v) => toLiteralEx(v)).join(',')}]`
+      let arrVals = map(o, (v) => toLiteralEx(v))
+      if (!keepNulls) arrVals = without(arrVals, null)
+      return `[${arrVals.join(',')}]`
     } else if (isString(o)) {
       return `"${o}"`
     } else if (isDate(o)) {
       return `"${o.toISOString()}"`
     } else if (isObject(o)) {
-      return `{${map(o, (v, k) => `${k}:${toLiteralEx(v)}`).join(',')}}`
+      let objVals = map(o, (v, k) => {
+        if (v === null && !keepNulls) return null
+        return `${k}:${toLiteralEx(v)}`
+      })
+      objVals = without(objVals, null)
+      return `{${objVals.join(',')}}`
     } else {
       return o
     }
   }
-  return toLiteralEx(circular(obj))
+  let objStr = toLiteralEx(circular(obj))
+  return noOuterBraces ? objStr.replace(/^{|^\[|\]$|}$/g, '') : objStr
 }
