@@ -2570,6 +2570,7 @@ function toObjectString(obj) {
   // filter out nulls by default since graphql doesnt currently support them
   var keepNulls = options.keepNulls === true ? true : false;
   var noOuterBraces = options.noOuterBraces === true ? true : false;
+  var safeQuotes = options.safeQuotes === false ? false : true;
 
   var toLiteralEx = function toLiteralEx(o) {
     if (isEnum(o)) {
@@ -2581,7 +2582,8 @@ function toObjectString(obj) {
       if (!keepNulls) arrVals = without(arrVals, null);
       return '[' + arrVals.join(',') + ']';
     } else if (isString(o)) {
-      return '"' + o + '"';
+      var strVal = safeQuotes ? o.replace(/"/gm, '\\"') : o;
+      return '"' + strVal + '"';
     } else if (isDate(o)) {
       return '"' + o.toISOString() + '"';
     } else if (isObject(o)) {

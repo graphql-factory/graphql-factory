@@ -402,6 +402,7 @@ export function toObjectString (obj, options = {}) {
   // filter out nulls by default since graphql doesnt currently support them
   let keepNulls = options.keepNulls === true ? true : false
   let noOuterBraces = options.noOuterBraces === true ? true : false
+  let safeQuotes = options.safeQuotes === false ? false : true
 
   let toLiteralEx = (o) => {
     if (isEnum(o)) {
@@ -411,7 +412,8 @@ export function toObjectString (obj, options = {}) {
       if (!keepNulls) arrVals = without(arrVals, null)
       return `[${arrVals.join(',')}]`
     } else if (isString(o)) {
-      return `"${o}"`
+      let strVal = safeQuotes ? o.replace(/"/gm, '\\"') : o
+      return `"${strVal}"`
     } else if (isDate(o)) {
       return `"${o.toISOString()}"`
     } else if (isObject(o)) {
