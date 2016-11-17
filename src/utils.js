@@ -397,23 +397,36 @@ export function circular (obj, value = '[Circular]') {
   return circularEx(obj, value)
 }
 
+export function escapeString (str) {
+  if (!isString(str)) return ''
+  return String(str)
+    .replace(/\\/gm, '\\\\')
+    .replace(/\//gm, '\\/')
+    .replace(/\b/gm, '')
+    .replace(/\f/gm, '\\f')
+    .replace(/\n/gm, '\\n')
+    .replace(/\r/gm, '\\r')
+    .replace(/\t/gm, '\\t')
+    .replace(/"/gm, '\\"')
+}
+
 export function toObjectString (obj, options = {}) {
 
   // filter out nulls by default since graphql doesnt currently support them
   let keepNulls = options.keepNulls === true ? true : false
   let noOuterBraces = options.noOuterBraces === true ? true : false
-  let safeQuotes = options.safeQuotes === false ? false : true
 
   let toLiteralEx = (o) => {
     if (isEnum(o)) {
       return o.value
+    } else if (isString(o) && o.match(/^Enum::/)) {
+      return o.replace(/^Enum::/, '')
     } else if (isArray(o)) {
       let arrVals = map(o, (v) => toLiteralEx(v))
       if (!keepNulls) arrVals = without(arrVals, null)
       return `[${arrVals.join(',')}]`
     } else if (isString(o)) {
-      let strVal = safeQuotes ? o.replace(/"/gm, '\\"') : o
-      return `"${strVal}"`
+      return `"${escapeString(o)}"`
     } else if (isDate(o)) {
       return `"${o.toISOString()}"`
     } else if (isObject(o)) {

@@ -3,7 +3,201 @@
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
 } : function (obj) {
-  return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj;
+  return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+};
+
+
+
+
+
+var asyncGenerator = function () {
+  function AwaitValue(value) {
+    this.value = value;
+  }
+
+  function AsyncGenerator(gen) {
+    var front, back;
+
+    function send(key, arg) {
+      return new Promise(function (resolve, reject) {
+        var request = {
+          key: key,
+          arg: arg,
+          resolve: resolve,
+          reject: reject,
+          next: null
+        };
+
+        if (back) {
+          back = back.next = request;
+        } else {
+          front = back = request;
+          resume(key, arg);
+        }
+      });
+    }
+
+    function resume(key, arg) {
+      try {
+        var result = gen[key](arg);
+        var value = result.value;
+
+        if (value instanceof AwaitValue) {
+          Promise.resolve(value.value).then(function (arg) {
+            resume("next", arg);
+          }, function (arg) {
+            resume("throw", arg);
+          });
+        } else {
+          settle(result.done ? "return" : "normal", result.value);
+        }
+      } catch (err) {
+        settle("throw", err);
+      }
+    }
+
+    function settle(type, value) {
+      switch (type) {
+        case "return":
+          front.resolve({
+            value: value,
+            done: true
+          });
+          break;
+
+        case "throw":
+          front.reject(value);
+          break;
+
+        default:
+          front.resolve({
+            value: value,
+            done: false
+          });
+          break;
+      }
+
+      front = front.next;
+
+      if (front) {
+        resume(front.key, front.arg);
+      } else {
+        back = null;
+      }
+    }
+
+    this._invoke = send;
+
+    if (typeof gen.return !== "function") {
+      this.return = undefined;
+    }
+  }
+
+  if (typeof Symbol === "function" && Symbol.asyncIterator) {
+    AsyncGenerator.prototype[Symbol.asyncIterator] = function () {
+      return this;
+    };
+  }
+
+  AsyncGenerator.prototype.next = function (arg) {
+    return this._invoke("next", arg);
+  };
+
+  AsyncGenerator.prototype.throw = function (arg) {
+    return this._invoke("throw", arg);
+  };
+
+  AsyncGenerator.prototype.return = function (arg) {
+    return this._invoke("return", arg);
+  };
+
+  return {
+    wrap: function (fn) {
+      return function () {
+        return new AsyncGenerator(fn.apply(this, arguments));
+      };
+    },
+    await: function (value) {
+      return new AwaitValue(value);
+    }
+  };
+}();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var get$1 = function get$1(object, property, receiver) {
+  if (object === null) object = Function.prototype;
+  var desc = Object.getOwnPropertyDescriptor(object, property);
+
+  if (desc === undefined) {
+    var parent = Object.getPrototypeOf(object);
+
+    if (parent === null) {
+      return undefined;
+    } else {
+      return get$1(parent, property, receiver);
+    }
+  } else if ("value" in desc) {
+    return desc.value;
+  } else {
+    var getter = desc.get;
+
+    if (getter === undefined) {
+      return undefined;
+    }
+
+    return getter.call(receiver);
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var set$1 = function set$1(object, property, value, receiver) {
+  var desc = Object.getOwnPropertyDescriptor(object, property);
+
+  if (desc === undefined) {
+    var parent = Object.getPrototypeOf(object);
+
+    if (parent !== null) {
+      set$1(parent, property, value, receiver);
+    }
+  } else if ("value" in desc && desc.writable) {
+    desc.value = value;
+  } else {
+    var setter = desc.set;
+
+    if (setter !== undefined) {
+      setter.call(receiver, value);
+    }
+  }
+
+  return value;
 };
 
 /**
@@ -41,6 +235,7 @@ var setTag = '[object Set]';
 var stringTag = '[object String]';
 var symbolTag = '[object Symbol]';
 var weakMapTag = '[object WeakMap]';
+
 var arrayBufferTag = '[object ArrayBuffer]';
 var dataViewTag = '[object DataView]';
 var float32Tag = '[object Float32Array]';
@@ -52,6 +247,7 @@ var uint8Tag = '[object Uint8Array]';
 var uint8ClampedTag = '[object Uint8ClampedArray]';
 var uint16Tag = '[object Uint16Array]';
 var uint32Tag = '[object Uint32Array]';
+
 /**
  * Used to match `RegExp`
  * [syntax characters](http://ecma-international.org/ecma-262/7.0/#sec-patterns).
@@ -130,10 +326,10 @@ function addMapEntry(map, pair) {
  * @param {*} value The value to add.
  * @returns {Object} Returns `set`.
  */
-function addSetEntry(set, value) {
+function addSetEntry(set$$1, value) {
   // Don't return `set.add` because it's not chainable in IE 11.
-  set.add(value);
-  return set;
+  set$$1.add(value);
+  return set$$1;
 }
 
 /**
@@ -326,11 +522,11 @@ function overArg(func, transform) {
  * @param {Object} set The set to convert.
  * @returns {Array} Returns the values.
  */
-function setToArray(set) {
+function setToArray(set$$1) {
   var index = -1,
-      result = Array(set.size);
+      result = Array(set$$1.size);
 
-  set.forEach(function (value) {
+  set$$1.forEach(function (value) {
     result[++index] = value;
   });
   return result;
@@ -340,6 +536,7 @@ function setToArray(set) {
 var arrayProto = Array.prototype;
 var funcProto = Function.prototype;
 var objectProto = Object.prototype;
+
 /** Used to detect overreaching core-js shims. */
 var coreJsData = root['__core-js_shared__'];
 
@@ -376,23 +573,32 @@ var getPrototype = overArg(Object.getPrototypeOf, Object);
 var objectCreate = Object.create;
 var propertyIsEnumerable = objectProto.propertyIsEnumerable;
 var splice = arrayProto.splice;
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
 var nativeGetSymbols = Object.getOwnPropertySymbols;
 var nativeIsBuffer = Buffer ? Buffer.isBuffer : undefined;
 var nativeKeys = overArg(Object.keys, Object);
 var nativeMax = Math.max;
+
+/* Built-in method references that are verified to be native. */
 var DataView = getNative(root, 'DataView');
 var Map = getNative(root, 'Map');
 var Promise$1 = getNative(root, 'Promise');
 var Set = getNative(root, 'Set');
 var WeakMap = getNative(root, 'WeakMap');
 var nativeCreate = getNative(Object, 'create');
+
+/** Used to detect maps, sets, and weakmaps. */
 var dataViewCtorString = toSource(DataView);
 var mapCtorString = toSource(Map);
 var promiseCtorString = toSource(Promise$1);
 var setCtorString = toSource(Set);
 var weakMapCtorString = toSource(WeakMap);
+
+/** Used to convert symbols to primitives and strings. */
 var symbolProto = _Symbol ? _Symbol.prototype : undefined;
 var symbolValueOf = symbolProto ? symbolProto.valueOf : undefined;
+
 /**
  * Creates a hash object.
  *
@@ -1265,9 +1471,9 @@ function cloneRegExp(regexp) {
  * @param {boolean} [isDeep] Specify a deep clone.
  * @returns {Object} Returns the cloned set.
  */
-function cloneSet(set, isDeep, cloneFunc) {
-  var array = isDeep ? cloneFunc(setToArray(set), true) : setToArray(set);
-  return arrayReduce(array, addSetEntry, new set.constructor());
+function cloneSet(set$$1, isDeep, cloneFunc) {
+  var array = isDeep ? cloneFunc(setToArray(set$$1), true) : setToArray(set$$1);
+  return arrayReduce(array, addSetEntry, new set$$1.constructor());
 }
 
 /**
@@ -2202,7 +2408,7 @@ function toUpper(str) {
 }
 
 function ensureArray() {
-  var obj = arguments.length <= 0 || arguments[0] === undefined ? [] : arguments[0];
+  var obj = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
 
   return isArray(obj) ? obj : [obj];
 }
@@ -2359,7 +2565,7 @@ function omitBy(obj, fn) {
 }
 
 function omit(obj) {
-  var omits = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
+  var omits = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
 
   var newObj = {};
   omits = ensureArray(omits);
@@ -2379,7 +2585,7 @@ function pickBy(obj, fn) {
 }
 
 function pick(obj) {
-  var picks = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
+  var picks = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
 
   var newObj = {};
   picks = ensureArray(picks);
@@ -2389,7 +2595,7 @@ function pick(obj) {
   return newObj;
 }
 
-function get(obj, path, defaultValue) {
+function get$$1(obj, path, defaultValue) {
   var value = obj;
   var fields = isArray(path) ? path : stringToPathArray(path);
   if (fields.length === 0) return defaultValue;
@@ -2404,7 +2610,7 @@ function get(obj, path, defaultValue) {
   return value;
 }
 
-function set(obj, path, val) {
+function set$$1(obj, path, val) {
   var value = obj;
   var fields = isArray(path) ? path : stringToPathArray(path);
   forEach(fields, function (p, idx) {
@@ -2469,13 +2675,13 @@ function clone(obj) {
 function getFieldPath(info, maxDepth) {
   maxDepth = maxDepth || 50;
 
-  var loc = get(info, 'fieldASTs[0].loc');
+  var loc = get$$1(info, 'fieldASTs[0].loc');
   var stackCount = 0;
 
   var traverseFieldPath = function traverseFieldPath(selections, start, end, fieldPath) {
     fieldPath = fieldPath || [];
 
-    var sel = get(filter(selections, function (s) {
+    var sel = get$$1(filter(selections, function (s) {
       return s.loc.start <= start && s.loc.end >= end;
     }), '[0]');
     if (sel) {
@@ -2492,8 +2698,8 @@ function getFieldPath(info, maxDepth) {
 }
 
 function getSchemaOperation(info) {
-  var _type = ['_', get(info, 'operation.operation'), 'Type'].join('');
-  return get(info, ['schema', _type].join('.'), {});
+  var _type = ['_', get$$1(info, 'operation.operation'), 'Type'].join('');
+  return get$$1(info, ['schema', _type].join('.'), {});
 }
 
 /*
@@ -2501,7 +2707,7 @@ function getSchemaOperation(info) {
  */
 function getReturnTypeName(info) {
   try {
-    var typeObj = get(getSchemaOperation(info), '_fields["' + info.fieldName + '"].type', {});
+    var typeObj = get$$1(getSchemaOperation(info), '_fields["' + info.fieldName + '"].type', {});
 
     while (!typeObj.name) {
       typeObj = typeObj.ofType;
@@ -2517,19 +2723,19 @@ function getReturnTypeName(info) {
  * Gets the field definition
  */
 function getRootFieldDef(info, path) {
-  var fldPath = get(getFieldPath(info), '[0]');
+  var fldPath = get$$1(getFieldPath(info), '[0]');
   var queryType = info.operation.operation;
-  var opDef = get(info, 'schema._factory.' + queryType + 'Def', {});
-  var fieldDef = get(opDef, 'fields["' + fldPath + '"]', undefined);
+  var opDef = get$$1(info, 'schema._factory.' + queryType + 'Def', {});
+  var fieldDef = get$$1(opDef, 'fields["' + fldPath + '"]', undefined);
 
   //  if a field def cannot be found, try to find it in the extendFields
   if (!fieldDef && has(opDef, 'extendFields')) {
     forEach(opDef.extendFields, function (v, k) {
-      if (has(v, fldPath)) fieldDef = get(v, '["' + fldPath + '"]', {});
+      if (has(v, fldPath)) fieldDef = get$$1(v, '["' + fldPath + '"]', {});
     });
   }
 
-  return path ? get(fieldDef, path, {}) : fieldDef;
+  return path ? get$$1(fieldDef, path, {}) : fieldDef;
 }
 
 /*
@@ -2539,16 +2745,16 @@ function getRootFieldDef(info, path) {
  */
 function getTypeConfig(info, path) {
   path = path ? '_typeConfig.'.concat(path) : '_typeConfig';
-  return get(getSchemaOperation(info), path, {});
+  return get$$1(getSchemaOperation(info), path, {});
 }
 
 // removes circular references
 function circular(obj) {
-  var value = arguments.length <= 1 || arguments[1] === undefined ? '[Circular]' : arguments[1];
+  var value = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '[Circular]';
 
   var circularEx = function circularEx(_obj) {
-    var key = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
-    var seen = arguments.length <= 2 || arguments[2] === undefined ? [] : arguments[2];
+    var key = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+    var seen = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
 
     seen.push(_obj);
     if (isObject(_obj)) {
@@ -2563,18 +2769,24 @@ function circular(obj) {
   return circularEx(obj, value);
 }
 
+function escapeString(str) {
+  if (!isString(str)) return '';
+  return String(str).replace(/\\/gm, '\\\\').replace(/\//gm, '\\/').replace(/\b/gm, '').replace(/\f/gm, '\\f').replace(/\n/gm, '\\n').replace(/\r/gm, '\\r').replace(/\t/gm, '\\t').replace(/"/gm, '\\"');
+}
+
 function toObjectString(obj) {
-  var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+  var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
 
   // filter out nulls by default since graphql doesnt currently support them
   var keepNulls = options.keepNulls === true ? true : false;
   var noOuterBraces = options.noOuterBraces === true ? true : false;
-  var safeQuotes = options.safeQuotes === false ? false : true;
 
   var toLiteralEx = function toLiteralEx(o) {
     if (isEnum(o)) {
       return o.value;
+    } else if (isString(o) && o.match(/^Enum::/)) {
+      return o.replace(/^Enum::/, '');
     } else if (isArray(o)) {
       var arrVals = map(o, function (v) {
         return toLiteralEx(v);
@@ -2582,8 +2794,7 @@ function toObjectString(obj) {
       if (!keepNulls) arrVals = without(arrVals, null);
       return '[' + arrVals.join(',') + ']';
     } else if (isString(o)) {
-      var strVal = safeQuotes ? o.replace(/"/gm, '\\"') : o;
-      return '"' + strVal + '"';
+      return '"' + escapeString(o) + '"';
     } else if (isDate(o)) {
       return '"' + o.toISOString() + '"';
     } else if (isObject(o)) {
@@ -2604,45 +2815,46 @@ function toObjectString(obj) {
 
 
 var utils = Object.freeze({
-  merge: merge,
-  Enum: Enum,
-  isEnum: isEnum,
-  isFunction: isFunction,
-  isString: isString,
-  isArray: isArray,
-  isDate: isDate,
-  isObject: isObject,
-  isNumber: isNumber,
-  isHash: isHash,
-  includes: includes,
-  toLower: toLower,
-  toUpper: toUpper,
-  ensureArray: ensureArray,
-  isEmpty: isEmpty,
-  keys: keys,
-  capitalize: capitalize,
-  stringToPathArray: stringToPathArray,
-  has: has,
-  forEach: forEach,
-  without: without,
-  map: map,
-  mapValues: mapValues,
-  remap: remap,
-  filter: filter,
-  omitBy: omitBy,
-  omit: omit,
-  pickBy: pickBy,
-  pick: pick,
-  get: get,
-  set: set,
-  clone: clone,
-  getFieldPath: getFieldPath,
-  getSchemaOperation: getSchemaOperation,
-  getReturnTypeName: getReturnTypeName,
-  getRootFieldDef: getRootFieldDef,
-  getTypeConfig: getTypeConfig,
-  circular: circular,
-  toObjectString: toObjectString
+	merge: merge,
+	Enum: Enum,
+	isEnum: isEnum,
+	isFunction: isFunction,
+	isString: isString,
+	isArray: isArray,
+	isDate: isDate,
+	isObject: isObject,
+	isNumber: isNumber,
+	isHash: isHash,
+	includes: includes,
+	toLower: toLower,
+	toUpper: toUpper,
+	ensureArray: ensureArray,
+	isEmpty: isEmpty,
+	keys: keys,
+	capitalize: capitalize,
+	stringToPathArray: stringToPathArray,
+	has: has,
+	forEach: forEach,
+	without: without,
+	map: map,
+	mapValues: mapValues,
+	remap: remap,
+	filter: filter,
+	omitBy: omitBy,
+	omit: omit,
+	pickBy: pickBy,
+	pick: pick,
+	get: get$$1,
+	set: set$$1,
+	clone: clone,
+	getFieldPath: getFieldPath,
+	getSchemaOperation: getSchemaOperation,
+	getReturnTypeName: getReturnTypeName,
+	getRootFieldDef: getRootFieldDef,
+	getTypeConfig: getTypeConfig,
+	circular: circular,
+	escapeString: escapeString,
+	toObjectString: toObjectString
 });
 
 function Types(gql, definitions) {
@@ -2659,16 +2871,16 @@ function Types(gql, definitions) {
   //  used to return the function from definitions if a string key is provided
   var getFunction = function getFunction(fn) {
     if (!fn) return;
-    fn = isString(fn) ? get(definitions.functions, fn) : fn;
+    fn = isString(fn) ? get$$1(definitions.functions, fn) : fn;
     if (isFunction(fn)) return fn.bind(definitions);
   };
 
   //  determines a field type given a FactoryTypeConfig
   var fieldType = function fieldType(field) {
-    var isObject = has(field, 'type');
-    var type = isObject ? field.type : field;
-    var isArray$$ = isArray(type);
-    type = isArray$$ ? type[0] : type;
+    var isObject$$1 = has(field, 'type');
+    var type = isObject$$1 ? field.type : field;
+    var isArray$$1 = isArray(type);
+    type = isArray$$1 ? type[0] : type;
 
     if (has(definitions.types, type)) {
       type = definitions.types[type];
@@ -2681,8 +2893,8 @@ function Types(gql, definitions) {
     }
 
     //  type modifiers for list and non-null
-    type = isArray$$ ? new gql.GraphQLList(type) : type;
-    type = isObject && (field.nullable === false || field.primary) ? new gql.GraphQLNonNull(type) : type;
+    type = isArray$$1 ? new gql.GraphQLList(type) : type;
+    type = isObject$$1 && (field.nullable === false || field.primary) ? new gql.GraphQLNonNull(type) : type;
     return type;
   };
 
@@ -2896,11 +3108,11 @@ function Types(gql, definitions) {
   //  create a GraphQLSchema
   var GraphQLSchema = function GraphQLSchema(schema, schemaKey) {
     var getDef = function getDef(op) {
-      var type = get(schema, op, {});
-      return isString(type) ? get(definitions.definition.types, type, {}) : type;
+      var type = get$$1(schema, op, {});
+      return isString(type) ? get$$1(definitions.definition.types, type, {}) : type;
     };
     var getObj = function getObj(op) {
-      var obj = get(schema, op, undefined);
+      var obj = get$$1(schema, op, undefined);
       return isString(obj) ? getType(obj) : isObject(obj) ? GraphQLObjectType(obj, capitalize(op)) : undefined;
     };
 
@@ -2977,7 +3189,7 @@ var TYPE_MAP = {
 };
 
 function getShortType(type) {
-  return get(TYPE_MAP, type, null);
+  return get$$1(TYPE_MAP, type, null);
 }
 
 function hasFields(type) {
@@ -3070,11 +3282,11 @@ function mergeExtendedWithBase(def, c, debug) {
 
       // examine the extend fields
       if (isString(ext)) {
-        var e = get(def, 'fields["' + ext + '"]', {});
+        var e = get$$1(def, 'fields["' + ext + '"]', {});
         merge(obj.fields, e);
       } else if (isArray(ext)) {
         forEach(ext, function (eName) {
-          var e = get(def, 'fields["' + eName + '"]', {});
+          var e = get$$1(def, 'fields["' + eName + '"]', {});
           merge(obj.fields, e);
         });
       } else if (isHash(ext)) {
@@ -3082,13 +3294,13 @@ function mergeExtendedWithBase(def, c, debug) {
         forEach(ext, function (eObj, eName) {
 
           // get the correct field bundle
-          var e = get(def, 'fields["' + eName + '"]', {});
+          var e = get$$1(def, 'fields["' + eName + '"]', {});
 
           // loop through each field
           forEach(eObj, function (oField, oName) {
 
             // look for the field config in the field bundle
-            var extCfg = get(e, oName);
+            var extCfg = get$$1(e, oName);
 
             if (extCfg) {
               extCfg = toTypeDef(extCfg);
@@ -3131,11 +3343,11 @@ function extendFieldTemplates(c, debug) {
             forEach(field, function (type, idx) {
               argsToTypeDef(type);
               if (type.name) {
-                var fieldBase = get(obj, 'fields["' + type.name + '"]', {});
+                var fieldBase = get$$1(obj, 'fields["' + type.name + '"]', {});
                 argsToTypeDef(fieldBase);
                 obj.fields[type.name] = merge({}, fieldBase, omit(type, 'name'));
               } else {
-                var _fieldBase = get(obj, 'fields["' + idx + '"]', {});
+                var _fieldBase = get$$1(obj, 'fields["' + idx + '"]', {});
                 argsToTypeDef(_fieldBase);
                 obj.fields['' + fieldName + idx] = merge({}, _fieldBase, type);
               }
@@ -3183,7 +3395,7 @@ function setConditionalTypes(c, debug) {
   });
 }
 
-function compile (definition, debug) {
+var compile = function (definition, debug) {
   var def = clone(definition);
   var c = {
     fields: def.fields || {},
@@ -3207,7 +3419,7 @@ function compile (definition, debug) {
   setConditionalTypes(c, debug);
 
   return c;
-}
+};
 
 var _ = utils;
 
@@ -3245,8 +3457,8 @@ var factory = function factory(gql) {
 
   //  make all graphql objects
   var make = function make() {
-    var def = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-    var opts = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+    var def = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    var opts = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
     var lib = {};
 

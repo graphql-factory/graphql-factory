@@ -295,6 +295,10 @@ describe('Utils', function () {
     var obj6 = {
       source: 'console.log("Hello World!")'
     }
+    var obj7 = {
+      source: 'console.log("msg1")\nconsole.log(\'msg2\')',
+      enum: 'Enum::TEST'
+    }
 
     expect(fn(obj1)).to.equal('{id:"1",bool:true,enum:ENUM_TYPE,a:[1,[2,3],{demo:"gorgan"}]}')
     expect(fn(obj2)).to.equal('[1,true,{demo:"gorgan"}]')
@@ -304,6 +308,7 @@ describe('Utils', function () {
     expect(fn(obj4, {noOuterBraces:true})).to.equal('id:1,fields:{},fields2:{sname:"Doe"},arr:[1]')
     expect(fn(obj5, {noOuterBraces:true})).to.equal('1,2,3')
     expect(fn(obj6)).to.equal('{source:"console.log(\\"Hello World!\\")"}')
+    expect(fn(obj7)).to.equal('{source:"console.log(\\"msg1\\")\\nconsole.log(\'msg2\')",enum:TEST}')
     done()
   })
 })
