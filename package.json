@@ -24,6 +24,7 @@
   "author": "Branden Horiuchi <bhoriuchi@gmail.com>",
   "dependencies": {},
   "devDependencies": {
+    "liteutils": "git+https://github.com/bhoriuchi/liteutils.git#master",
     "chai": "^3.5.0",
     "babel-core": "^6.0.0",
     "babel-preset-es2015": "^6.14.0",
