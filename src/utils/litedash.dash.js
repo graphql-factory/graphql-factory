@@ -215,6 +215,7 @@ var includes = function includes(obj, key) {
 
 includes._accepts = [Array];
 
+/*
 function _arrayMerge(target, source, seen) {
   forEach(source, function (val, i) {
     if (isArray(val) && !isArray(target[i])) target[i] = val;else if (target[i] !== undefined) _merge(target[i], val, clone(seen));else target.push(val);
@@ -252,6 +253,7 @@ var merge = function merge() {
 
 merge._accepts = [Object];
 merge._dependencies = ['dash.isArray', 'dash.isHash', 'dash.isDate', 'dash.forEach', 'dash.includes', 'dash.clone'];
+*/
 
 var map = function map(obj, fn) {
   var output = [];
@@ -599,8 +601,7 @@ var _dash = {
   without: without,
   clone: clone,
   stringToPathArray: stringToPathArray,
-  isDate: isDate,
-  merge: merge
+  isDate: isDate
 };
 
 var DashChain = function DashChain(obj) {
