@@ -2272,6 +2272,128 @@ function stubFalse() {
   return false;
 }
 
+/*
+ * @name - graphql-obj2arg
+ * @description - Convert JavaScript a object into a GraphQL argument string
+ * @author - Branden Horiuchi <bhoriuchi@gmail.com>
+ *
+ */
+var ARRAY = 'array';
+var BOOLEAN = 'boolean';
+var DATE = 'date';
+var ENUM = 'enum';
+var FLOAT = 'float';
+var INT = 'int';
+var NULL = 'null';
+var NUMBER = 'number';
+var OBJECT = 'object';
+var STRING = 'string';
+var UNDEFINED = 'undefined';
+var RX_BOOLEAN = /^Boolean::/;
+var RX_DATE = /^Date::/;
+var RX_ENUM = /^Enum::/;
+var RX_FLOAT = /^Float::/;
+var RX_INT = /^Int::/;
+var RX_OUTER_BRACES = /^{|^\[|\]$|}$/g;
+
+function getType$1(obj) {
+  if (obj === null) {
+    return { obj: obj, type: NULL };
+  } else if (obj === undefined) {
+    return { obj: obj, type: UNDEFINED };
+  } else if (obj instanceof Enum) {
+    return { obj: obj.value, type: ENUM };
+  } else if ((typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === STRING) {
+    if (obj.match(RX_BOOLEAN)) return { obj: Boolean(obj.replace(RX_BOOLEAN, '')), type: BOOLEAN };
+    if (obj.match(RX_DATE)) return { obj: new Date(obj.replace(RX_DATE, '')), type: DATE };
+    if (obj.match(RX_ENUM)) return { obj: obj.replace(RX_ENUM, ''), type: ENUM };
+    if (obj.match(RX_FLOAT)) return { obj: obj.replace(RX_FLOAT, ''), type: FLOAT };
+    if (obj.match(RX_INT)) return { obj: obj.replace(RX_INT, ''), type: INT };
+    return { obj: obj, type: STRING };
+  } else if ((typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === BOOLEAN) {
+    return { obj: obj, type: BOOLEAN };
+  } else if ((typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === NUMBER) {
+    return obj % 1 === 0 ? { obj: obj, type: INT } : { obj: obj, type: FLOAT };
+  } else if (Array.isArray(obj)) {
+    return { obj: obj, type: ARRAY };
+  } else if (obj instanceof Date) {
+    return { obj: obj, type: DATE };
+  } else if ((typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === OBJECT) {
+    return { obj: obj, type: OBJECT };
+  } else {
+    return { obj: obj, type: UNDEFINED };
+  }
+}
+
+var toArguments = function toArguments(obj) {
+  var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+  var keepNulls = options.keepNulls === true ? true : false;
+  var noOuterBraces = options.noOuterBraces === true ? true : false;
+
+  var toLiteral = function toLiteral(o) {
+    var _getType = getType$1(o),
+        obj = _getType.obj,
+        type = _getType.type;
+
+    var _ret = function () {
+      switch (type) {
+        case ARRAY:
+          var arrList = [];
+          forEach(obj, function (v) {
+            var arrVal = toLiteral(v);
+            if (arrVal === NULL && keepNulls || arrVal && arrVal !== NULL) arrList.push(arrVal);
+          });
+          return {
+            v: '[' + arrList.join(',') + ']'
+          };
+        case OBJECT:
+          var objList = [];
+          forEach(obj, function (v, k) {
+            var objVal = toLiteral(v);
+            if (objVal === NULL && keepNulls || objVal && objVal !== NULL) objList.push(k + ':' + objVal);
+          });
+          return {
+            v: '{' + objList.join(',') + '}'
+          };
+        case DATE:
+          return {
+            v: '"' + obj.toISOString() + '"'
+          };
+        case FLOAT:
+          var s = String(obj);
+          return {
+            v: s.indexOf('.') === -1 ? s + '.0' : s
+          };
+        case NULL:
+          return {
+            v: NULL
+          };
+        case STRING:
+          return {
+            v: '"' + escapeString(obj) + '"'
+          };
+        case UNDEFINED:
+          return {
+            v: undefined
+          };
+        default:
+          return {
+            v: String(obj)
+          };
+      }
+    }();
+
+    if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+  };
+
+  var objStr = toLiteral(circular(obj));
+  return noOuterBraces ? objStr.replace(RX_OUTER_BRACES, '') : objStr;
+};
+
+toArguments.Enum = Enum;
+toArguments.escapeString = escapeString;
+
 /* lodash like functions to remove dependency on lodash accept lodash.merge */
 // enum type for use with toObjectString function
 function Enum(value) {
@@ -2541,52 +2663,6 @@ function set$1(obj, path, val) {
   });
 }
 
-/* revisit to remove lodash.merge from project
-export function merge () {
-  let args = Array.prototype.slice.call(arguments)
-  if (args.length === 0) return {}
-  else if (args.length === 1) return args[0]
-  else if (!isHash(args[0])) return {}
-  let targetObject = args[0]
-  let sources = args.slice(1)
-
-  //  define the recursive merge function
-  let _merge = function (target, source) {
-    for (let k in source) {
-      if (!target[k] && isHash(source[k])) {
-        target[k] = _merge({}, source[k])
-      } else if (target[k] && isHash(target[k]) && isHash(source[k])) {
-        target[k] = merge(target[k], source[k])
-      } else {
-        if (isArray(source[k])) {
-          target[k] = []
-          for (let x in source[k]) {
-            if (isHash(source[k][x])) {
-              target[k].push(_merge({}, source[k][x]))
-            } else if (isArray(source[k][x])) {
-              target[k].push(_merge([], source[k][x]))
-            } else {
-              target[k].push(source[k][x])
-            }
-          }
-        } else if (isDate(source[k])) {
-          target[k] = new Date(source[k])
-        } else {
-          target[k] = source[k]
-        }
-      }
-    }
-    return target
-  }
-
-  //  merge each source
-  for (let k in sources) {
-    if (isHash(sources[k])) _merge(targetObject, sources[k])
-  }
-  return targetObject
-}
-*/
-
 function clone(obj) {
   return merge$1({}, obj);
 }
@@ -2696,49 +2772,12 @@ function escapeString(str) {
   return String(str).replace(/\\/gm, '\\\\').replace(/\//gm, '\\/').replace(/\b/gm, '').replace(/\f/gm, '\\f').replace(/\n/gm, '\\n').replace(/\r/gm, '\\r').replace(/\t/gm, '\\t').replace(/"/gm, '\\"');
 }
 
-function toObjectString(obj) {
-  var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-
-  // filter out nulls by default since graphql doesnt currently support them
-  var keepNulls = options.keepNulls === true ? true : false;
-  var noOuterBraces = options.noOuterBraces === true ? true : false;
-
-  var toLiteralEx = function toLiteralEx(o) {
-    if (isEnum(o)) {
-      return o.value;
-    } else if (isString(o) && o.match(/^Enum::/)) {
-      return o.replace(/^Enum::/, '');
-    } else if (isArray(o)) {
-      var arrVals = map(o, function (v) {
-        return toLiteralEx(v);
-      });
-      if (!keepNulls) arrVals = without(arrVals, null);
-      return '[' + arrVals.join(',') + ']';
-    } else if (isString(o)) {
-      return '"' + escapeString(o) + '"';
-    } else if (isDate(o)) {
-      return '"' + o.toISOString() + '"';
-    } else if (isObject(o)) {
-      var objVals = map(o, function (v, k) {
-        if (v === null && !keepNulls) return null;
-        return k + ':' + toLiteralEx(v);
-      });
-      objVals = without(objVals, null);
-      return '{' + objVals.join(',') + '}';
-    } else {
-      return o;
-    }
-  };
-  var objStr = toLiteralEx(circular(obj));
-  return noOuterBraces ? objStr.replace(/^{|^\[|\]$|}$/g, '') : objStr;
-}
-
 var utils = {};
 
 
 
 var _$1 = Object.freeze({
+	toObjectString: toArguments,
 	merge: merge$1,
 	Enum: Enum,
 	isEnum: isEnum,
@@ -2778,7 +2817,6 @@ var _$1 = Object.freeze({
 	getTypeConfig: getTypeConfig,
 	circular: circular,
 	escapeString: escapeString,
-	toObjectString: toObjectString,
 	default: utils
 });
 
@@ -3260,8 +3298,10 @@ function FactoryArgumentConfig(_this) {
   var rootType = arguments[2];
 
   try {
-    var defaultValue = arg.defaultValue,
-        description = arg.description;
+    arg = _$1.isString(arg) || _$1.isArray(arg) ? { type: arg } : arg;
+    var _arg = arg,
+        defaultValue = _arg.defaultValue,
+        description = _arg.description;
 
     var type = _this.resolveType(arg, rootType);
 
@@ -3448,16 +3488,16 @@ function FactoryGQLUnionType(_this, definition, nameDefault) {
 }
 
 // built in type name constants
-var BOOLEAN = 'Boolean';
-var ENUM = 'Enum';
-var FLOAT = 'Float';
+var BOOLEAN$1 = 'Boolean';
+var ENUM$1 = 'Enum';
+var FLOAT$1 = 'Float';
 var ID = 'ID';
 var INPUT = 'Input';
-var INT = 'Int';
+var INT$1 = 'Int';
 var INTERFACE = 'Interface';
-var OBJECT = 'Object';
+var OBJECT$1 = 'Object';
 var SCALAR = 'Scalar';
-var STRING = 'String';
+var STRING$1 = 'String';
 var UNION = 'Union';
 
 /*
@@ -3475,7 +3515,7 @@ var GraphQLFactoryTypeGenerator = function () {
     this._types = null;
     this._schemas = null;
     this.fnContext = definition.plugin;
-    this.typeMap = (_typeMap = {}, defineProperty(_typeMap, BOOLEAN, graphql.GraphQLBoolean), defineProperty(_typeMap, FLOAT, graphql.GraphQLFloat), defineProperty(_typeMap, ID, graphql.GraphQLID), defineProperty(_typeMap, INT, graphql.GraphQLInt), defineProperty(_typeMap, STRING, graphql.GraphQLString), _typeMap);
+    this.typeMap = (_typeMap = {}, defineProperty(_typeMap, BOOLEAN$1, graphql.GraphQLBoolean), defineProperty(_typeMap, FLOAT$1, graphql.GraphQLFloat), defineProperty(_typeMap, ID, graphql.GraphQLID), defineProperty(_typeMap, INT$1, graphql.GraphQLInt), defineProperty(_typeMap, STRING$1, graphql.GraphQLString), _typeMap);
   }
 
   /****************************************************************************
@@ -3511,7 +3551,9 @@ var GraphQLFactoryTypeGenerator = function () {
   }, {
     key: 'resolveType',
     value: function resolveType(field, rootType) {
-      var type = field.type;
+      field = _$1.isString(field) || _$1.isArray(field) ? { type: field } : field;
+      var _field = field,
+          type = _field.type;
 
 
       if (!type && _$1.has(field, '["' + rootType + '"]')) {
@@ -3535,7 +3577,7 @@ var GraphQLFactoryTypeGenerator = function () {
         if (type === UNION) return;
 
         switch (type) {
-          case ENUM:
+          case ENUM$1:
             fn = FactoryGQLEnumType;
             break;
           case INPUT:
@@ -3544,7 +3586,7 @@ var GraphQLFactoryTypeGenerator = function () {
           case INTERFACE:
             fn = FactoryGQLInterfaceType;
             break;
-          case OBJECT:
+          case OBJECT$1:
             fn = FactoryGQLObjectType;
             break;
           case SCALAR:
@@ -3635,6 +3677,8 @@ var GraphQLFactory = function () {
 
     this.graphql = graphql;
     this.definition = new GraphQLFactoryDefinition();
+    this.utils = _$1;
+    this.compile = compiler;
   }
 
   createClass(GraphQLFactory, [{
@@ -3668,7 +3712,8 @@ var factory$1 = function factory$1(graphql) {
   return new GraphQLFactory(graphql);
 };
 
-factory$1.utils = utils;
+factory$1.compile = compiler;
+factory$1.utils = _$1;
 factory$1.GraphQLFactoryDefinition = GraphQLFactoryDefinition;
 
 /*

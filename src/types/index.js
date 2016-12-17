@@ -67,6 +67,7 @@ export default class GraphQLFactoryTypeGenerator {
   }
 
   resolveType (field, rootType) {
+    field = _.isString(field) || _.isArray(field) ? { type: field } : field
     let { type } = field
 
     if (!type && _.has(field, `["${rootType}"]`)) {

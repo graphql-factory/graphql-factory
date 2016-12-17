@@ -1,5 +1,7 @@
 /* lodash like functions to remove dependency on lodash accept lodash.merge */
 import merge from './lodash.merge'
+import toObjectString from './obj2arg'
+export { toObjectString }
 export { merge }
 
 // enum type for use with toObjectString function
@@ -250,52 +252,6 @@ export function set (obj, path, val) {
   })
 }
 
-/* revisit to remove lodash.merge from project
-export function merge () {
-  let args = Array.prototype.slice.call(arguments)
-  if (args.length === 0) return {}
-  else if (args.length === 1) return args[0]
-  else if (!isHash(args[0])) return {}
-  let targetObject = args[0]
-  let sources = args.slice(1)
-
-  //  define the recursive merge function
-  let _merge = function (target, source) {
-    for (let k in source) {
-      if (!target[k] && isHash(source[k])) {
-        target[k] = _merge({}, source[k])
-      } else if (target[k] && isHash(target[k]) && isHash(source[k])) {
-        target[k] = merge(target[k], source[k])
-      } else {
-        if (isArray(source[k])) {
-          target[k] = []
-          for (let x in source[k]) {
-            if (isHash(source[k][x])) {
-              target[k].push(_merge({}, source[k][x]))
-            } else if (isArray(source[k][x])) {
-              target[k].push(_merge([], source[k][x]))
-            } else {
-              target[k].push(source[k][x])
-            }
-          }
-        } else if (isDate(source[k])) {
-          target[k] = new Date(source[k])
-        } else {
-          target[k] = source[k]
-        }
-      }
-    }
-    return target
-  }
-
-  //  merge each source
-  for (let k in sources) {
-    if (isHash(sources[k])) _merge(targetObject, sources[k])
-  }
-  return targetObject
-}
-*/
-
 export function clone (obj) {
   return merge({}, obj)
 }
@@ -408,40 +364,6 @@ export function escapeString (str) {
     .replace(/\r/gm, '\\r')
     .replace(/\t/gm, '\\t')
     .replace(/"/gm, '\\"')
-}
-
-export function toObjectString (obj, options = {}) {
-
-  // filter out nulls by default since graphql doesnt currently support them
-  let keepNulls = options.keepNulls === true ? true : false
-  let noOuterBraces = options.noOuterBraces === true ? true : false
-
-  let toLiteralEx = (o) => {
-    if (isEnum(o)) {
-      return o.value
-    } else if (isString(o) && o.match(/^Enum::/)) {
-      return o.replace(/^Enum::/, '')
-    } else if (isArray(o)) {
-      let arrVals = map(o, (v) => toLiteralEx(v))
-      if (!keepNulls) arrVals = without(arrVals, null)
-      return `[${arrVals.join(',')}]`
-    } else if (isString(o)) {
-      return `"${escapeString(o)}"`
-    } else if (isDate(o)) {
-      return `"${o.toISOString()}"`
-    } else if (isObject(o)) {
-      let objVals = map(o, (v, k) => {
-        if (v === null && !keepNulls) return null
-        return `${k}:${toLiteralEx(v)}`
-      })
-      objVals = without(objVals, null)
-      return `{${objVals.join(',')}}`
-    } else {
-      return o
-    }
-  }
-  let objStr = toLiteralEx(circular(obj))
-  return noOuterBraces ? objStr.replace(/^{|^\[|\]$|}$/g, '') : objStr
 }
 
 export default {}
