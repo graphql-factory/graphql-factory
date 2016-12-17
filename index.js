@@ -3495,10 +3495,57 @@ var ID = 'ID';
 var INPUT = 'Input';
 var INT$1 = 'Int';
 var INTERFACE = 'Interface';
+var LIST = 'List';
+var NONNULL = 'NonNull';
 var OBJECT$1 = 'Object';
 var SCALAR = 'Scalar';
+var SCHEMA = 'Schema';
 var STRING$1 = 'String';
 var UNION = 'Union';
+
+// build a type alias
+var TYPE_ALIAS = {
+  Enum: ENUM$1,
+  Input: INPUT,
+  Interface: INTERFACE,
+  List: LIST,
+  NonNull: NONNULL,
+  Object: OBJECT$1,
+  Scalar: SCALAR,
+  Schema: SCHEMA,
+  Union: UNION,
+  GraphQLEnumType: ENUM$1,
+  GraphQLInputObjectType: INPUT,
+  GraphQLInterfaceType: INTERFACE,
+  GraphQLList: LIST,
+  GraphQLNonNull: NONNULL,
+  GraphQLObjectType: OBJECT$1,
+  GraphQLScalarType: SCALAR,
+  GraphQLSchema: SCHEMA,
+  GraphQLUnionType: UNION
+};
+
+// types with fields
+var HAS_FIELDS$1 = [OBJECT$1, INPUT, INTERFACE];
+
+var constants = {
+  BOOLEAN: BOOLEAN$1,
+  ENUM: ENUM$1,
+  FLOAT: FLOAT$1,
+  ID: ID,
+  INPUT: INPUT,
+  INT: INT$1,
+  INTERFACE: INTERFACE,
+  LIST: LIST,
+  NONNULL: NONNULL,
+  OBJECT: OBJECT$1,
+  SCALAR: SCALAR,
+  SCHEMA: SCHEMA,
+  STRING: STRING$1,
+  UNION: UNION,
+  TYPE_ALIAS: TYPE_ALIAS,
+  HAS_FIELDS: HAS_FIELDS$1
+};
 
 /*
  * Type generator class
@@ -3679,6 +3726,7 @@ var GraphQLFactory$1 = function () {
     this.definition = new GraphQLFactoryDefinition();
     this.utils = _$1;
     this.compile = compiler;
+    this.constants = constants;
   }
 
   createClass(GraphQLFactory, [{
@@ -3712,6 +3760,7 @@ var factory = function factory(graphql) {
   return new GraphQLFactory$1(graphql);
 };
 
+factory.constants = constants;
 factory.compile = compiler;
 factory.utils = _$1;
 factory.GraphQLFactoryDefinition = GraphQLFactoryDefinition;

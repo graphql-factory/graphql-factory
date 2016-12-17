@@ -3,6 +3,7 @@ import * as graphql from 'graphql'
 import GraphQLFactory from '../src/index'
 let factory = GraphQLFactory(graphql)
 
+
 let db = {
   tables: {
     user: [

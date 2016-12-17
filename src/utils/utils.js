@@ -10,6 +10,10 @@ export function Enum (value) {
   this.value = value
 }
 
+export function isBoolean (obj) {
+  return obj === true || obj === false
+}
+
 export function isEnum (obj) {
   return obj instanceof Enum
 }
@@ -163,7 +167,7 @@ export function mapValues (obj, fn) {
   let newObj = {}
   try {
     forEach(obj, function (v, k) {
-      newObj[k] = fn(v)
+      newObj[k] = fn(v, k)
     })
   } catch (err) {
     return obj
@@ -254,6 +258,18 @@ export function set (obj, path, val) {
 
 export function clone (obj) {
   return merge({}, obj)
+}
+
+export function typeOf (obj) {
+  if (obj === undefined) return 'UNDEFINED'
+  if (obj === null) return 'NULL'
+  if (isBoolean(obj)) return 'BOOLEAN'
+  if (isArray(obj)) return 'ARRAY'
+  if (isString(obj)) return 'STRING'
+  if (isNumber(obj)) return 'NUMBER'
+  if (isDate(obj)) return 'DATE'
+  if (isHash(obj)) return 'HASH'
+  if (isObject(obj)) return 'OBJECT'
 }
 
 /*

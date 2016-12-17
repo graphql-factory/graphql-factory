@@ -6,19 +6,19 @@ import FactoryGQLObjectType from './FactoryGQLObjectType'
 import FactoryGQLScalarType from './FactoryGQLScalarType'
 import FactoryGQLSchema from './FactoryGQLSchema'
 import FactoryGQLUnionType from './FactoryGQLUnionType'
-
-// built in type name constants
-export const BOOLEAN = 'Boolean'
-export const ENUM = 'Enum'
-export const FLOAT = 'Float'
-export const ID = 'ID'
-export const INPUT = 'Input'
-export const INT = 'Int'
-export const INTERFACE = 'Interface'
-export const OBJECT = 'Object'
-export const SCALAR = 'Scalar'
-export const STRING = 'String'
-export const UNION = 'Union'
+import {
+  BOOLEAN,
+  ENUM,
+  FLOAT,
+  ID,
+  INPUT,
+  INT,
+  INTERFACE,
+  OBJECT,
+  SCALAR,
+  STRING,
+  UNION
+} from './constants'
 
 /*
  * Type generator class

@@ -3,6 +3,7 @@ import GraphQLFactoryDefinition from './GraphQLFactoryDefinition'
 import GraphQLFactoryLibrary from './GraphQLFactoryLibrary'
 import utils from './utils/index'
 import compiler from './compiler'
+import constants from './types/constants'
 
 export class GraphQLFactory {
   constructor (graphql) {
@@ -10,6 +11,7 @@ export class GraphQLFactory {
     this.definition = new GraphQLFactoryDefinition()
     this.utils = utils
     this.compile = compiler
+    this.constants = constants
   }
 
   plugin (plugins = []) {
@@ -29,6 +31,7 @@ let factory = function (graphql) {
   return new GraphQLFactory(graphql)
 }
 
+factory.constants = constants
 factory.compile = compiler
 factory.utils = utils
 factory.GraphQLFactoryDefinition = GraphQLFactoryDefinition
