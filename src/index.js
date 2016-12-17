@@ -4,5 +4,5 @@
  * @description Create GraphQL schemas and types from JSON definitions
  *
  */
-import factory from './factory'
-export default factory
+import GraphQLFactory from './GraphQLFactory'
+export default GraphQLFactory

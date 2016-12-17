@@ -3671,7 +3671,7 @@ var GraphQLFactoryLibrary = function GraphQLFactoryLibrary(graphql, definition) 
   });
 };
 
-var GraphQLFactory = function () {
+var GraphQLFactory$1 = function () {
   function GraphQLFactory(graphql) {
     classCallCheck(this, GraphQLFactory);
 
@@ -3708,13 +3708,13 @@ var GraphQLFactory = function () {
   return GraphQLFactory;
 }();
 
-var factory$1 = function factory$1(graphql) {
-  return new GraphQLFactory(graphql);
+var factory = function factory(graphql) {
+  return new GraphQLFactory$1(graphql);
 };
 
-factory$1.compile = compiler;
-factory$1.utils = _$1;
-factory$1.GraphQLFactoryDefinition = GraphQLFactoryDefinition;
+factory.compile = compiler;
+factory.utils = _$1;
+factory.GraphQLFactoryDefinition = GraphQLFactoryDefinition;
 
 /*
  * @module graphql-factory
@@ -3723,4 +3723,4 @@ factory$1.GraphQLFactoryDefinition = GraphQLFactoryDefinition;
  *
  */
 
-module.exports = factory$1;
+module.exports = factory;

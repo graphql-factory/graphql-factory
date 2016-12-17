@@ -1,5 +1,5 @@
 import _ from './utils/index'
-import GraphQLFactoryTypeGenerator from './types/index'
+import GraphQLFactoryTypeGenerator from './types/GraphQLFactoryTypeGenerator'
 
 export default class GraphQLFactoryLibrary {
   constructor (graphql, definition) {

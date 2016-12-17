@@ -1,6 +1,6 @@
 import _ from './utils/index'
-import GraphQLFactoryDefinition from './definition'
-import GraphQLFactoryLibrary from './lib'
+import GraphQLFactoryDefinition from './GraphQLFactoryDefinition'
+import GraphQLFactoryLibrary from './GraphQLFactoryLibrary'
 import utils from './utils/index'
 import compiler from './compiler'
 
