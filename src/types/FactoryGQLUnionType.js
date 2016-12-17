@@ -1,12 +1,16 @@
 import _ from '../utils/index'
 
 export default function FactoryGQLUnionType (_this, definition, nameDefault) {
-  let { name, types, resolveType, description } = definition
+  try {
+    let { name, types, resolveType, description } = definition
 
-  return new _this.graphql.GraphQLUnionType({
-    name: name || nameDefault,
-    types: _.map(types, (type) => _this.resolveType(type)),
-    resolveType: _this.bindFunction(resolveType),
-    description
-  })
+    return new _this.graphql.GraphQLUnionType({
+      name: name || nameDefault,
+      types: _.map(types, (type) => _this.resolveType(type)),
+      resolveType: _this.bindFunction(resolveType),
+      description
+    })
+  } catch (err) {
+    console.error('FactoryGQLUnionType', err)
+  }
 }

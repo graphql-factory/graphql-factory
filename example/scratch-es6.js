@@ -20,7 +20,6 @@ let definition = {
   },
   functions: {
     getDog () {
-      console.log('CALLED')
       return {
         name: 'Spot'
       }
@@ -35,11 +34,8 @@ let definition = {
 
 let lib = factory.make(definition)
 
-console.log(lib.types)
-/*
 lib.Animals('{ getDog { name } }')
   .then((dog) => {
     console.log(JSON.stringify(dog, null, '  '))
   })
   .catch(console.error)
-  */

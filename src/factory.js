@@ -1,7 +1,7 @@
 import _ from './utils/index'
 import GraphQLFactoryDefinition from './definition'
 import GraphQLFactoryLibrary from './lib'
-import utils from './utils'
+import utils from './utils/utils'
 
 export class GraphQLFactory {
   constructor (graphql) {

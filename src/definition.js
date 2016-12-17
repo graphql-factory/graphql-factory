@@ -51,13 +51,10 @@ export default class GraphQLFactoryDefinition {
   }
 
   compile () {
-    let { globals, fields, functions, types, schemas, externalTypes } = compiler(this.plugin)
-    this.globals = globals || {}
+    let { fields, types, schemas } = compiler(this.plugin)
     this.fields = fields || {}
-    this.functions = functions || {}
     this.types = types || {}
     this.schemas = schemas || {}
-    this.externalTypes = externalTypes || {}
   }
 
   get definition () {

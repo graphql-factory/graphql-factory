@@ -235,7 +235,6 @@ function setConditionalTypes (c, debug) {
   })
 }
 
-
 export default function (definition, debug) {
   let def = _.clone(definition)
   let c = {

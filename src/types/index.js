@@ -16,7 +16,7 @@ export const INPUT = 'Input'
 export const INT = 'Int'
 export const INTERFACE = 'Interface'
 export const OBJECT = 'Object'
-export const SCALAR = 'SCALAR'
+export const SCALAR = 'Scalar'
 export const STRING = 'String'
 export const UNION = 'Union'
 
@@ -45,7 +45,7 @@ export default class GraphQLFactoryTypeGenerator {
   bindFunction (fn) {
     if (!fn) return
     let resolver = _.isFunction(fn) ? fn : this.definition.get(`functions["${fn}"]`)
-    if (!_.isFunction(resolver)) throw new Error(`could not resolve function ${fn}`)
+    if (!_.isFunction(resolver)) console.error(`could not resolve function ${fn}`)
     return resolver.bind(this.fnContext)
   }
 
