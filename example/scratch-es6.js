@@ -103,4 +103,4 @@ let def = {
 
 let lib = factory.make(def)
 
-console.log(lib)
+console.log(lib._definitions.types)

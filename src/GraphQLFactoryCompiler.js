@@ -20,6 +20,10 @@ function normalizeArgs (field) {
   return field
 }
 
+function normalizeType (type) {
+  return normalizeArgs(toTypeDef(type))
+}
+
 export default class GraphQLFactoryCompiler {
   constructor (definition) {
     this.definition = definition.clone()
@@ -31,11 +35,15 @@ export default class GraphQLFactoryCompiler {
   }
 
   compile () {
-    this.moveSchema()
-    this.normalizeTypes()
-    this.mergeBase()
-    this.extendTemplates()
-    this.conditionalTypes()
+    return this.moveSchema()
+      .normalizeTypes()
+      .mergeBase()
+      .extendTemplates()
+      .conditionalTypes()
+      .value()
+  }
+
+  value () {
     return this.compiled
   }
 
@@ -48,6 +56,7 @@ export default class GraphQLFactoryCompiler {
         return opName
       })
     })
+    return this
   }
 
   normalizeTypes () {
@@ -59,42 +68,50 @@ export default class GraphQLFactoryCompiler {
 
       switch (_.typeOf(type)) {
         case 'UNDEFINED':
-          return types[name] = { type: OBJECT, _typeDef }
+          types[name] = { type: OBJECT, _typeDef }
+          break
 
         case 'STRING':
-          return types[name] = { type, _typeDef }
+          types[name] = { type, _typeDef }
+          break
 
         case 'ARRAY':
           _.forEach(type, (multi) => {
-            if (_.isString(multi)) return types[multi === OBJECT ? name : `${name}${multi}`] = { type, _typeDef }
-            _.forEach(multi, (v, k) => {
-              if (k === OBJECT && !v) return types[name] = { type: OBJECT, _typeDef }
-              else if (k !== OBJECT && !v) return types[name] = { type: k, _typeDef }
-              return types[v] = { type: k, _typeDef }
-            })
+            if (_.isString(multi)) {
+              types[multi === OBJECT ? name : `${name}${multi}`] = { type: multi, _typeDef }
+            } else {
+              _.forEach(multi, (v, k) => {
+                if (k === OBJECT && !v) types[name] = { type: OBJECT, _typeDef }
+                else if (k !== OBJECT && !v) types[name] = { type: k, _typeDef }
+                else types[v] = { type: k, _typeDef }
+              })
+            }
           })
           break
 
         default:
           _.forEach(type, (multi, mName) => {
-            if (mName === OBJECT && !multi) return types[name] = { type: mName, _typeDef }
-            else if (mName !== OBJECT && !multi) return types[`${name}${mName}`] = { type: mName, _typeDef }
-            return types[multi] = { type: mName, _typeDef }
+            if (mName === OBJECT && !multi) types[name] = { type: mName, _typeDef }
+            else if (mName !== OBJECT && !multi) types[`${name}${mName}`] = { type: mName, _typeDef }
+            else types[multi] = { type: mName, _typeDef }
           })
           break
       }
     })
+    return this
   }
 
   mergeBase () {
-    _.forEach(this.compiled.types, (definition) => {
+    let fields = this.compiled.fields
+    _.forEach(this.compiled.types, (definition, n) => {
       let { type, _typeDef } = definition
-      let typeDef = _.omit(_typeDef, 'type')
+      let { extendFields } = _typeDef
+
+      _.merge(definition, _.omit(_typeDef, ['type', 'extendFields']))
       delete definition._typeDef
 
       // no type fields
       if (!hasFields(type)) {
-        _.merge(definition, typeDef)
         if (getShortType(type) === ENUM) {
           let { values } = definition
           _.forEach(values, (v, k) => {
@@ -104,35 +121,35 @@ export default class GraphQLFactoryCompiler {
         return true
       }
 
-      // type fields
-      let { extendFields } = typeDef
-      _.merge(definition, _.omit(typeDef, 'extendFields'))
+      // ensure there is a fields hash
+      definition.fields = _.isHash(definition.fields) ? definition.fields : {}
 
+      // type fields
       switch (_.typeOf(extendFields)) {
         case 'STRING':
-          return _.merge(definition.fields, _.get(this.definition, `fields["${extendFields}"]`, {}))
+          _.merge(definition.fields, _.get(fields, `["${extendFields}"]`, {}))
+          break
 
         case 'ARRAY':
           _.forEach(extendFields, (typeName) => {
-            _.merge(definitions.fields, _.get(this.definition, `fields["${typeName}"]`, {}))
+            _.merge(definition.fields, _.get(fields, `["${typeName}"]`, {}))
           })
           break
 
         case 'HASH':
           _.forEach(extendFields, (extendDef, name) => {
-            let ext = _.get(this.definition, `fields["${name}"]`, {})
+            let ext = _.get(fields, `["${name}"]`, {})
             _.forEach(extendDef, (field, name) => {
               let config = _.get(ext, name)
               if (!config) return true
-              config = toTypeDef(config)
-
+              config = normalizeType(config)
               if (_.isArray(field) && field.length > 1) {
                 _.forEach(field, (v, i) => {
-                  field[i] = _.merge({}, config, toTypeDef(v))
+                  field[i] = _.merge({}, config, normalizeType(v))
                 })
                 return true
               }
-              extendDef[name] = _.merge({}, config, toTypeDef(field))
+              extendDef[name] = _.merge({}, config, normalizeType(field))
             })
             _.merge(definition.fields, ext, extendDef)
           })
@@ -142,6 +159,7 @@ export default class GraphQLFactoryCompiler {
           break
       }
     })
+    return this
   }
 
   extendTemplates () {
@@ -171,6 +189,7 @@ export default class GraphQLFactoryCompiler {
       })
       definition.fields = _.omit(definition.fields, omits)
     })
+    return this
   }
 
   conditionalTypes () {
@@ -184,11 +203,11 @@ export default class GraphQLFactoryCompiler {
           case 'HASH':
             let { type, omitFrom } = field
             if (!type) {
-              if (field[definition.type]) definition.fields[name] = normalizeArgs(toTypeDef(field[definition.type]))
+              if (field[definition.type]) definition.fields[name] = normalizeType(field[definition.type])
               else omits.push(name)
             } else if (omitFrom) {
               if (_.includes(_.isArray(omitFrom) ? omitFrom : [omitFrom], definition.type)) omits.push(name)
-              else normalizeArgs(_.omit(fields[name], 'omitFrom'))
+              else fields[name] = normalizeArgs(_.omit(fields[name], 'omitFrom'))
             }
             break
 
@@ -199,5 +218,6 @@ export default class GraphQLFactoryCompiler {
       })
       definition.fields = _.omit(definition.fields, omits)
     })
+    return this
   }
 }

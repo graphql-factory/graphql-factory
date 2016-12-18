@@ -2917,6 +2917,10 @@ function normalizeArgs(field) {
   return field;
 }
 
+function normalizeType(type) {
+  return normalizeArgs(toTypeDef(type));
+}
+
 var GraphQLFactoryCompiler = function () {
   function GraphQLFactoryCompiler(definition) {
     classCallCheck(this, GraphQLFactoryCompiler);
@@ -2932,11 +2936,11 @@ var GraphQLFactoryCompiler = function () {
   createClass(GraphQLFactoryCompiler, [{
     key: 'compile',
     value: function compile() {
-      this.moveSchema();
-      this.normalizeTypes();
-      this.mergeBase();
-      this.extendTemplates();
-      this.conditionalTypes();
+      return this.moveSchema().normalizeTypes().mergeBase().extendTemplates().conditionalTypes().value();
+    }
+  }, {
+    key: 'value',
+    value: function value() {
       return this.compiled;
     }
   }, {
@@ -2952,6 +2956,7 @@ var GraphQLFactoryCompiler = function () {
           return opName;
         });
       });
+      return this;
     }
   }, {
     key: 'normalizeTypes',
@@ -2965,45 +2970,49 @@ var GraphQLFactoryCompiler = function () {
 
         switch (_$1.typeOf(type)) {
           case 'UNDEFINED':
-            return types[name] = { type: OBJECT$1, _typeDef: _typeDef };
+            types[name] = { type: OBJECT$1, _typeDef: _typeDef };
+            break;
 
           case 'STRING':
-            return types[name] = { type: type, _typeDef: _typeDef };
+            types[name] = { type: type, _typeDef: _typeDef };
+            break;
 
           case 'ARRAY':
             _$1.forEach(type, function (multi) {
-              if (_$1.isString(multi)) return types[multi === OBJECT$1 ? name : '' + name + multi] = { type: type, _typeDef: _typeDef };
-              _$1.forEach(multi, function (v, k) {
-                if (k === OBJECT$1 && !v) return types[name] = { type: OBJECT$1, _typeDef: _typeDef };else if (k !== OBJECT$1 && !v) return types[name] = { type: k, _typeDef: _typeDef };
-                return types[v] = { type: k, _typeDef: _typeDef };
-              });
+              if (_$1.isString(multi)) {
+                types[multi === OBJECT$1 ? name : '' + name + multi] = { type: multi, _typeDef: _typeDef };
+              } else {
+                _$1.forEach(multi, function (v, k) {
+                  if (k === OBJECT$1 && !v) types[name] = { type: OBJECT$1, _typeDef: _typeDef };else if (k !== OBJECT$1 && !v) types[name] = { type: k, _typeDef: _typeDef };else types[v] = { type: k, _typeDef: _typeDef };
+                });
+              }
             });
             break;
 
           default:
             _$1.forEach(type, function (multi, mName) {
-              if (mName === OBJECT$1 && !multi) return types[name] = { type: mName, _typeDef: _typeDef };else if (mName !== OBJECT$1 && !multi) return types['' + name + mName] = { type: mName, _typeDef: _typeDef };
-              return types[multi] = { type: mName, _typeDef: _typeDef };
+              if (mName === OBJECT$1 && !multi) types[name] = { type: mName, _typeDef: _typeDef };else if (mName !== OBJECT$1 && !multi) types['' + name + mName] = { type: mName, _typeDef: _typeDef };else types[multi] = { type: mName, _typeDef: _typeDef };
             });
             break;
         }
       });
+      return this;
     }
   }, {
     key: 'mergeBase',
     value: function mergeBase() {
-      var _this2 = this;
-
-      _$1.forEach(this.compiled.types, function (definition) {
+      var fields = this.compiled.fields;
+      _$1.forEach(this.compiled.types, function (definition, n) {
         var type = definition.type,
             _typeDef = definition._typeDef;
+        var extendFields = _typeDef.extendFields;
 
-        var typeDef = _$1.omit(_typeDef, 'type');
+
+        _$1.merge(definition, _$1.omit(_typeDef, ['type', 'extendFields']));
         delete definition._typeDef;
 
         // no type fields
         if (!hasFields(type)) {
-          _$1.merge(definition, typeDef);
           if (getShortType(type) === ENUM$1) {
             (function () {
               var values = definition.values;
@@ -3016,36 +3025,35 @@ var GraphQLFactoryCompiler = function () {
           return true;
         }
 
+        // ensure there is a fields hash
+        definition.fields = _$1.isHash(definition.fields) ? definition.fields : {};
+
         // type fields
-        var extendFields = typeDef.extendFields;
-
-        _$1.merge(definition, _$1.omit(typeDef, 'extendFields'));
-
         switch (_$1.typeOf(extendFields)) {
           case 'STRING':
-            return _$1.merge(definition.fields, _$1.get(_this2.definition, 'fields["' + extendFields + '"]', {}));
+            _$1.merge(definition.fields, _$1.get(fields, '["' + extendFields + '"]', {}));
+            break;
 
           case 'ARRAY':
             _$1.forEach(extendFields, function (typeName) {
-              _$1.merge(definitions.fields, _$1.get(_this2.definition, 'fields["' + typeName + '"]', {}));
+              _$1.merge(definition.fields, _$1.get(fields, '["' + typeName + '"]', {}));
             });
             break;
 
           case 'HASH':
             _$1.forEach(extendFields, function (extendDef, name) {
-              var ext = _$1.get(_this2.definition, 'fields["' + name + '"]', {});
+              var ext = _$1.get(fields, '["' + name + '"]', {});
               _$1.forEach(extendDef, function (field, name) {
                 var config = _$1.get(ext, name);
                 if (!config) return true;
-                config = toTypeDef(config);
-
+                config = normalizeType(config);
                 if (_$1.isArray(field) && field.length > 1) {
                   _$1.forEach(field, function (v, i) {
-                    field[i] = _$1.merge({}, config, toTypeDef(v));
+                    field[i] = _$1.merge({}, config, normalizeType(v));
                   });
                   return true;
                 }
-                extendDef[name] = _$1.merge({}, config, toTypeDef(field));
+                extendDef[name] = _$1.merge({}, config, normalizeType(field));
               });
               _$1.merge(definition.fields, ext, extendDef);
             });
@@ -3055,6 +3063,7 @@ var GraphQLFactoryCompiler = function () {
             break;
         }
       });
+      return this;
     }
   }, {
     key: 'extendTemplates',
@@ -3086,6 +3095,7 @@ var GraphQLFactoryCompiler = function () {
         });
         definition.fields = _$1.omit(definition.fields, omits);
       });
+      return this;
     }
   }, {
     key: 'conditionalTypes',
@@ -3103,9 +3113,9 @@ var GraphQLFactoryCompiler = function () {
                   omitFrom = field.omitFrom;
 
               if (!type) {
-                if (field[definition.type]) definition.fields[name] = normalizeArgs(toTypeDef(field[definition.type]));else omits.push(name);
+                if (field[definition.type]) definition.fields[name] = normalizeType(field[definition.type]);else omits.push(name);
               } else if (omitFrom) {
-                if (_$1.includes(_$1.isArray(omitFrom) ? omitFrom : [omitFrom], definition.type)) omits.push(name);else normalizeArgs(_$1.omit(fields[name], 'omitFrom'));
+                if (_$1.includes(_$1.isArray(omitFrom) ? omitFrom : [omitFrom], definition.type)) omits.push(name);else fields[name] = normalizeArgs(_$1.omit(fields[name], 'omitFrom'));
               }
               break;
 
@@ -3116,6 +3126,7 @@ var GraphQLFactoryCompiler = function () {
         });
         definition.fields = _$1.omit(definition.fields, omits);
       });
+      return this;
     }
   }]);
   return GraphQLFactoryCompiler;
@@ -3124,7 +3135,9 @@ var GraphQLFactoryCompiler = function () {
 var GraphQLFactoryDefinition = function () {
   function GraphQLFactoryDefinition() {
     var definition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
     classCallCheck(this, GraphQLFactoryDefinition);
+    var plugin = options.plugin;
     var globals = definition.globals,
         fields = definition.fields,
         functions = definition.functions,
@@ -3138,6 +3151,7 @@ var GraphQLFactoryDefinition = function () {
     this.types = types || {};
     this.schemas = schemas || {};
     this.externalTypes = externalTypes || {};
+    this.registerPlugin(plugin);
   }
 
   createClass(GraphQLFactoryDefinition, [{
@@ -3157,6 +3171,33 @@ var GraphQLFactoryDefinition = function () {
       _$1.merge(this.types, types || {});
       _$1.merge(this.schemas, schemas || {});
       _$1.merge(this.externalTypes, externalTypes || {});
+      return this;
+    }
+  }, {
+    key: 'registerPlugin',
+    value: function registerPlugin() {
+      var _this = this;
+
+      var plugins = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+
+      _$1.forEach(_$1.ensureArray(plugins), function (p) {
+        return _this.merge(p);
+      });
+      return this;
+    }
+  }, {
+    key: 'compile',
+    value: function compile() {
+      var compiler = new GraphQLFactoryCompiler(this);
+      var compiled = compiler.compile();
+      var fields = compiled.fields,
+          types = compiled.types,
+          schemas = compiled.schemas;
+
+      this.fields = fields || {};
+      this.types = types || {};
+      this.schemas = schemas || {};
+      return compiled;
     }
   }, {
     key: 'clone',
@@ -3197,20 +3238,6 @@ var GraphQLFactoryDefinition = function () {
     key: 'getExtType',
     value: function getExtType(typeName) {
       return this.has('externalTypes["' + typeName + '"]');
-    }
-  }, {
-    key: 'compile',
-    value: function compile() {
-      var compiler = new GraphQLFactoryCompiler(this);
-
-      var _compiler$compile = compiler.compile(),
-          fields = _compiler$compile.fields,
-          types = _compiler$compile.types,
-          schemas = _compiler$compile.schemas;
-
-      this.fields = fields || {};
-      this.types = types || {};
-      this.schemas = schemas || {};
     }
   }, {
     key: 'definition',
@@ -3684,63 +3711,70 @@ var GraphQLFactoryLibrary = function GraphQLFactoryLibrary(graphql, definition) 
 
   classCallCheck(this, GraphQLFactoryLibrary);
 
-  var generator = new GraphQLFactoryTypeGenerator(graphql, definition);
+  var _ref = new GraphQLFactoryTypeGenerator(graphql, definition),
+      types = _ref.types,
+      schemas = _ref.schemas;
 
   // store original and compiled definitions/types
+
+
   this._definitions = {
-    graphql: graphql,
     definition: definition.definition,
-    types: generator.types,
-    schemas: generator.schemas
+    graphql: graphql,
+    schemas: schemas,
+    types: types
   };
 
   // build schema functions
-  _$1.forEach(generator.schemas, function (schema, name) {
+  _$1.forEach(schemas, function (schema, name) {
     _this[name] = function (requestString, rootValue, contextValue, variableValues, operationName) {
       return graphql.graphql(schema, requestString, rootValue, contextValue, variableValues, operationName);
     };
   });
 };
 
-function compile$1(definition) {
-  var def = new GraphQLFactoryDefinition(definition);
-  def.compile();
-  return def.plugin;
+// standalone definition builder
+function define() {
+  var definition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+  return new GraphQLFactoryDefinition(definition, options);
 }
 
+// standalone compiler
+function compile$1() {
+  var definition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  var plugin = options.plugin;
+
+  if (definition instanceof GraphQLFactoryDefinition) {
+    return definition.registerPlugin(plugin).compile();
+  }
+  return define(definition, options).compile();
+}
+
+// main graphql factory class
 var GraphQLFactory$1 = function () {
   function GraphQLFactory(graphql) {
     classCallCheck(this, GraphQLFactory);
 
-    this.graphql = graphql;
-    this.definition = new GraphQLFactoryDefinition();
     this.compile = compile$1;
-    this.utils = _$1;
     this.constants = constants;
+    this.define = define;
+    this.graphql = graphql;
+    this.utils = _$1;
   }
 
   createClass(GraphQLFactory, [{
-    key: 'plugin',
-    value: function plugin() {
-      var _this = this;
-
-      var plugins = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
-
-      _$1.forEach(_$1.ensureArray(plugins), function (p) {
-        return _this.definition.merge(p);
-      });
-    }
-  }, {
     key: 'make',
     value: function make() {
       var definition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
       var plugin = options.plugin;
 
-      this.plugin(plugin);
-      this.definition.merge(definition);
-      this.definition.compile();
-      return new GraphQLFactoryLibrary(this.graphql, this.definition);
+      var factoryDef = new GraphQLFactoryDefinition();
+      factoryDef.merge(definition).registerPlugin(plugin).compile();
+      return new GraphQLFactoryLibrary(this.graphql, factoryDef);
     }
   }]);
   return GraphQLFactory;
@@ -3750,10 +3784,18 @@ var factory = function factory(graphql) {
   return new GraphQLFactory$1(graphql);
 };
 
-factory.constants = constants;
+// add tools to main module
 factory.compile = compile$1;
+factory.constants = constants;
+factory.define = define;
 factory.utils = _$1;
+
+// add classes to main module
+factory.GraphQLFactory = GraphQLFactory$1;
+factory.GraphQLFactoryCompiler = GraphQLFactoryCompiler;
 factory.GraphQLFactoryDefinition = GraphQLFactoryDefinition;
+factory.GraphQLFactoryLibrary = GraphQLFactoryLibrary;
+factory.GraphQLFactoryTypeGenerator = GraphQLFactoryTypeGenerator;
 
 /*
  * @module graphql-factory

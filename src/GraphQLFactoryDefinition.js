@@ -2,7 +2,8 @@ import _ from './utils/index'
 import GraphQLFactoryCompiler from './GraphQLFactoryCompiler'
 
 export default class GraphQLFactoryDefinition {
-  constructor (definition = {}) {
+  constructor (definition = {}, options = {}) {
+    let { plugin } = options
     let { globals, fields, functions, types, schemas, externalTypes } = definition
     this.globals = globals || {}
     this.fields = fields || {}
@@ -10,6 +11,7 @@ export default class GraphQLFactoryDefinition {
     this.types = types || {}
     this.schemas = schemas || {}
     this.externalTypes = externalTypes || {}
+    this.registerPlugin(plugin)
   }
 
   merge (definition = {}) {
@@ -20,6 +22,22 @@ export default class GraphQLFactoryDefinition {
     _.merge(this.types, types || {})
     _.merge(this.schemas, schemas || {})
     _.merge(this.externalTypes, externalTypes || {})
+    return this
+  }
+
+  registerPlugin (plugins = []) {
+    _.forEach(_.ensureArray(plugins), (p) => this.merge(p))
+    return this
+  }
+
+  compile () {
+    let compiler = new GraphQLFactoryCompiler(this)
+    let compiled = compiler.compile()
+    let { fields, types, schemas } = compiled
+    this.fields = fields || {}
+    this.types = types || {}
+    this.schemas = schemas || {}
+    return compiled
   }
 
   clone () {
@@ -52,14 +70,6 @@ export default class GraphQLFactoryDefinition {
 
   getExtType (typeName) {
     return this.has(`externalTypes["${typeName}"]`)
-  }
-
-  compile () {
-    let compiler = new GraphQLFactoryCompiler(this)
-    let { fields, types, schemas } = compiler.compile()
-    this.fields = fields || {}
-    this.types = types || {}
-    this.schemas = schemas || {}
   }
 
   get definition () {

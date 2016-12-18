@@ -1,34 +1,40 @@
-import _ from './utils/index'
+import GraphQLFactoryCompiler from './GraphQLFactoryCompiler'
 import GraphQLFactoryDefinition from './GraphQLFactoryDefinition'
 import GraphQLFactoryLibrary from './GraphQLFactoryLibrary'
+import GraphQLFactoryTypeGenerator from './types/GraphQLFactoryTypeGenerator'
 import utils from './utils/index'
 import constants from './types/constants'
 
-function compile (definition) {
-  let def = new GraphQLFactoryDefinition(definition)
-  def.compile()
-  return def.plugin
+// standalone definition builder
+function define (definition = {}, options = {}) {
+  return new GraphQLFactoryDefinition(definition, options)
 }
 
+// standalone compiler
+function compile (definition = {}, options = {}) {
+  let { plugin } = options
+  if (definition instanceof GraphQLFactoryDefinition) {
+    return definition.registerPlugin(plugin).compile()
+  }
+  return define(definition, options).compile()
+}
+
+// main graphql factory class
 export class GraphQLFactory {
   constructor (graphql) {
-    this.graphql = graphql
-    this.definition = new GraphQLFactoryDefinition()
     this.compile = compile
-    this.utils = utils
     this.constants = constants
-  }
+    this.define = define
+    this.graphql = graphql
+    this.utils = utils
 
-  plugin (plugins = []) {
-    _.forEach(_.ensureArray(plugins), (p) => this.definition.merge(p))
   }
 
   make (definition = {}, options = {}) {
     let { plugin } = options
-    this.plugin(plugin)
-    this.definition.merge(definition)
-    this.definition.compile()
-    return new GraphQLFactoryLibrary(this.graphql, this.definition)
+    let factoryDef = new GraphQLFactoryDefinition()
+    factoryDef.merge(definition).registerPlugin(plugin).compile()
+    return new GraphQLFactoryLibrary(this.graphql, factoryDef)
   }
 }
 
@@ -36,9 +42,18 @@ let factory = function (graphql) {
   return new GraphQLFactory(graphql)
 }
 
-factory.constants = constants
+// add tools to main module
 factory.compile = compile
+factory.constants = constants
+factory.define = define
 factory.utils = utils
-factory.GraphQLFactoryDefinition = GraphQLFactoryDefinition
 
+// add classes to main module
+factory.GraphQLFactory = GraphQLFactory
+factory.GraphQLFactoryCompiler = GraphQLFactoryCompiler
+factory.GraphQLFactoryDefinition = GraphQLFactoryDefinition
+factory.GraphQLFactoryLibrary = GraphQLFactoryLibrary
+factory.GraphQLFactoryTypeGenerator = GraphQLFactoryTypeGenerator
+
+// export main factory methods
 export default factory
