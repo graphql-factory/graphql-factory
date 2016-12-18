@@ -1,6 +1,5 @@
 import _ from './utils/index'
-// import compiler from './compiler'
-import GraphQLFactoryCompiler from './compile/GraphQLFactoryCompiler'
+import GraphQLFactoryCompiler from './GraphQLFactoryCompiler'
 
 export default class GraphQLFactoryDefinition {
   constructor (definition = {}) {
@@ -56,11 +55,8 @@ export default class GraphQLFactoryDefinition {
   }
 
   compile () {
-    // let { fields, types, schemas } = compiler(this.plugin)
     let compiler = new GraphQLFactoryCompiler(this)
     let { fields, types, schemas } = compiler.compile()
-    // console.log(JSON.stringify({ fields, types, schemas }, null, '  '))
-    process.exit()
     this.fields = fields || {}
     this.types = types || {}
     this.schemas = schemas || {}

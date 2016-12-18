@@ -2401,6 +2401,10 @@ function Enum(value) {
   this.value = value;
 }
 
+function isBoolean(obj) {
+  return obj === true || obj === false;
+}
+
 function isEnum(obj) {
   return obj instanceof Enum;
 }
@@ -2573,7 +2577,7 @@ function mapValues(obj, fn) {
   var newObj = {};
   try {
     forEach(obj, function (v, k) {
-      newObj[k] = fn(v);
+      newObj[k] = fn(v, k);
     });
   } catch (err) {
     return obj;
@@ -2663,8 +2667,20 @@ function set$1(obj, path, val) {
   });
 }
 
-function clone(obj) {
+function clone$1(obj) {
   return merge$1({}, obj);
+}
+
+function typeOf(obj) {
+  if (obj === undefined) return 'UNDEFINED';
+  if (obj === null) return 'NULL';
+  if (isBoolean(obj)) return 'BOOLEAN';
+  if (isArray(obj)) return 'ARRAY';
+  if (isString(obj)) return 'STRING';
+  if (isNumber(obj)) return 'NUMBER';
+  if (isDate(obj)) return 'DATE';
+  if (isHash(obj)) return 'HASH';
+  if (isObject(obj)) return 'OBJECT';
 }
 
 /*
@@ -2780,6 +2796,7 @@ var _$1 = Object.freeze({
 	toObjectString: toArguments,
 	merge: merge$1,
 	Enum: Enum,
+	isBoolean: isBoolean,
 	isEnum: isEnum,
 	isFunction: isFunction,
 	isString: isString,
@@ -2809,7 +2826,8 @@ var _$1 = Object.freeze({
 	pick: pick,
 	get: get$1,
 	set: set$1,
-	clone: clone,
+	clone: clone$1,
+	typeOf: typeOf,
 	getFieldPath: getFieldPath,
 	getSchemaOperation: getSchemaOperation,
 	getReturnTypeName: getReturnTypeName,
@@ -2820,39 +2838,68 @@ var _$1 = Object.freeze({
 	default: utils
 });
 
-/*
- * Expand all definitions. The goal is to omit the fields
- * property from the final definition leaving definitions
- * that stand on their own and can be referenced more easily
- * by utils. This also makes troubleshooting types easier
- * a side effect is also a more well defined schema as some
- * omitted properties will be filled in
- */
-var HAS_FIELDS = ['Object', 'Input', 'Interface'];
+// built in type name constants
+var BOOLEAN$1 = 'Boolean';
+var ENUM$1 = 'Enum';
+var FLOAT$1 = 'Float';
+var ID = 'ID';
+var INPUT = 'Input';
+var INT$1 = 'Int';
+var INTERFACE = 'Interface';
+var LIST = 'List';
+var NONNULL = 'NonNull';
+var OBJECT$1 = 'Object';
+var SCALAR = 'Scalar';
+var SCHEMA = 'Schema';
+var STRING$1 = 'String';
+var UNION = 'Union';
 
-var TYPE_MAP = {
-  Schema: 'Schema',
-  GraphQLSchema: 'Schema',
-  Scalar: 'Scalar',
-  GraphQLScalarType: 'Scalar',
-  Object: 'Object',
-  GraphQLObjectType: 'Object',
-  Interface: 'Interface',
-  GraphQLInterfaceType: 'Interface',
-  Union: 'Union',
-  GraphQLUnionType: 'Union',
-  Enum: 'Enum',
-  GraphQLEnumtype: 'Enum',
-  Input: 'Input',
-  GraphQLInputObjectType: 'Input',
-  List: 'List',
-  GraphQLList: 'List',
-  NonNull: 'NonNull',
-  GraphQLNonNull: 'NonNull'
+// build a type alias
+var TYPE_ALIAS = {
+  Enum: ENUM$1,
+  Input: INPUT,
+  Interface: INTERFACE,
+  List: LIST,
+  NonNull: NONNULL,
+  Object: OBJECT$1,
+  Scalar: SCALAR,
+  Schema: SCHEMA,
+  Union: UNION,
+  GraphQLEnumType: ENUM$1,
+  GraphQLInputObjectType: INPUT,
+  GraphQLInterfaceType: INTERFACE,
+  GraphQLList: LIST,
+  GraphQLNonNull: NONNULL,
+  GraphQLObjectType: OBJECT$1,
+  GraphQLScalarType: SCALAR,
+  GraphQLSchema: SCHEMA,
+  GraphQLUnionType: UNION
+};
+
+// types with fields
+var HAS_FIELDS = [OBJECT$1, INPUT, INTERFACE];
+
+var constants = {
+  BOOLEAN: BOOLEAN$1,
+  ENUM: ENUM$1,
+  FLOAT: FLOAT$1,
+  ID: ID,
+  INPUT: INPUT,
+  INT: INT$1,
+  INTERFACE: INTERFACE,
+  LIST: LIST,
+  NONNULL: NONNULL,
+  OBJECT: OBJECT$1,
+  SCALAR: SCALAR,
+  SCHEMA: SCHEMA,
+  STRING: STRING$1,
+  UNION: UNION,
+  TYPE_ALIAS: TYPE_ALIAS,
+  HAS_FIELDS: HAS_FIELDS
 };
 
 function getShortType(type) {
-  return _$1.get(TYPE_MAP, type, null);
+  return _$1.get(TYPE_ALIAS, type, null);
 }
 
 function hasFields(type) {
@@ -2863,226 +2910,216 @@ function toTypeDef(obj) {
   return _$1.isHash(obj) ? obj : { type: obj };
 }
 
-function argsToTypeDef(field) {
+function normalizeArgs(field) {
   _$1.forEach(field.args, function (arg, argName) {
     field.args[argName] = toTypeDef(arg);
   });
+  return field;
 }
 
-// moves objects defined on the schema to the types section and references the type
-function moveSchemaObjects(def, c) {
-  _$1.forEach(def.schemas, function (schema, schemaName) {
-    var schemaDef = {};
-    _$1.forEach(schema, function (field, fieldName) {
-      if (_$1.isHash(field)) {
-        var name = field.name || '' + schemaName + _$1.capitalize(fieldName);
-        def.types[name] = field;
-        schemaDef[fieldName] = name;
-      } else {
-        schemaDef[fieldName] = field;
-      }
-    });
-    c.schemas[schemaName] = schemaDef;
-  });
-}
+var GraphQLFactoryCompiler = function () {
+  function GraphQLFactoryCompiler(definition) {
+    classCallCheck(this, GraphQLFactoryCompiler);
 
-// expands multi types into their own definitions
-function expandMultiTypes(def, c, debug) {
-  _$1.forEach(def.types, function (typeDef, typeName) {
-    if (!typeDef.type) {
-      c.types[typeName] = { type: 'Object', _typeDef: typeDef };
-    } else if (_$1.isString(typeDef.type)) {
-      c.types[typeName] = { type: typeDef.type, _typeDef: typeDef };
-    } else if (_$1.isArray(typeDef.type)) {
-      _$1.forEach(typeDef.type, function (multiVal) {
-        if (_$1.isString(multiVal)) {
-          var name = multiVal === 'Object' ? typeName : typeName + multiVal;
-          c.types[name] = { type: multiVal, _typeDef: typeDef };
-        } else {
-          _$1.forEach(multiVal, function (v, k) {
-            if (k === 'Object' && !v) {
-              c.types[typeName] = { type: 'Object', _typeDef: typeDef };
-            } else if (k !== 'Object' && !v) {
-              c.types[typeName + k] = { type: k, _typeDef: typeDef };
-            } else {
-              c.types[v] = { type: k, _typeDef: typeDef };
-            }
-          });
-        }
+    this.definition = definition.clone();
+    this.compiled = {
+      fields: this.definition.fields || {},
+      types: {},
+      schemas: {}
+    };
+  }
+
+  createClass(GraphQLFactoryCompiler, [{
+    key: 'compile',
+    value: function compile() {
+      this.moveSchema();
+      this.normalizeTypes();
+      this.mergeBase();
+      this.extendTemplates();
+      this.conditionalTypes();
+      return this.compiled;
+    }
+  }, {
+    key: 'moveSchema',
+    value: function moveSchema() {
+      var _this = this;
+
+      _$1.forEach(this.definition.schemas, function (schema, schemaName) {
+        _this.compiled.schemas[schemaName] = _$1.mapValues(schema, function (definition, operation) {
+          if (_$1.isString(definition)) return definition;
+          var opName = definition.name || '' + schemaName + _$1.capitalize(operation);
+          _$1.set(_this.definition, 'types["' + opName + '"]', definition);
+          return opName;
+        });
       });
-    } else {
-      _$1.forEach(typeDef.type, function (multiVal, multiName) {
-        if (multiName === 'Object' && !multiVal) {
-          c.types[typeName] = { type: multiName, _typeDef: typeDef };
-        } else if (multiName !== 'Object' && !multiVal) {
-          c.types[typeName + multiName] = { type: multiName, _typeDef: typeDef };
-        } else {
-          c.types[multiVal] = { type: multiName, _typeDef: typeDef };
+    }
+  }, {
+    key: 'normalizeTypes',
+    value: function normalizeTypes() {
+      var types = this.compiled.types;
+
+      _$1.forEach(this.definition.types, function (_typeDef, name) {
+        if (!_$1.isHash(_typeDef)) return console.error(name + ' type definition is not an object');
+        var type = _typeDef.type;
+
+
+        switch (_$1.typeOf(type)) {
+          case 'UNDEFINED':
+            return types[name] = { type: OBJECT$1, _typeDef: _typeDef };
+
+          case 'STRING':
+            return types[name] = { type: type, _typeDef: _typeDef };
+
+          case 'ARRAY':
+            _$1.forEach(type, function (multi) {
+              if (_$1.isString(multi)) return types[multi === OBJECT$1 ? name : '' + name + multi] = { type: type, _typeDef: _typeDef };
+              _$1.forEach(multi, function (v, k) {
+                if (k === OBJECT$1 && !v) return types[name] = { type: OBJECT$1, _typeDef: _typeDef };else if (k !== OBJECT$1 && !v) return types[name] = { type: k, _typeDef: _typeDef };
+                return types[v] = { type: k, _typeDef: _typeDef };
+              });
+            });
+            break;
+
+          default:
+            _$1.forEach(type, function (multi, mName) {
+              if (mName === OBJECT$1 && !multi) return types[name] = { type: mName, _typeDef: _typeDef };else if (mName !== OBJECT$1 && !multi) return types['' + name + mName] = { type: mName, _typeDef: _typeDef };
+              return types[multi] = { type: mName, _typeDef: _typeDef };
+            });
+            break;
         }
       });
     }
-  });
-}
+  }, {
+    key: 'mergeBase',
+    value: function mergeBase() {
+      var _this2 = this;
 
-// merges extended fields with base config
-function mergeExtendedWithBase(def, c, debug) {
-  _$1.forEach(c.types, function (obj) {
+      _$1.forEach(this.compiled.types, function (definition) {
+        var type = definition.type,
+            _typeDef = definition._typeDef;
 
-    var typeDef = _$1.omit(obj._typeDef, 'type');
+        var typeDef = _$1.omit(_typeDef, 'type');
+        delete definition._typeDef;
 
-    // at this point we can remove the typedef
-    delete obj._typeDef;
+        // no type fields
+        if (!hasFields(type)) {
+          _$1.merge(definition, typeDef);
+          if (getShortType(type) === ENUM$1) {
+            (function () {
+              var values = definition.values;
 
-    if (hasFields(obj.type)) {
-      obj.fields = obj.fields || {};
+              _$1.forEach(values, function (v, k) {
+                if (!_$1.isHash(v)) values[k] = { value: v };
+              });
+            })();
+          }
+          return true;
+        }
 
-      // get the extend fields and the base definition
-      var ext = typeDef.extendFields;
-      var baseDef = _$1.omit(typeDef, 'extendFields');
+        // type fields
+        var extendFields = typeDef.extendFields;
 
-      // create a base by merging the current type obj with the base definition
-      _$1.merge(obj, baseDef);
+        _$1.merge(definition, _$1.omit(typeDef, 'extendFields'));
 
-      // examine the extend fields
-      if (_$1.isString(ext)) {
-        var e = _$1.get(def, 'fields["' + ext + '"]', {});
-        _$1.merge(obj.fields, e);
-      } else if (_$1.isArray(ext)) {
-        _$1.forEach(ext, function (eName) {
-          var e = _$1.get(def, 'fields["' + eName + '"]', {});
-          _$1.merge(obj.fields, e);
-        });
-      } else if (_$1.isHash(ext)) {
+        switch (_$1.typeOf(extendFields)) {
+          case 'STRING':
+            return _$1.merge(definition.fields, _$1.get(_this2.definition, 'fields["' + extendFields + '"]', {}));
 
-        _$1.forEach(ext, function (eObj, eName) {
+          case 'ARRAY':
+            _$1.forEach(extendFields, function (typeName) {
+              _$1.merge(definitions.fields, _$1.get(_this2.definition, 'fields["' + typeName + '"]', {}));
+            });
+            break;
 
-          // get the correct field bundle
-          var e = _$1.get(def, 'fields["' + eName + '"]', {});
+          case 'HASH':
+            _$1.forEach(extendFields, function (extendDef, name) {
+              var ext = _$1.get(_this2.definition, 'fields["' + name + '"]', {});
+              _$1.forEach(extendDef, function (field, name) {
+                var config = _$1.get(ext, name);
+                if (!config) return true;
+                config = toTypeDef(config);
 
-          // loop through each field
-          _$1.forEach(eObj, function (oField, oName) {
+                if (_$1.isArray(field) && field.length > 1) {
+                  _$1.forEach(field, function (v, i) {
+                    field[i] = _$1.merge({}, config, toTypeDef(v));
+                  });
+                  return true;
+                }
+                extendDef[name] = _$1.merge({}, config, toTypeDef(field));
+              });
+              _$1.merge(definition.fields, ext, extendDef);
+            });
+            break;
 
-            // look for the field config in the field bundle
-            var extCfg = _$1.get(e, oName);
-
-            if (extCfg) {
-              extCfg = toTypeDef(extCfg);
-
-              // check for field templates
-              if (_$1.isArray(oField) && oField.length > 1) {
-                _$1.forEach(oField, function (v, i) {
-                  oField[i] = _$1.merge({}, extCfg, toTypeDef(v));
-                });
-              } else {
-                eObj[oName] = _$1.merge({}, extCfg, toTypeDef(oField));
-              }
-            }
-          });
-          _$1.merge(obj.fields, e, eObj);
-        });
-      }
-    } else {
-      _$1.merge(obj, typeDef);
-
-      // create a hash for enum values specified as strings
-      if (getShortType(obj.type) === 'Enum') {
-        _$1.forEach(obj.values, function (v, k) {
-          if (!_$1.isHash(v)) obj.values[k] = { value: v };
-        });
-      }
+          default:
+            break;
+        }
+      });
     }
-  });
-}
-
-function extendFieldTemplates(c, debug) {
-  _$1.forEach(c.types, function (obj, name) {
-    if (obj.fields) {
-      (function () {
+  }, {
+    key: 'extendTemplates',
+    value: function extendTemplates() {
+      _$1.forEach(this.compiled.types, function (definition) {
         var omits = [];
-        _$1.forEach(obj.fields, function (field, fieldName) {
+        var fieldBase = null;
+        var fields = definition.fields;
+
+        if (!fields) return true;
+        _$1.forEach(fields, function (field, name) {
           if (_$1.isArray(field) && field.length > 1) {
-            omits.push(fieldName);
-            // get the field template
+            omits.push(name);
             _$1.forEach(field, function (type, idx) {
-              argsToTypeDef(type);
+              normalizeArgs(type);
+
               if (type.name) {
-                var fieldBase = _$1.get(obj, 'fields["' + type.name + '"]', {});
-                argsToTypeDef(fieldBase);
-                obj.fields[type.name] = _$1.merge({}, fieldBase, _$1.omit(type, 'name'));
-              } else {
-                var _fieldBase = _$1.get(obj, 'fields["' + idx + '"]', {});
-                argsToTypeDef(_fieldBase);
-                obj.fields['' + fieldName + idx] = _$1.merge({}, _fieldBase, type);
+                fieldBase = _$1.get(definition, 'fields["' + type.name + '"]', {});
+                normalizeArgs(fieldBase);
+                definition.fields[type.name] = _$1.merge({}, fieldBase, _$1.omit(type, 'name'));
+                return true;
               }
+
+              fieldBase = _$1.get(definition, 'fields["' + idx + '"]', {});
+              normalizeArgs(fieldBase);
+              definition.fields['' + name + idx] = _$1.merge({}, fieldBase, type);
             });
           }
         });
-        obj.fields = _$1.omit(obj.fields, omits);
-      })();
+        definition.fields = _$1.omit(definition.fields, omits);
+      });
     }
-  });
-}
-
-function setConditionalTypes(c, debug) {
-  _$1.forEach(c.types, function (obj) {
-    if (obj.fields) {
-      (function () {
+  }, {
+    key: 'conditionalTypes',
+    value: function conditionalTypes() {
+      _$1.forEach(this.compiled.types, function (definition) {
         var omits = [];
-        _$1.forEach(obj.fields, function (field, fieldName) {
-          if (_$1.isHash(field)) {
-            if (!field.type) {
-              if (field[obj.type]) {
-                var typeDef = field[obj.type];
-                typeDef = toTypeDef(typeDef);
-                argsToTypeDef(typeDef);
-                obj.fields[fieldName] = typeDef;
-              } else {
-                omits.push(fieldName);
+        var fields = definition.fields;
+
+        if (!fields) return true;
+
+        _$1.forEach(fields, function (field, name) {
+          switch (_$1.typeOf(field)) {
+            case 'HASH':
+              var type = field.type,
+                  omitFrom = field.omitFrom;
+
+              if (!type) {
+                if (field[definition.type]) definition.fields[name] = normalizeArgs(toTypeDef(field[definition.type]));else omits.push(name);
+              } else if (omitFrom) {
+                if (_$1.includes(_$1.isArray(omitFrom) ? omitFrom : [omitFrom], definition.type)) omits.push(name);else normalizeArgs(_$1.omit(fields[name], 'omitFrom'));
               }
-            } else if (field.omitFrom) {
-              var omitFrom = _$1.isArray(field.omitFrom) ? field.omitFrom : [field.omitFrom];
-              if (_$1.includes(omitFrom, obj.type)) {
-                omits.push(fieldName);
-              } else {
-                obj.fields[fieldName] = _$1.omit(obj.fields[fieldName], 'omitFrom');
-                argsToTypeDef(obj.fields[fieldName]);
-              }
-            }
-          } else {
-            obj.fields[fieldName] = { type: field };
+              break;
+
+            default:
+              definition.fields[name] = { type: field };
+              break;
           }
         });
-        obj.fields = _$1.omit(obj.fields, omits);
-      })();
+        definition.fields = _$1.omit(definition.fields, omits);
+      });
     }
-  });
-}
-
-var compiler = function (definition, debug) {
-  var def = _$1.clone(definition);
-  var c = {
-    fields: def.fields || {},
-    types: {},
-    schemas: {}
-  };
-
-  // first check if schema fields are objects, if they are, move them to the types
-  moveSchemaObjects(def, c, debug);
-
-  // expand multi-types
-  expandMultiTypes(def, c, debug);
-
-  // merge extended fields and base configs
-  mergeExtendedWithBase(def, c, debug);
-
-  // extend field templates
-  extendFieldTemplates(c, debug);
-
-  // omit fields and set conditional types
-  setConditionalTypes(c, debug);
-
-  return c;
-};
+  }]);
+  return GraphQLFactoryCompiler;
+}();
 
 var GraphQLFactoryDefinition = function () {
   function GraphQLFactoryDefinition() {
@@ -3122,6 +3159,11 @@ var GraphQLFactoryDefinition = function () {
       _$1.merge(this.externalTypes, externalTypes || {});
     }
   }, {
+    key: 'clone',
+    value: function clone() {
+      return _$1.merge({}, this.plugin);
+    }
+  }, {
     key: 'has',
     value: function has(keyPath) {
       return _$1.has(this, keyPath);
@@ -3159,10 +3201,12 @@ var GraphQLFactoryDefinition = function () {
   }, {
     key: 'compile',
     value: function compile() {
-      var _compiler = compiler(this.plugin),
-          fields = _compiler.fields,
-          types = _compiler.types,
-          schemas = _compiler.schemas;
+      var compiler = new GraphQLFactoryCompiler(this);
+
+      var _compiler$compile = compiler.compile(),
+          fields = _compiler$compile.fields,
+          types = _compiler$compile.types,
+          schemas = _compiler$compile.schemas;
 
       this.fields = fields || {};
       this.types = types || {};
@@ -3487,66 +3531,6 @@ function FactoryGQLUnionType(_this, definition, nameDefault) {
   }
 }
 
-// built in type name constants
-var BOOLEAN$1 = 'Boolean';
-var ENUM$1 = 'Enum';
-var FLOAT$1 = 'Float';
-var ID = 'ID';
-var INPUT = 'Input';
-var INT$1 = 'Int';
-var INTERFACE = 'Interface';
-var LIST = 'List';
-var NONNULL = 'NonNull';
-var OBJECT$1 = 'Object';
-var SCALAR = 'Scalar';
-var SCHEMA = 'Schema';
-var STRING$1 = 'String';
-var UNION = 'Union';
-
-// build a type alias
-var TYPE_ALIAS = {
-  Enum: ENUM$1,
-  Input: INPUT,
-  Interface: INTERFACE,
-  List: LIST,
-  NonNull: NONNULL,
-  Object: OBJECT$1,
-  Scalar: SCALAR,
-  Schema: SCHEMA,
-  Union: UNION,
-  GraphQLEnumType: ENUM$1,
-  GraphQLInputObjectType: INPUT,
-  GraphQLInterfaceType: INTERFACE,
-  GraphQLList: LIST,
-  GraphQLNonNull: NONNULL,
-  GraphQLObjectType: OBJECT$1,
-  GraphQLScalarType: SCALAR,
-  GraphQLSchema: SCHEMA,
-  GraphQLUnionType: UNION
-};
-
-// types with fields
-var HAS_FIELDS$1 = [OBJECT$1, INPUT, INTERFACE];
-
-var constants = {
-  BOOLEAN: BOOLEAN$1,
-  ENUM: ENUM$1,
-  FLOAT: FLOAT$1,
-  ID: ID,
-  INPUT: INPUT,
-  INT: INT$1,
-  INTERFACE: INTERFACE,
-  LIST: LIST,
-  NONNULL: NONNULL,
-  OBJECT: OBJECT$1,
-  SCALAR: SCALAR,
-  SCHEMA: SCHEMA,
-  STRING: STRING$1,
-  UNION: UNION,
-  TYPE_ALIAS: TYPE_ALIAS,
-  HAS_FIELDS: HAS_FIELDS$1
-};
-
 /*
  * Type generator class
  */
@@ -3718,14 +3702,20 @@ var GraphQLFactoryLibrary = function GraphQLFactoryLibrary(graphql, definition) 
   });
 };
 
+function compile$1(definition) {
+  var def = new GraphQLFactoryDefinition(definition);
+  def.compile();
+  return def.plugin;
+}
+
 var GraphQLFactory$1 = function () {
   function GraphQLFactory(graphql) {
     classCallCheck(this, GraphQLFactory);
 
     this.graphql = graphql;
     this.definition = new GraphQLFactoryDefinition();
+    this.compile = compile$1;
     this.utils = _$1;
-    this.compile = compiler;
     this.constants = constants;
   }
 
@@ -3761,7 +3751,7 @@ var factory = function factory(graphql) {
 };
 
 factory.constants = constants;
-factory.compile = compiler;
+factory.compile = compile$1;
 factory.utils = _$1;
 factory.GraphQLFactoryDefinition = GraphQLFactoryDefinition;
 
