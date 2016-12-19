@@ -10,116 +10,33 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 
 
-var asyncGenerator = function () {
-  function AwaitValue(value) {
-    this.value = value;
+
+
+
+
+
+
+var classCallCheck = function (instance, Constructor) {
+  if (!(instance instanceof Constructor)) {
+    throw new TypeError("Cannot call a class as a function");
   }
+};
 
-  function AsyncGenerator(gen) {
-    var front, back;
-
-    function send(key, arg) {
-      return new Promise(function (resolve, reject) {
-        var request = {
-          key: key,
-          arg: arg,
-          resolve: resolve,
-          reject: reject,
-          next: null
-        };
-
-        if (back) {
-          back = back.next = request;
-        } else {
-          front = back = request;
-          resume(key, arg);
-        }
-      });
-    }
-
-    function resume(key, arg) {
-      try {
-        var result = gen[key](arg);
-        var value = result.value;
-
-        if (value instanceof AwaitValue) {
-          Promise.resolve(value.value).then(function (arg) {
-            resume("next", arg);
-          }, function (arg) {
-            resume("throw", arg);
-          });
-        } else {
-          settle(result.done ? "return" : "normal", result.value);
-        }
-      } catch (err) {
-        settle("throw", err);
-      }
-    }
-
-    function settle(type, value) {
-      switch (type) {
-        case "return":
-          front.resolve({
-            value: value,
-            done: true
-          });
-          break;
-
-        case "throw":
-          front.reject(value);
-          break;
-
-        default:
-          front.resolve({
-            value: value,
-            done: false
-          });
-          break;
-      }
-
-      front = front.next;
-
-      if (front) {
-        resume(front.key, front.arg);
-      } else {
-        back = null;
-      }
-    }
-
-    this._invoke = send;
-
-    if (typeof gen.return !== "function") {
-      this.return = undefined;
+var createClass = function () {
+  function defineProperties(target, props) {
+    for (var i = 0; i < props.length; i++) {
+      var descriptor = props[i];
+      descriptor.enumerable = descriptor.enumerable || false;
+      descriptor.configurable = true;
+      if ("value" in descriptor) descriptor.writable = true;
+      Object.defineProperty(target, descriptor.key, descriptor);
     }
   }
 
-  if (typeof Symbol === "function" && Symbol.asyncIterator) {
-    AsyncGenerator.prototype[Symbol.asyncIterator] = function () {
-      return this;
-    };
-  }
-
-  AsyncGenerator.prototype.next = function (arg) {
-    return this._invoke("next", arg);
-  };
-
-  AsyncGenerator.prototype.throw = function (arg) {
-    return this._invoke("throw", arg);
-  };
-
-  AsyncGenerator.prototype.return = function (arg) {
-    return this._invoke("return", arg);
-  };
-
-  return {
-    wrap: function (fn) {
-      return function () {
-        return new AsyncGenerator(fn.apply(this, arguments));
-      };
-    },
-    await: function (value) {
-      return new AwaitValue(value);
-    }
+  return function (Constructor, protoProps, staticProps) {
+    if (protoProps) defineProperties(Constructor.prototype, protoProps);
+    if (staticProps) defineProperties(Constructor, staticProps);
+    return Constructor;
   };
 }();
 
@@ -127,17 +44,22 @@ var asyncGenerator = function () {
 
 
 
+var defineProperty = function (obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
 
+  return obj;
+};
 
-
-
-
-
-
-
-
-
-var get$1 = function get$1(object, property, receiver) {
+var get$2 = function get$2(object, property, receiver) {
   if (object === null) object = Function.prototype;
   var desc = Object.getOwnPropertyDescriptor(object, property);
 
@@ -147,7 +69,7 @@ var get$1 = function get$1(object, property, receiver) {
     if (parent === null) {
       return undefined;
     } else {
-      return get$1(parent, property, receiver);
+      return get$2(parent, property, receiver);
     }
   } else if ("value" in desc) {
     return desc.value;
@@ -178,14 +100,14 @@ var get$1 = function get$1(object, property, receiver) {
 
 
 
-var set$1 = function set$1(object, property, value, receiver) {
+var set$2 = function set$2(object, property, value, receiver) {
   var desc = Object.getOwnPropertyDescriptor(object, property);
 
   if (desc === undefined) {
     var parent = Object.getPrototypeOf(object);
 
     if (parent !== null) {
-      set$1(parent, property, value, receiver);
+      set$2(parent, property, value, receiver);
     }
   } else if ("value" in desc && desc.writable) {
     desc.value = value;
@@ -2307,7 +2229,7 @@ function keysIn(object) {
  * _.merge(object, other);
  * // => { 'a': [{ 'b': 2, 'c': 3 }, { 'd': 4, 'e': 5 }] }
  */
-var merge = createAssigner(function (object, source, srcIndex) {
+var merge$1 = createAssigner(function (object, source, srcIndex) {
   baseMerge(object, source, srcIndex);
 });
 
@@ -2350,11 +2272,137 @@ function stubFalse() {
   return false;
 }
 
+/*
+ * @name - graphql-obj2arg
+ * @description - Convert JavaScript a object into a GraphQL argument string
+ * @author - Branden Horiuchi <bhoriuchi@gmail.com>
+ *
+ */
+var ARRAY = 'array';
+var BOOLEAN = 'boolean';
+var DATE = 'date';
+var ENUM = 'enum';
+var FLOAT = 'float';
+var INT = 'int';
+var NULL = 'null';
+var NUMBER = 'number';
+var OBJECT = 'object';
+var STRING = 'string';
+var UNDEFINED = 'undefined';
+var RX_BOOLEAN = /^Boolean::/;
+var RX_DATE = /^Date::/;
+var RX_ENUM = /^Enum::/;
+var RX_FLOAT = /^Float::/;
+var RX_INT = /^Int::/;
+var RX_OUTER_BRACES = /^{|^\[|\]$|}$/g;
+
+function getType$1(obj) {
+  if (obj === null) {
+    return { obj: obj, type: NULL };
+  } else if (obj === undefined) {
+    return { obj: obj, type: UNDEFINED };
+  } else if (obj instanceof Enum) {
+    return { obj: obj.value, type: ENUM };
+  } else if ((typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === STRING) {
+    if (obj.match(RX_BOOLEAN)) return { obj: Boolean(obj.replace(RX_BOOLEAN, '')), type: BOOLEAN };
+    if (obj.match(RX_DATE)) return { obj: new Date(obj.replace(RX_DATE, '')), type: DATE };
+    if (obj.match(RX_ENUM)) return { obj: obj.replace(RX_ENUM, ''), type: ENUM };
+    if (obj.match(RX_FLOAT)) return { obj: obj.replace(RX_FLOAT, ''), type: FLOAT };
+    if (obj.match(RX_INT)) return { obj: obj.replace(RX_INT, ''), type: INT };
+    return { obj: obj, type: STRING };
+  } else if ((typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === BOOLEAN) {
+    return { obj: obj, type: BOOLEAN };
+  } else if ((typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === NUMBER) {
+    return obj % 1 === 0 ? { obj: obj, type: INT } : { obj: obj, type: FLOAT };
+  } else if (Array.isArray(obj)) {
+    return { obj: obj, type: ARRAY };
+  } else if (obj instanceof Date) {
+    return { obj: obj, type: DATE };
+  } else if ((typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === OBJECT) {
+    return { obj: obj, type: OBJECT };
+  } else {
+    return { obj: obj, type: UNDEFINED };
+  }
+}
+
+var toArguments = function toArguments(obj) {
+  var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+  var keepNulls = options.keepNulls === true ? true : false;
+  var noOuterBraces = options.noOuterBraces === true ? true : false;
+
+  var toLiteral = function toLiteral(o) {
+    var _getType = getType$1(o),
+        obj = _getType.obj,
+        type = _getType.type;
+
+    var _ret = function () {
+      switch (type) {
+        case ARRAY:
+          var arrList = [];
+          forEach(obj, function (v) {
+            var arrVal = toLiteral(v);
+            if (arrVal === NULL && keepNulls || arrVal && arrVal !== NULL) arrList.push(arrVal);
+          });
+          return {
+            v: '[' + arrList.join(',') + ']'
+          };
+        case OBJECT:
+          var objList = [];
+          forEach(obj, function (v, k) {
+            var objVal = toLiteral(v);
+            if (objVal === NULL && keepNulls || objVal && objVal !== NULL) objList.push(k + ':' + objVal);
+          });
+          return {
+            v: '{' + objList.join(',') + '}'
+          };
+        case DATE:
+          return {
+            v: '"' + obj.toISOString() + '"'
+          };
+        case FLOAT:
+          var s = String(obj);
+          return {
+            v: s.indexOf('.') === -1 ? s + '.0' : s
+          };
+        case NULL:
+          return {
+            v: NULL
+          };
+        case STRING:
+          return {
+            v: '"' + escapeString(obj) + '"'
+          };
+        case UNDEFINED:
+          return {
+            v: undefined
+          };
+        default:
+          return {
+            v: String(obj)
+          };
+      }
+    }();
+
+    if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+  };
+
+  var objStr = toLiteral(circular(obj));
+  return noOuterBraces ? objStr.replace(RX_OUTER_BRACES, '') : objStr;
+};
+
+toArguments.Enum = Enum;
+toArguments.escapeString = escapeString;
+
 /* lodash like functions to remove dependency on lodash accept lodash.merge */
 // enum type for use with toObjectString function
 function Enum(value) {
   if (!(this instanceof Enum)) return new Enum(value);
   this.value = value;
+}
+
+function isBoolean(obj) {
+  return obj === true || obj === false;
 }
 
 function isEnum(obj) {
@@ -2449,7 +2497,7 @@ function stringToPathArray(pathString) {
   return pathArray;
 }
 
-function has(obj, path) {
+function has$1(obj, path) {
   var value = obj;
   var fields = isArray(path) ? path : stringToPathArray(path);
   if (fields.length === 0) return false;
@@ -2529,7 +2577,7 @@ function mapValues(obj, fn) {
   var newObj = {};
   try {
     forEach(obj, function (v, k) {
-      newObj[k] = fn(v);
+      newObj[k] = fn(v, k);
     });
   } catch (err) {
     return obj;
@@ -2541,7 +2589,7 @@ function remap(obj, fn) {
   var newObj = {};
   forEach(obj, function (v, k) {
     var newMap = fn(v, k);
-    if (has(newMap, 'key') && has(newMap, 'value')) newObj[newMap.key] = newMap.value;else newMap[k] = v;
+    if (has$1(newMap, 'key') && has$1(newMap, 'value')) newObj[newMap.key] = newMap.value;else newMap[k] = v;
   });
   return newObj;
 }
@@ -2595,7 +2643,7 @@ function pick(obj) {
   return newObj;
 }
 
-function get$$1(obj, path, defaultValue) {
+function get$1(obj, path, defaultValue) {
   var value = obj;
   var fields = isArray(path) ? path : stringToPathArray(path);
   if (fields.length === 0) return defaultValue;
@@ -2610,7 +2658,7 @@ function get$$1(obj, path, defaultValue) {
   return value;
 }
 
-function set$$1(obj, path, val) {
+function set$1(obj, path, val) {
   var value = obj;
   var fields = isArray(path) ? path : stringToPathArray(path);
   forEach(fields, function (p, idx) {
@@ -2619,54 +2667,20 @@ function set$$1(obj, path, val) {
   });
 }
 
-/* revisit to remove lodash.merge from project
-export function merge () {
-  let args = Array.prototype.slice.call(arguments)
-  if (args.length === 0) return {}
-  else if (args.length === 1) return args[0]
-  else if (!isHash(args[0])) return {}
-  let targetObject = args[0]
-  let sources = args.slice(1)
-
-  //  define the recursive merge function
-  let _merge = function (target, source) {
-    for (let k in source) {
-      if (!target[k] && isHash(source[k])) {
-        target[k] = _merge({}, source[k])
-      } else if (target[k] && isHash(target[k]) && isHash(source[k])) {
-        target[k] = merge(target[k], source[k])
-      } else {
-        if (isArray(source[k])) {
-          target[k] = []
-          for (let x in source[k]) {
-            if (isHash(source[k][x])) {
-              target[k].push(_merge({}, source[k][x]))
-            } else if (isArray(source[k][x])) {
-              target[k].push(_merge([], source[k][x]))
-            } else {
-              target[k].push(source[k][x])
-            }
-          }
-        } else if (isDate(source[k])) {
-          target[k] = new Date(source[k])
-        } else {
-          target[k] = source[k]
-        }
-      }
-    }
-    return target
-  }
-
-  //  merge each source
-  for (let k in sources) {
-    if (isHash(sources[k])) _merge(targetObject, sources[k])
-  }
-  return targetObject
+function clone$1(obj) {
+  return merge$1({}, obj);
 }
-*/
 
-function clone(obj) {
-  return merge({}, obj);
+function typeOf(obj) {
+  if (obj === undefined) return 'UNDEFINED';
+  if (obj === null) return 'NULL';
+  if (isBoolean(obj)) return 'BOOLEAN';
+  if (isArray(obj)) return 'ARRAY';
+  if (isString(obj)) return 'STRING';
+  if (isNumber(obj)) return 'NUMBER';
+  if (isDate(obj)) return 'DATE';
+  if (isHash(obj)) return 'HASH';
+  if (isObject(obj)) return 'OBJECT';
 }
 
 /*
@@ -2675,13 +2689,13 @@ function clone(obj) {
 function getFieldPath(info, maxDepth) {
   maxDepth = maxDepth || 50;
 
-  var loc = get$$1(info, 'fieldASTs[0].loc');
+  var loc = get$1(info, 'fieldASTs[0].loc');
   var stackCount = 0;
 
   var traverseFieldPath = function traverseFieldPath(selections, start, end, fieldPath) {
     fieldPath = fieldPath || [];
 
-    var sel = get$$1(filter(selections, function (s) {
+    var sel = get$1(filter(selections, function (s) {
       return s.loc.start <= start && s.loc.end >= end;
     }), '[0]');
     if (sel) {
@@ -2698,8 +2712,8 @@ function getFieldPath(info, maxDepth) {
 }
 
 function getSchemaOperation(info) {
-  var _type = ['_', get$$1(info, 'operation.operation'), 'Type'].join('');
-  return get$$1(info, ['schema', _type].join('.'), {});
+  var _type = ['_', get$1(info, 'operation.operation'), 'Type'].join('');
+  return get$1(info, ['schema', _type].join('.'), {});
 }
 
 /*
@@ -2707,7 +2721,7 @@ function getSchemaOperation(info) {
  */
 function getReturnTypeName(info) {
   try {
-    var typeObj = get$$1(getSchemaOperation(info), '_fields["' + info.fieldName + '"].type', {});
+    var typeObj = get$1(getSchemaOperation(info), '_fields["' + info.fieldName + '"].type', {});
 
     while (!typeObj.name) {
       typeObj = typeObj.ofType;
@@ -2723,19 +2737,19 @@ function getReturnTypeName(info) {
  * Gets the field definition
  */
 function getRootFieldDef(info, path) {
-  var fldPath = get$$1(getFieldPath(info), '[0]');
+  var fldPath = get$1(getFieldPath(info), '[0]');
   var queryType = info.operation.operation;
-  var opDef = get$$1(info, 'schema._factory.' + queryType + 'Def', {});
-  var fieldDef = get$$1(opDef, 'fields["' + fldPath + '"]', undefined);
+  var opDef = get$1(info, 'schema._factory.' + queryType + 'Def', {});
+  var fieldDef = get$1(opDef, 'fields["' + fldPath + '"]', undefined);
 
   //  if a field def cannot be found, try to find it in the extendFields
-  if (!fieldDef && has(opDef, 'extendFields')) {
+  if (!fieldDef && has$1(opDef, 'extendFields')) {
     forEach(opDef.extendFields, function (v, k) {
-      if (has(v, fldPath)) fieldDef = get$$1(v, '["' + fldPath + '"]', {});
+      if (has$1(v, fldPath)) fieldDef = get$1(v, '["' + fldPath + '"]', {});
     });
   }
 
-  return path ? get$$1(fieldDef, path, {}) : fieldDef;
+  return path ? get$1(fieldDef, path, {}) : fieldDef;
 }
 
 /*
@@ -2745,7 +2759,7 @@ function getRootFieldDef(info, path) {
  */
 function getTypeConfig(info, path) {
   path = path ? '_typeConfig.'.concat(path) : '_typeConfig';
-  return get$$1(getSchemaOperation(info), path, {});
+  return get$1(getSchemaOperation(info), path, {});
 }
 
 // removes circular references
@@ -2774,49 +2788,15 @@ function escapeString(str) {
   return String(str).replace(/\\/gm, '\\\\').replace(/\//gm, '\\/').replace(/\b/gm, '').replace(/\f/gm, '\\f').replace(/\n/gm, '\\n').replace(/\r/gm, '\\r').replace(/\t/gm, '\\t').replace(/"/gm, '\\"');
 }
 
-function toObjectString(obj) {
-  var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-
-  // filter out nulls by default since graphql doesnt currently support them
-  var keepNulls = options.keepNulls === true ? true : false;
-  var noOuterBraces = options.noOuterBraces === true ? true : false;
-
-  var toLiteralEx = function toLiteralEx(o) {
-    if (isEnum(o)) {
-      return o.value;
-    } else if (isString(o) && o.match(/^Enum::/)) {
-      return o.replace(/^Enum::/, '');
-    } else if (isArray(o)) {
-      var arrVals = map(o, function (v) {
-        return toLiteralEx(v);
-      });
-      if (!keepNulls) arrVals = without(arrVals, null);
-      return '[' + arrVals.join(',') + ']';
-    } else if (isString(o)) {
-      return '"' + escapeString(o) + '"';
-    } else if (isDate(o)) {
-      return '"' + o.toISOString() + '"';
-    } else if (isObject(o)) {
-      var objVals = map(o, function (v, k) {
-        if (v === null && !keepNulls) return null;
-        return k + ':' + toLiteralEx(v);
-      });
-      objVals = without(objVals, null);
-      return '{' + objVals.join(',') + '}';
-    } else {
-      return o;
-    }
-  };
-  var objStr = toLiteralEx(circular(obj));
-  return noOuterBraces ? objStr.replace(/^{|^\[|\]$|}$/g, '') : objStr;
-}
+var utils = {};
 
 
 
-var utils = Object.freeze({
-	merge: merge,
+var _$1 = Object.freeze({
+	toObjectString: toArguments,
+	merge: merge$1,
 	Enum: Enum,
+	isBoolean: isBoolean,
 	isEnum: isEnum,
 	isFunction: isFunction,
 	isString: isString,
@@ -2833,7 +2813,7 @@ var utils = Object.freeze({
 	keys: keys,
 	capitalize: capitalize,
 	stringToPathArray: stringToPathArray,
-	has: has,
+	has: has$1,
 	forEach: forEach,
 	without: without,
 	map: map,
@@ -2844,9 +2824,10 @@ var utils = Object.freeze({
 	omit: omit,
 	pickBy: pickBy,
 	pick: pick,
-	get: get$$1,
-	set: set$$1,
-	clone: clone,
+	get: get$1,
+	set: set$1,
+	clone: clone$1,
+	typeOf: typeOf,
 	getFieldPath: getFieldPath,
 	getSchemaOperation: getSchemaOperation,
 	getReturnTypeName: getReturnTypeName,
@@ -2854,710 +2835,973 @@ var utils = Object.freeze({
 	getTypeConfig: getTypeConfig,
 	circular: circular,
 	escapeString: escapeString,
-	toObjectString: toObjectString
+	default: utils
 });
 
-function Types(gql, definitions) {
+// built in type name constants
+var BOOLEAN$1 = 'Boolean';
+var ENUM$1 = 'Enum';
+var FLOAT$1 = 'Float';
+var ID = 'ID';
+var INPUT = 'Input';
+var INT$1 = 'Int';
+var INTERFACE = 'Interface';
+var LIST = 'List';
+var NONNULL = 'NonNull';
+var OBJECT$1 = 'Object';
+var SCALAR = 'Scalar';
+var SCHEMA = 'Schema';
+var STRING$1 = 'String';
+var UNION = 'Union';
 
-  //  primitive types
-  var typeMap = {
-    'String': gql.GraphQLString,
-    'Int': gql.GraphQLInt,
-    'Boolean': gql.GraphQLBoolean,
-    'Float': gql.GraphQLFloat,
-    'ID': gql.GraphQLID
-  };
+// build a type alias
+var TYPE_ALIAS = {
+  Enum: ENUM$1,
+  Input: INPUT,
+  Interface: INTERFACE,
+  List: LIST,
+  NonNull: NONNULL,
+  Object: OBJECT$1,
+  Scalar: SCALAR,
+  Schema: SCHEMA,
+  Union: UNION,
+  GraphQLEnumType: ENUM$1,
+  GraphQLInputObjectType: INPUT,
+  GraphQLInterfaceType: INTERFACE,
+  GraphQLList: LIST,
+  GraphQLNonNull: NONNULL,
+  GraphQLObjectType: OBJECT$1,
+  GraphQLScalarType: SCALAR,
+  GraphQLSchema: SCHEMA,
+  GraphQLUnionType: UNION
+};
 
-  //  used to return the function from definitions if a string key is provided
-  var getFunction = function getFunction(fn) {
-    if (!fn) return;
-    fn = isString(fn) ? get$$1(definitions.functions, fn) : fn;
-    if (isFunction(fn)) return fn.bind(definitions);
-  };
+// types with fields
+var HAS_FIELDS = [OBJECT$1, INPUT, INTERFACE];
 
-  //  determines a field type given a FactoryTypeConfig
-  var fieldType = function fieldType(field) {
-    var isObject$$1 = has(field, 'type');
-    var type = isObject$$1 ? field.type : field;
-    var isArray$$1 = isArray(type);
-    type = isArray$$1 ? type[0] : type;
-
-    if (has(definitions.types, type)) {
-      type = definitions.types[type];
-    } else if (has(typeMap, type)) {
-      type = typeMap[type];
-    } else if (has(definitions.externalTypes, type)) {
-      type = definitions.externalTypes[type];
-    } else if (has(gql, type)) {
-      type = gql[type];
-    }
-
-    //  type modifiers for list and non-null
-    type = isArray$$1 ? new gql.GraphQLList(type) : type;
-    type = isObject$$1 && (field.nullable === false || field.primary) ? new gql.GraphQLNonNull(type) : type;
-    return type;
-  };
-
-  //  resolves the type from the schema, custom types, and graphql itself. supports conditional type
-  var getType = function getType(field, rootType) {
-    if (isHash(field) && !has(field, 'type') && has(field, rootType)) return fieldType(field[rootType]);
-    return fieldType(field);
-  };
-
-  //  extend fields using a definition
-  var extendFields = function extendFields(fields, exts) {
-    var extKeys = [];
-    var customProps = {};
-    var defFields = definitions.definition.fields;
-    fields = fields || {};
-
-    //  check for valid extend config
-    if (!exts || isArray(exts) && exts.length === 0 || isHash(exts) && keys(exts).length === 0 || !isString(exts) && !isHash(exts) && !isArray(exts)) {
-      return remap(fields, function (value, key) {
-        return { key: value.name ? value.name : key, value: value };
-      });
-    }
-
-    //  get the bundle keys
-    if (isString(exts)) extKeys = [exts];else if (isHash(exts)) extKeys = keys(exts);else if (isArray(exts)) extKeys = exts;
-
-    //  merge bundles and existing fields
-    var newFields = clone(fields);
-    forEach(extKeys, function (v) {
-      if (has(defFields, v)) {
-        var fieldTemplate = defFields[v];
-
-        if (!isHash(exts)) {
-          //  if a string or array merge the fields
-          merge(newFields, fieldTemplate);
-        } else {
-          (function () {
-            //  otherwise look for overrides for each field
-            var currentExt = exts[v];
-            forEach(fieldTemplate, function (ftVal, ftKey) {
-              if (has(currentExt, ftKey)) {
-                var extField = currentExt[ftKey];
-                if (isArray(extField)) {
-                  forEach(extField, function (efVal, efIdx) {
-                    if (isHash(efVal) && efVal.name) {
-                      newFields[efVal.name] = merge({}, ftVal, efVal);
-                    } else {
-                      newFields['' + ftKey + efIdx] = merge({}, ftVal, efVal);
-                    }
-                  });
-                } else {
-                  newFields[extField.name || ftKey] = merge({}, ftVal, extField);
-                }
-              }
-            });
-          })();
-        }
-      }
-    });
-
-    //  finally return the merged fields and remap the keys
-    return remap(newFields, function (value, key) {
-      return { key: value.name ? value.name : key, value: value };
-    });
-  };
-
-  //  create a GraphQLArgumentConfig
-  var GraphQLArgumentConfig = function GraphQLArgumentConfig(arg, type) {
-    return {
-      type: getType(arg, type),
-      defaultValue: arg.defaultValue,
-      description: arg.description
-    };
-  };
-
-  //  create a InputObjectFieldConfig
-  var InputObjectFieldConfig = function InputObjectFieldConfig(field, type) {
-    return {
-      type: getType(field, type),
-      defaultValue: field.defaultValue,
-      description: field.description
-    };
-  };
-
-  //  create a GraphQLEnumValueConfig
-  var GraphQLEnumValueConfig = function GraphQLEnumValueConfig(value) {
-    if (!isObject(value)) return { value: value };
-    return {
-      value: value.value,
-      deprecationReason: value.deprecationReason,
-      description: value.description
-    };
-  };
-
-  //  create a GraphQLEnumValueConfigMap
-  var GraphQLEnumValueConfigMap = function GraphQLEnumValueConfigMap(values) {
-    return mapValues(values, function (value) {
-      return GraphQLEnumValueConfig(value);
-    });
-  };
-
-  //  create a GraphQLFieldConfigMapThunk
-  var GraphQLFieldConfigMapThunk = function GraphQLFieldConfigMapThunk(fields, type, objDef) {
-    fields = omitBy(extendFields(fields, objDef.extendFields), function (f) {
-      return has(f, 'omitFrom') && (includes(f.omitFrom, type) || f.omitFrom === type);
-    });
-    if (!fields) return;
-    return function () {
-      return mapValues(fields, function (field) {
-        field = !has(field, 'type') && has(field, type) ? field[type] : field;
-        return {
-          type: getType(field, type),
-          args: mapValues(field.args, function (arg) {
-            return GraphQLArgumentConfig(arg, type);
-          }),
-          resolve: getFunction(field.resolve),
-          deprecationReason: field.deprecationReason,
-          description: field.description
-        };
-      });
-    };
-  };
-
-  //  create a GraphQLInterfacesThunk
-  var GraphQLInterfacesThunk = function GraphQLInterfacesThunk(interfaces) {
-    if (!interfaces) return;
-    var thunk = without(map(interfaces, function (type) {
-      var i = getType(type);
-      if (i instanceof gql.GraphQLInterfaceType) return i;else return null;
-    }), null);
-    return thunk.length > 0 ? function () {
-      return thunk;
-    } : undefined;
-  };
-
-  //  create a InputObjectConfigFieldMapThunk
-  var InputObjectConfigFieldMapThunk = function InputObjectConfigFieldMapThunk(fields, type, objDef) {
-    fields = omitBy(extendFields(fields, objDef.extendFields), function (f) {
-      return has(f, 'omitFrom') && (includes(f.omitFrom, type) || f.omitFrom === type);
-    });
-    if (!fields) return;
-    return function () {
-      return mapValues(fields, function (field) {
-        return InputObjectFieldConfig(field, type);
-      });
-    };
-  };
-
-  //  create a GraphQLScalarType
-  var GraphQLScalarType = function GraphQLScalarType(objDef, objName) {
-    return new gql.GraphQLScalarType({
-      name: objDef.name || objName,
-      description: objDef.description,
-      serialize: getFunction(objDef.serialize),
-      parseValue: getFunction(objDef.parseValue),
-      parseLiteral: getFunction(objDef.parseLiteral)
-    });
-  };
-
-  //  create a GraphQLObjectType
-  var GraphQLObjectType = function GraphQLObjectType(objDef, objName) {
-    return new gql.GraphQLObjectType(merge({}, objDef, {
-      name: objDef.name || objName,
-      interfaces: GraphQLInterfacesThunk(objDef.interfaces),
-      fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Object', objDef),
-      isTypeOf: getFunction(objDef.isTypeOf),
-      description: objDef.description
-    }));
-  };
-
-  //  create a GraphQLInterfaceType
-  var GraphQLInterfaceType = function GraphQLInterfaceType(objDef, objName) {
-    return new gql.GraphQLInterfaceType({
-      name: objDef.name || objName,
-      fields: GraphQLFieldConfigMapThunk(objDef.fields, 'Interface'),
-      resolveType: getFunction(objDef.resolveType),
-      description: objDef.description
-    });
-  };
-
-  //  create a GraphQLEnumType
-  var GraphQLEnumType = function GraphQLEnumType(objDef, objName) {
-    return new gql.GraphQLEnumType({
-      name: objDef.name || objName,
-      values: GraphQLEnumValueConfigMap(objDef.values),
-      description: objDef.description
-    });
-  };
-
-  //  create a GraphQLInputObjectType
-  var GraphQLInputObjectType = function GraphQLInputObjectType(objDef, objName) {
-    return new gql.GraphQLInputObjectType({
-      name: objDef.name || objName,
-      fields: InputObjectConfigFieldMapThunk(objDef.fields, 'Input', objDef),
-      description: objDef.description
-    });
-  };
-
-  //  create a GraphQLUnionType
-  var GraphQLUnionType = function GraphQLUnionType(objDef, objName) {
-    return new gql.GraphQLUnionType({
-      name: objDef.name || objName,
-      types: map(objDef.types, function (type) {
-        return getType(type);
-      }),
-      resolveType: getFunction(objDef.resolveType),
-      description: objDef.description
-    });
-  };
-
-  //  create a GraphQLSchema
-  var GraphQLSchema = function GraphQLSchema(schema, schemaKey) {
-    var getDef = function getDef(op) {
-      var type = get$$1(schema, op, {});
-      return isString(type) ? get$$1(definitions.definition.types, type, {}) : type;
-    };
-    var getObj = function getObj(op) {
-      var obj = get$$1(schema, op, undefined);
-      return isString(obj) ? getType(obj) : isObject(obj) ? GraphQLObjectType(obj, capitalize(op)) : undefined;
-    };
-
-    //  create a new factory object
-    var gqlSchema = new gql.GraphQLSchema({
-      query: getObj('query'),
-      mutation: getObj('mutation'),
-      subscription: getObj('subscription')
-    });
-
-    //  add a _factory property the schema object
-    gqlSchema._factory = {
-      key: schemaKey,
-      queryDef: getDef('query'),
-      mutationDef: getDef('mutation'),
-      subscriptionDef: getDef('subscription')
-    };
-
-    //  return the modified object
-    return gqlSchema;
-  };
-
-  //  type to function map
-  var typeFnMap = {
-    'Input': GraphQLInputObjectType,
-    'Enum': GraphQLEnumType,
-    'Interface': GraphQLInterfaceType,
-    'Object': GraphQLObjectType,
-    'Scalar': GraphQLScalarType
-  };
-
-  return {
-    getType: getType,
-    GraphQLSchema: GraphQLSchema,
-    GraphQLUnionType: GraphQLUnionType,
-    GraphQLInputObjectType: GraphQLInputObjectType,
-    GraphQLEnumType: GraphQLEnumType,
-    GraphQLInterfaceType: GraphQLInterfaceType,
-    GraphQLObjectType: GraphQLObjectType,
-    GraphQLScalarType: GraphQLScalarType,
-    typeFnMap: typeFnMap
-  };
-}
-
-/*
- * Expand all definitions. The goal is to omit the fields
- * property from the final definition leaving definitions
- * that stand on their own and can be referenced more easily
- * by utils. This also makes troubleshooting types easier
- * a side effect is also a more well defined schema as some
- * omitted properties will be filled in
- */
-var HAS_FIELDS = ['Object', 'Input', 'Interface'];
-
-var TYPE_MAP = {
-  Schema: 'Schema',
-  GraphQLSchema: 'Schema',
-  Scalar: 'Scalar',
-  GraphQLScalarType: 'Scalar',
-  Object: 'Object',
-  GraphQLObjectType: 'Object',
-  Interface: 'Interface',
-  GraphQLInterfaceType: 'Interface',
-  Union: 'Union',
-  GraphQLUnionType: 'Union',
-  Enum: 'Enum',
-  GraphQLEnumtype: 'Enum',
-  Input: 'Input',
-  GraphQLInputObjectType: 'Input',
-  List: 'List',
-  GraphQLList: 'List',
-  NonNull: 'NonNull',
-  GraphQLNonNull: 'NonNull'
+var constants = {
+  BOOLEAN: BOOLEAN$1,
+  ENUM: ENUM$1,
+  FLOAT: FLOAT$1,
+  ID: ID,
+  INPUT: INPUT,
+  INT: INT$1,
+  INTERFACE: INTERFACE,
+  LIST: LIST,
+  NONNULL: NONNULL,
+  OBJECT: OBJECT$1,
+  SCALAR: SCALAR,
+  SCHEMA: SCHEMA,
+  STRING: STRING$1,
+  UNION: UNION,
+  TYPE_ALIAS: TYPE_ALIAS,
+  HAS_FIELDS: HAS_FIELDS
 };
 
 function getShortType(type) {
-  return get$$1(TYPE_MAP, type, null);
+  return _$1.get(TYPE_ALIAS, type, null);
 }
 
 function hasFields(type) {
-  return includes(HAS_FIELDS, getShortType(type));
+  return _$1.includes(HAS_FIELDS, getShortType(type));
 }
 
 function toTypeDef(obj) {
-  return isHash(obj) ? obj : { type: obj };
+  return _$1.isHash(obj) ? obj : { type: obj };
 }
 
-function argsToTypeDef(field) {
-  forEach(field.args, function (arg, argName) {
+function normalizeArgs(field) {
+  _$1.forEach(field.args, function (arg, argName) {
     field.args[argName] = toTypeDef(arg);
   });
+  return field;
 }
 
-// moves objects defined on the schema to the types section and references the type
-function moveSchemaObjects(def, c) {
-  forEach(def.schemas, function (schema, schemaName) {
-    var schemaDef = {};
-    forEach(schema, function (field, fieldName) {
-      if (isHash(field)) {
-        var name = field.name || '' + schemaName + capitalize(fieldName);
-        def.types[name] = field;
-        schemaDef[fieldName] = name;
-      } else {
-        schemaDef[fieldName] = field;
-      }
-    });
-    c.schemas[schemaName] = schemaDef;
-  });
+function normalizeType(type) {
+  return normalizeArgs(toTypeDef(type));
 }
 
-// expands multi types into their own definitions
-function expandMultiTypes(def, c, debug) {
-  forEach(def.types, function (typeDef, typeName) {
-    if (!typeDef.type) {
-      c.types[typeName] = { type: 'Object', _typeDef: typeDef };
-    } else if (isString(typeDef.type)) {
-      c.types[typeName] = { type: typeDef.type, _typeDef: typeDef };
-    } else if (isArray(typeDef.type)) {
-      forEach(typeDef.type, function (multiVal) {
-        if (isString(multiVal)) {
-          var name = multiVal === 'Object' ? typeName : typeName + multiVal;
-          c.types[name] = { type: multiVal, _typeDef: typeDef };
-        } else {
-          forEach(multiVal, function (v, k) {
-            if (k === 'Object' && !v) {
-              c.types[typeName] = { type: 'Object', _typeDef: typeDef };
-            } else if (k !== 'Object' && !v) {
-              c.types[typeName + k] = { type: k, _typeDef: typeDef };
-            } else {
-              c.types[v] = { type: k, _typeDef: typeDef };
-            }
-          });
-        }
-      });
-    } else {
-      forEach(typeDef.type, function (multiVal, multiName) {
-        if (multiName === 'Object' && !multiVal) {
-          c.types[typeName] = { type: multiName, _typeDef: typeDef };
-        } else if (multiName !== 'Object' && !multiVal) {
-          c.types[typeName + multiName] = { type: multiName, _typeDef: typeDef };
-        } else {
-          c.types[multiVal] = { type: multiName, _typeDef: typeDef };
-        }
-      });
+var GraphQLFactoryCompiler = function () {
+  function GraphQLFactoryCompiler(definition) {
+    classCallCheck(this, GraphQLFactoryCompiler);
+
+    this.definition = definition.clone();
+    this.compiled = {
+      fields: this.definition.fields || {},
+      types: {},
+      schemas: {}
+    };
+  }
+
+  createClass(GraphQLFactoryCompiler, [{
+    key: 'compile',
+    value: function compile() {
+      return this.moveSchema().normalizeTypes().mergeBase().extendTemplates().conditionalTypes().value();
     }
-  });
-}
+  }, {
+    key: 'value',
+    value: function value() {
+      return this.compiled;
+    }
+  }, {
+    key: 'moveSchema',
+    value: function moveSchema() {
+      var _this = this;
 
-// merges extended fields with base config
-function mergeExtendedWithBase(def, c, debug) {
-  forEach(c.types, function (obj) {
-
-    var typeDef = omit(obj._typeDef, 'type');
-
-    // at this point we can remove the typedef
-    delete obj._typeDef;
-
-    if (hasFields(obj.type)) {
-      obj.fields = obj.fields || {};
-
-      // get the extend fields and the base definition
-      var ext = typeDef.extendFields;
-      var baseDef = omit(typeDef, 'extendFields');
-
-      // create a base by merging the current type obj with the base definition
-      merge(obj, baseDef);
-
-      // examine the extend fields
-      if (isString(ext)) {
-        var e = get$$1(def, 'fields["' + ext + '"]', {});
-        merge(obj.fields, e);
-      } else if (isArray(ext)) {
-        forEach(ext, function (eName) {
-          var e = get$$1(def, 'fields["' + eName + '"]', {});
-          merge(obj.fields, e);
+      _$1.forEach(this.definition.schemas, function (schema, schemaName) {
+        _this.compiled.schemas[schemaName] = _$1.mapValues(schema, function (definition, operation) {
+          if (_$1.isString(definition)) return definition;
+          var opName = definition.name || '' + schemaName + _$1.capitalize(operation);
+          _$1.set(_this.definition, 'types["' + opName + '"]', definition);
+          return opName;
         });
-      } else if (isHash(ext)) {
+      });
+      return this;
+    }
+  }, {
+    key: 'normalizeTypes',
+    value: function normalizeTypes() {
+      var types = this.compiled.types;
 
-        forEach(ext, function (eObj, eName) {
+      _$1.forEach(this.definition.types, function (_typeDef, name) {
+        if (!_$1.isHash(_typeDef)) return console.error(name + ' type definition is not an object');
+        var type = _typeDef.type;
 
-          // get the correct field bundle
-          var e = get$$1(def, 'fields["' + eName + '"]', {});
 
-          // loop through each field
-          forEach(eObj, function (oField, oName) {
+        switch (_$1.typeOf(type)) {
+          case 'UNDEFINED':
+            types[name] = { type: OBJECT$1, _typeDef: _typeDef };
+            break;
 
-            // look for the field config in the field bundle
-            var extCfg = get$$1(e, oName);
+          case 'STRING':
+            types[name] = { type: type, _typeDef: _typeDef };
+            break;
 
-            if (extCfg) {
-              extCfg = toTypeDef(extCfg);
-
-              // check for field templates
-              if (isArray(oField) && oField.length > 1) {
-                forEach(oField, function (v, i) {
-                  oField[i] = merge({}, extCfg, toTypeDef(v));
+          case 'ARRAY':
+            _$1.forEach(type, function (multi) {
+              if (_$1.isString(multi)) {
+                types[multi === OBJECT$1 ? name : '' + name + multi] = { type: multi, _typeDef: _typeDef };
+              } else {
+                _$1.forEach(multi, function (v, k) {
+                  if (k === OBJECT$1 && !v) types[name] = { type: OBJECT$1, _typeDef: _typeDef };else if (k !== OBJECT$1 && !v) types[name] = { type: k, _typeDef: _typeDef };else types[v] = { type: k, _typeDef: _typeDef };
                 });
-              } else {
-                eObj[oName] = merge({}, extCfg, toTypeDef(oField));
               }
-            }
-          });
-          merge(obj.fields, e, eObj);
-        });
-      }
-    } else {
-      merge(obj, typeDef);
+            });
+            break;
 
-      // create a hash for enum values specified as strings
-      if (getShortType(obj.type) === 'Enum') {
-        forEach(obj.values, function (v, k) {
-          if (!isHash(v)) obj.values[k] = { value: v };
-        });
-      }
+          default:
+            _$1.forEach(type, function (multi, mName) {
+              if (mName === OBJECT$1 && !multi) types[name] = { type: mName, _typeDef: _typeDef };else if (mName !== OBJECT$1 && !multi) types['' + name + mName] = { type: mName, _typeDef: _typeDef };else types[multi] = { type: mName, _typeDef: _typeDef };
+            });
+            break;
+        }
+      });
+      return this;
     }
-  });
-}
+  }, {
+    key: 'mergeBase',
+    value: function mergeBase() {
+      var fields = this.compiled.fields;
+      _$1.forEach(this.compiled.types, function (definition, n) {
+        var type = definition.type,
+            _typeDef = definition._typeDef;
+        var extendFields = _typeDef.extendFields;
 
-function extendFieldTemplates(c, debug) {
-  forEach(c.types, function (obj, name) {
-    if (obj.fields) {
-      (function () {
+
+        _$1.merge(definition, _$1.omit(_typeDef, ['type', 'extendFields']));
+        delete definition._typeDef;
+
+        // no type fields
+        if (!hasFields(type)) {
+          if (getShortType(type) === ENUM$1) {
+            (function () {
+              var values = definition.values;
+
+              _$1.forEach(values, function (v, k) {
+                if (!_$1.isHash(v)) values[k] = { value: v };
+              });
+            })();
+          }
+          return true;
+        }
+
+        // ensure there is a fields hash
+        definition.fields = _$1.isHash(definition.fields) ? definition.fields : {};
+
+        // type fields
+        switch (_$1.typeOf(extendFields)) {
+          case 'STRING':
+            _$1.merge(definition.fields, _$1.get(fields, '["' + extendFields + '"]', {}));
+            break;
+
+          case 'ARRAY':
+            _$1.forEach(extendFields, function (typeName) {
+              _$1.merge(definition.fields, _$1.get(fields, '["' + typeName + '"]', {}));
+            });
+            break;
+
+          case 'HASH':
+            _$1.forEach(extendFields, function (extendDef, name) {
+              var ext = _$1.get(fields, '["' + name + '"]', {});
+              _$1.forEach(extendDef, function (field, name) {
+                var config = _$1.get(ext, name);
+                if (!config) return true;
+                config = normalizeType(config);
+                if (_$1.isArray(field) && field.length > 1) {
+                  _$1.forEach(field, function (v, i) {
+                    field[i] = _$1.merge({}, config, normalizeType(v));
+                  });
+                  return true;
+                }
+                extendDef[name] = _$1.merge({}, config, normalizeType(field));
+              });
+              _$1.merge(definition.fields, ext, extendDef);
+            });
+            break;
+
+          default:
+            break;
+        }
+      });
+      return this;
+    }
+  }, {
+    key: 'extendTemplates',
+    value: function extendTemplates() {
+      _$1.forEach(this.compiled.types, function (definition) {
         var omits = [];
-        forEach(obj.fields, function (field, fieldName) {
-          if (isArray(field) && field.length > 1) {
-            omits.push(fieldName);
-            // get the field template
-            forEach(field, function (type, idx) {
-              argsToTypeDef(type);
+        var fieldBase = null;
+        var fields = definition.fields;
+
+        if (!fields) return true;
+        _$1.forEach(fields, function (field, name) {
+          if (_$1.isArray(field) && field.length > 1) {
+            omits.push(name);
+            _$1.forEach(field, function (type, idx) {
+              normalizeArgs(type);
+
               if (type.name) {
-                var fieldBase = get$$1(obj, 'fields["' + type.name + '"]', {});
-                argsToTypeDef(fieldBase);
-                obj.fields[type.name] = merge({}, fieldBase, omit(type, 'name'));
-              } else {
-                var _fieldBase = get$$1(obj, 'fields["' + idx + '"]', {});
-                argsToTypeDef(_fieldBase);
-                obj.fields['' + fieldName + idx] = merge({}, _fieldBase, type);
+                fieldBase = _$1.get(definition, 'fields["' + type.name + '"]', {});
+                normalizeArgs(fieldBase);
+                definition.fields[type.name] = _$1.merge({}, fieldBase, _$1.omit(type, 'name'));
+                return true;
               }
+
+              fieldBase = _$1.get(definition, 'fields["' + idx + '"]', {});
+              normalizeArgs(fieldBase);
+              definition.fields['' + name + idx] = _$1.merge({}, fieldBase, type);
             });
           }
         });
-        obj.fields = omit(obj.fields, omits);
-      })();
-    }
-  });
-}
-
-function setConditionalTypes(c, debug) {
-  forEach(c.types, function (obj) {
-    if (obj.fields) {
-      (function () {
-        var omits = [];
-        forEach(obj.fields, function (field, fieldName) {
-          if (isHash(field)) {
-            if (!field.type) {
-              if (field[obj.type]) {
-                var typeDef = field[obj.type];
-                typeDef = toTypeDef(typeDef);
-                argsToTypeDef(typeDef);
-                obj.fields[fieldName] = typeDef;
-              } else {
-                omits.push(fieldName);
-              }
-            } else if (field.omitFrom) {
-              var omitFrom = isArray(field.omitFrom) ? field.omitFrom : [field.omitFrom];
-              if (includes(omitFrom, obj.type)) {
-                omits.push(fieldName);
-              } else {
-                obj.fields[fieldName] = omit(obj.fields[fieldName], 'omitFrom');
-                argsToTypeDef(obj.fields[fieldName]);
-              }
-            }
-          } else {
-            obj.fields[fieldName] = { type: field };
-          }
-        });
-        obj.fields = omit(obj.fields, omits);
-      })();
-    }
-  });
-}
-
-var compile = function (definition, debug) {
-  var def = clone(definition);
-  var c = {
-    fields: def.fields || {},
-    types: {},
-    schemas: {}
-  };
-
-  // first check if schema fields are objects, if they are, move them to the types
-  moveSchemaObjects(def, c, debug);
-
-  // expand multi-types
-  expandMultiTypes(def, c, debug);
-
-  // merge extended fields and base configs
-  mergeExtendedWithBase(def, c, debug);
-
-  // extend field templates
-  extendFieldTemplates(c, debug);
-
-  // omit fields and set conditional types
-  setConditionalTypes(c, debug);
-
-  return c;
-};
-
-var _ = utils;
-
-var factory = function factory(gql) {
-  var plugins = {};
-  var definitions = { globals: {}, fields: {}, functions: {}, externalTypes: {}, types: {}, schemas: {} };
-  var t = Types(gql, definitions);
-  var typeFnMap = t.typeFnMap;
-
-  //  check for valid types
-  var validateType = function validateType(type) {
-    if (!_.has(typeFnMap, type)) throw 'InvalidTypeError: "' + type + '" is not a valid object type in the current context';
-  };
-
-  //  construct a type name
-  var makeTypeName = function makeTypeName(t, typeDef, typeName, nameOverride) {
-    if (t == 'Object') return nameOverride || typeDef.name || typeName;else return nameOverride || (typeDef.name || typeName).concat(t);
-  };
-
-  //  add a hash type
-  var addTypeHash = function addTypeHash(_types, type, typeDef, typeName) {
-    _.forEach(type, function (tName, tType) {
-      validateType(tType);
-      _types[tType] = makeTypeName(tType, typeDef, typeName, tName);
-    });
-  };
-
-  //  add plugin
-  var plugin = function plugin(p) {
-    if (!p) return;
-    _.forEach(_.ensureArray(p), function (h) {
-      return plugins = _.merge(plugins, h);
-    });
-  };
-
-  //  make all graphql objects
-  var make = function make() {
-    var def = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    var opts = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-    var lib = {};
-
-    // allow plugins to be added with a make option
-    plugin(opts.plugin);
-
-    // now merge all plugins into the def
-    _.merge(def, plugins);
-
-    // compile the def if no option to suppress
-    if (opts.compile !== false) _.merge(def, compile(def));
-
-    // ensure globals and fields have objects
-    def.globals = def.globals || {};
-    def.fields = def.fields || {};
-
-    //  merge the externalTypes and functions before make
-    _.merge(definitions.externalTypes, def.externalTypes || {});
-    _.merge(definitions.functions, def.functions || {});
-
-    //  add the globals, utils, and graphql reference
-    definitions.globals = def.globals;
-    definitions.utils = utils;
-    definitions.graphql = gql;
-
-    // before building types, clone the compiled schemaDef
-    // and store it in the definition
-    definitions.definition = _.clone(_.omit(def, 'globals'));
-
-    var nonUnionDefs = _.omitBy(def.types, function (tDef) {
-      return tDef.type === 'Union';
-    });
-    var unionDefs = _.pickBy(def.types, function (tDef) {
-      return tDef.type === 'Union';
-    });
-
-    //  build types first since schemas will use them, save UnionTypes for the end
-    _.forEach(nonUnionDefs, function (typeDef, typeName) {
-
-      var _types = {};
-
-      //  default to object type
-      if (!typeDef.type) typeDef.type = 'Object';
-
-      //  if a single type is defined as a string
-      if (_.isString(typeDef.type)) {
-
-        //  validate the type and add it
-        validateType(typeDef.type);
-        _types[typeDef.type] = typeDef.name || typeName;
-      } else if (_.isArray(typeDef.type)) {
-
-        //  look at each type in the type definition array
-        //  support the case [ String, { Type: Name } ] with defaults
-        _.forEach(typeDef.type, function (t) {
-          if (_.isString(t)) {
-            validateType(t);
-            _types[t] = makeTypeName(t, typeDef, typeName);
-          } else if (_.isHash(t)) {
-            addTypeHash(_types, t, typeDef, typeName);
-          }
-        });
-      } else if (_.isHash(typeDef.type)) {
-        addTypeHash(_types, typeDef.type, typeDef, typeName);
-      }
-
-      //  add the definitions
-      _.forEach(_types, function (tName, tType) {
-        definitions.types[tName] = typeFnMap[tType](typeDef, tName);
+        definition.fields = _$1.omit(definition.fields, omits);
       });
+      return this;
+    }
+  }, {
+    key: 'conditionalTypes',
+    value: function conditionalTypes() {
+      _$1.forEach(this.compiled.types, function (definition) {
+        var omits = [];
+        var fields = definition.fields;
+
+        if (!fields) return true;
+
+        _$1.forEach(fields, function (field, name) {
+          switch (_$1.typeOf(field)) {
+            case 'HASH':
+              var type = field.type,
+                  omitFrom = field.omitFrom;
+
+              if (!type) {
+                if (field[definition.type]) definition.fields[name] = normalizeType(field[definition.type]);else omits.push(name);
+              } else if (omitFrom) {
+                if (_$1.includes(_$1.isArray(omitFrom) ? omitFrom : [omitFrom], definition.type)) omits.push(name);else fields[name] = normalizeArgs(_$1.omit(fields[name], 'omitFrom'));
+              }
+              break;
+
+            default:
+              definition.fields[name] = { type: field };
+              break;
+          }
+        });
+        definition.fields = _$1.omit(definition.fields, omits);
+      });
+      return this;
+    }
+  }]);
+  return GraphQLFactoryCompiler;
+}();
+
+var GraphQLFactoryDefinition = function () {
+  function GraphQLFactoryDefinition() {
+    var definition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    classCallCheck(this, GraphQLFactoryDefinition);
+    var plugin = options.plugin;
+    var globals = definition.globals,
+        fields = definition.fields,
+        functions = definition.functions,
+        types = definition.types,
+        schemas = definition.schemas,
+        externalTypes = definition.externalTypes;
+
+    this.globals = globals || {};
+    this.fields = fields || {};
+    this.functions = functions || {};
+    this.types = types || {};
+    this.schemas = schemas || {};
+    this.externalTypes = externalTypes || {};
+    this.registerPlugin(plugin);
+  }
+
+  createClass(GraphQLFactoryDefinition, [{
+    key: 'merge',
+    value: function merge() {
+      var definition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+      var globals = definition.globals,
+          fields = definition.fields,
+          functions = definition.functions,
+          types = definition.types,
+          schemas = definition.schemas,
+          externalTypes = definition.externalTypes;
+
+      _$1.merge(this.globals, globals || {});
+      _$1.merge(this.fields, fields || {});
+      _$1.merge(this.functions, functions || {});
+      _$1.merge(this.types, types || {});
+      _$1.merge(this.schemas, schemas || {});
+      _$1.merge(this.externalTypes, externalTypes || {});
+      return this;
+    }
+  }, {
+    key: 'registerPlugin',
+    value: function registerPlugin() {
+      var _this = this;
+
+      var plugins = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+
+      _$1.forEach(_$1.ensureArray(plugins), function (p) {
+        return _this.merge(p);
+      });
+      return this;
+    }
+  }, {
+    key: 'compile',
+    value: function compile() {
+      var compiler = new GraphQLFactoryCompiler(this);
+      var compiled = compiler.compile();
+      var fields = compiled.fields,
+          types = compiled.types,
+          schemas = compiled.schemas;
+
+      this.fields = fields || {};
+      this.types = types || {};
+      this.schemas = schemas || {};
+      return compiled;
+    }
+  }, {
+    key: 'clone',
+    value: function clone() {
+      return _$1.merge({}, this.plugin);
+    }
+  }, {
+    key: 'has',
+    value: function has(keyPath) {
+      return _$1.has(this, keyPath);
+    }
+  }, {
+    key: 'get',
+    value: function get(keyPath) {
+      return _$1.get(this, keyPath);
+    }
+  }, {
+    key: 'set',
+    value: function set(keyPath, value) {
+      _$1.set(this, keyPath, value);
+    }
+  }, {
+    key: 'hasType',
+    value: function hasType(typeName) {
+      return this.has('types["' + typeName + '"]');
+    }
+  }, {
+    key: 'getType',
+    value: function getType(typeName) {
+      return this.has('types["' + typeName + '"]');
+    }
+  }, {
+    key: 'hasExtType',
+    value: function hasExtType(typeName) {
+      return this.has('externalTypes["' + typeName + '"]');
+    }
+  }, {
+    key: 'getExtType',
+    value: function getExtType(typeName) {
+      return this.has('externalTypes["' + typeName + '"]');
+    }
+  }, {
+    key: 'definition',
+    get: function get() {
+      return {
+        fields: this.fields,
+        functions: this.functions,
+        types: this.types,
+        schemas: this.schemas,
+        externalType: this.externalTypes
+      };
+    }
+  }, {
+    key: 'plugin',
+    get: function get() {
+      return {
+        globals: this.globals,
+        fields: this.fields,
+        functions: this.functions,
+        types: this.types,
+        schemas: this.schemas,
+        externalType: this.externalTypes
+      };
+    }
+  }]);
+  return GraphQLFactoryDefinition;
+}();
+
+function FactoryEnumValueConfig(_this, val) {
+  try {
+    var _ref = _$1.isObject(val) ? val : { value: val },
+        value = _ref.value,
+        deprecationReason = _ref.deprecationReason,
+        description = _ref.description;
+
+    return {
+      value: value,
+      deprecationReason: deprecationReason,
+      description: description
+    };
+  } catch (err) {
+    console.error('FactoryEnumValueConfig', err);
+  }
+}
+
+function FactoryEnumValueConfigMap(_this, values) {
+  try {
+    return _$1.mapValues(values, function (value) {
+      return FactoryEnumValueConfig(_this, value);
+    });
+  } catch (err) {
+    console.error('FactoryEnumValueConfigMap', err);
+  }
+}
+
+function FactoryGQLEnumType(_this, definition, nameDefault) {
+  try {
+    var name = definition.name,
+        values = definition.values,
+        description = definition.description;
+
+
+    return new _this.graphql.GraphQLEnumType({
+      name: name || nameDefault,
+      values: FactoryEnumValueConfigMap(_this, values),
+      description: description
+    });
+  } catch (err) {
+    console.error('FactoryGQLEnumType', err);
+  }
+}
+
+function FactoryInputObjectFieldConfig(_this, field, rootType) {
+  try {
+    var defaultValue = field.defaultValue,
+        description = field.description;
+
+    var type = _this.resolveType(field, rootType);
+
+    return {
+      type: type,
+      defaultValue: defaultValue,
+      description: description
+    };
+  } catch (err) {
+    console.error('FactoryInputObjectFieldConfig', err);
+  }
+}
+
+function FactoryInputObjectFieldConfigMapThunk(_this, fields, rootType) {
+  try {
+    fields = _$1.omitBy(fields, function (field) {
+      var omitFrom = field.omitFrom;
+
+      return omitFrom && (_$1.includes(omitFrom, rootType) || omitFrom === rootType);
     });
 
-    //  add union definitions
-    _.forEach(unionDefs, function (unionDef, unionName) {
-      definitions.types[unionName] = t.GraphQLUnionType(unionDef, unionName);
+    if (!_$1.keys(fields).length) return;
+
+    return function () {
+      return _$1.mapValues(fields, function (field) {
+        return FactoryInputObjectFieldConfig(_this, field, rootType);
+      });
+    };
+  } catch (err) {
+    console.error('FactoryInputObjectFieldConfigMapThunk', err);
+  }
+}
+
+function FactoryGQLInputObjectType(_this, definition, nameDefault) {
+  try {
+    var name = definition.name,
+        fields = definition.fields,
+        description = definition.description;
+
+
+    return new _this.graphql.GraphQLInputObjectType({
+      name: name || nameDefault,
+      fields: FactoryInputObjectFieldConfigMapThunk(_this, fields, 'Input'),
+      description: description
+    });
+  } catch (err) {
+    console.error('FactoryInputObjectFieldConfigMapThunk', err);
+  }
+}
+
+function FactoryArgumentConfig(_this) {
+  var arg = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  var rootType = arguments[2];
+
+  try {
+    arg = _$1.isString(arg) || _$1.isArray(arg) ? { type: arg } : arg;
+    var _arg = arg,
+        defaultValue = _arg.defaultValue,
+        description = _arg.description;
+
+    var type = _this.resolveType(arg, rootType);
+
+    return {
+      type: type,
+      defaultValue: defaultValue,
+      description: description
+    };
+  } catch (err) {
+    console.error('FactoryArgumentConfig', err);
+  }
+}
+
+function FactoryFieldConfigMapThunk(_this, fields, rootType) {
+  try {
+    fields = _$1.omitBy(fields, function (field) {
+      var omitFrom = field.omitFrom;
+
+      return omitFrom && (_$1.includes(omitFrom, rootType) || omitFrom === rootType);
     });
 
-    //  build schemas
-    _.forEach(def.schemas, function (schemaDef, schemaName) {
-      //  create a schema
-      try {
-        definitions.schemas[schemaName] = t.GraphQLSchema(schemaDef, schemaName);
+    if (!_$1.keys(fields).length) return;
 
-        //  create a function to execute the graphql schmea
-        lib[schemaName] = function (query, rootValue, ctxValue, varValues, opName) {
-          return gql.graphql(definitions.schemas[schemaName], query, rootValue, ctxValue, varValues, opName);
+    return function () {
+      return _$1.mapValues(fields, function (field) {
+        field = !_$1.has(field, 'type') && _$1.has(field, rootType) ? field[rootType] : field;
+        var _field = field,
+            args = _field.args,
+            resolve = _field.resolve,
+            deprecationReason = _field.deprecationReason,
+            description = _field.description;
+
+
+        return {
+          type: _this.resolveType(field, rootType),
+          args: _$1.mapValues(args, function (arg) {
+            return FactoryArgumentConfig(_this, arg, rootType);
+          }),
+          resolve: _this.bindFunction(resolve),
+          deprecationReason: deprecationReason,
+          description: description
         };
-      } catch (err) {
-        console.log(err);
-        return false;
-      }
+      });
+    };
+  } catch (err) {
+    console.error('FactoryFieldConfigMapThunk', err);
+  }
+}
+
+function FactoryGQLInterfaceType(_this, definition, nameDefault) {
+  try {
+    var name = definition.name,
+        fields = definition.fields,
+        resolveType = definition.resolveType,
+        description = definition.description;
+
+
+    return new _this.graphql.GraphQLInterfaceType({
+      name: name || nameDefault,
+      fields: FactoryFieldConfigMapThunk(_this, fields, 'Interface'),
+      resolveType: _this.bindFunction(resolveType),
+      description: description
+    });
+  } catch (err) {
+    console.error('FactoryGQLInterfaceType', err);
+  }
+}
+
+function FactoryInterfacesThunk(_this) {
+  var interfaces = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+
+  try {
+    var _ret = function () {
+      if (!_$1.isArray(interfaces) || !interfaces.length) return {
+          v: void 0
+        };
+
+      var thunk = _$1.without(_$1.map(interfaces, function (type) {
+        var iface = _this.resolveType(type);
+        if (iface instanceof _this.graphql.GraphQLInterfaceType) return iface;
+        return null;
+      }), null);
+
+      return {
+        v: thunk.length > 0 ? function () {
+          return thunk;
+        } : undefined
+      };
+    }();
+
+    if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+  } catch (err) {
+    console.error('FactoryInterfacesThunk', err);
+  }
+}
+
+function FactoryGQLObjectType(_this, definition, nameDefault) {
+  try {
+    var name = definition.name,
+        interfaces = definition.interfaces,
+        fields = definition.fields,
+        isTypeOf = definition.isTypeOf,
+        description = definition.description;
+
+
+    return new _this.graphql.GraphQLObjectType(_$1.merge({}, definition, {
+      name: name || nameDefault,
+      interfaces: FactoryInterfacesThunk(_this, interfaces),
+      fields: FactoryFieldConfigMapThunk(_this, fields, 'Object'),
+      isTypeOf: _this.bindFunction(isTypeOf),
+      description: description
+    }));
+  } catch (err) {
+    console.error('FactoryGQLObjectType', err);
+  }
+}
+
+function FactoryGQLScalarType(_this, definition, nameDefault) {
+  try {
+    var name = definition.name,
+        description = definition.description,
+        serialize = definition.serialize,
+        parseValue = definition.parseValue,
+        parseLiteral = definition.parseLiteral;
+
+
+    return new _this.graphql.GraphQLScalarType({
+      name: name || nameDefault,
+      description: description,
+      serialize: _this.bindFunction(serialize),
+      parseValue: _this.bindFunction(parseValue),
+      parseLiteral: _this.bindFunction(parseLiteral)
+    });
+  } catch (err) {
+    console.error('FactoryGQLScalarType', err);
+  }
+}
+
+function FactoryGQLSchema(_this, definition, nameDefault) {
+  try {
+    var query = definition.query,
+        mutation = definition.mutation,
+        subscription = definition.subscription;
+
+
+    var schema = new _this.graphql.GraphQLSchema({
+      query: _this.types[query],
+      mutation: _this.types[mutation],
+      subscription: _this.types[subscription]
     });
 
-    lib._definitions = definitions;
-    return lib;
+    schema._factory = {
+      key: nameDefault,
+      query: _this.definition.getType(query),
+      mutation: _this.definition.getType(mutation),
+      subscription: _this.definition.getType(subscription)
+    };
+
+    return schema;
+  } catch (err) {
+    console.error('FactoryGQLSchema', err);
+  }
+}
+
+function FactoryGQLUnionType(_this, definition, nameDefault) {
+  try {
+    var name = definition.name,
+        types = definition.types,
+        resolveType = definition.resolveType,
+        description = definition.description;
+
+
+    return new _this.graphql.GraphQLUnionType({
+      name: name || nameDefault,
+      types: _$1.map(types, function (type) {
+        return _this.resolveType(type);
+      }),
+      resolveType: _this.bindFunction(resolveType),
+      description: description
+    });
+  } catch (err) {
+    console.error('FactoryGQLUnionType', err);
+  }
+}
+
+/*
+ * Type generator class
+ */
+
+var GraphQLFactoryTypeGenerator = function () {
+  function GraphQLFactoryTypeGenerator(graphql, definition) {
+    var _typeMap;
+
+    classCallCheck(this, GraphQLFactoryTypeGenerator);
+
+    this.graphql = graphql;
+    this.definition = definition;
+    this._types = null;
+    this._schemas = null;
+    this.fnContext = definition.plugin;
+    this.typeMap = (_typeMap = {}, defineProperty(_typeMap, BOOLEAN$1, graphql.GraphQLBoolean), defineProperty(_typeMap, FLOAT$1, graphql.GraphQLFloat), defineProperty(_typeMap, ID, graphql.GraphQLID), defineProperty(_typeMap, INT$1, graphql.GraphQLInt), defineProperty(_typeMap, STRING$1, graphql.GraphQLString), _typeMap);
+  }
+
+  /****************************************************************************
+   * Helpers
+   ****************************************************************************/
+
+
+  createClass(GraphQLFactoryTypeGenerator, [{
+    key: 'bindFunction',
+    value: function bindFunction(fn) {
+      if (!fn) return;
+      var resolver = _$1.isFunction(fn) ? fn : this.definition.get('functions["' + fn + '"]');
+      if (!_$1.isFunction(resolver)) console.error('could not resolve function ' + fn);
+      return resolver.bind(this.fnContext);
+    }
+  }, {
+    key: 'makeFieldType',
+    value: function makeFieldType(field) {
+      var type = field.type,
+          nullable = field.nullable,
+          primary = field.primary;
+
+      var isList = _$1.isArray(type) && type.length > 0;
+      var nonNull = nullable === false || primary === true;
+      var typeName = isList ? type[0] : type;
+      var typeObj = null;
+
+      if (_$1.has(this.types, '["' + typeName + '"]')) typeObj = this.types[typeName];else if (_$1.has(this.typeMap, '["' + typeName + '"]')) typeObj = this.typeMap[typeName];else if (this.definition.hasExtType(typeName)) typeObj = this.definition.getExtType(typeName);else if (_$1.has(this.graphql, '["' + typeName + '"]')) typeObj = this.graphql[typeName];else throw new Error('invalid type ' + typeName);
+
+      var gqlType = isList ? new this.graphql.GraphQLList(typeObj) : typeObj;
+      return nonNull ? new this.graphql.GraphQLNonNull(gqlType) : gqlType;
+    }
+  }, {
+    key: 'resolveType',
+    value: function resolveType(field, rootType) {
+      field = _$1.isString(field) || _$1.isArray(field) ? { type: field } : field;
+      var _field = field,
+          type = _field.type;
+
+
+      if (!type && _$1.has(field, '["' + rootType + '"]')) {
+        return this.makeFieldType(_$1.merge({}, field, {
+          type: field[rootType]
+        }));
+      }
+
+      return this.makeFieldType(field);
+    }
+  }, {
+    key: 'makeNonUnionTypes',
+    value: function makeNonUnionTypes() {
+      var _this = this;
+
+      _$1.forEach(this.definition.types, function (definition, nameDefault) {
+        var name = definition.name,
+            type = definition.type;
+
+        var fn = null;
+        if (type === UNION) return;
+
+        switch (type) {
+          case ENUM$1:
+            fn = FactoryGQLEnumType;
+            break;
+          case INPUT:
+            fn = FactoryGQLInputObjectType;
+            break;
+          case INTERFACE:
+            fn = FactoryGQLInterfaceType;
+            break;
+          case OBJECT$1:
+            fn = FactoryGQLObjectType;
+            break;
+          case SCALAR:
+            fn = FactoryGQLScalarType;
+            break;
+          default:
+            throw new Error(type + ' is an invalid base type');
+        }
+        _this._types[name || nameDefault] = fn(_this, definition, nameDefault);
+      });
+    }
+  }, {
+    key: 'makeUnionTypes',
+    value: function makeUnionTypes() {
+      var _this2 = this;
+
+      _$1.forEach(this.definition.types, function (definition, nameDefault) {
+        var name = definition.name,
+            type = definition.type;
+
+        if (type !== UNION) return;
+        _this2._types[name || nameDefault] = FactoryGQLUnionType(_this2, definition, nameDefault);
+      });
+    }
+  }, {
+    key: 'makeSchemas',
+    value: function makeSchemas() {
+      var _this3 = this;
+
+      _$1.forEach(this.definition.schemas, function (definition, nameDefault) {
+        var name = definition.name;
+
+        _this3._schemas[name || nameDefault] = FactoryGQLSchema(_this3, definition, nameDefault);
+      });
+    }
+
+    /****************************************************************************
+     * Getters
+     ****************************************************************************/
+
+  }, {
+    key: 'types',
+    get: function get() {
+      if (this._types !== null) return this._types;
+      this._types = {};
+      this.makeNonUnionTypes();
+      this.makeUnionTypes();
+      return this._types;
+    }
+  }, {
+    key: 'schemas',
+    get: function get() {
+      if (this._schemas !== null) return this._schemas;
+      this._schemas = {};
+      this.makeSchemas();
+      return this._schemas;
+    }
+  }]);
+  return GraphQLFactoryTypeGenerator;
+}();
+
+var GraphQLFactoryLibrary = function GraphQLFactoryLibrary(graphql, definition) {
+  var _this = this;
+
+  classCallCheck(this, GraphQLFactoryLibrary);
+
+  var _ref = new GraphQLFactoryTypeGenerator(graphql, definition),
+      types = _ref.types,
+      schemas = _ref.schemas;
+
+  // store original and compiled definitions/types
+
+
+  this._definitions = {
+    definition: definition.definition,
+    graphql: graphql,
+    schemas: schemas,
+    types: types
   };
-  return { make: make, plugin: plugin, utils: utils, compile: compile };
+
+  // build schema functions
+  _$1.forEach(schemas, function (schema, name) {
+    _this[name] = function (requestString, rootValue, contextValue, variableValues, operationName) {
+      return graphql.graphql(schema, requestString, rootValue, contextValue, variableValues, operationName);
+    };
+  });
 };
 
-factory.utils = utils;
+// standalone definition builder
+function define() {
+  var definition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+  return new GraphQLFactoryDefinition(definition, options);
+}
+
+// standalone compiler
+function compile$1() {
+  var definition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  var plugin = options.plugin;
+
+  if (definition instanceof GraphQLFactoryDefinition) {
+    return definition.registerPlugin(plugin).compile();
+  }
+  return define(definition, options).compile();
+}
+
+// main graphql factory class
+var GraphQLFactory$1 = function () {
+  function GraphQLFactory(graphql) {
+    classCallCheck(this, GraphQLFactory);
+
+    this.compile = compile$1;
+    this.constants = constants;
+    this.define = define;
+    this.graphql = graphql;
+    this.utils = _$1;
+  }
+
+  createClass(GraphQLFactory, [{
+    key: 'make',
+    value: function make() {
+      var definition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+      var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+      var plugin = options.plugin;
+
+      var factoryDef = new GraphQLFactoryDefinition();
+      factoryDef.merge(definition).registerPlugin(plugin).compile();
+      return new GraphQLFactoryLibrary(this.graphql, factoryDef);
+    }
+  }]);
+  return GraphQLFactory;
+}();
+
+var factory = function factory(graphql) {
+  return new GraphQLFactory$1(graphql);
+};
+
+// add tools to main module
+factory.compile = compile$1;
+factory.constants = constants;
+factory.define = define;
+factory.utils = _$1;
+
+// add classes to main module
+factory.GraphQLFactory = GraphQLFactory$1;
+factory.GraphQLFactoryCompiler = GraphQLFactoryCompiler;
+factory.GraphQLFactoryDefinition = GraphQLFactoryDefinition;
+factory.GraphQLFactoryLibrary = GraphQLFactoryLibrary;
+factory.GraphQLFactoryTypeGenerator = GraphQLFactoryTypeGenerator;
+
+/*
+ * @module graphql-factory
+ * @author Branden Horiuchi <bhoriuchi@gmail.com>
+ * @description Create GraphQL schemas and types from JSON definitions
+ *
+ */
 
 module.exports = factory;

@@ -1,5 +1,5 @@
 var utils = factory.utils
-var GraphQLCustomDateType = require('graphql-custom-datetype')
+// var GraphQLCustomDateType = require('graphql-custom-datetype')
 
 describe('Utils', function () {
 
@@ -217,7 +217,7 @@ describe('Utils', function () {
     expect(fn({ a: { b: 0 } }, { a: 1 })).to.deep.equal({a: 1 })
     expect(fn({ a: { b: [1, 2, 3] } }, { a: { b : 1 } })).to.deep.equal({a: { b: 1 }})
     expect(fn({ a: { b: [1, 2, 3] } }, { a: { b : [4, 5, 6] } })).to.deep.equal({a: { b: [4, 5, 6] }})
-    expect(fn({}, {type: GraphQLCustomDateType})).to.deep.equal({type: GraphQLCustomDateType})
+    // expect(fn({}, {type: GraphQLCustomDateType})).to.deep.equal({type: GraphQLCustomDateType})
     done()
   })
 
@@ -304,7 +304,7 @@ describe('Utils', function () {
     expect(fn(obj2)).to.equal('[1,true,{demo:"gorgan"}]')
     expect(fn(obj3)).to.equal('{id:"1",obj:"[Circular]"}')
     expect(fn(obj4)).to.equal('{id:1,fields:{},fields2:{sname:"Doe"},arr:[1]}')
-    expect(fn(obj4, {keepNulls:true})).to.equal('{id:1,name:null,fields:{name:null},fields2:{name:null,sname:"Doe"},arr:[1,]}')
+    expect(fn(obj4, {keepNulls:true})).to.equal('{id:1,name:null,fields:{name:null},fields2:{name:null,sname:"Doe"},arr:[1,null]}')
     expect(fn(obj4, {noOuterBraces:true})).to.equal('id:1,fields:{},fields2:{sname:"Doe"},arr:[1]')
     expect(fn(obj5, {noOuterBraces:true})).to.equal('1,2,3')
     expect(fn(obj6)).to.equal('{source:"console.log(\\"Hello World!\\")"}')

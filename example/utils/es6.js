@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { isHash } from '../../src/utils'
+import { isHash } from '../../src/utils/utils'
 import GraphQLCustomDateType from 'graphql-custom-datetype'
 
 function hasOwn(obj, key) {
