@@ -27,9 +27,16 @@ export default class GraphQLFactoryTypeGenerator {
   constructor (graphql, definition) {
     this.graphql = graphql
     this.definition = definition
-    this._types = null
-    this._schemas = null
-    this.fnContext = definition.plugin
+    this._types = {}
+    this._schemas = {}
+    this.fnContext = {
+      definition: definition.definition,
+      globals: definition.plugin.globals,
+      graphql,
+      utils: _,
+      types: this._types,
+      schemas: this._schemas
+    }
     this.typeMap = {
       [BOOLEAN]: graphql.GraphQLBoolean,
       [FLOAT]: graphql.GraphQLFloat,
@@ -127,16 +134,14 @@ export default class GraphQLFactoryTypeGenerator {
    * Getters
    ****************************************************************************/
   get types () {
-    if (this._types !== null) return this._types
-    this._types = {}
+    if (_.keys(this._types).length) return this._types
     this.makeNonUnionTypes()
     this.makeUnionTypes()
     return this._types
   }
 
   get schemas () {
-    if (this._schemas !== null) return this._schemas
-    this._schemas = {}
+    if (_.keys(this._schemas).length) return this._schemas
     this.makeSchemas()
     return this._schemas
   }

@@ -3,7 +3,7 @@ assets
 example
 node_modules
 src
-src-old
+src-v0
 test
 dist
 .babelrc

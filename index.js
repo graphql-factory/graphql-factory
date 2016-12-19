@@ -3570,9 +3570,16 @@ var GraphQLFactoryTypeGenerator = function () {
 
     this.graphql = graphql;
     this.definition = definition;
-    this._types = null;
-    this._schemas = null;
-    this.fnContext = definition.plugin;
+    this._types = {};
+    this._schemas = {};
+    this.fnContext = {
+      definition: definition.definition,
+      globals: definition.plugin.globals,
+      graphql: graphql,
+      utils: _$1,
+      types: this._types,
+      schemas: this._schemas
+    };
     this.typeMap = (_typeMap = {}, defineProperty(_typeMap, BOOLEAN$1, graphql.GraphQLBoolean), defineProperty(_typeMap, FLOAT$1, graphql.GraphQLFloat), defineProperty(_typeMap, ID, graphql.GraphQLID), defineProperty(_typeMap, INT$1, graphql.GraphQLInt), defineProperty(_typeMap, STRING$1, graphql.GraphQLString), _typeMap);
   }
 
@@ -3688,8 +3695,7 @@ var GraphQLFactoryTypeGenerator = function () {
   }, {
     key: 'types',
     get: function get() {
-      if (this._types !== null) return this._types;
-      this._types = {};
+      if (_$1.keys(this._types).length) return this._types;
       this.makeNonUnionTypes();
       this.makeUnionTypes();
       return this._types;
@@ -3697,8 +3703,7 @@ var GraphQLFactoryTypeGenerator = function () {
   }, {
     key: 'schemas',
     get: function get() {
-      if (this._schemas !== null) return this._schemas;
-      this._schemas = {};
+      if (_$1.keys(this._schemas).length) return this._schemas;
       this.makeSchemas();
       return this._schemas;
     }
