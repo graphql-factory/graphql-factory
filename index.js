@@ -3227,7 +3227,7 @@ var GraphQLFactoryDefinition = function () {
   }, {
     key: 'getType',
     value: function getType(typeName) {
-      return this.has('types["' + typeName + '"]');
+      return this.get('types["' + typeName + '"]');
     }
   }, {
     key: 'hasExtType',
@@ -3237,7 +3237,7 @@ var GraphQLFactoryDefinition = function () {
   }, {
     key: 'getExtType',
     value: function getExtType(typeName) {
-      return this.has('externalTypes["' + typeName + '"]');
+      return this.get('externalTypes["' + typeName + '"]');
     }
   }, {
     key: 'definition',

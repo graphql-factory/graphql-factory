@@ -61,7 +61,7 @@ export default class GraphQLFactoryDefinition {
   }
 
   getType (typeName) {
-    return this.has(`types["${typeName}"]`)
+    return this.get(`types["${typeName}"]`)
   }
 
   hasExtType (typeName) {
@@ -69,7 +69,7 @@ export default class GraphQLFactoryDefinition {
   }
 
   getExtType (typeName) {
-    return this.has(`externalTypes["${typeName}"]`)
+    return this.get(`externalTypes["${typeName}"]`)
   }
 
   get definition () {

@@ -58,7 +58,7 @@ let definition = {
         fields: {
           users: {
             type: ['User'],
-            resolve: (root, args) => {
+            resolve (root, args) {
               // query code
             }
           }
@@ -73,7 +73,7 @@ let definition = {
               email: { type: 'String'},
               status: { type: 'EnumUserStatus' }
             },
-            resolve: (obj, args, source, fieldASTs) => {
+            resolve (obj, args, source, fieldASTs) {
               // create code
             }
           }
