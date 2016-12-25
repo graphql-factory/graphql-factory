@@ -11,6 +11,7 @@ export default class GraphQLFactoryDefinition {
     this.types = types || {}
     this.schemas = schemas || {}
     this.externalTypes = externalTypes || {}
+    this.pluginRegistry = {}
     this.registerPlugin(plugin)
   }
 
@@ -26,7 +27,11 @@ export default class GraphQLFactoryDefinition {
   }
 
   registerPlugin (plugins = []) {
-    _.forEach(_.ensureArray(plugins), (p) => this.merge(p))
+    _.forEach(_.ensureArray(plugins), (p) => {
+      let name = _.get(p, 'name', `unnamedPlugin${_.keys(this.pluginRegistry).length}`)
+      this.pluginRegistry(name, p)
+      this.merge(p)
+    })
     return this
   }
 

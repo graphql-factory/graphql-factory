@@ -59,69 +59,6 @@ var defineProperty = function (obj, key, value) {
   return obj;
 };
 
-var get$2 = function get$2(object, property, receiver) {
-  if (object === null) object = Function.prototype;
-  var desc = Object.getOwnPropertyDescriptor(object, property);
-
-  if (desc === undefined) {
-    var parent = Object.getPrototypeOf(object);
-
-    if (parent === null) {
-      return undefined;
-    } else {
-      return get$2(parent, property, receiver);
-    }
-  } else if ("value" in desc) {
-    return desc.value;
-  } else {
-    var getter = desc.get;
-
-    if (getter === undefined) {
-      return undefined;
-    }
-
-    return getter.call(receiver);
-  }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var set$2 = function set$2(object, property, value, receiver) {
-  var desc = Object.getOwnPropertyDescriptor(object, property);
-
-  if (desc === undefined) {
-    var parent = Object.getPrototypeOf(object);
-
-    if (parent !== null) {
-      set$2(parent, property, value, receiver);
-    }
-  } else if ("value" in desc && desc.writable) {
-    desc.value = value;
-  } else {
-    var setter = desc.set;
-
-    if (setter !== undefined) {
-      setter.call(receiver, value);
-    }
-  }
-
-  return value;
-};
-
 /**
  * lodash (Custom Build) <https://lodash.com/>
  * Build: `lodash modularize exports="npm" -o ./`
@@ -2229,7 +2166,7 @@ function keysIn(object) {
  * _.merge(object, other);
  * // => { 'a': [{ 'b': 2, 'c': 3 }, { 'd': 4, 'e': 5 }] }
  */
-var merge$1 = createAssigner(function (object, source, srcIndex) {
+var merge = createAssigner(function (object, source, srcIndex) {
   baseMerge(object, source, srcIndex);
 });
 
@@ -2296,7 +2233,7 @@ var RX_FLOAT = /^Float::/;
 var RX_INT = /^Int::/;
 var RX_OUTER_BRACES = /^{|^\[|\]$|}$/g;
 
-function getType$1(obj) {
+function getType(obj) {
   if (obj === null) {
     return { obj: obj, type: NULL };
   } else if (obj === undefined) {
@@ -2332,7 +2269,7 @@ var toArguments = function toArguments(obj) {
   var noOuterBraces = options.noOuterBraces === true ? true : false;
 
   var toLiteral = function toLiteral(o) {
-    var _getType = getType$1(o),
+    var _getType = getType(o),
         obj = _getType.obj,
         type = _getType.type;
 
@@ -2497,7 +2434,7 @@ function stringToPathArray(pathString) {
   return pathArray;
 }
 
-function has$1(obj, path) {
+function has(obj, path) {
   var value = obj;
   var fields = isArray(path) ? path : stringToPathArray(path);
   if (fields.length === 0) return false;
@@ -2589,7 +2526,7 @@ function remap(obj, fn) {
   var newObj = {};
   forEach(obj, function (v, k) {
     var newMap = fn(v, k);
-    if (has$1(newMap, 'key') && has$1(newMap, 'value')) newObj[newMap.key] = newMap.value;else newMap[k] = v;
+    if (has(newMap, 'key') && has(newMap, 'value')) newObj[newMap.key] = newMap.value;else newMap[k] = v;
   });
   return newObj;
 }
@@ -2643,7 +2580,7 @@ function pick(obj) {
   return newObj;
 }
 
-function get$1(obj, path, defaultValue) {
+function get$$1(obj, path, defaultValue) {
   var value = obj;
   var fields = isArray(path) ? path : stringToPathArray(path);
   if (fields.length === 0) return defaultValue;
@@ -2658,7 +2595,7 @@ function get$1(obj, path, defaultValue) {
   return value;
 }
 
-function set$1(obj, path, val) {
+function set$$1(obj, path, val) {
   var value = obj;
   var fields = isArray(path) ? path : stringToPathArray(path);
   forEach(fields, function (p, idx) {
@@ -2667,8 +2604,8 @@ function set$1(obj, path, val) {
   });
 }
 
-function clone$1(obj) {
-  return merge$1({}, obj);
+function clone(obj) {
+  return merge({}, obj);
 }
 
 function typeOf(obj) {
@@ -2689,13 +2626,13 @@ function typeOf(obj) {
 function getFieldPath(info, maxDepth) {
   maxDepth = maxDepth || 50;
 
-  var loc = get$1(info, 'fieldASTs[0].loc');
+  var loc = get$$1(info, 'fieldASTs[0].loc');
   var stackCount = 0;
 
   var traverseFieldPath = function traverseFieldPath(selections, start, end, fieldPath) {
     fieldPath = fieldPath || [];
 
-    var sel = get$1(filter(selections, function (s) {
+    var sel = get$$1(filter(selections, function (s) {
       return s.loc.start <= start && s.loc.end >= end;
     }), '[0]');
     if (sel) {
@@ -2712,8 +2649,8 @@ function getFieldPath(info, maxDepth) {
 }
 
 function getSchemaOperation(info) {
-  var _type = ['_', get$1(info, 'operation.operation'), 'Type'].join('');
-  return get$1(info, ['schema', _type].join('.'), {});
+  var _type = ['_', get$$1(info, 'operation.operation'), 'Type'].join('');
+  return get$$1(info, ['schema', _type].join('.'), {});
 }
 
 /*
@@ -2721,7 +2658,7 @@ function getSchemaOperation(info) {
  */
 function getReturnTypeName(info) {
   try {
-    var typeObj = get$1(getSchemaOperation(info), '_fields["' + info.fieldName + '"].type', {});
+    var typeObj = get$$1(getSchemaOperation(info), '_fields["' + info.fieldName + '"].type', {});
 
     while (!typeObj.name) {
       typeObj = typeObj.ofType;
@@ -2737,19 +2674,19 @@ function getReturnTypeName(info) {
  * Gets the field definition
  */
 function getRootFieldDef(info, path) {
-  var fldPath = get$1(getFieldPath(info), '[0]');
+  var fldPath = get$$1(getFieldPath(info), '[0]');
   var queryType = info.operation.operation;
-  var opDef = get$1(info, 'schema._factory.' + queryType + 'Def', {});
-  var fieldDef = get$1(opDef, 'fields["' + fldPath + '"]', undefined);
+  var opDef = get$$1(info, 'schema._factory.' + queryType + 'Def', {});
+  var fieldDef = get$$1(opDef, 'fields["' + fldPath + '"]', undefined);
 
   //  if a field def cannot be found, try to find it in the extendFields
-  if (!fieldDef && has$1(opDef, 'extendFields')) {
+  if (!fieldDef && has(opDef, 'extendFields')) {
     forEach(opDef.extendFields, function (v, k) {
-      if (has$1(v, fldPath)) fieldDef = get$1(v, '["' + fldPath + '"]', {});
+      if (has(v, fldPath)) fieldDef = get$$1(v, '["' + fldPath + '"]', {});
     });
   }
 
-  return path ? get$1(fieldDef, path, {}) : fieldDef;
+  return path ? get$$1(fieldDef, path, {}) : fieldDef;
 }
 
 /*
@@ -2759,7 +2696,7 @@ function getRootFieldDef(info, path) {
  */
 function getTypeConfig(info, path) {
   path = path ? '_typeConfig.'.concat(path) : '_typeConfig';
-  return get$1(getSchemaOperation(info), path, {});
+  return get$$1(getSchemaOperation(info), path, {});
 }
 
 // removes circular references
@@ -2794,7 +2731,7 @@ var utils = {};
 
 var _$1 = Object.freeze({
 	toObjectString: toArguments,
-	merge: merge$1,
+	merge: merge,
 	Enum: Enum,
 	isBoolean: isBoolean,
 	isEnum: isEnum,
@@ -2813,7 +2750,7 @@ var _$1 = Object.freeze({
 	keys: keys,
 	capitalize: capitalize,
 	stringToPathArray: stringToPathArray,
-	has: has$1,
+	has: has,
 	forEach: forEach,
 	without: without,
 	map: map,
@@ -2824,9 +2761,9 @@ var _$1 = Object.freeze({
 	omit: omit,
 	pickBy: pickBy,
 	pick: pick,
-	get: get$1,
-	set: set$1,
-	clone: clone$1,
+	get: get$$1,
+	set: set$$1,
+	clone: clone,
 	typeOf: typeOf,
 	getFieldPath: getFieldPath,
 	getSchemaOperation: getSchemaOperation,
@@ -3151,6 +3088,7 @@ var GraphQLFactoryDefinition = function () {
     this.types = types || {};
     this.schemas = schemas || {};
     this.externalTypes = externalTypes || {};
+    this.pluginRegistry = {};
     this.registerPlugin(plugin);
   }
 
@@ -3181,7 +3119,9 @@ var GraphQLFactoryDefinition = function () {
       var plugins = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
 
       _$1.forEach(_$1.ensureArray(plugins), function (p) {
-        return _this.merge(p);
+        var name = _$1.get(p, 'name', 'unnamedPlugin' + _$1.keys(_this.pluginRegistry).length);
+        _this.pluginRegistry(name, p);
+        _this.merge(p);
       });
       return this;
     }
@@ -3747,7 +3687,7 @@ function define() {
 }
 
 // standalone compiler
-function compile$1() {
+function compile() {
   var definition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
   var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
   var plugin = options.plugin;
@@ -3763,7 +3703,7 @@ var GraphQLFactory$1 = function () {
   function GraphQLFactory(graphql) {
     classCallCheck(this, GraphQLFactory);
 
-    this.compile = compile$1;
+    this.compile = compile;
     this.constants = constants;
     this.define = define;
     this.graphql = graphql;
@@ -3790,7 +3730,7 @@ var factory = function factory(graphql) {
 };
 
 // add tools to main module
-factory.compile = compile$1;
+factory.compile = compile;
 factory.constants = constants;
 factory.define = define;
 factory.utils = _$1;
