@@ -3120,7 +3120,7 @@ var GraphQLFactoryDefinition = function () {
 
       _$1.forEach(_$1.ensureArray(plugins), function (p) {
         var name = _$1.get(p, 'name', 'unnamedPlugin' + _$1.keys(_this.pluginRegistry).length);
-        _this.pluginRegistry(name, p);
+        _this.pluginRegistry[name] = p;
         _this.merge(p);
       });
       return this;
@@ -3158,6 +3158,11 @@ var GraphQLFactoryDefinition = function () {
     key: 'set',
     value: function set(keyPath, value) {
       _$1.set(this, keyPath, value);
+    }
+  }, {
+    key: 'hasPlugin',
+    value: function hasPlugin(name) {
+      return this.has('pluginRegistry["' + name + '"]');
     }
   }, {
     key: 'hasType',

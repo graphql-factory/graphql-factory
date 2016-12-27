@@ -29,7 +29,7 @@ export default class GraphQLFactoryDefinition {
   registerPlugin (plugins = []) {
     _.forEach(_.ensureArray(plugins), (p) => {
       let name = _.get(p, 'name', `unnamedPlugin${_.keys(this.pluginRegistry).length}`)
-      this.pluginRegistry(name, p)
+      this.pluginRegistry[name] = p
       this.merge(p)
     })
     return this
@@ -59,6 +59,10 @@ export default class GraphQLFactoryDefinition {
 
   set (keyPath, value) {
     _.set(this, keyPath, value)
+  }
+
+  hasPlugin (name) {
+    return this.has(`pluginRegistry["${name}"]`)
   }
 
   hasType (typeName) {
