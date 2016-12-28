@@ -19,17 +19,46 @@ function compile (definition = {}, options = {}) {
   return define(definition, options).compile()
 }
 
-// main graphql factory class
+/**
+ * graphql-factory instance
+ * @property {GraphQL} graphql - instance of graphql
+ * @property {ConstantsEnum} constants
+ * @property {FactoryUtils} utils - Util functions
+ */
 export class GraphQLFactory {
   constructor (graphql) {
+    /**
+     * Compiles a {@link FactoryDefinition}
+     * @function compile
+     * @param {FactoryDefinition} definition
+     * @param {Object} [options]
+     * @param {String|Array} options.plugin - Plugin or array of plugins
+     * @returns {GraphQLFactoryDefinition}
+     */
     this.compile = compile
     this.constants = constants
+
+    /**
+     * Creates an un-compiled {@link FactoryDefinition}
+     * @function define
+     * @param {FactoryDefinition} definition
+     * @param {Object} [options]
+     * @param {String|Array} options.plugin - Plugin or array of plugins
+     * @returns {GraphQLFactoryDefinition}
+     */
     this.define = define
     this.graphql = graphql
     this.utils = utils
 
   }
 
+  /**
+   * Creates a new GraphQLFactoryLibrary
+   * @param {FactoryDefinition} definition
+   * @param {Object} options
+   * @param {String|Array} options.plugin - Plugin or array of plugins
+   * @returns {GraphQLFactoryLibrary}
+   */
   make (definition = {}, options = {}) {
     let { plugin } = options
     let factoryDef = new GraphQLFactoryDefinition()
@@ -38,6 +67,21 @@ export class GraphQLFactory {
   }
 }
 
+/**
+ * Create a new instance of graphql-factory
+ * @module graphql-factory
+ *
+ * @param {GraphQL} graphql - Instance of graphql
+ * @returns {GraphQLFactory} instance of graphql-factory
+ * @example <caption>ES5</caption>
+ * var graphql = require('graphql')
+ * var GraphQLFactory = require('graphql-factory')
+ * var factory = GraphQLFactory(graphql)
+ * @example <caption>ES6</caption>
+ * import * as graphql from 'graphql'
+ * import GraphQLFactory from 'graphql-factory'
+ * let factory = GraphQLFactory(graphql)
+ */
 let factory = function (graphql) {
   return new GraphQLFactory(graphql)
 }

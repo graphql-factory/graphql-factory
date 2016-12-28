@@ -1,4 +1,4 @@
-/**
+/*
  * lodash (Custom Build) <https://lodash.com/>
  * Build: `lodash modularize exports="npm" -o ./`
  * Copyright jQuery Foundation and other contributors <https://jquery.org/>
@@ -7,16 +7,16 @@
  * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
  */
 
-/** Used as the size to enable large array optimizations. */
+/* Used as the size to enable large array optimizations. */
 var LARGE_ARRAY_SIZE = 200;
 
-/** Used to stand-in for `undefined` hash values. */
+/* Used to stand-in for `undefined` hash values. */
 var HASH_UNDEFINED = '__lodash_hash_undefined__';
 
-/** Used as references for various `Number` constants. */
+/* Used as references for various `Number` constants. */
 var MAX_SAFE_INTEGER = 9007199254740991;
 
-/** `Object#toString` result references. */
+/* `Object#toString` result references. */
 var argsTag = '[object Arguments]',
     arrayTag = '[object Array]',
     boolTag = '[object Boolean]',
@@ -46,22 +46,22 @@ var arrayBufferTag = '[object ArrayBuffer]',
     uint16Tag = '[object Uint16Array]',
     uint32Tag = '[object Uint32Array]';
 
-/**
+/*
  * Used to match `RegExp`
  * [syntax characters](http://ecma-international.org/ecma-262/7.0/#sec-patterns).
  */
 var reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
 
-/** Used to match `RegExp` flags from their coerced string values. */
+/* Used to match `RegExp` flags from their coerced string values. */
 var reFlags = /\w*$/;
 
-/** Used to detect host constructors (Safari). */
+/* Used to detect host constructors (Safari). */
 var reIsHostCtor = /^\[object .+?Constructor\]$/;
 
-/** Used to detect unsigned integer values. */
+/* Used to detect unsigned integer values. */
 var reIsUint = /^(?:0|[1-9]\d*)$/;
 
-/** Used to identify `toStringTag` values of typed arrays. */
+/* Used to identify `toStringTag` values of typed arrays. */
 var typedArrayTags = {};
 typedArrayTags[float32Tag] = typedArrayTags[float64Tag] =
 typedArrayTags[int8Tag] = typedArrayTags[int16Tag] =
@@ -77,7 +77,7 @@ typedArrayTags[objectTag] = typedArrayTags[regexpTag] =
 typedArrayTags[setTag] = typedArrayTags[stringTag] =
 typedArrayTags[weakMapTag] = false;
 
-/** Used to identify `toStringTag` values supported by `_.clone`. */
+/* Used to identify `toStringTag` values supported by `_.clone`. */
 var cloneableTags = {};
 cloneableTags[argsTag] = cloneableTags[arrayTag] =
 cloneableTags[arrayBufferTag] = cloneableTags[dataViewTag] =
@@ -93,28 +93,28 @@ cloneableTags[uint16Tag] = cloneableTags[uint32Tag] = true;
 cloneableTags[errorTag] = cloneableTags[funcTag] =
 cloneableTags[weakMapTag] = false;
 
-/** Detect free variable `global` from Node.js. */
+/* Detect free variable `global` from Node.js. */
 var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
 
-/** Detect free variable `self`. */
+/* Detect free variable `self`. */
 var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
 
-/** Used as a reference to the global object. */
+/* Used as a reference to the global object. */
 var root = freeGlobal || freeSelf || Function('return this')();
 
-/** Detect free variable `exports`. */
+/* Detect free variable `exports`. */
 var freeExports = typeof exports == 'object' && exports && !exports.nodeType && exports;
 
-/** Detect free variable `module`. */
+/* Detect free variable `module`. */
 var freeModule = freeExports && typeof module == 'object' && module && !module.nodeType && module;
 
-/** Detect the popular CommonJS extension `module.exports`. */
+/* Detect the popular CommonJS extension `module.exports`. */
 var moduleExports = freeModule && freeModule.exports === freeExports;
 
-/** Detect free variable `process` from Node.js. */
+/* Detect free variable `process` from Node.js. */
 var freeProcess = moduleExports && freeGlobal.process;
 
-/** Used to access faster Node.js helpers. */
+/* Used to access faster Node.js helpers. */
 var nodeUtil = (function() {
   try {
     return freeProcess && freeProcess.binding('util');
@@ -124,7 +124,7 @@ var nodeUtil = (function() {
 /* Node.js helper references. */
 var nodeIsTypedArray = nodeUtil && nodeUtil.isTypedArray;
 
-/**
+/*
  * Adds the key-value `pair` to `map`.
  *
  * @private
@@ -138,7 +138,7 @@ function addMapEntry(map, pair) {
   return map;
 }
 
-/**
+/*
  * Adds `value` to `set`.
  *
  * @private
@@ -152,7 +152,7 @@ function addSetEntry(set, value) {
   return set;
 }
 
-/**
+/*
  * A faster alternative to `Function#apply`, this function invokes `func`
  * with the `this` binding of `thisArg` and the arguments of `args`.
  *
@@ -172,7 +172,7 @@ function apply(func, thisArg, args) {
   return func.apply(thisArg, args);
 }
 
-/**
+/*
  * A specialized version of `_.forEach` for arrays without support for
  * iteratee shorthands.
  *
@@ -193,7 +193,7 @@ function arrayEach(array, iteratee) {
   return array;
 }
 
-/**
+/*
  * Appends the elements of `values` to `array`.
  *
  * @private
@@ -212,7 +212,7 @@ function arrayPush(array, values) {
   return array;
 }
 
-/**
+/*
  * A specialized version of `_.reduce` for arrays without support for
  * iteratee shorthands.
  *
@@ -237,7 +237,7 @@ function arrayReduce(array, iteratee, accumulator, initAccum) {
   return accumulator;
 }
 
-/**
+/*
  * The base implementation of `_.times` without support for iteratee shorthands
  * or max array length checks.
  *
@@ -256,7 +256,7 @@ function baseTimes(n, iteratee) {
   return result;
 }
 
-/**
+/*
  * The base implementation of `_.unary` without support for storing metadata.
  *
  * @private
@@ -269,7 +269,7 @@ function baseUnary(func) {
   };
 }
 
-/**
+/*
  * Gets the value at `key` of `object`.
  *
  * @private
@@ -281,7 +281,7 @@ function getValue(object, key) {
   return object == null ? undefined : object[key];
 }
 
-/**
+/*
  * Checks if `value` is a host object in IE < 9.
  *
  * @private
@@ -300,7 +300,7 @@ function isHostObject(value) {
   return result;
 }
 
-/**
+/*
  * Converts `map` to its key-value pairs.
  *
  * @private
@@ -317,7 +317,7 @@ function mapToArray(map) {
   return result;
 }
 
-/**
+/*
  * Creates a unary function that invokes `func` with its argument transformed.
  *
  * @private
@@ -331,7 +331,7 @@ function overArg(func, transform) {
   };
 }
 
-/**
+/*
  * Converts `set` to an array of its values.
  *
  * @private
@@ -348,43 +348,43 @@ function setToArray(set) {
   return result;
 }
 
-/** Used for built-in method references. */
+/* Used for built-in method references. */
 var arrayProto = Array.prototype,
     funcProto = Function.prototype,
     objectProto = Object.prototype;
 
-/** Used to detect overreaching core-js shims. */
+/* Used to detect overreaching core-js shims. */
 var coreJsData = root['__core-js_shared__'];
 
-/** Used to detect methods masquerading as native. */
+/* Used to detect methods masquerading as native. */
 var maskSrcKey = (function() {
   var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
   return uid ? ('Symbol(src)_1.' + uid) : '';
 }());
 
-/** Used to resolve the decompiled source of functions. */
+/* Used to resolve the decompiled source of functions. */
 var funcToString = funcProto.toString;
 
-/** Used to check objects for own properties. */
+/* Used to check objects for own properties. */
 var hasOwnProperty = objectProto.hasOwnProperty;
 
-/** Used to infer the `Object` constructor. */
+/* Used to infer the `Object` constructor. */
 var objectCtorString = funcToString.call(Object);
 
-/**
+/*
  * Used to resolve the
  * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
  * of values.
  */
 var objectToString = objectProto.toString;
 
-/** Used to detect if a method is native. */
+/* Used to detect if a method is native. */
 var reIsNative = RegExp('^' +
   funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&')
   .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
 );
 
-/** Built-in value references. */
+/* Built-in value references. */
 var Buffer = moduleExports ? root.Buffer : undefined,
     Symbol = root.Symbol,
     Uint8Array = root.Uint8Array,
@@ -407,18 +407,18 @@ var DataView = getNative(root, 'DataView'),
     WeakMap = getNative(root, 'WeakMap'),
     nativeCreate = getNative(Object, 'create');
 
-/** Used to detect maps, sets, and weakmaps. */
+/* Used to detect maps, sets, and weakmaps. */
 var dataViewCtorString = toSource(DataView),
     mapCtorString = toSource(Map),
     promiseCtorString = toSource(Promise),
     setCtorString = toSource(Set),
     weakMapCtorString = toSource(WeakMap);
 
-/** Used to convert symbols to primitives and strings. */
+/* Used to convert symbols to primitives and strings. */
 var symbolProto = Symbol ? Symbol.prototype : undefined,
     symbolValueOf = symbolProto ? symbolProto.valueOf : undefined;
 
-/**
+/*
  * Creates a hash object.
  *
  * @private
@@ -436,7 +436,7 @@ function Hash(entries) {
   }
 }
 
-/**
+/*
  * Removes all key-value entries from the hash.
  *
  * @private
@@ -447,7 +447,7 @@ function hashClear() {
   this.__data__ = nativeCreate ? nativeCreate(null) : {};
 }
 
-/**
+/*
  * Removes `key` and its value from the hash.
  *
  * @private
@@ -461,7 +461,7 @@ function hashDelete(key) {
   return this.has(key) && delete this.__data__[key];
 }
 
-/**
+/*
  * Gets the hash value for `key`.
  *
  * @private
@@ -479,7 +479,7 @@ function hashGet(key) {
   return hasOwnProperty.call(data, key) ? data[key] : undefined;
 }
 
-/**
+/*
  * Checks if a hash value for `key` exists.
  *
  * @private
@@ -493,7 +493,7 @@ function hashHas(key) {
   return nativeCreate ? data[key] !== undefined : hasOwnProperty.call(data, key);
 }
 
-/**
+/*
  * Sets the hash `key` to `value`.
  *
  * @private
@@ -516,7 +516,7 @@ Hash.prototype.get = hashGet;
 Hash.prototype.has = hashHas;
 Hash.prototype.set = hashSet;
 
-/**
+/*
  * Creates an list cache object.
  *
  * @private
@@ -534,7 +534,7 @@ function ListCache(entries) {
   }
 }
 
-/**
+/*
  * Removes all key-value entries from the list cache.
  *
  * @private
@@ -545,7 +545,7 @@ function listCacheClear() {
   this.__data__ = [];
 }
 
-/**
+/*
  * Removes `key` and its value from the list cache.
  *
  * @private
@@ -570,7 +570,7 @@ function listCacheDelete(key) {
   return true;
 }
 
-/**
+/*
  * Gets the list cache value for `key`.
  *
  * @private
@@ -586,7 +586,7 @@ function listCacheGet(key) {
   return index < 0 ? undefined : data[index][1];
 }
 
-/**
+/*
  * Checks if a list cache value for `key` exists.
  *
  * @private
@@ -599,7 +599,7 @@ function listCacheHas(key) {
   return assocIndexOf(this.__data__, key) > -1;
 }
 
-/**
+/*
  * Sets the list cache `key` to `value`.
  *
  * @private
@@ -628,7 +628,7 @@ ListCache.prototype.get = listCacheGet;
 ListCache.prototype.has = listCacheHas;
 ListCache.prototype.set = listCacheSet;
 
-/**
+/*
  * Creates a map cache object to store key-value pairs.
  *
  * @private
@@ -646,7 +646,7 @@ function MapCache(entries) {
   }
 }
 
-/**
+/*
  * Removes all key-value entries from the map.
  *
  * @private
@@ -661,7 +661,7 @@ function mapCacheClear() {
   };
 }
 
-/**
+/*
  * Removes `key` and its value from the map.
  *
  * @private
@@ -674,7 +674,7 @@ function mapCacheDelete(key) {
   return getMapData(this, key)['delete'](key);
 }
 
-/**
+/*
  * Gets the map value for `key`.
  *
  * @private
@@ -687,7 +687,7 @@ function mapCacheGet(key) {
   return getMapData(this, key).get(key);
 }
 
-/**
+/*
  * Checks if a map value for `key` exists.
  *
  * @private
@@ -700,7 +700,7 @@ function mapCacheHas(key) {
   return getMapData(this, key).has(key);
 }
 
-/**
+/*
  * Sets the map `key` to `value`.
  *
  * @private
@@ -722,7 +722,7 @@ MapCache.prototype.get = mapCacheGet;
 MapCache.prototype.has = mapCacheHas;
 MapCache.prototype.set = mapCacheSet;
 
-/**
+/*
  * Creates a stack cache object to store key-value pairs.
  *
  * @private
@@ -733,7 +733,7 @@ function Stack(entries) {
   this.__data__ = new ListCache(entries);
 }
 
-/**
+/*
  * Removes all key-value entries from the stack.
  *
  * @private
@@ -744,7 +744,7 @@ function stackClear() {
   this.__data__ = new ListCache;
 }
 
-/**
+/*
  * Removes `key` and its value from the stack.
  *
  * @private
@@ -757,7 +757,7 @@ function stackDelete(key) {
   return this.__data__['delete'](key);
 }
 
-/**
+/*
  * Gets the stack value for `key`.
  *
  * @private
@@ -770,7 +770,7 @@ function stackGet(key) {
   return this.__data__.get(key);
 }
 
-/**
+/*
  * Checks if a stack value for `key` exists.
  *
  * @private
@@ -783,7 +783,7 @@ function stackHas(key) {
   return this.__data__.has(key);
 }
 
-/**
+/*
  * Sets the stack `key` to `value`.
  *
  * @private
@@ -814,7 +814,7 @@ Stack.prototype.get = stackGet;
 Stack.prototype.has = stackHas;
 Stack.prototype.set = stackSet;
 
-/**
+/*
  * Creates an array of the enumerable property names of the array-like `value`.
  *
  * @private
@@ -841,7 +841,7 @@ function arrayLikeKeys(value, inherited) {
   return result;
 }
 
-/**
+/*
  * This function is like `assignValue` except that it doesn't assign
  * `undefined` values.
  *
@@ -857,7 +857,7 @@ function assignMergeValue(object, key, value) {
   }
 }
 
-/**
+/*
  * Assigns `value` to `key` of `object` if the existing value is not equivalent
  * using [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
  * for equality comparisons.
@@ -875,7 +875,7 @@ function assignValue(object, key, value) {
   }
 }
 
-/**
+/*
  * Gets the index at which the `key` is found in `array` of key-value pairs.
  *
  * @private
@@ -893,7 +893,7 @@ function assocIndexOf(array, key) {
   return -1;
 }
 
-/**
+/*
  * The base implementation of `_.assign` without support for multiple sources
  * or `customizer` functions.
  *
@@ -906,7 +906,7 @@ function baseAssign(object, source) {
   return object && copyObject(source, keys(source), object);
 }
 
-/**
+/*
  * The base implementation of `_.clone` and `_.cloneDeep` which tracks
  * traversed objects.
  *
@@ -981,7 +981,7 @@ function baseClone(value, isDeep, isFull, customizer, key, object, stack) {
   return result;
 }
 
-/**
+/*
  * The base implementation of `_.create` without support for assigning
  * properties to the created object.
  *
@@ -993,7 +993,7 @@ function baseCreate(proto) {
   return isObject(proto) ? objectCreate(proto) : {};
 }
 
-/**
+/*
  * The base implementation of `getAllKeys` and `getAllKeysIn` which uses
  * `keysFunc` and `symbolsFunc` to get the enumerable property names and
  * symbols of `object`.
@@ -1009,7 +1009,7 @@ function baseGetAllKeys(object, keysFunc, symbolsFunc) {
   return isArray(object) ? result : arrayPush(result, symbolsFunc(object));
 }
 
-/**
+/*
  * The base implementation of `getTag`.
  *
  * @private
@@ -1020,7 +1020,7 @@ function baseGetTag(value) {
   return objectToString.call(value);
 }
 
-/**
+/*
  * The base implementation of `_.isNative` without bad shim checks.
  *
  * @private
@@ -1036,7 +1036,7 @@ function baseIsNative(value) {
   return pattern.test(toSource(value));
 }
 
-/**
+/*
  * The base implementation of `_.isTypedArray` without Node.js optimizations.
  *
  * @private
@@ -1048,7 +1048,7 @@ function baseIsTypedArray(value) {
     isLength(value.length) && !!typedArrayTags[objectToString.call(value)];
 }
 
-/**
+/*
  * The base implementation of `_.keys` which doesn't treat sparse arrays as dense.
  *
  * @private
@@ -1068,7 +1068,7 @@ function baseKeys(object) {
   return result;
 }
 
-/**
+/*
  * The base implementation of `_.keysIn` which doesn't treat sparse arrays as dense.
  *
  * @private
@@ -1090,7 +1090,7 @@ function baseKeysIn(object) {
   return result;
 }
 
-/**
+/*
  * The base implementation of `_.merge` without support for multiple sources.
  *
  * @private
@@ -1130,7 +1130,7 @@ function baseMerge(object, source, srcIndex, customizer, stack) {
   });
 }
 
-/**
+/*
  * A specialized version of `baseMerge` for arrays and objects which performs
  * deep merges and tracks traversed objects enabling objects with circular
  * references to be merged.
@@ -1199,7 +1199,7 @@ function baseMergeDeep(object, source, key, srcIndex, mergeFunc, customizer, sta
   assignMergeValue(object, key, newValue);
 }
 
-/**
+/*
  * The base implementation of `_.rest` which doesn't validate or coerce arguments.
  *
  * @private
@@ -1228,7 +1228,7 @@ function baseRest(func, start) {
   };
 }
 
-/**
+/*
  * Creates a clone of  `buffer`.
  *
  * @private
@@ -1245,7 +1245,7 @@ function cloneBuffer(buffer, isDeep) {
   return result;
 }
 
-/**
+/*
  * Creates a clone of `arrayBuffer`.
  *
  * @private
@@ -1258,7 +1258,7 @@ function cloneArrayBuffer(arrayBuffer) {
   return result;
 }
 
-/**
+/*
  * Creates a clone of `dataView`.
  *
  * @private
@@ -1271,7 +1271,7 @@ function cloneDataView(dataView, isDeep) {
   return new dataView.constructor(buffer, dataView.byteOffset, dataView.byteLength);
 }
 
-/**
+/*
  * Creates a clone of `map`.
  *
  * @private
@@ -1285,7 +1285,7 @@ function cloneMap(map, isDeep, cloneFunc) {
   return arrayReduce(array, addMapEntry, new map.constructor);
 }
 
-/**
+/*
  * Creates a clone of `regexp`.
  *
  * @private
@@ -1298,7 +1298,7 @@ function cloneRegExp(regexp) {
   return result;
 }
 
-/**
+/*
  * Creates a clone of `set`.
  *
  * @private
@@ -1312,7 +1312,7 @@ function cloneSet(set, isDeep, cloneFunc) {
   return arrayReduce(array, addSetEntry, new set.constructor);
 }
 
-/**
+/*
  * Creates a clone of the `symbol` object.
  *
  * @private
@@ -1323,7 +1323,7 @@ function cloneSymbol(symbol) {
   return symbolValueOf ? Object(symbolValueOf.call(symbol)) : {};
 }
 
-/**
+/*
  * Creates a clone of `typedArray`.
  *
  * @private
@@ -1336,7 +1336,7 @@ function cloneTypedArray(typedArray, isDeep) {
   return new typedArray.constructor(buffer, typedArray.byteOffset, typedArray.length);
 }
 
-/**
+/*
  * Copies the values of `source` to `array`.
  *
  * @private
@@ -1355,7 +1355,7 @@ function copyArray(source, array) {
   return array;
 }
 
-/**
+/*
  * Copies properties of `source` to `object`.
  *
  * @private
@@ -1383,7 +1383,7 @@ function copyObject(source, props, object, customizer) {
   return object;
 }
 
-/**
+/*
  * Copies own symbol properties of `source` to `object`.
  *
  * @private
@@ -1395,7 +1395,7 @@ function copySymbols(source, object) {
   return copyObject(source, getSymbols(source), object);
 }
 
-/**
+/*
  * Creates a function like `_.assign`.
  *
  * @private
@@ -1428,7 +1428,7 @@ function createAssigner(assigner) {
   });
 }
 
-/**
+/*
  * Creates an array of own enumerable property names and symbols of `object`.
  *
  * @private
@@ -1439,7 +1439,7 @@ function getAllKeys(object) {
   return baseGetAllKeys(object, keys, getSymbols);
 }
 
-/**
+/*
  * Gets the data for `map`.
  *
  * @private
@@ -1454,7 +1454,7 @@ function getMapData(map, key) {
     : data.map;
 }
 
-/**
+/*
  * Gets the native function at `key` of `object`.
  *
  * @private
@@ -1467,7 +1467,7 @@ function getNative(object, key) {
   return baseIsNative(value) ? value : undefined;
 }
 
-/**
+/*
  * Creates an array of the own enumerable symbol properties of `object`.
  *
  * @private
@@ -1476,7 +1476,7 @@ function getNative(object, key) {
  */
 var getSymbols = nativeGetSymbols ? overArg(nativeGetSymbols, Object) : stubArray;
 
-/**
+/*
  * Gets the `toStringTag` of `value`.
  *
  * @private
@@ -1510,7 +1510,7 @@ if ((DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag) ||
   };
 }
 
-/**
+/*
  * Initializes an array clone.
  *
  * @private
@@ -1529,7 +1529,7 @@ function initCloneArray(array) {
   return result;
 }
 
-/**
+/*
  * Initializes an object clone.
  *
  * @private
@@ -1542,7 +1542,7 @@ function initCloneObject(object) {
     : {};
 }
 
-/**
+/*
  * Initializes an object clone based on its `toStringTag`.
  *
  * **Note:** This function only supports cloning values with tags of
@@ -1591,7 +1591,7 @@ function initCloneByTag(object, tag, cloneFunc, isDeep) {
   }
 }
 
-/**
+/*
  * Checks if `value` is a valid array-like index.
  *
  * @private
@@ -1606,7 +1606,7 @@ function isIndex(value, length) {
     (value > -1 && value % 1 == 0 && value < length);
 }
 
-/**
+/*
  * Checks if the given arguments are from an iteratee call.
  *
  * @private
@@ -1630,7 +1630,7 @@ function isIterateeCall(value, index, object) {
   return false;
 }
 
-/**
+/*
  * Checks if `value` is suitable for use as unique object key.
  *
  * @private
@@ -1644,7 +1644,7 @@ function isKeyable(value) {
     : (value === null);
 }
 
-/**
+/*
  * Checks if `func` has its source masked.
  *
  * @private
@@ -1655,7 +1655,7 @@ function isMasked(func) {
   return !!maskSrcKey && (maskSrcKey in func);
 }
 
-/**
+/*
  * Checks if `value` is likely a prototype object.
  *
  * @private
@@ -1669,7 +1669,7 @@ function isPrototype(value) {
   return value === proto;
 }
 
-/**
+/*
  * This function is like
  * [`Object.keys`](http://ecma-international.org/ecma-262/7.0/#sec-object.keys)
  * except that it includes inherited enumerable properties.
@@ -1688,7 +1688,7 @@ function nativeKeysIn(object) {
   return result;
 }
 
-/**
+/*
  * Converts `func` to its source code.
  *
  * @private
@@ -1707,7 +1707,7 @@ function toSource(func) {
   return '';
 }
 
-/**
+/*
  * Performs a
  * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
  * comparison between two values to determine if they are equivalent.
@@ -1743,7 +1743,7 @@ function eq(value, other) {
   return value === other || (value !== value && other !== other);
 }
 
-/**
+/*
  * Checks if `value` is likely an `arguments` object.
  *
  * @static
@@ -1767,7 +1767,7 @@ function isArguments(value) {
     (!propertyIsEnumerable.call(value, 'callee') || objectToString.call(value) == argsTag);
 }
 
-/**
+/*
  * Checks if `value` is classified as an `Array` object.
  *
  * @static
@@ -1792,7 +1792,7 @@ function isArguments(value) {
  */
 var isArray = Array.isArray;
 
-/**
+/*
  * Checks if `value` is array-like. A value is considered array-like if it's
  * not a function and has a `value.length` that's an integer greater than or
  * equal to `0` and less than or equal to `Number.MAX_SAFE_INTEGER`.
@@ -1821,7 +1821,7 @@ function isArrayLike(value) {
   return value != null && isLength(value.length) && !isFunction(value);
 }
 
-/**
+/*
  * This method is like `_.isArrayLike` except that it also checks if `value`
  * is an object.
  *
@@ -1850,7 +1850,7 @@ function isArrayLikeObject(value) {
   return isObjectLike(value) && isArrayLike(value);
 }
 
-/**
+/*
  * Checks if `value` is a buffer.
  *
  * @static
@@ -1869,7 +1869,7 @@ function isArrayLikeObject(value) {
  */
 var isBuffer = nativeIsBuffer || stubFalse;
 
-/**
+/*
  * Checks if `value` is classified as a `Function` object.
  *
  * @static
@@ -1893,7 +1893,7 @@ function isFunction(value) {
   return tag == funcTag || tag == genTag;
 }
 
-/**
+/*
  * Checks if `value` is a valid array-like length.
  *
  * **Note:** This method is loosely based on
@@ -1924,7 +1924,7 @@ function isLength(value) {
     value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
 }
 
-/**
+/*
  * Checks if `value` is the
  * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
  * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
@@ -1954,7 +1954,7 @@ function isObject(value) {
   return !!value && (type == 'object' || type == 'function');
 }
 
-/**
+/*
  * Checks if `value` is object-like. A value is object-like if it's not `null`
  * and has a `typeof` result of "object".
  *
@@ -1982,7 +1982,7 @@ function isObjectLike(value) {
   return !!value && typeof value == 'object';
 }
 
-/**
+/*
  * Checks if `value` is a plain object, that is, an object created by the
  * `Object` constructor or one with a `[[Prototype]]` of `null`.
  *
@@ -2024,7 +2024,7 @@ function isPlainObject(value) {
     Ctor instanceof Ctor && funcToString.call(Ctor) == objectCtorString);
 }
 
-/**
+/*
  * Checks if `value` is classified as a typed array.
  *
  * @static
@@ -2043,7 +2043,7 @@ function isPlainObject(value) {
  */
 var isTypedArray = nodeIsTypedArray ? baseUnary(nodeIsTypedArray) : baseIsTypedArray;
 
-/**
+/*
  * Converts `value` to a plain object flattening inherited enumerable string
  * keyed properties of `value` to own properties of the plain object.
  *
@@ -2071,7 +2071,7 @@ function toPlainObject(value) {
   return copyObject(value, keysIn(value));
 }
 
-/**
+/*
  * Creates an array of the own enumerable property names of `object`.
  *
  * **Note:** Non-object values are coerced to objects. See the
@@ -2103,7 +2103,7 @@ function keys(object) {
   return isArrayLike(object) ? arrayLikeKeys(object) : baseKeys(object);
 }
 
-/**
+/*
  * Creates an array of the own and inherited enumerable property names of `object`.
  *
  * **Note:** Non-object values are coerced to objects.
@@ -2130,7 +2130,7 @@ function keysIn(object) {
   return isArrayLike(object) ? arrayLikeKeys(object, true) : baseKeysIn(object);
 }
 
-/**
+/*
  * This method is like `_.assign` except that it recursively merges own and
  * inherited enumerable string keyed properties of source objects into the
  * destination object. Source properties that resolve to `undefined` are
@@ -2165,7 +2165,7 @@ var merge = createAssigner(function(object, source, srcIndex) {
   baseMerge(object, source, srcIndex);
 });
 
-/**
+/*
  * This method returns a new empty array.
  *
  * @static
@@ -2187,7 +2187,7 @@ function stubArray() {
   return [];
 }
 
-/**
+/*
  * This method returns `false`.
  *
  * @static
