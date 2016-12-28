@@ -35,7 +35,16 @@ export default class GraphQLFactoryDefinition {
     return this
   }
 
+  processDefinitionHooks () {
+    _.forEach(this.pluginRegistry, (plugin) => {
+      let hook = _.get(plugin, 'hooks.definition')
+      if (_.isFunction(hook)) hook(this)
+    })
+    return this
+  }
+
   compile () {
+    this.processDefinitionHooks()
     let compiler = new GraphQLFactoryCompiler(this)
     let compiled = compiler.compile()
     let { fields, types, schemas } = compiled

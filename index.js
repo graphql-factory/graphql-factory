@@ -3126,8 +3126,20 @@ var GraphQLFactoryDefinition = function () {
       return this;
     }
   }, {
+    key: 'processDefinitionHooks',
+    value: function processDefinitionHooks() {
+      var _this2 = this;
+
+      _$1.forEach(this.pluginRegistry, function (plugin) {
+        var hook = _$1.get(plugin, 'hooks.definition');
+        if (_$1.isFunction(hook)) hook(_this2);
+      });
+      return this;
+    }
+  }, {
     key: 'compile',
     value: function compile() {
+      this.processDefinitionHooks();
       var compiler = new GraphQLFactoryCompiler(this);
       var compiled = compiler.compile();
       var fields = compiled.fields,
@@ -3151,12 +3163,12 @@ var GraphQLFactoryDefinition = function () {
     }
   }, {
     key: 'get',
-    value: function get(keyPath) {
+    value: function get$$1(keyPath) {
       return _$1.get(this, keyPath);
     }
   }, {
     key: 'set',
-    value: function set(keyPath, value) {
+    value: function set$$1(keyPath, value) {
       _$1.set(this, keyPath, value);
     }
   }, {
@@ -3186,7 +3198,7 @@ var GraphQLFactoryDefinition = function () {
     }
   }, {
     key: 'definition',
-    get: function get() {
+    get: function get$$1() {
       return {
         fields: this.fields,
         functions: this.functions,
@@ -3197,7 +3209,7 @@ var GraphQLFactoryDefinition = function () {
     }
   }, {
     key: 'plugin',
-    get: function get() {
+    get: function get$$1() {
       return {
         globals: this.globals,
         fields: this.fields,
@@ -3639,7 +3651,7 @@ var GraphQLFactoryTypeGenerator = function () {
 
   }, {
     key: 'types',
-    get: function get() {
+    get: function get$$1() {
       if (_$1.keys(this._types).length) return this._types;
       this.makeNonUnionTypes();
       this.makeUnionTypes();
@@ -3647,7 +3659,7 @@ var GraphQLFactoryTypeGenerator = function () {
     }
   }, {
     key: 'schemas',
-    get: function get() {
+    get: function get$$1() {
       if (_$1.keys(this._schemas).length) return this._schemas;
       this.makeSchemas();
       return this._schemas;
