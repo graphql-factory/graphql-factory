@@ -3103,7 +3103,7 @@ var GraphQLFactoryDefinition = function () {
           schemas = definition.schemas,
           externalTypes = definition.externalTypes;
 
-      _$1.merge(this.globals, globals || {});
+      Object.assign(this.globals, globals || {}); // assign is used to prevent overwriting instantiated classes
       _$1.merge(this.fields, fields || {});
       _$1.merge(this.functions, functions || {});
       _$1.merge(this.types, types || {});
@@ -3717,23 +3717,44 @@ function compile() {
 
 /**
  * graphql-factory instance
+ * @property {GraphQL} graphql - instance of graphql
+ * @property {ConstantsEnum} constants
+ * @property {FactoryUtils} utils - Util functions
  */
 var GraphQLFactory$1 = function () {
   function GraphQLFactory(graphql) {
     classCallCheck(this, GraphQLFactory);
 
+    /**
+     * Compiles a {@link FactoryDefinition}
+     * @function compile
+     * @param {FactoryDefinition} definition
+     * @param {Object} [options]
+     * @param {String|Array} options.plugin - Plugin or array of plugins
+     * @returns {GraphQLFactoryDefinition}
+     */
     this.compile = compile;
     this.constants = constants;
+
+    /**
+     * Creates an un-compiled {@link FactoryDefinition}
+     * @function define
+     * @param {FactoryDefinition} definition
+     * @param {Object} [options]
+     * @param {String|Array} options.plugin - Plugin or array of plugins
+     * @returns {GraphQLFactoryDefinition}
+     */
     this.define = define;
     this.graphql = graphql;
     this.utils = _$1;
   }
 
   /**
-   * @memberOf GraphQLFactory$1
-   * @param {GraphQLFactoryDefinition} definition - graphql-factory definition
-   * @param {Object} options - options hash
-   * @returns {GraphQLFactoryLibrary} graphql-factory library instance
+   * Creates a new GraphQLFactoryLibrary
+   * @param {FactoryDefinition} definition
+   * @param {Object} options
+   * @param {String|Array} options.plugin - Plugin or array of plugins
+   * @returns {GraphQLFactoryLibrary}
    */
 
 
@@ -3754,8 +3775,18 @@ var GraphQLFactory$1 = function () {
 
 /**
  * Create a new instance of graphql-factory
+ * @module graphql-factory
+ *
  * @param {GraphQL} graphql - Instance of graphql
- * @returns {GraphqlFactory} instance of graphql-factory
+ * @returns {GraphQLFactory} instance of graphql-factory
+ * @example <caption>ES5</caption>
+ * var graphql = require('graphql')
+ * var GraphQLFactory = require('graphql-factory')
+ * var factory = GraphQLFactory(graphql)
+ * @example <caption>ES6</caption>
+ * import * as graphql from 'graphql'
+ * import GraphQLFactory from 'graphql-factory'
+ * let factory = GraphQLFactory(graphql)
  */
 var factory = function factory(graphql) {
   return new GraphQLFactory$1(graphql);
@@ -3773,11 +3804,5 @@ factory.GraphQLFactoryCompiler = GraphQLFactoryCompiler;
 factory.GraphQLFactoryDefinition = GraphQLFactoryDefinition;
 factory.GraphQLFactoryLibrary = GraphQLFactoryLibrary;
 factory.GraphQLFactoryTypeGenerator = GraphQLFactoryTypeGenerator;
-
-/*
- * @module graphql-factory
- * @author Branden Horiuchi <bhoriuchi@gmail.com>
- * @description Create GraphQL schemas and types from JSON definitions
- */
 
 module.exports = factory;
