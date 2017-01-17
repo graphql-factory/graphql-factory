@@ -17,7 +17,7 @@ export default class GraphQLFactoryDefinition {
 
   merge (definition = {}) {
     let { globals, fields, functions, types, schemas, externalTypes } = definition
-    _.merge(this.globals, globals || {})
+    Object.assign(this.globals, globals || {}) // assign is used to prevent overwriting instantiated classes
     _.merge(this.fields, fields || {})
     _.merge(this.functions, functions || {})
     _.merge(this.types, types || {})
