@@ -2626,7 +2626,7 @@ function typeOf(obj) {
 function getFieldPath(info, maxDepth) {
   maxDepth = maxDepth || 50;
 
-  var loc = get$$1(info, 'fieldASTs[0].loc');
+  var loc = get$$1(info, 'fieldNodes[0].loc') || get$$1(info, 'fieldASTs[0].loc');
   var stackCount = 0;
 
   var traverseFieldPath = function traverseFieldPath(selections, start, end, fieldPath) {
@@ -2676,7 +2676,7 @@ function getReturnTypeName(info) {
 function getRootFieldDef(info, path) {
   var fldPath = get$$1(getFieldPath(info), '[0]');
   var queryType = info.operation.operation;
-  var opDef = get$$1(info, 'schema._factory.' + queryType + 'Def', {});
+  var opDef = get$$1(info, 'schema._factory.' + queryType, {});
   var fieldDef = get$$1(opDef, 'fields["' + fldPath + '"]', undefined);
 
   //  if a field def cannot be found, try to find it in the extendFields

@@ -278,7 +278,7 @@ export function typeOf (obj) {
 export function getFieldPath (info, maxDepth) {
   maxDepth = maxDepth || 50
 
-  let loc = get(info, 'fieldASTs[0].loc')
+  let loc = get(info, 'fieldNodes[0].loc') || get(info, 'fieldASTs[0].loc')
   let stackCount = 0
 
   let traverseFieldPath = function (selections, start, end, fieldPath) {
@@ -329,7 +329,7 @@ export function getReturnTypeName (info) {
 export function getRootFieldDef (info, path) {
   let fldPath = get(getFieldPath(info), '[0]')
   let queryType = info.operation.operation
-  let opDef = get(info, 'schema._factory.' + queryType + 'Def', {})
+  let opDef = get(info, 'schema._factory.' + queryType, {})
   let fieldDef = get(opDef, 'fields["' + fldPath + '"]', undefined)
 
   //  if a field def cannot be found, try to find it in the extendFields
