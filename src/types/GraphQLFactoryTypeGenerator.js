@@ -49,11 +49,85 @@ export default class GraphQLFactoryTypeGenerator {
   /****************************************************************************
    * Helpers
    ****************************************************************************/
+  processMiddleware (resolver, args) {
+    return new Promise((resolve, reject) => {
+      let status = { resolved: false, rejected: false, isFulfilled: false }
+
+      // create a reject handler so that reject is only called once
+      let doReject = error => {
+        if (status.isFulfilled) return
+        status.isFulfilled = true
+        status.rejected = true
+        reject(error)
+      }
+
+      // create a resolve handler so that resolve is only called once
+      let doResolve = result => {
+        if (status.isFulfilled) return
+        status.isFulfilled = true
+        status.resolved = true
+        resolve(result)
+      }
+
+      // if there is no middleware proceed to the resolver
+      if (!this.definition._middleware.before.length) return this.processResolver(resolver, args, doResolve, doReject)
+
+      // add a timeout to the middleware
+      let timeout = setTimeout(() => {
+        this.processResolver(resolver, args, doResolve, doReject)
+      }, this.definition._middleware.beforeTimeout)
+
+      let hooks = this.definition._middleware.before.slice()
+      let next = error => {
+        hooks = hooks.splice(1)
+        if (error) return reject(error)
+        if (!hooks.length) {
+          clearTimeout(timeout)
+          return this.processResolver(resolver, args, doResolve, doReject)
+        }
+        return hooks[0].apply(this.fnContext, [args, next])
+      }
+      return hooks[0].apply(this.fnContext, [args, next])
+    })
+  }
+
+  processResolver (resolver, args, resolve, reject) {
+    return Promise.resolve(resolver.apply(this.fnContext, _.values(args)))
+      .then(result => {
+        return this.afterMiddleware(result, args, resolve, reject)
+      }, reject)
+  }
+
+  afterMiddleware (result, args, resolve, reject) {
+    // if there is no middleware resolve the result
+    if (!this.definition._middleware.after.length) return resolve(result)
+
+    // add a timeout to the middleware
+    let timeout = setTimeout(() => {
+      resolve(result)
+    }, this.definition._middleware.afterTimeout)
+
+    let hooks = this.definition._middleware.after.slice()
+    let next = (error, res) => {
+      res = res === undefined ? result : res // default to original result if not supplied
+      hooks = hooks.splice(1)
+      if (error) return reject(error)
+      if (!hooks.length) {
+        clearTimeout(timeout)
+        return resolve(res)
+      }
+      return hooks[0].apply(this.fnContext, [args, res, next])
+    }
+    return hooks[0].apply(this.fnContext, [args, result, next])
+  }
+
   bindFunction (fn) {
     if (!fn) return
     let resolver = _.isFunction(fn) ? fn : this.definition.get(`functions["${fn}"]`)
     if (!_.isFunction(resolver)) console.error(`could not resolve function ${fn}`)
-    return resolver.bind(this.fnContext)
+    return (source, args, context, info) => {
+      return this.processMiddleware(resolver, { source, args, context, info })
+    }
   }
 
   makeFieldType (field) {

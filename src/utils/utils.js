@@ -139,6 +139,14 @@ export function forEach (obj, fn) {
   }
 }
 
+export function values (obj) {
+  let _values = []
+  forEach(obj, val => {
+    _values.push(val)
+  })
+  return _values
+}
+
 export function without () {
   let output = []
   let args = [...arguments]
@@ -244,6 +252,22 @@ export function get (obj, path, defaultValue) {
    return defaultValue
   }
   return value
+}
+
+export function union () {
+  let args = [ ...arguments ]
+  if (!args.length) return []
+
+  try {
+    let u = args.reduce((prev, cur) => {
+      if (!isArray(prev) || !isArray(cur)) return []
+      return prev.concat(cur)
+    }, [])
+
+    return [ ...new Set(u) ]
+  } catch (err) {
+    return []
+  }
 }
 
 export function set (obj, path, val) {

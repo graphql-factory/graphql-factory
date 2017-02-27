@@ -59,6 +59,50 @@ var defineProperty = function (obj, key, value) {
   return obj;
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var toConsumableArray = function (arr) {
+  if (Array.isArray(arr)) {
+    for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
+
+    return arr2;
+  } else {
+    return Array.from(arr);
+  }
+};
+
 /*
  * lodash (Custom Build) <https://lodash.com/>
  * Build: `lodash modularize exports="npm" -o ./`
@@ -443,7 +487,7 @@ var nativeMax = Math.max;
 var DataView = getNative(root, 'DataView');
 var Map = getNative(root, 'Map');
 var Promise$1 = getNative(root, 'Promise');
-var Set = getNative(root, 'Set');
+var Set$1 = getNative(root, 'Set');
 var WeakMap = getNative(root, 'WeakMap');
 var nativeCreate = getNative(Object, 'create');
 
@@ -451,7 +495,7 @@ var nativeCreate = getNative(Object, 'create');
 var dataViewCtorString = toSource(DataView);
 var mapCtorString = toSource(Map);
 var promiseCtorString = toSource(Promise$1);
-var setCtorString = toSource(Set);
+var setCtorString = toSource(Set$1);
 var weakMapCtorString = toSource(WeakMap);
 
 /* Used to convert symbols to primitives and strings. */
@@ -1504,7 +1548,7 @@ var getTag = baseGetTag;
 
 // Fallback for data views, maps, sets, and weak maps in IE 11,
 // for data views in Edge < 14, and promises in Node.js.
-if (DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag || Map && getTag(new Map()) != mapTag || Promise$1 && getTag(Promise$1.resolve()) != promiseTag || Set && getTag(new Set()) != setTag || WeakMap && getTag(new WeakMap()) != weakMapTag) {
+if (DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag || Map && getTag(new Map()) != mapTag || Promise$1 && getTag(Promise$1.resolve()) != promiseTag || Set$1 && getTag(new Set$1()) != setTag || WeakMap && getTag(new WeakMap()) != weakMapTag) {
   getTag = function getTag(value) {
     var result = objectToString.call(value),
         Ctor = result == objectTag ? value.constructor : undefined,
@@ -2273,55 +2317,35 @@ var toArguments = function toArguments(obj) {
         obj = _getType.obj,
         type = _getType.type;
 
-    var _ret = function () {
-      switch (type) {
-        case ARRAY:
-          var arrList = [];
-          forEach(obj, function (v) {
-            var arrVal = toLiteral(v);
-            if (arrVal === NULL && keepNulls || arrVal && arrVal !== NULL) arrList.push(arrVal);
-          });
-          return {
-            v: '[' + arrList.join(',') + ']'
-          };
-        case OBJECT:
-          var objList = [];
-          forEach(obj, function (v, k) {
-            var objVal = toLiteral(v);
-            if (objVal === NULL && keepNulls || objVal && objVal !== NULL) objList.push(k + ':' + objVal);
-          });
-          return {
-            v: '{' + objList.join(',') + '}'
-          };
-        case DATE:
-          return {
-            v: '"' + obj.toISOString() + '"'
-          };
-        case FLOAT:
-          var s = String(obj);
-          return {
-            v: s.indexOf('.') === -1 ? s + '.0' : s
-          };
-        case NULL:
-          return {
-            v: NULL
-          };
-        case STRING:
-          return {
-            v: '"' + escapeString(obj) + '"'
-          };
-        case UNDEFINED:
-          return {
-            v: undefined
-          };
-        default:
-          return {
-            v: String(obj)
-          };
-      }
-    }();
-
-    if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+    switch (type) {
+      case ARRAY:
+        var arrList = [];
+        forEach(obj, function (v) {
+          var arrVal = toLiteral(v);
+          if (arrVal === NULL && keepNulls || arrVal && arrVal !== NULL) arrList.push(arrVal);
+        });
+        return '[' + arrList.join(',') + ']';
+      case OBJECT:
+        var objList = [];
+        forEach(obj, function (v, k) {
+          var objVal = toLiteral(v);
+          if (objVal === NULL && keepNulls || objVal && objVal !== NULL) objList.push(k + ':' + objVal);
+        });
+        return '{' + objList.join(',') + '}';
+      case DATE:
+        return '"' + obj.toISOString() + '"';
+      case FLOAT:
+        var s = String(obj);
+        return s.indexOf('.') === -1 ? s + '.0' : s;
+      case NULL:
+        return NULL;
+      case STRING:
+        return '"' + escapeString(obj) + '"';
+      case UNDEFINED:
+        return undefined;
+      default:
+        return String(obj);
+    }
   };
 
   var objStr = toLiteral(circular(obj));
@@ -2487,6 +2511,14 @@ function forEach(obj, fn) {
   }
 }
 
+function values(obj) {
+  var _values = [];
+  forEach(obj, function (val) {
+    _values.push(val);
+  });
+  return _values;
+}
+
 function without() {
   var output = [];
   var args = [].concat(Array.prototype.slice.call(arguments));
@@ -2593,6 +2625,22 @@ function get$$1(obj, path, defaultValue) {
     return defaultValue;
   }
   return value;
+}
+
+function union() {
+  var args = [].concat(Array.prototype.slice.call(arguments));
+  if (!args.length) return [];
+
+  try {
+    var u = args.reduce(function (prev, cur) {
+      if (!isArray(prev) || !isArray(cur)) return [];
+      return prev.concat(cur);
+    }, []);
+
+    return [].concat(toConsumableArray(new Set(u)));
+  } catch (err) {
+    return [];
+  }
 }
 
 function set$$1(obj, path, val) {
@@ -2752,6 +2800,7 @@ var _$1 = Object.freeze({
 	stringToPathArray: stringToPathArray,
 	has: has,
 	forEach: forEach,
+	values: values,
 	without: without,
 	map: map,
 	mapValues: mapValues,
@@ -2762,6 +2811,7 @@ var _$1 = Object.freeze({
 	pickBy: pickBy,
 	pick: pick,
 	get: get$$1,
+	union: union,
 	set: set$$1,
 	clone: clone,
 	typeOf: typeOf,
@@ -2951,13 +3001,11 @@ var GraphQLFactoryCompiler = function () {
         // no type fields
         if (!hasFields(type)) {
           if (getShortType(type) === ENUM$1) {
-            (function () {
-              var values = definition.values;
+            var values = definition.values;
 
-              _$1.forEach(values, function (v, k) {
-                if (!_$1.isHash(v)) values[k] = { value: v };
-              });
-            })();
+            _$1.forEach(values, function (v, k) {
+              if (!_$1.isHash(v)) values[k] = { value: v };
+            });
           }
           return true;
         }
@@ -3069,6 +3117,8 @@ var GraphQLFactoryCompiler = function () {
   return GraphQLFactoryCompiler;
 }();
 
+var DEFAULT_MIDDLEWARE_TIMEOUT = 5000;
+
 var GraphQLFactoryDefinition = function () {
   function GraphQLFactoryDefinition() {
     var definition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
@@ -3089,6 +3139,12 @@ var GraphQLFactoryDefinition = function () {
     this.schemas = schemas || {};
     this.externalTypes = externalTypes || {};
     this.pluginRegistry = {};
+    this._middleware = {
+      before: [],
+      after: [],
+      beforeTimeout: DEFAULT_MIDDLEWARE_TIMEOUT,
+      afterTimeout: DEFAULT_MIDDLEWARE_TIMEOUT
+    };
     this.registerPlugin(plugin);
   }
 
@@ -3126,13 +3182,45 @@ var GraphQLFactoryDefinition = function () {
       return this;
     }
   }, {
+    key: 'beforeResolve',
+    value: function beforeResolve(middleware) {
+      var _this2 = this;
+
+      _$1.forEach(_$1.ensureArray(middleware), function (mw) {
+        if (_$1.isFunction(mw)) _this2._middleware.before = _$1.union(_this2._middleware.before, [mw]);
+      });
+      return this;
+    }
+  }, {
+    key: 'afterResolve',
+    value: function afterResolve(middleware) {
+      var _this3 = this;
+
+      _$1.forEach(_$1.ensureArray(middleware), function (mw) {
+        if (_$1.isFunction(mw)) _this3._middleware.after = _$1.union(_this3._middleware.after, [mw]);
+      });
+      return this;
+    }
+  }, {
+    key: 'beforeTimeout',
+    value: function beforeTimeout(timeout) {
+      if (_$1.isNumber(timeout)) this._middleware.beforeTimeout = Math.ceil(timeout);
+      return this;
+    }
+  }, {
+    key: 'afterTimeout',
+    value: function afterTimeout(timeout) {
+      if (_$1.isNumber(timeout)) this._middleware.afterTimeout = Math.ceil(timeout);
+      return this;
+    }
+  }, {
     key: 'processDefinitionHooks',
     value: function processDefinitionHooks() {
-      var _this2 = this;
+      var _this4 = this;
 
       _$1.forEach(this.pluginRegistry, function (plugin) {
         var hook = _$1.get(plugin, 'hooks.definition');
-        if (_$1.isFunction(hook)) hook(_this2);
+        if (_$1.isFunction(hook)) hook(_this4);
       });
       return this;
     }
@@ -3402,25 +3490,17 @@ function FactoryInterfacesThunk(_this) {
   var interfaces = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
 
   try {
-    var _ret = function () {
-      if (!_$1.isArray(interfaces) || !interfaces.length) return {
-          v: void 0
-        };
+    if (!_$1.isArray(interfaces) || !interfaces.length) return;
 
-      var thunk = _$1.without(_$1.map(interfaces, function (type) {
-        var iface = _this.resolveType(type);
-        if (iface instanceof _this.graphql.GraphQLInterfaceType) return iface;
-        return null;
-      }), null);
+    var thunk = _$1.without(_$1.map(interfaces, function (type) {
+      var iface = _this.resolveType(type);
+      if (iface instanceof _this.graphql.GraphQLInterfaceType) return iface;
+      return null;
+    }), null);
 
-      return {
-        v: thunk.length > 0 ? function () {
-          return thunk;
-        } : undefined
-      };
-    }();
-
-    if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+    return thunk.length > 0 ? function () {
+      return thunk;
+    } : undefined;
   } catch (err) {
     console.error('FactoryInterfacesThunk', err);
   }
@@ -3546,12 +3626,96 @@ var GraphQLFactoryTypeGenerator = function () {
 
 
   createClass(GraphQLFactoryTypeGenerator, [{
+    key: 'processMiddleware',
+    value: function processMiddleware(resolver, args) {
+      var _this = this;
+
+      return new Promise(function (resolve, reject) {
+        var status = { resolved: false, rejected: false, isFulfilled: false };
+
+        // create a reject handler so that reject is only called once
+        var doReject = function doReject(error) {
+          if (status.isFulfilled) return;
+          status.isFulfilled = true;
+          status.rejected = true;
+          reject(error);
+        };
+
+        // create a resolve handler so that resolve is only called once
+        var doResolve = function doResolve(result) {
+          if (status.isFulfilled) return;
+          status.isFulfilled = true;
+          status.resolved = true;
+          resolve(result);
+        };
+
+        // if there is no middleware proceed to the resolver
+        if (!_this.definition._middleware.before.length) return _this.processResolver(resolver, args, doResolve, doReject);
+
+        // add a timeout to the middleware
+        var timeout = setTimeout(function () {
+          _this.processResolver(resolver, args, doResolve, doReject);
+        }, _this.definition._middleware.beforeTimeout);
+
+        var hooks = _this.definition._middleware.before.slice();
+        var next = function next(error) {
+          hooks = hooks.splice(1);
+          if (error) return reject(error);
+          if (!hooks.length) {
+            clearTimeout(timeout);
+            return _this.processResolver(resolver, args, doResolve, doReject);
+          }
+          return hooks[0].apply(_this.fnContext, [args, next]);
+        };
+        return hooks[0].apply(_this.fnContext, [args, next]);
+      });
+    }
+  }, {
+    key: 'processResolver',
+    value: function processResolver(resolver, args, resolve, reject) {
+      var _this2 = this;
+
+      return Promise.resolve(resolver.apply(this.fnContext, _$1.values(args))).then(function (result) {
+        return _this2.afterMiddleware(result, args, resolve, reject);
+      }, reject);
+    }
+  }, {
+    key: 'afterMiddleware',
+    value: function afterMiddleware(result, args, resolve, reject) {
+      var _this3 = this;
+
+      // if there is no middleware resolve the result
+      if (!this.definition._middleware.after.length) return resolve(result);
+
+      // add a timeout to the middleware
+      var timeout = setTimeout(function () {
+        resolve(result);
+      }, this.definition._middleware.afterTimeout);
+
+      var hooks = this.definition._middleware.after.slice();
+      var next = function next(error, res) {
+        res = res === undefined ? result : res; // default to original result if not supplied
+        hooks = hooks.splice(1);
+        if (error) return reject(error);
+        if (!hooks.length) {
+          clearTimeout(timeout);
+          return resolve(res);
+        }
+        return hooks[0].apply(_this3.fnContext, [args, res, next]);
+      };
+      return hooks[0].apply(this.fnContext, [args, result, next]);
+    }
+  }, {
     key: 'bindFunction',
     value: function bindFunction(fn) {
+      var _this4 = this;
+
       if (!fn) return;
       var resolver = _$1.isFunction(fn) ? fn : this.definition.get('functions["' + fn + '"]');
       if (!_$1.isFunction(resolver)) console.error('could not resolve function ' + fn);
-      return resolver.bind(this.fnContext);
+      return function (source, args, context, info) {
+        return _this4.processMiddleware(resolver, { source: source, args: args, context: context, info: info });
+      };
     }
   }, {
     key: 'makeFieldType',
@@ -3589,7 +3753,7 @@ var GraphQLFactoryTypeGenerator = function () {
   }, {
     key: 'makeNonUnionTypes',
     value: function makeNonUnionTypes() {
-      var _this = this;
+      var _this5 = this;
 
       _$1.forEach(this.definition.types, function (definition, nameDefault) {
         var name = definition.name,
@@ -3617,31 +3781,31 @@ var GraphQLFactoryTypeGenerator = function () {
           default:
             throw new Error(type + ' is an invalid base type');
         }
-        _this._types[name || nameDefault] = fn(_this, definition, nameDefault);
+        _this5._types[name || nameDefault] = fn(_this5, definition, nameDefault);
       });
     }
   }, {
     key: 'makeUnionTypes',
     value: function makeUnionTypes() {
-      var _this2 = this;
+      var _this6 = this;
 
       _$1.forEach(this.definition.types, function (definition, nameDefault) {
         var name = definition.name,
             type = definition.type;
 
         if (type !== UNION) return;
-        _this2._types[name || nameDefault] = FactoryGQLUnionType(_this2, definition, nameDefault);
+        _this6._types[name || nameDefault] = FactoryGQLUnionType(_this6, definition, nameDefault);
       });
     }
   }, {
     key: 'makeSchemas',
     value: function makeSchemas() {
-      var _this3 = this;
+      var _this7 = this;
 
       _$1.forEach(this.definition.schemas, function (definition, nameDefault) {
         var name = definition.name;
 
-        _this3._schemas[name || nameDefault] = FactoryGQLSchema(_this3, definition, nameDefault);
+        _this7._schemas[name || nameDefault] = FactoryGQLSchema(_this7, definition, nameDefault);
       });
     }
 
@@ -3763,10 +3927,16 @@ var GraphQLFactory$1 = function () {
     value: function make() {
       var definition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-      var plugin = options.plugin;
+      var plugin = options.plugin,
+          beforeResolve = options.beforeResolve,
+          afterResolve = options.afterResolve,
+          beforeTimeout = options.beforeTimeout,
+          afterTimeout = options.afterTimeout;
 
-      var factoryDef = new GraphQLFactoryDefinition();
-      factoryDef.merge(definition).registerPlugin(plugin).compile();
+      var factoryDef = definition instanceof GraphQLFactoryDefinition ? definition : new GraphQLFactoryDefinition(definition);
+
+      factoryDef.registerPlugin(plugin).beforeResolve(beforeResolve).beforeTimeout(beforeTimeout).afterResolve(afterResolve).afterTimeout(afterTimeout).compile();
+
       return new GraphQLFactoryLibrary(this.graphql, factoryDef);
     }
   }]);

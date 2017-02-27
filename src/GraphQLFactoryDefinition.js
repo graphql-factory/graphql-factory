@@ -1,6 +1,8 @@
 import _ from './utils/index'
 import GraphQLFactoryCompiler from './GraphQLFactoryCompiler'
 
+const DEFAULT_MIDDLEWARE_TIMEOUT = 5000
+
 export default class GraphQLFactoryDefinition {
   constructor (definition = {}, options = {}) {
     let { plugin } = options
@@ -12,6 +14,12 @@ export default class GraphQLFactoryDefinition {
     this.schemas = schemas || {}
     this.externalTypes = externalTypes || {}
     this.pluginRegistry = {}
+    this._middleware = {
+      before: [],
+      after: [],
+      beforeTimeout: DEFAULT_MIDDLEWARE_TIMEOUT,
+      afterTimeout: DEFAULT_MIDDLEWARE_TIMEOUT
+    }
     this.registerPlugin(plugin)
   }
 
@@ -32,6 +40,30 @@ export default class GraphQLFactoryDefinition {
       this.pluginRegistry[name] = p
       this.merge(p)
     })
+    return this
+  }
+
+  beforeResolve (middleware) {
+    _.forEach(_.ensureArray(middleware), mw => {
+      if (_.isFunction(mw)) this._middleware.before = _.union(this._middleware.before, [mw])
+    })
+    return this
+  }
+
+  afterResolve (middleware) {
+    _.forEach(_.ensureArray(middleware), mw => {
+      if (_.isFunction(mw)) this._middleware.after = _.union(this._middleware.after, [mw])
+    })
+    return this
+  }
+
+  beforeTimeout (timeout) {
+    if (_.isNumber(timeout)) this._middleware.beforeTimeout = Math.ceil(timeout)
+    return this
+  }
+
+  afterTimeout (timeout) {
+    if (_.isNumber(timeout)) this._middleware.afterTimeout = Math.ceil(timeout)
     return this
   }
 
