@@ -24,7 +24,15 @@ export default class GraphQLFactoryDefinition {
   }
 
   merge (definition = {}) {
-    let { globals, fields, functions, types, schemas, externalTypes } = definition
+    let {
+      globals,
+      fields,
+      functions,
+      types,
+      schemas,
+      externalTypes
+    } = definition
+
     Object.assign(this.globals, globals || {}) // assign is used to prevent overwriting instantiated classes
     _.merge(this.fields, fields || {})
     _.merge(this.functions, functions || {})
@@ -35,10 +43,11 @@ export default class GraphQLFactoryDefinition {
   }
 
   registerPlugin (plugins = []) {
-    _.forEach(_.ensureArray(plugins), (p) => {
-      let name = _.get(p, 'name', `unnamedPlugin${_.keys(this.pluginRegistry).length}`)
-      this.pluginRegistry[name] = p
-      this.merge(p)
+    _.forEach(_.ensureArray(plugins), plugin => {
+      let name = _.get(plugin, 'name', `unnamedPlugin${_.keys(this.pluginRegistry).length}`)
+      this.pluginRegistry[name] = plugin
+      this.merge(plugin)
+      if (_.isFunction(plugin.install)) plugin.install(this)
     })
     return this
   }

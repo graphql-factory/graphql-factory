@@ -24,25 +24,27 @@ import {
  * Type generator class
  */
 export default class GraphQLFactoryTypeGenerator {
-  constructor (graphql, definition) {
+  constructor (graphql, definition, emitter) {
     this.graphql = graphql
     this.definition = definition
     this._types = {}
     this._schemas = {}
-    this.fnContext = {
-      definition: definition.definition,
-      globals: definition.plugin.globals,
-      graphql,
-      utils: _,
-      types: this._types,
-      schemas: this._schemas
-    }
     this.typeMap = {
       [BOOLEAN]: graphql.GraphQLBoolean,
       [FLOAT]: graphql.GraphQLFloat,
       [ID]: graphql.GraphQLID,
       [INT]: graphql.GraphQLInt,
       [STRING]: graphql.GraphQLString
+    }
+
+    this.fnContext = {
+      emitter,
+      definition: definition.definition,
+      globals: definition.plugin.globals,
+      graphql,
+      utils: _,
+      types: this._types,
+      schemas: this._schemas
     }
   }
 
