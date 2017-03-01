@@ -22,9 +22,7 @@
     "test:query": "npm run build && mocha test/index.js -t 'unit.query'"
   },
   "author": "Branden Horiuchi <bhoriuchi@gmail.com>",
-  "dependencies": {
-    "hash.js": "^1.0.3"
-  },
+  "dependencies": {},
   "devDependencies": {
     "babel-core": "^6.23.1",
     "babel-plugin-transform-runtime": "^6.23.0",
@@ -40,6 +38,7 @@
     "lodash": "^4.17.4",
     "mocha": "^3.2.0",
     "node-getopt": "^0.2.3",
+    "rethinkdbdash": "^2.3.28",
     "rewire": "^2.5.2",
     "rollup": "^0.38.3",
     "rollup-plugin-babel": "^2.7.1",

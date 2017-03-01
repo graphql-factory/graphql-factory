@@ -1,7 +1,9 @@
 import GraphQLFactory from '../src/index'
 import * as graphql from 'graphql'
 import SubscriptionPlugin from '../src/plugins/subscription'
+import rethinkdbdash from 'rethinkdbdash'
 
+let r = rethinkdbdash({ silent: true })
 let factory = GraphQLFactory(graphql)
 
 const definition = {
@@ -25,11 +27,8 @@ const definition = {
               name: { type: 'String' },
               email: { type: 'String' }
             },
-            resolve () {
-              return [
-                { id: '1', name: 'John Doe', email: 'jdoe@test.com' },
-                { id: '2', name: 'Jane Doe', email: 'jdoe2@test.com' }
-              ]
+            resolve (source, args) {
+              return r.table('user').filter(args).run()
             }
           }
         }
@@ -43,15 +42,17 @@ const definition = {
               name: { type: 'String' },
               email: { type: 'String' }
             },
-            resolve () {
-              return new Promise(resolve => {
-                setTimeout(() => {
-                  resolve([
-                    { id: '1', name: 'John Doe', email: 'jdoe@test.com' },
-                    { id: '2', name: 'Jane Doe', email: 'jdoe2@test.com' }
-                  ])
-                }, 100)
+            resolve (source, args, context, info) {
+              let _query = r.table('user').filter(args)
+              this.subscriptionSetup(info, function (change, data) {
+                return _query.changes().run().then(cursor => {
+                  data.cursor = cursor
+                  return cursor.each(error => {
+                    if (!error) change()
+                  })
+                })
               })
+              return _query.run()
             }
           },
           subscribeB: {
@@ -61,11 +62,17 @@ const definition = {
               name: { type: 'String' },
               email: { type: 'String' }
             },
-            resolve () {
-              return [
-                { id: '1', name: 'John Doe', email: 'jdoe@test.com' },
-                { id: '2', name: 'Jane Doe', email: 'jdoe2@test.com' }
-              ]
+            resolve (source, args, context, info) {
+              let _query = r.table('user').filter(args)
+              this.subscriptionSetup(info, function (change, data) {
+                return _query.changes().run().then(cursor => {
+                  data.cursor = cursor
+                  return cursor.each(error => {
+                    if (!error) change()
+                  })
+                })
+              })
+              return _query.run()
             }
           }
         }
@@ -74,16 +81,24 @@ const definition = {
   }
 }
 
-let lib = factory.make(definition, { plugin: [new SubscriptionPlugin()] })
+let lib = factory.make(definition, {
+  plugin: [
+    new SubscriptionPlugin()
+  ]
+})
 
-lib.Users(`subscription subUUID {
+lib.on('mysub', data => {
+  console.log(JSON.stringify({ feed: data }, null, '  '))
+})
+
+lib.Users(`subscription mysub {
   subscribeA { id, name, email }
   subscribeB { id }
 }`, { root: 'i am groot' })
 .then(result => {
   console.log(JSON.stringify(result, null, '  '))
-  process.exit()
+  // setTimeout(() => process.exit(), 100)
 }, error => {
   console.dir(error)
-  process.exit()
+  // setTimeout(() => process.exit(), 100)
 })

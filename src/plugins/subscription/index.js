@@ -3,16 +3,29 @@ import SubscriptionManager from './SubscriptionManager'
 
 export default class GraphqlFactorySubscriptionPlugin {
   constructor (options) {
+    let _self = this
+
+    // create a new subscription manager
     this.manager = new SubscriptionManager(options)
+
+    // add the subscriptionSetup method to the context so that is can be
+    // called from the resolve function
+    this.context = {
+      subscriptionSetup (change, data) {
+        _self.manager.setup(change, data)
+      }
+    }
   }
 
   install (definition) {
     let _self = this
+
+    // install before resolver
     definition.beforeResolve(function (args, next) {
       let { info } = args
 
       if (_.get(info, 'operation.kind') === this.graphql.Kind.OPERATION_DEFINITION) {
-        this.manager.subscribe(args, this)
+        _self.manager.subscribe(args, this)
       }
       next()
     })

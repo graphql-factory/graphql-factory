@@ -24,7 +24,7 @@ import {
  * Type generator class
  */
 export default class GraphQLFactoryTypeGenerator {
-  constructor (graphql, definition, emitter) {
+  constructor (graphql, definition, lib) {
     this.graphql = graphql
     this.definition = definition
     this._types = {}
@@ -38,7 +38,7 @@ export default class GraphQLFactoryTypeGenerator {
     }
 
     this.fnContext = {
-      emitter,
+      lib,
       definition: definition.definition,
       globals: definition.plugin.globals,
       graphql,
@@ -46,6 +46,10 @@ export default class GraphQLFactoryTypeGenerator {
       types: this._types,
       schemas: this._schemas
     }
+
+    _.forEach(definition.pluginRegistry, plugin => {
+      if (plugin.context) this.fnContext = Object.assign(this.fnContext, plugin.context)
+    })
   }
 
   /****************************************************************************

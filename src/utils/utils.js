@@ -1,7 +1,6 @@
 /* lodash like functions to remove dependency on lodash accept lodash.merge */
 import merge from './lodash.merge'
 import toObjectString from './obj2arg'
-import hash from 'hash.js'
 
 export { toObjectString }
 export { merge }
@@ -401,10 +400,6 @@ export function stringify () {
   } catch (error) {
     return ''
   }
-}
-
-export function sha256 (body) {
-  return hash.sha256().update(body).digest('hex')
 }
 
 export function escapeString (str) {
