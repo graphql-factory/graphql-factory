@@ -11,8 +11,11 @@ export default class GraphqlFactorySubscriptionPlugin {
     // add the subscriptionSetup method to the context so that is can be
     // called from the resolve function
     this.context = {
-      subscriptionSetup (change, data) {
-        _self.manager.setup(change, data)
+      subscriptionSetup (change, setupHandler, removeHandler) {
+        _self.manager.setup(change, setupHandler, removeHandler)
+      },
+      subscriptionRemove (args) {
+        _self.manager.remove(args)
       }
     }
   }

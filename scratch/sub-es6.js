@@ -44,15 +44,31 @@ const definition = {
             },
             resolve (source, args, context, info) {
               let _query = r.table('user').filter(args)
-              this.subscriptionSetup(info, function (change, data) {
+
+              let create = function (change, data) {
                 return _query.changes().run().then(cursor => {
                   data.cursor = cursor
                   return cursor.each(error => {
                     if (!error) change()
                   })
                 })
-              })
+              }
+
+              let destroy = function (data) {
+                return data.cursor.close()
+              }
+
+              this.subscriptionSetup(info, create, destroy)
               return _query.run()
+            }
+          },
+          unsubscribe: {
+            type: 'Boolean',
+            args: {
+              subscriber: 'String'
+            },
+            resolve (source, args, context, info) {
+              return this.subscriptionRemove(args)
             }
           },
           subscribeB: {
