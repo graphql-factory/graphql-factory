@@ -1,5 +1,9 @@
 'use strict';
 
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var EventEmitter = _interopDefault(require('events'));
+
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
 } : function (obj) {
@@ -61,6 +65,21 @@ var defineProperty = function (obj, key, value) {
 
 
 
+var inherits = function (subClass, superClass) {
+  if (typeof superClass !== "function" && superClass !== null) {
+    throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+  }
+
+  subClass.prototype = Object.create(superClass && superClass.prototype, {
+    constructor: {
+      value: subClass,
+      enumerable: false,
+      writable: true,
+      configurable: true
+    }
+  });
+  if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+};
 
 
 
@@ -72,8 +91,13 @@ var defineProperty = function (obj, key, value) {
 
 
 
+var possibleConstructorReturn = function (self, call) {
+  if (!self) {
+    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+  }
 
-
+  return call && (typeof call === "object" || typeof call === "function") ? call : self;
+};
 
 
 
@@ -2464,7 +2488,7 @@ function has(obj, path) {
   if (fields.length === 0) return false;
   try {
     for (var f in fields) {
-      if (!value[fields[f]]) return false;else value = value[fields[f]];
+      if (value[fields[f]] === undefined) return false;else value = value[fields[f]];
     }
   } catch (err) {
     return false;
@@ -2619,7 +2643,7 @@ function get$$1(obj, path, defaultValue) {
 
   try {
     for (var f in fields) {
-      if (!value[fields[f]]) return defaultValue;else value = value[fields[f]];
+      if (value[fields[f]] === undefined) return defaultValue;else value = value[fields[f]];
     }
   } catch (err) {
     return defaultValue;
@@ -2647,7 +2671,7 @@ function set$$1(obj, path, val) {
   var value = obj;
   var fields = isArray(path) ? path : stringToPathArray(path);
   forEach(fields, function (p, idx) {
-    if (idx === fields.length - 1) value[p] = val;else if (!value[p]) value[p] = isNumber(p) ? [] : {};
+    if (idx === fields.length - 1) value[p] = val;else if (value[p] === undefined) value[p] = isNumber(p) ? [] : {};
     value = value[p];
   });
 }
@@ -2768,6 +2792,14 @@ function circular(obj) {
   return circularEx(obj, value);
 }
 
+function stringify() {
+  try {
+    return JSON.stringify.apply(null, [].concat(Array.prototype.slice.call(arguments)));
+  } catch (error) {
+    return '';
+  }
+}
+
 function escapeString(str) {
   if (!isString(str)) return '';
   return String(str).replace(/\\/gm, '\\\\').replace(/\//gm, '\\/').replace(/\b/gm, '').replace(/\f/gm, '\\f').replace(/\n/gm, '\\n').replace(/\r/gm, '\\r').replace(/\t/gm, '\\t').replace(/"/gm, '\\"');
@@ -2821,6 +2853,7 @@ var _$1 = Object.freeze({
 	getRootFieldDef: getRootFieldDef,
 	getTypeConfig: getTypeConfig,
 	circular: circular,
+	stringify: stringify,
 	escapeString: escapeString,
 	default: utils
 });
@@ -3159,6 +3192,7 @@ var GraphQLFactoryDefinition = function () {
           schemas = definition.schemas,
           externalTypes = definition.externalTypes;
 
+
       Object.assign(this.globals, globals || {}); // assign is used to prevent overwriting instantiated classes
       _$1.merge(this.fields, fields || {});
       _$1.merge(this.functions, functions || {});
@@ -3174,10 +3208,11 @@ var GraphQLFactoryDefinition = function () {
 
       var plugins = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
 
-      _$1.forEach(_$1.ensureArray(plugins), function (p) {
-        var name = _$1.get(p, 'name', 'unnamedPlugin' + _$1.keys(_this.pluginRegistry).length);
-        _this.pluginRegistry[name] = p;
-        _this.merge(p);
+      _$1.forEach(_$1.ensureArray(plugins), function (plugin) {
+        var name = _$1.get(plugin, 'name', 'unnamedPlugin' + _$1.keys(_this.pluginRegistry).length);
+        _this.pluginRegistry[name] = plugin;
+        _this.merge(plugin);
+        if (_$1.isFunction(plugin.install)) plugin.install(_this);
       });
       return this;
     }
@@ -3600,8 +3635,9 @@ function FactoryGQLUnionType(_this, definition, nameDefault) {
  */
 
 var GraphQLFactoryTypeGenerator = function () {
-  function GraphQLFactoryTypeGenerator(graphql, definition) {
-    var _typeMap;
+  function GraphQLFactoryTypeGenerator(graphql, definition, lib) {
+    var _typeMap,
+        _this = this;
 
     classCallCheck(this, GraphQLFactoryTypeGenerator);
 
@@ -3609,7 +3645,10 @@ var GraphQLFactoryTypeGenerator = function () {
     this.definition = definition;
     this._types = {};
     this._schemas = {};
+    this.typeMap = (_typeMap = {}, defineProperty(_typeMap, BOOLEAN$1, graphql.GraphQLBoolean), defineProperty(_typeMap, FLOAT$1, graphql.GraphQLFloat), defineProperty(_typeMap, ID, graphql.GraphQLID), defineProperty(_typeMap, INT$1, graphql.GraphQLInt), defineProperty(_typeMap, STRING$1, graphql.GraphQLString), _typeMap);
+
     this.fnContext = {
+      lib: lib,
       definition: definition.definition,
       globals: definition.plugin.globals,
       graphql: graphql,
@@ -3617,7 +3656,10 @@ var GraphQLFactoryTypeGenerator = function () {
       types: this._types,
       schemas: this._schemas
     };
-    this.typeMap = (_typeMap = {}, defineProperty(_typeMap, BOOLEAN$1, graphql.GraphQLBoolean), defineProperty(_typeMap, FLOAT$1, graphql.GraphQLFloat), defineProperty(_typeMap, ID, graphql.GraphQLID), defineProperty(_typeMap, INT$1, graphql.GraphQLInt), defineProperty(_typeMap, STRING$1, graphql.GraphQLString), _typeMap);
+
+    _$1.forEach(definition.pluginRegistry, function (plugin) {
+      if (plugin.context) _this.fnContext = Object.assign(_this.fnContext, plugin.context);
+    });
   }
 
   /****************************************************************************
@@ -3628,7 +3670,7 @@ var GraphQLFactoryTypeGenerator = function () {
   createClass(GraphQLFactoryTypeGenerator, [{
     key: 'processMiddleware',
     value: function processMiddleware(resolver, args) {
-      var _this = this;
+      var _this2 = this;
 
       return new Promise(function (resolve, reject) {
         var status = { resolved: false, rejected: false, isFulfilled: false };
@@ -3650,39 +3692,39 @@ var GraphQLFactoryTypeGenerator = function () {
         };
 
         // if there is no middleware proceed to the resolver
-        if (!_this.definition._middleware.before.length) return _this.processResolver(resolver, args, doResolve, doReject);
+        if (!_this2.definition._middleware.before.length) return _this2.processResolver(resolver, args, doResolve, doReject);
 
         // add a timeout to the middleware
         var timeout = setTimeout(function () {
-          _this.processResolver(resolver, args, doResolve, doReject);
-        }, _this.definition._middleware.beforeTimeout);
+          _this2.processResolver(resolver, args, doResolve, doReject);
+        }, _this2.definition._middleware.beforeTimeout);
 
-        var hooks = _this.definition._middleware.before.slice();
+        var hooks = _this2.definition._middleware.before.slice();
         var next = function next(error) {
           hooks = hooks.splice(1);
           if (error) return reject(error);
           if (!hooks.length) {
             clearTimeout(timeout);
-            return _this.processResolver(resolver, args, doResolve, doReject);
+            return _this2.processResolver(resolver, args, doResolve, doReject);
           }
-          return hooks[0].apply(_this.fnContext, [args, next]);
+          return hooks[0].apply(_this2.fnContext, [args, next]);
         };
-        return hooks[0].apply(_this.fnContext, [args, next]);
+        return hooks[0].apply(_this2.fnContext, [args, next]);
       });
     }
   }, {
     key: 'processResolver',
     value: function processResolver(resolver, args, resolve, reject) {
-      var _this2 = this;
+      var _this3 = this;
 
       return Promise.resolve(resolver.apply(this.fnContext, _$1.values(args))).then(function (result) {
-        return _this2.afterMiddleware(result, args, resolve, reject);
+        return _this3.afterMiddleware(result, args, resolve, reject);
       }, reject);
     }
   }, {
     key: 'afterMiddleware',
     value: function afterMiddleware(result, args, resolve, reject) {
-      var _this3 = this;
+      var _this4 = this;
 
       // if there is no middleware resolve the result
       if (!this.definition._middleware.after.length) return resolve(result);
@@ -3701,20 +3743,20 @@ var GraphQLFactoryTypeGenerator = function () {
           clearTimeout(timeout);
           return resolve(res);
         }
-        return hooks[0].apply(_this3.fnContext, [args, res, next]);
+        return hooks[0].apply(_this4.fnContext, [args, res, next]);
       };
       return hooks[0].apply(this.fnContext, [args, result, next]);
     }
   }, {
     key: 'bindFunction',
     value: function bindFunction(fn) {
-      var _this4 = this;
+      var _this5 = this;
 
       if (!fn) return;
       var resolver = _$1.isFunction(fn) ? fn : this.definition.get('functions["' + fn + '"]');
       if (!_$1.isFunction(resolver)) console.error('could not resolve function ' + fn);
       return function (source, args, context, info) {
-        return _this4.processMiddleware(resolver, { source: source, args: args, context: context, info: info });
+        return _this5.processMiddleware(resolver, { source: source, args: args, context: context, info: info });
       };
     }
   }, {
@@ -3753,7 +3795,7 @@ var GraphQLFactoryTypeGenerator = function () {
   }, {
     key: 'makeNonUnionTypes',
     value: function makeNonUnionTypes() {
-      var _this5 = this;
+      var _this6 = this;
 
       _$1.forEach(this.definition.types, function (definition, nameDefault) {
         var name = definition.name,
@@ -3781,31 +3823,31 @@ var GraphQLFactoryTypeGenerator = function () {
           default:
             throw new Error(type + ' is an invalid base type');
         }
-        _this5._types[name || nameDefault] = fn(_this5, definition, nameDefault);
+        _this6._types[name || nameDefault] = fn(_this6, definition, nameDefault);
       });
     }
   }, {
     key: 'makeUnionTypes',
     value: function makeUnionTypes() {
-      var _this6 = this;
+      var _this7 = this;
 
       _$1.forEach(this.definition.types, function (definition, nameDefault) {
         var name = definition.name,
             type = definition.type;
 
         if (type !== UNION) return;
-        _this6._types[name || nameDefault] = FactoryGQLUnionType(_this6, definition, nameDefault);
+        _this7._types[name || nameDefault] = FactoryGQLUnionType(_this7, definition, nameDefault);
       });
     }
   }, {
     key: 'makeSchemas',
     value: function makeSchemas() {
-      var _this7 = this;
+      var _this8 = this;
 
       _$1.forEach(this.definition.schemas, function (definition, nameDefault) {
         var name = definition.name;
 
-        _this7._schemas[name || nameDefault] = FactoryGQLSchema(_this7, definition, nameDefault);
+        _this8._schemas[name || nameDefault] = FactoryGQLSchema(_this8, definition, nameDefault);
       });
     }
 
@@ -3832,32 +3874,39 @@ var GraphQLFactoryTypeGenerator = function () {
   return GraphQLFactoryTypeGenerator;
 }();
 
-var GraphQLFactoryLibrary = function GraphQLFactoryLibrary(graphql, definition) {
-  var _this = this;
+var GraphQLFactoryLibrary = function (_EventEmitter) {
+  inherits(GraphQLFactoryLibrary, _EventEmitter);
 
-  classCallCheck(this, GraphQLFactoryLibrary);
+  function GraphQLFactoryLibrary(graphql, definition) {
+    classCallCheck(this, GraphQLFactoryLibrary);
 
-  var _ref = new GraphQLFactoryTypeGenerator(graphql, definition),
-      types = _ref.types,
-      schemas = _ref.schemas;
+    var _this = possibleConstructorReturn(this, (GraphQLFactoryLibrary.__proto__ || Object.getPrototypeOf(GraphQLFactoryLibrary)).call(this));
 
-  // store original and compiled definitions/types
+    var _ref = new GraphQLFactoryTypeGenerator(graphql, definition, _this),
+        types = _ref.types,
+        schemas = _ref.schemas;
+
+    // store original and compiled definitions/types
 
 
-  this._definitions = {
-    definition: definition.definition,
-    graphql: graphql,
-    schemas: schemas,
-    types: types
-  };
-
-  // build schema functions
-  _$1.forEach(schemas, function (schema, name) {
-    _this[name] = function (requestString, rootValue, contextValue, variableValues, operationName) {
-      return graphql.graphql(schema, requestString, rootValue, contextValue, variableValues, operationName);
+    _this._definitions = {
+      definition: definition.definition,
+      graphql: graphql,
+      schemas: schemas,
+      types: types
     };
-  });
-};
+
+    // build schema functions
+    _$1.forEach(schemas, function (schema, name) {
+      _this[name] = function (requestString, rootValue, contextValue, variableValues, operationName) {
+        return graphql.graphql(schema, requestString, rootValue, contextValue, variableValues, operationName);
+      };
+    });
+    return _this;
+  }
+
+  return GraphQLFactoryLibrary;
+}(EventEmitter);
 
 // standalone definition builder
 function define() {
