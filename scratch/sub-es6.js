@@ -45,30 +45,28 @@ const definition = {
             resolve (source, args, context, info) {
               let _query = r.table('user').filter(args)
 
-              let create = function (change, data) {
-                return _query.changes().run().then(cursor => {
-                  data.cursor = cursor
-                  return cursor.each(error => {
-                    if (!error) change()
+              this.subscriptionSetup(
+                info,
+                function create (change, data) {
+                  return _query.changes().run().then(cursor => {
+                    data.cursor = cursor
+                    return cursor.each(error => {
+                      if (!error) change()
+                    })
                   })
-                })
-              }
+                },
+                function destroy (data) {
+                  return data.cursor.close()
+                }
+              )
 
-              let destroy = function (data) {
-                return data.cursor.close()
-              }
-
-              this.subscriptionSetup(info, create, destroy)
               return _query.run()
             }
           },
           unsubscribe: {
             type: 'Boolean',
-            args: {
-              subscriber: 'String'
-            },
             resolve (source, args, context, info) {
-              return this.subscriptionRemove(args)
+              return this.subscriptionRemove(info)
             }
           },
           subscribeB: {
@@ -80,14 +78,18 @@ const definition = {
             },
             resolve (source, args, context, info) {
               let _query = r.table('user').filter(args)
-              this.subscriptionSetup(info, function (change, data) {
-                return _query.changes().run().then(cursor => {
-                  data.cursor = cursor
-                  return cursor.each(error => {
-                    if (!error) change()
+
+              this.subscriptionSetup(
+                info,
+                function create (change, data) {
+                  return _query.changes().run().then(cursor => {
+                    data.cursor = cursor
+                    return cursor.each(error => {
+                      if (!error) change()
+                    })
                   })
-                })
-              })
+                }
+              )
               return _query.run()
             }
           }
@@ -118,3 +120,8 @@ lib.Users(`subscription mysub {
   console.dir(error)
   // setTimeout(() => process.exit(), 100)
 })
+
+setTimeout(() => {
+  console.log('unsubscribing')
+  lib.Users(`subscription mysub { unsubscribe } `)
+}, 10000)
