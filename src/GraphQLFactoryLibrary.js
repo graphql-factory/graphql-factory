@@ -7,6 +7,7 @@ export default class GraphQLFactoryLibrary extends EventEmitter {
     super()
 
     let { types, schemas } = new GraphQLFactoryTypeGenerator(graphql, definition, this)
+    definition.lib = this
 
     // store original and compiled definitions/types
     this._definitions = {

@@ -3886,9 +3886,9 @@ var GraphQLFactoryLibrary = function (_EventEmitter) {
         types = _ref.types,
         schemas = _ref.schemas;
 
+    definition.lib = _this;
+
     // store original and compiled definitions/types
-
-
     _this._definitions = {
       definition: definition.definition,
       graphql: graphql,
