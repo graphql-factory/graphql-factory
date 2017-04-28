@@ -22,6 +22,6 @@ documentation.build([
       console.error('no output generated, exiting')
       process.exit()
     }
-    streamArray(output).pipe(vfs.dest(path.resolve(__dirname, '../docs')))
+    streamArray(output).pipe(vfs.dest(path.resolve(__dirname, '../docs/api')))
   })
 })
