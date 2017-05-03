@@ -3793,62 +3793,66 @@ var GraphQLFactoryTypeGenerator = function () {
       return this.makeFieldType(field);
     }
   }, {
-    key: 'makeNonUnionTypes',
-    value: function makeNonUnionTypes() {
+    key: 'makeSchemas',
+    value: function makeSchemas() {
       var _this6 = this;
 
-      _$1.forEach(this.definition.types, function (definition, nameDefault) {
-        var name = definition.name,
-            type = definition.type;
+      _$1.forEach(this.definition.schemas, function (definition, nameDefault) {
+        var name = definition.name;
 
-        var fn = null;
-        if (type === UNION) return;
-
-        switch (type) {
-          case ENUM$1:
-            fn = FactoryGQLEnumType;
-            break;
-          case INPUT:
-            fn = FactoryGQLInputObjectType;
-            break;
-          case INTERFACE:
-            fn = FactoryGQLInterfaceType;
-            break;
-          case OBJECT$1:
-            fn = FactoryGQLObjectType;
-            break;
-          case SCALAR:
-            fn = FactoryGQLScalarType;
-            break;
-          default:
-            throw new Error(type + ' is an invalid base type');
-        }
-        _this6._types[name || nameDefault] = fn(_this6, definition, nameDefault);
+        _this6._schemas[name || nameDefault] = FactoryGQLSchema(_this6, definition, nameDefault);
       });
+      return this;
     }
   }, {
-    key: 'makeUnionTypes',
-    value: function makeUnionTypes() {
+    key: 'makeType',
+    value: function makeType(typeToMake) {
       var _this7 = this;
 
       _$1.forEach(this.definition.types, function (definition, nameDefault) {
         var name = definition.name,
             type = definition.type;
 
-        if (type !== UNION) return;
-        _this7._types[name || nameDefault] = FactoryGQLUnionType(_this7, definition, nameDefault);
+        var useName = name || nameDefault;
+        if (type !== typeToMake) return;
+
+        switch (type) {
+          case ENUM$1:
+            _this7._types[useName] = FactoryGQLEnumType(_this7, definition, nameDefault);
+            break;
+          case INPUT:
+            _this7._types[useName] = FactoryGQLInputObjectType(_this7, definition, nameDefault);
+            break;
+          case INTERFACE:
+            _this7._types[useName] = FactoryGQLInterfaceType(_this7, definition, nameDefault);
+            break;
+          case OBJECT$1:
+            _this7._types[useName] = FactoryGQLObjectType(_this7, definition, nameDefault);
+            break;
+          case SCALAR:
+            _this7._types[useName] = FactoryGQLScalarType(_this7, definition, nameDefault);
+            break;
+          case UNION:
+            _this7._types[useName] = FactoryGQLUnionType(_this7, definition, nameDefault);
+            break;
+          default:
+            throw new Error(type + ' is an invalid base type');
+        }
       });
+      return this;
     }
   }, {
-    key: 'makeSchemas',
-    value: function makeSchemas() {
-      var _this8 = this;
-
-      _$1.forEach(this.definition.schemas, function (definition, nameDefault) {
-        var name = definition.name;
-
-        _this8._schemas[name || nameDefault] = FactoryGQLSchema(_this8, definition, nameDefault);
-      });
+    key: 'values',
+    value: function values() {
+      return {
+        types: this._types,
+        schemas: this._schemas
+      };
+    }
+  }, {
+    key: 'generate',
+    value: function generate() {
+      return this.makeType(ENUM$1).makeType(SCALAR).makeType(INPUT).makeType(OBJECT$1).makeType(INTERFACE).makeType(UNION).makeSchemas().values();
     }
 
     /****************************************************************************
@@ -3859,15 +3863,14 @@ var GraphQLFactoryTypeGenerator = function () {
     key: 'types',
     get: function get$$1() {
       if (_$1.keys(this._types).length) return this._types;
-      this.makeNonUnionTypes();
-      this.makeUnionTypes();
+      this.generate();
       return this._types;
     }
   }, {
     key: 'schemas',
     get: function get$$1() {
       if (_$1.keys(this._schemas).length) return this._schemas;
-      this.makeSchemas();
+      this.generate();
       return this._schemas;
     }
   }]);

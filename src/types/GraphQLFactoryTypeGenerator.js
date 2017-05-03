@@ -166,48 +166,62 @@ export default class GraphQLFactoryTypeGenerator {
     return this.makeFieldType(field)
   }
 
-  makeNonUnionTypes () {
-    _.forEach(this.definition.types, (definition, nameDefault) => {
-      let { name, type } = definition
-      let fn = null
-      if (type === UNION) return
-
-      switch (type) {
-        case ENUM:
-          fn = FactoryGQLEnumType
-          break
-        case INPUT:
-          fn = FactoryGQLInputObjectType
-          break
-        case INTERFACE:
-          fn = FactoryGQLInterfaceType
-          break
-        case OBJECT:
-          fn = FactoryGQLObjectType
-          break
-        case SCALAR:
-          fn = FactoryGQLScalarType
-          break
-        default:
-          throw new Error(`${type} is an invalid base type`)
-      }
-      this._types[name || nameDefault] = fn(this, definition, nameDefault)
-    })
-  }
-
-  makeUnionTypes () {
-    _.forEach(this.definition.types, (definition, nameDefault) => {
-      let { name, type } = definition
-      if (type !== UNION) return
-      this._types[name || nameDefault] = FactoryGQLUnionType(this, definition, nameDefault)
-    })
-  }
-
   makeSchemas () {
     _.forEach(this.definition.schemas, (definition, nameDefault) => {
       let { name } = definition
       this._schemas[name || nameDefault] = FactoryGQLSchema(this, definition, nameDefault)
     })
+    return this
+  }
+
+  makeType (typeToMake) {
+    _.forEach(this.definition.types, (definition, nameDefault) => {
+      let { name, type } = definition
+      let useName = name || nameDefault
+      if (type !== typeToMake) return
+
+      switch (type) {
+        case ENUM:
+          this._types[useName] = FactoryGQLEnumType(this, definition, nameDefault)
+          break
+        case INPUT:
+          this._types[useName] = FactoryGQLInputObjectType(this, definition, nameDefault)
+          break
+        case INTERFACE:
+          this._types[useName] = FactoryGQLInterfaceType(this, definition, nameDefault)
+          break
+        case OBJECT:
+          this._types[useName] = FactoryGQLObjectType(this, definition, nameDefault)
+          break
+        case SCALAR:
+          this._types[useName] = FactoryGQLScalarType(this, definition, nameDefault)
+          break
+        case UNION:
+          this._types[useName] = FactoryGQLUnionType(this, definition, nameDefault)
+          break
+        default:
+          throw new Error(`${type} is an invalid base type`)
+      }
+    })
+    return this
+  }
+
+  values () {
+    return {
+      types: this._types,
+      schemas: this._schemas
+    }
+  }
+
+  generate () {
+    return this.makeType(ENUM)
+      .makeType(SCALAR)
+      .makeType(INPUT)
+      .makeType(OBJECT)
+      .makeType(INTERFACE)
+      .makeType(UNION)
+      .makeSchemas()
+      .values()
   }
 
   /****************************************************************************
@@ -215,14 +229,13 @@ export default class GraphQLFactoryTypeGenerator {
    ****************************************************************************/
   get types () {
     if (_.keys(this._types).length) return this._types
-    this.makeNonUnionTypes()
-    this.makeUnionTypes()
+    this.generate()
     return this._types
   }
 
   get schemas () {
     if (_.keys(this._schemas).length) return this._schemas
-    this.makeSchemas()
+    this.generate()
     return this._schemas
   }
 }
