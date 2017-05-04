@@ -205,7 +205,7 @@ export default class GraphQLFactoryTypeGenerator {
       }
 
       // add list types for non enum types
-      if (type !== ENUM && this.makeLists !== false) {
+      if (this.makeLists !== false) {
         this._types[`ListOf${useName}`] = new this.graphql.GraphQLList(this._types[useName])
       }
     })

@@ -3841,7 +3841,7 @@ var GraphQLFactoryTypeGenerator = function () {
         }
 
         // add list types for non enum types
-        if (type !== ENUM$1 && _this7.makeLists !== false) {
+        if (_this7.makeLists !== false) {
           _this7._types['ListOf' + useName] = new _this7.graphql.GraphQLList(_this7._types[useName]);
         }
       });
