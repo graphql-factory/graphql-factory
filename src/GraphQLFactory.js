@@ -59,7 +59,7 @@ export class GraphQLFactory {
    * @returns {GraphQLFactoryLibrary}
    */
   make (definition = {}, options = {}) {
-    let { plugin, beforeResolve, afterResolve, beforeTimeout, afterTimeout, makeLists } = options
+    let { plugin, beforeResolve, afterResolve, beforeTimeout, afterTimeout } = options
     let factoryDef = definition instanceof GraphQLFactoryDefinition
       ? definition
       : new GraphQLFactoryDefinition(definition)
@@ -71,7 +71,7 @@ export class GraphQLFactory {
       .afterTimeout(afterTimeout)
       .compile()
 
-    return new GraphQLFactoryLibrary(this.graphql, factoryDef, { makeLists })
+    return new GraphQLFactoryLibrary(this.graphql, factoryDef, options)
   }
 }
 

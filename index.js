@@ -3643,7 +3643,6 @@ var GraphQLFactoryTypeGenerator = function () {
 
     this.graphql = graphql;
     this.definition = definition;
-    this.makeLists = _$1.get(options, 'makeLists', true);
     this._types = {};
     this._schemas = {};
     this.typeMap = (_typeMap = {}, defineProperty(_typeMap, BOOLEAN$1, graphql.GraphQLBoolean), defineProperty(_typeMap, FLOAT$1, graphql.GraphQLFloat), defineProperty(_typeMap, ID, graphql.GraphQLID), defineProperty(_typeMap, INT$1, graphql.GraphQLInt), defineProperty(_typeMap, STRING$1, graphql.GraphQLString), _typeMap);
@@ -3839,11 +3838,6 @@ var GraphQLFactoryTypeGenerator = function () {
           default:
             throw new Error(type + ' is an invalid base type');
         }
-
-        // add list types for non enum types
-        if (_this7.makeLists !== false) {
-          _this7._types['ListOf' + useName] = new _this7.graphql.GraphQLList(_this7._types[useName]);
-        }
       });
       return this;
     }
@@ -3991,14 +3985,13 @@ var GraphQLFactory$1 = function () {
           beforeResolve = options.beforeResolve,
           afterResolve = options.afterResolve,
           beforeTimeout = options.beforeTimeout,
-          afterTimeout = options.afterTimeout,
-          makeLists = options.makeLists;
+          afterTimeout = options.afterTimeout;
 
       var factoryDef = definition instanceof GraphQLFactoryDefinition ? definition : new GraphQLFactoryDefinition(definition);
 
       factoryDef.registerPlugin(plugin).beforeResolve(beforeResolve).beforeTimeout(beforeTimeout).afterResolve(afterResolve).afterTimeout(afterTimeout).compile();
 
-      return new GraphQLFactoryLibrary(this.graphql, factoryDef, { makeLists: makeLists });
+      return new GraphQLFactoryLibrary(this.graphql, factoryDef, options);
     }
   }]);
   return GraphQLFactory;

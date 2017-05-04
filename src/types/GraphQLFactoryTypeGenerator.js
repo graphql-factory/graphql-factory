@@ -27,7 +27,6 @@ export default class GraphQLFactoryTypeGenerator {
   constructor (graphql, definition, lib, options) {
     this.graphql = graphql
     this.definition = definition
-    this.makeLists = _.get(options, 'makeLists', true)
     this._types = {}
     this._schemas = {}
     this.typeMap = {
@@ -202,11 +201,6 @@ export default class GraphQLFactoryTypeGenerator {
           break
         default:
           throw new Error(`${type} is an invalid base type`)
-      }
-
-      // add list types for non enum types
-      if (this.makeLists !== false) {
-        this._types[`ListOf${useName}`] = new this.graphql.GraphQLList(this._types[useName])
       }
     })
     return this
