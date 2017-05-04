@@ -3635,7 +3635,7 @@ function FactoryGQLUnionType(_this, definition, nameDefault) {
  */
 
 var GraphQLFactoryTypeGenerator = function () {
-  function GraphQLFactoryTypeGenerator(graphql, definition, lib) {
+  function GraphQLFactoryTypeGenerator(graphql, definition, lib, options) {
     var _typeMap,
         _this = this;
 
@@ -3643,6 +3643,7 @@ var GraphQLFactoryTypeGenerator = function () {
 
     this.graphql = graphql;
     this.definition = definition;
+    this.makeLists = _$1.get(options, 'makeLists', true);
     this._types = {};
     this._schemas = {};
     this.typeMap = (_typeMap = {}, defineProperty(_typeMap, BOOLEAN$1, graphql.GraphQLBoolean), defineProperty(_typeMap, FLOAT$1, graphql.GraphQLFloat), defineProperty(_typeMap, ID, graphql.GraphQLID), defineProperty(_typeMap, INT$1, graphql.GraphQLInt), defineProperty(_typeMap, STRING$1, graphql.GraphQLString), _typeMap);
@@ -3838,6 +3839,11 @@ var GraphQLFactoryTypeGenerator = function () {
           default:
             throw new Error(type + ' is an invalid base type');
         }
+
+        // add list types for non enum types
+        if (type !== ENUM$1 && _this7.makeLists !== false) {
+          _this7._types['ListOf' + useName] = new _this7.graphql.GraphQLList(_this7._types[useName]);
+        }
       });
       return this;
     }
@@ -3880,12 +3886,14 @@ var GraphQLFactoryTypeGenerator = function () {
 var GraphQLFactoryLibrary = function (_EventEmitter) {
   inherits(GraphQLFactoryLibrary, _EventEmitter);
 
-  function GraphQLFactoryLibrary(graphql, definition) {
+  function GraphQLFactoryLibrary(graphql, definition, options) {
     classCallCheck(this, GraphQLFactoryLibrary);
 
     var _this = possibleConstructorReturn(this, (GraphQLFactoryLibrary.__proto__ || Object.getPrototypeOf(GraphQLFactoryLibrary)).call(this));
 
-    var _ref = new GraphQLFactoryTypeGenerator(graphql, definition, _this),
+    options = _$1.isHash(options) ? options : {};
+
+    var _ref = new GraphQLFactoryTypeGenerator(graphql, definition, _this, options),
         types = _ref.types,
         schemas = _ref.schemas;
 
@@ -3983,13 +3991,14 @@ var GraphQLFactory$1 = function () {
           beforeResolve = options.beforeResolve,
           afterResolve = options.afterResolve,
           beforeTimeout = options.beforeTimeout,
-          afterTimeout = options.afterTimeout;
+          afterTimeout = options.afterTimeout,
+          makeLists = options.makeLists;
 
       var factoryDef = definition instanceof GraphQLFactoryDefinition ? definition : new GraphQLFactoryDefinition(definition);
 
       factoryDef.registerPlugin(plugin).beforeResolve(beforeResolve).beforeTimeout(beforeTimeout).afterResolve(afterResolve).afterTimeout(afterTimeout).compile();
 
-      return new GraphQLFactoryLibrary(this.graphql, factoryDef);
+      return new GraphQLFactoryLibrary(this.graphql, factoryDef, { makeLists: makeLists });
     }
   }]);
   return GraphQLFactory;

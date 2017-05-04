@@ -3,10 +3,10 @@ import EventEmitter from 'events'
 import GraphQLFactoryTypeGenerator from './types/GraphQLFactoryTypeGenerator'
 
 export default class GraphQLFactoryLibrary extends EventEmitter {
-  constructor (graphql, definition) {
+  constructor (graphql, definition, options) {
     super()
-
-    let { types, schemas } = new GraphQLFactoryTypeGenerator(graphql, definition, this)
+    options = _.isHash(options) ? options : {}
+    let { types, schemas } = new GraphQLFactoryTypeGenerator(graphql, definition, this, options)
 
     // store original and compiled definitions/types
     this._definitions = {
