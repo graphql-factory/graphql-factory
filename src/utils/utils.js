@@ -1,6 +1,7 @@
 /* lodash like functions to remove dependency on lodash accept lodash.merge */
 import merge from './lodash.merge'
 import toObjectString from './obj2arg'
+
 export { toObjectString }
 export { merge }
 
@@ -112,7 +113,7 @@ export function has (obj, path) {
   if (fields.length === 0) return false
   try {
     for (let f in fields) {
-      if (!value[fields[f]]) return false
+      if (value[fields[f]] === undefined) return false
       else value = value[fields[f]]
     }
   } catch (err) {
@@ -137,6 +138,14 @@ export function forEach (obj, fn) {
   } catch (err) {
     return
   }
+}
+
+export function values (obj) {
+  let _values = []
+  forEach(obj, val => {
+    _values.push(val)
+  })
+  return _values
 }
 
 export function without () {
@@ -237,7 +246,7 @@ export function get (obj, path, defaultValue) {
 
   try {
     for (let f in fields) {
-      if (!value[fields[f]]) return defaultValue
+      if (value[fields[f]] === undefined) return defaultValue
       else value = value[fields[f]]
     }
   } catch (err) {
@@ -246,12 +255,28 @@ export function get (obj, path, defaultValue) {
   return value
 }
 
+export function union () {
+  let args = [ ...arguments ]
+  if (!args.length) return []
+
+  try {
+    let u = args.reduce((prev, cur) => {
+      if (!isArray(prev) || !isArray(cur)) return []
+      return prev.concat(cur)
+    }, [])
+
+    return [ ...new Set(u) ]
+  } catch (err) {
+    return []
+  }
+}
+
 export function set (obj, path, val) {
   let value = obj
   let fields = isArray(path) ? path : stringToPathArray(path)
   forEach(fields, (p, idx) => {
     if (idx === fields.length - 1) value[p] = val
-    else if (!value[p]) value[p] = isNumber(p) ? [] : {}
+    else if (value[p] === undefined) value[p] = isNumber(p) ? [] : {}
     value = value[p]
   })
 }
@@ -367,6 +392,14 @@ export function circular (obj, value = '[Circular]') {
 
   if (!obj) throw new Error('circular requires an object to examine')
   return circularEx(obj, value)
+}
+
+export function stringify () {
+  try {
+    return JSON.stringify.apply(null, [...arguments])
+  } catch (error) {
+    return ''
+  }
 }
 
 export function escapeString (str) {

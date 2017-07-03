@@ -101,7 +101,22 @@ describe('Query', function () {
   }
 
   // make lib
-  var lib = factory.make(def)
+  var lib = factory.make(def, {
+    beforeResolve: [
+      function (args, next) {
+        console.log('before middleware1')
+        next()
+      },
+      function (args, next) {
+        console.log('before middleware2')
+        next()
+      }
+    ],
+    afterResolve: function (args, result, next) {
+      console.log('after middleware', result)
+      next()
+    }
+  })
 
 
   // queries

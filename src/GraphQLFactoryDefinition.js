@@ -1,6 +1,8 @@
 import _ from './utils/index'
 import GraphQLFactoryCompiler from './GraphQLFactoryCompiler'
 
+const DEFAULT_MIDDLEWARE_TIMEOUT = 5000
+
 export default class GraphQLFactoryDefinition {
   constructor (definition = {}, options = {}) {
     let { plugin } = options
@@ -12,11 +14,25 @@ export default class GraphQLFactoryDefinition {
     this.schemas = schemas || {}
     this.externalTypes = externalTypes || {}
     this.pluginRegistry = {}
+    this._middleware = {
+      before: [],
+      after: [],
+      beforeTimeout: DEFAULT_MIDDLEWARE_TIMEOUT,
+      afterTimeout: DEFAULT_MIDDLEWARE_TIMEOUT
+    }
     this.registerPlugin(plugin)
   }
 
   merge (definition = {}) {
-    let { globals, fields, functions, types, schemas, externalTypes } = definition
+    let {
+      globals,
+      fields,
+      functions,
+      types,
+      schemas,
+      externalTypes
+    } = definition
+
     Object.assign(this.globals, globals || {}) // assign is used to prevent overwriting instantiated classes
     _.merge(this.fields, fields || {})
     _.merge(this.functions, functions || {})
@@ -27,11 +43,36 @@ export default class GraphQLFactoryDefinition {
   }
 
   registerPlugin (plugins = []) {
-    _.forEach(_.ensureArray(plugins), (p) => {
-      let name = _.get(p, 'name', `unnamedPlugin${_.keys(this.pluginRegistry).length}`)
-      this.pluginRegistry[name] = p
-      this.merge(p)
+    _.forEach(_.ensureArray(plugins), plugin => {
+      let name = _.get(plugin, 'name', `unnamedPlugin${_.keys(this.pluginRegistry).length}`)
+      this.pluginRegistry[name] = plugin
+      this.merge(plugin)
+      if (_.isFunction(plugin.install)) plugin.install(this)
     })
+    return this
+  }
+
+  beforeResolve (middleware) {
+    _.forEach(_.ensureArray(middleware), mw => {
+      if (_.isFunction(mw)) this._middleware.before = _.union(this._middleware.before, [mw])
+    })
+    return this
+  }
+
+  afterResolve (middleware) {
+    _.forEach(_.ensureArray(middleware), mw => {
+      if (_.isFunction(mw)) this._middleware.after = _.union(this._middleware.after, [mw])
+    })
+    return this
+  }
+
+  beforeTimeout (timeout) {
+    if (_.isNumber(timeout)) this._middleware.beforeTimeout = Math.ceil(timeout)
+    return this
+  }
+
+  afterTimeout (timeout) {
+    if (_.isNumber(timeout)) this._middleware.afterTimeout = Math.ceil(timeout)
     return this
   }
 

@@ -49,7 +49,6 @@ export class GraphQLFactory {
     this.define = define
     this.graphql = graphql
     this.utils = utils
-
   }
 
   /**
@@ -60,10 +59,19 @@ export class GraphQLFactory {
    * @returns {GraphQLFactoryLibrary}
    */
   make (definition = {}, options = {}) {
-    let { plugin } = options
-    let factoryDef = new GraphQLFactoryDefinition()
-    factoryDef.merge(definition).registerPlugin(plugin).compile()
-    return new GraphQLFactoryLibrary(this.graphql, factoryDef)
+    let { plugin, beforeResolve, afterResolve, beforeTimeout, afterTimeout } = options
+    let factoryDef = definition instanceof GraphQLFactoryDefinition
+      ? definition
+      : new GraphQLFactoryDefinition(definition)
+
+    factoryDef.registerPlugin(plugin)
+      .beforeResolve(beforeResolve)
+      .beforeTimeout(beforeTimeout)
+      .afterResolve(afterResolve)
+      .afterTimeout(afterTimeout)
+      .compile()
+
+    return new GraphQLFactoryLibrary(this.graphql, factoryDef, options)
   }
 }
 
