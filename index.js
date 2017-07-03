@@ -2894,10 +2894,9 @@ var TYPE_ALIAS = {
   GraphQLScalarType: SCALAR,
   GraphQLSchema: SCHEMA,
   GraphQLUnionType: UNION
-};
 
-// types with fields
-var HAS_FIELDS = [OBJECT$1, INPUT, INTERFACE];
+  // types with fields
+};var HAS_FIELDS = [OBJECT$1, INPUT, INTERFACE];
 
 var constants = {
   BOOLEAN: BOOLEAN$1,
@@ -3673,10 +3672,10 @@ var GraphQLFactoryTypeGenerator = function () {
       var _this2 = this;
 
       return new Promise(function (resolve, reject) {
-        var status = { resolved: false, rejected: false, isFulfilled: false };
+        var status = { resolved: false, rejected: false, isFulfilled: false
 
-        // create a reject handler so that reject is only called once
-        var doReject = function doReject(error) {
+          // create a reject handler so that reject is only called once
+        };var doReject = function doReject(error) {
           if (status.isFulfilled) return;
           status.isFulfilled = true;
           status.rejected = true;
@@ -3899,10 +3898,9 @@ var GraphQLFactoryLibrary = function (_EventEmitter) {
       graphql: graphql,
       schemas: schemas,
       types: types
-    };
 
-    // build schema functions
-    _$1.forEach(schemas, function (schema, name) {
+      // build schema functions
+    };_$1.forEach(schemas, function (schema, name) {
       _this[name] = function (requestString, rootValue, contextValue, variableValues, operationName) {
         return graphql.graphql(schema, requestString, rootValue, contextValue, variableValues, operationName);
       };
