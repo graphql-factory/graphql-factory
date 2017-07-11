@@ -253,10 +253,10 @@ function addMapEntry(map, pair) {
  * @param {*} value The value to add.
  * @returns {Object} Returns `set`.
  */
-function addSetEntry(set$$1, value) {
+function addSetEntry(set, value) {
   // Don't return `set.add` because it's not chainable in IE 11.
-  set$$1.add(value);
-  return set$$1;
+  set.add(value);
+  return set;
 }
 
 /*
@@ -449,11 +449,11 @@ function overArg(func, transform) {
  * @param {Object} set The set to convert.
  * @returns {Array} Returns the values.
  */
-function setToArray(set$$1) {
+function setToArray(set) {
   var index = -1,
-      result = Array(set$$1.size);
+      result = Array(set.size);
 
-  set$$1.forEach(function (value) {
+  set.forEach(function (value) {
     result[++index] = value;
   });
   return result;
@@ -1398,9 +1398,9 @@ function cloneRegExp(regexp) {
  * @param {boolean} [isDeep] Specify a deep clone.
  * @returns {Object} Returns the cloned set.
  */
-function cloneSet(set$$1, isDeep, cloneFunc) {
-  var array = isDeep ? cloneFunc(setToArray(set$$1), true) : setToArray(set$$1);
-  return arrayReduce(array, addSetEntry, new set$$1.constructor());
+function cloneSet(set, isDeep, cloneFunc) {
+  var array = isDeep ? cloneFunc(setToArray(set), true) : setToArray(set);
+  return arrayReduce(array, addSetEntry, new set.constructor());
 }
 
 /*
@@ -2636,7 +2636,7 @@ function pick(obj) {
   return newObj;
 }
 
-function get$$1(obj, path, defaultValue) {
+function get(obj, path, defaultValue) {
   var value = obj;
   var fields = isArray(path) ? path : stringToPathArray(path);
   if (fields.length === 0) return defaultValue;
@@ -2667,7 +2667,7 @@ function union() {
   }
 }
 
-function set$$1(obj, path, val) {
+function set(obj, path, val) {
   var value = obj;
   var fields = isArray(path) ? path : stringToPathArray(path);
   forEach(fields, function (p, idx) {
@@ -2698,13 +2698,13 @@ function typeOf(obj) {
 function getFieldPath(info, maxDepth) {
   maxDepth = maxDepth || 50;
 
-  var loc = get$$1(info, 'fieldNodes[0].loc') || get$$1(info, 'fieldASTs[0].loc');
+  var loc = get(info, 'fieldNodes[0].loc') || get(info, 'fieldASTs[0].loc');
   var stackCount = 0;
 
   var traverseFieldPath = function traverseFieldPath(selections, start, end, fieldPath) {
     fieldPath = fieldPath || [];
 
-    var sel = get$$1(filter(selections, function (s) {
+    var sel = get(filter(selections, function (s) {
       return s.loc.start <= start && s.loc.end >= end;
     }), '[0]');
     if (sel) {
@@ -2721,8 +2721,8 @@ function getFieldPath(info, maxDepth) {
 }
 
 function getSchemaOperation(info) {
-  var _type = ['_', get$$1(info, 'operation.operation'), 'Type'].join('');
-  return get$$1(info, ['schema', _type].join('.'), {});
+  var _type = ['_', get(info, 'operation.operation'), 'Type'].join('');
+  return get(info, ['schema', _type].join('.'), {});
 }
 
 /*
@@ -2730,7 +2730,7 @@ function getSchemaOperation(info) {
  */
 function getReturnTypeName(info) {
   try {
-    var typeObj = get$$1(getSchemaOperation(info), '_fields["' + info.fieldName + '"].type', {});
+    var typeObj = get(getSchemaOperation(info), '_fields["' + info.fieldName + '"].type', {});
 
     while (!typeObj.name) {
       typeObj = typeObj.ofType;
@@ -2746,19 +2746,19 @@ function getReturnTypeName(info) {
  * Gets the field definition
  */
 function getRootFieldDef(info, path) {
-  var fldPath = get$$1(getFieldPath(info), '[0]');
+  var fldPath = get(getFieldPath(info), '[0]');
   var queryType = info.operation.operation;
-  var opDef = get$$1(info, 'schema._factory.' + queryType, {});
-  var fieldDef = get$$1(opDef, 'fields["' + fldPath + '"]', undefined);
+  var opDef = get(info, 'schema._factory.' + queryType, {});
+  var fieldDef = get(opDef, 'fields["' + fldPath + '"]', undefined);
 
   //  if a field def cannot be found, try to find it in the extendFields
   if (!fieldDef && has(opDef, 'extendFields')) {
     forEach(opDef.extendFields, function (v, k) {
-      if (has(v, fldPath)) fieldDef = get$$1(v, '["' + fldPath + '"]', {});
+      if (has(v, fldPath)) fieldDef = get(v, '["' + fldPath + '"]', {});
     });
   }
 
-  return path ? get$$1(fieldDef, path, {}) : fieldDef;
+  return path ? get(fieldDef, path, {}) : fieldDef;
 }
 
 /*
@@ -2768,7 +2768,7 @@ function getRootFieldDef(info, path) {
  */
 function getTypeConfig(info, path) {
   path = path ? '_typeConfig.'.concat(path) : '_typeConfig';
-  return get$$1(getSchemaOperation(info), path, {});
+  return get(getSchemaOperation(info), path, {});
 }
 
 // removes circular references
@@ -2842,9 +2842,9 @@ var _$1 = Object.freeze({
 	omit: omit,
 	pickBy: pickBy,
 	pick: pick,
-	get: get$$1,
+	get: get,
 	union: union,
-	set: set$$1,
+	set: set,
 	clone: clone,
 	typeOf: typeOf,
 	getFieldPath: getFieldPath,
@@ -3285,12 +3285,12 @@ var GraphQLFactoryDefinition = function () {
     }
   }, {
     key: 'get',
-    value: function get$$1(keyPath) {
+    value: function get(keyPath) {
       return _$1.get(this, keyPath);
     }
   }, {
     key: 'set',
-    value: function set$$1(keyPath, value) {
+    value: function set(keyPath, value) {
       _$1.set(this, keyPath, value);
     }
   }, {
@@ -3320,7 +3320,7 @@ var GraphQLFactoryDefinition = function () {
     }
   }, {
     key: 'definition',
-    get: function get$$1() {
+    get: function get() {
       return {
         fields: this.fields,
         functions: this.functions,
@@ -3331,7 +3331,7 @@ var GraphQLFactoryDefinition = function () {
     }
   }, {
     key: 'plugin',
-    get: function get$$1() {
+    get: function get() {
       return {
         globals: this.globals,
         fields: this.fields,
@@ -3860,14 +3860,14 @@ var GraphQLFactoryTypeGenerator = function () {
 
   }, {
     key: 'types',
-    get: function get$$1() {
+    get: function get() {
       if (_$1.keys(this._types).length) return this._types;
       this.generate();
       return this._types;
     }
   }, {
     key: 'schemas',
-    get: function get$$1() {
+    get: function get() {
       if (_$1.keys(this._schemas).length) return this._schemas;
       this.generate();
       return this._schemas;
