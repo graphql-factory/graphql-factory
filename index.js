@@ -185,10 +185,10 @@ function addMapEntry(map, pair) {
  * @param {*} value The value to add.
  * @returns {Object} Returns `set`.
  */
-function addSetEntry(set$$1, value) {
+function addSetEntry(set, value) {
   // Don't return `set.add` because it's not chainable in IE 11.
-  set$$1.add(value);
-  return set$$1;
+  set.add(value);
+  return set;
 }
 
 /*
@@ -381,11 +381,11 @@ function overArg(func, transform) {
  * @param {Object} set The set to convert.
  * @returns {Array} Returns the values.
  */
-function setToArray(set$$1) {
+function setToArray(set) {
   var index = -1,
-      result = Array(set$$1.size);
+      result = Array(set.size);
 
-  set$$1.forEach(function (value) {
+  set.forEach(function (value) {
     result[++index] = value;
   });
   return result;
@@ -1330,9 +1330,9 @@ function cloneRegExp(regexp) {
  * @param {boolean} [isDeep] Specify a deep clone.
  * @returns {Object} Returns the cloned set.
  */
-function cloneSet(set$$1, isDeep, cloneFunc) {
-  var array = isDeep ? cloneFunc(setToArray(set$$1), true) : setToArray(set$$1);
-  return arrayReduce(array, addSetEntry, new set$$1.constructor());
+function cloneSet(set, isDeep, cloneFunc) {
+  var array = isDeep ? cloneFunc(setToArray(set), true) : setToArray(set);
+  return arrayReduce(array, addSetEntry, new set.constructor());
 }
 
 /*
@@ -2273,55 +2273,35 @@ var toArguments = function toArguments(obj) {
         obj = _getType.obj,
         type = _getType.type;
 
-    var _ret = function () {
-      switch (type) {
-        case ARRAY:
-          var arrList = [];
-          forEach(obj, function (v) {
-            var arrVal = toLiteral(v);
-            if (arrVal === NULL && keepNulls || arrVal && arrVal !== NULL) arrList.push(arrVal);
-          });
-          return {
-            v: '[' + arrList.join(',') + ']'
-          };
-        case OBJECT:
-          var objList = [];
-          forEach(obj, function (v, k) {
-            var objVal = toLiteral(v);
-            if (objVal === NULL && keepNulls || objVal && objVal !== NULL) objList.push(k + ':' + objVal);
-          });
-          return {
-            v: '{' + objList.join(',') + '}'
-          };
-        case DATE:
-          return {
-            v: '"' + obj.toISOString() + '"'
-          };
-        case FLOAT:
-          var s = String(obj);
-          return {
-            v: s.indexOf('.') === -1 ? s + '.0' : s
-          };
-        case NULL:
-          return {
-            v: NULL
-          };
-        case STRING:
-          return {
-            v: '"' + escapeString(obj) + '"'
-          };
-        case UNDEFINED:
-          return {
-            v: undefined
-          };
-        default:
-          return {
-            v: String(obj)
-          };
-      }
-    }();
-
-    if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+    switch (type) {
+      case ARRAY:
+        var arrList = [];
+        forEach(obj, function (v) {
+          var arrVal = toLiteral(v);
+          if (arrVal === NULL && keepNulls || arrVal && arrVal !== NULL) arrList.push(arrVal);
+        });
+        return '[' + arrList.join(',') + ']';
+      case OBJECT:
+        var objList = [];
+        forEach(obj, function (v, k) {
+          var objVal = toLiteral(v);
+          if (objVal === NULL && keepNulls || objVal && objVal !== NULL) objList.push(k + ':' + objVal);
+        });
+        return '{' + objList.join(',') + '}';
+      case DATE:
+        return '"' + obj.toISOString() + '"';
+      case FLOAT:
+        var s = String(obj);
+        return s.indexOf('.') === -1 ? s + '.0' : s;
+      case NULL:
+        return NULL;
+      case STRING:
+        return '"' + escapeString(obj) + '"';
+      case UNDEFINED:
+        return undefined;
+      default:
+        return String(obj);
+    }
   };
 
   var objStr = toLiteral(circular(obj));
@@ -2580,7 +2560,7 @@ function pick(obj) {
   return newObj;
 }
 
-function get$$1(obj, path, defaultValue) {
+function get(obj, path, defaultValue) {
   var value = obj;
   var fields = isArray(path) ? path : stringToPathArray(path);
   if (fields.length === 0) return defaultValue;
@@ -2595,7 +2575,7 @@ function get$$1(obj, path, defaultValue) {
   return value;
 }
 
-function set$$1(obj, path, val) {
+function set(obj, path, val) {
   var value = obj;
   var fields = isArray(path) ? path : stringToPathArray(path);
   forEach(fields, function (p, idx) {
@@ -2626,13 +2606,13 @@ function typeOf(obj) {
 function getFieldPath(info, maxDepth) {
   maxDepth = maxDepth || 50;
 
-  var loc = get$$1(info, 'fieldNodes[0].loc') || get$$1(info, 'fieldASTs[0].loc');
+  var loc = get(info, 'fieldNodes[0].loc') || get(info, 'fieldASTs[0].loc');
   var stackCount = 0;
 
   var traverseFieldPath = function traverseFieldPath(selections, start, end, fieldPath) {
     fieldPath = fieldPath || [];
 
-    var sel = get$$1(filter(selections, function (s) {
+    var sel = get(filter(selections, function (s) {
       return s.loc.start <= start && s.loc.end >= end;
     }), '[0]');
     if (sel) {
@@ -2649,8 +2629,8 @@ function getFieldPath(info, maxDepth) {
 }
 
 function getSchemaOperation(info) {
-  var _type = ['_', get$$1(info, 'operation.operation'), 'Type'].join('');
-  return get$$1(info, ['schema', _type].join('.'), {});
+  var _type = ['_', get(info, 'operation.operation'), 'Type'].join('');
+  return get(info, ['schema', _type].join('.'), {});
 }
 
 /*
@@ -2658,7 +2638,7 @@ function getSchemaOperation(info) {
  */
 function getReturnTypeName(info) {
   try {
-    var typeObj = get$$1(getSchemaOperation(info), '_fields["' + info.fieldName + '"].type', {});
+    var typeObj = get(getSchemaOperation(info), '_fields["' + info.fieldName + '"].type', {});
 
     while (!typeObj.name) {
       typeObj = typeObj.ofType;
@@ -2674,19 +2654,19 @@ function getReturnTypeName(info) {
  * Gets the field definition
  */
 function getRootFieldDef(info, path) {
-  var fldPath = get$$1(getFieldPath(info), '[0]');
+  var fldPath = get(getFieldPath(info), '[0]');
   var queryType = info.operation.operation;
-  var opDef = get$$1(info, 'schema._factory.' + queryType, {});
-  var fieldDef = get$$1(opDef, 'fields["' + fldPath + '"]', undefined);
+  var opDef = get(info, 'schema._factory.' + queryType, {});
+  var fieldDef = get(opDef, 'fields["' + fldPath + '"]', undefined);
 
   //  if a field def cannot be found, try to find it in the extendFields
   if (!fieldDef && has(opDef, 'extendFields')) {
     forEach(opDef.extendFields, function (v, k) {
-      if (has(v, fldPath)) fieldDef = get$$1(v, '["' + fldPath + '"]', {});
+      if (has(v, fldPath)) fieldDef = get(v, '["' + fldPath + '"]', {});
     });
   }
 
-  return path ? get$$1(fieldDef, path, {}) : fieldDef;
+  return path ? get(fieldDef, path, {}) : fieldDef;
 }
 
 /*
@@ -2696,7 +2676,7 @@ function getRootFieldDef(info, path) {
  */
 function getTypeConfig(info, path) {
   path = path ? '_typeConfig.'.concat(path) : '_typeConfig';
-  return get$$1(getSchemaOperation(info), path, {});
+  return get(getSchemaOperation(info), path, {});
 }
 
 // removes circular references
@@ -2761,8 +2741,8 @@ var _$1 = Object.freeze({
 	omit: omit,
 	pickBy: pickBy,
 	pick: pick,
-	get: get$$1,
-	set: set$$1,
+	get: get,
+	set: set,
 	clone: clone,
 	typeOf: typeOf,
 	getFieldPath: getFieldPath,
@@ -2811,10 +2791,9 @@ var TYPE_ALIAS = {
   GraphQLScalarType: SCALAR,
   GraphQLSchema: SCHEMA,
   GraphQLUnionType: UNION
-};
 
-// types with fields
-var HAS_FIELDS = [OBJECT$1, INPUT, INTERFACE];
+  // types with fields
+};var HAS_FIELDS = [OBJECT$1, INPUT, INTERFACE];
 
 var constants = {
   BOOLEAN: BOOLEAN$1,
@@ -2951,13 +2930,11 @@ var GraphQLFactoryCompiler = function () {
         // no type fields
         if (!hasFields(type)) {
           if (getShortType(type) === ENUM$1) {
-            (function () {
-              var values = definition.values;
+            var values = definition.values;
 
-              _$1.forEach(values, function (v, k) {
-                if (!_$1.isHash(v)) values[k] = { value: v };
-              });
-            })();
+            _$1.forEach(values, function (v, k) {
+              if (!_$1.isHash(v)) values[k] = { value: v };
+            });
           }
           return true;
         }
@@ -3163,12 +3140,12 @@ var GraphQLFactoryDefinition = function () {
     }
   }, {
     key: 'get',
-    value: function get$$1(keyPath) {
+    value: function get(keyPath) {
       return _$1.get(this, keyPath);
     }
   }, {
     key: 'set',
-    value: function set$$1(keyPath, value) {
+    value: function set(keyPath, value) {
       _$1.set(this, keyPath, value);
     }
   }, {
@@ -3198,7 +3175,7 @@ var GraphQLFactoryDefinition = function () {
     }
   }, {
     key: 'definition',
-    get: function get$$1() {
+    get: function get() {
       return {
         fields: this.fields,
         functions: this.functions,
@@ -3209,7 +3186,7 @@ var GraphQLFactoryDefinition = function () {
     }
   }, {
     key: 'plugin',
-    get: function get$$1() {
+    get: function get() {
       return {
         globals: this.globals,
         fields: this.fields,
@@ -3402,25 +3379,17 @@ function FactoryInterfacesThunk(_this) {
   var interfaces = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
 
   try {
-    var _ret = function () {
-      if (!_$1.isArray(interfaces) || !interfaces.length) return {
-          v: void 0
-        };
+    if (!_$1.isArray(interfaces) || !interfaces.length) return;
 
-      var thunk = _$1.without(_$1.map(interfaces, function (type) {
-        var iface = _this.resolveType(type);
-        if (iface instanceof _this.graphql.GraphQLInterfaceType) return iface;
-        return null;
-      }), null);
+    var thunk = _$1.without(_$1.map(interfaces, function (type) {
+      var iface = _this.resolveType(type);
+      if (iface instanceof _this.graphql.GraphQLInterfaceType) return iface;
+      return null;
+    }), null);
 
-      return {
-        v: thunk.length > 0 ? function () {
-          return thunk;
-        } : undefined
-      };
-    }();
-
-    if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+    return thunk.length > 0 ? function () {
+      return thunk;
+    } : undefined;
   } catch (err) {
     console.error('FactoryInterfacesThunk', err);
   }
@@ -3651,7 +3620,7 @@ var GraphQLFactoryTypeGenerator = function () {
 
   }, {
     key: 'types',
-    get: function get$$1() {
+    get: function get() {
       if (_$1.keys(this._types).length) return this._types;
       this.makeNonUnionTypes();
       this.makeUnionTypes();
@@ -3659,7 +3628,7 @@ var GraphQLFactoryTypeGenerator = function () {
     }
   }, {
     key: 'schemas',
-    get: function get$$1() {
+    get: function get() {
       if (_$1.keys(this._schemas).length) return this._schemas;
       this.makeSchemas();
       return this._schemas;
@@ -3685,10 +3654,9 @@ var GraphQLFactoryLibrary = function GraphQLFactoryLibrary(graphql, definition) 
     graphql: graphql,
     schemas: schemas,
     types: types
-  };
 
-  // build schema functions
-  _$1.forEach(schemas, function (schema, name) {
+    // build schema functions
+  };_$1.forEach(schemas, function (schema, name) {
     _this[name] = function (requestString, rootValue, contextValue, variableValues, operationName) {
       return graphql.graphql(schema, requestString, rootValue, contextValue, variableValues, operationName);
     };
