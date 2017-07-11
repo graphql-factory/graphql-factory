@@ -2,6 +2,7 @@ build
 assets
 example
 node_modules
+scratch,
 src
 src-v0
 test
