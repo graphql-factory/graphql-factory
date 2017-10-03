@@ -12,6 +12,6 @@ export default function FactoryInputObjectFieldConfigMapThunk (_this, fields, ro
 
     return () => _.mapValues(fields, (field) => FactoryInputObjectFieldConfig(_this, field, rootType))
   } catch (err) {
-    console.error('FactoryInputObjectFieldConfigMapThunk', err)
+    console.error('GraphQLFactoryError: FactoryInputObjectFieldConfigMapThunk:', err)
   }
 }

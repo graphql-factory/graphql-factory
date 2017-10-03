@@ -9,6 +9,6 @@ export default function FactoryInputObjectFieldConfig (_this, field, rootType) {
       description
     }
   } catch (err) {
-    console.error('FactoryInputObjectFieldConfig', err)
+    console.error('GraphQLFactoryError: FactoryInputObjectFieldConfig', err)
   }
 }

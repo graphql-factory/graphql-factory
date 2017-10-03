@@ -10,6 +10,6 @@ export default function FactoryGQLEnumType (_this, definition, nameDefault) {
       description
     })
   } catch (err) {
-    console.error('FactoryGQLEnumType', err)
+    console.error('GraphQLFactoryError: FactoryGQLEnumType', err)
   }
 }

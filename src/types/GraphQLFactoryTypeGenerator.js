@@ -37,6 +37,7 @@ export default class GraphQLFactoryTypeGenerator {
       [STRING]: graphql.GraphQLString
     }
 
+    // create a new function context
     this.fnContext = {
       lib,
       definition: definition.definition,
@@ -55,9 +56,12 @@ export default class GraphQLFactoryTypeGenerator {
   /****************************************************************************
    * Helpers
    ****************************************************************************/
-  processMiddleware (resolver, args) {
+  processMiddleware (resolver, args, fieldDef) {
     return new Promise((resolve, reject) => {
       let status = { resolved: false, rejected: false, isFulfilled: false }
+
+      // create a new resolver context by merging the type context with a new object and the fieldDef
+      let ctx = Object.assign({}, this.fnContext, { fieldDef })
 
       // create a reject handler so that reject is only called once
       let doReject = error => {
@@ -76,11 +80,13 @@ export default class GraphQLFactoryTypeGenerator {
       }
 
       // if there is no middleware proceed to the resolver
-      if (!this.definition._middleware.before.length) return this.processResolver(resolver, args, doResolve, doReject)
+      if (!this.definition._middleware.before.length) {
+        return this.processResolver(resolver, args, ctx, doResolve, doReject)
+      }
 
       // add a timeout to the middleware
       let timeout = setTimeout(() => {
-        this.processResolver(resolver, args, doResolve, doReject)
+        this.processResolver(resolver, args, fieldDef, doResolve, doReject)
       }, this.definition._middleware.beforeTimeout)
 
       let hooks = this.definition._middleware.before.slice()
@@ -89,22 +95,22 @@ export default class GraphQLFactoryTypeGenerator {
         if (error) return reject(error)
         if (!hooks.length) {
           clearTimeout(timeout)
-          return this.processResolver(resolver, args, doResolve, doReject)
+          return this.processResolver(resolver, args, fieldDef, doResolve, doReject)
         }
-        return hooks[0].apply(this.fnContext, [args, next])
+        return hooks[0].apply(ctx, [args, next])
       }
-      return hooks[0].apply(this.fnContext, [args, next])
+      return hooks[0].apply(ctx, [args, next])
     })
   }
 
-  processResolver (resolver, args, resolve, reject) {
-    return Promise.resolve(resolver.apply(this.fnContext, _.values(args)))
+  processResolver (resolver, args, ctx, resolve, reject) {
+    return Promise.resolve(resolver.apply(ctx, _.values(args)))
       .then(result => {
-        return this.afterMiddleware(result, args, resolve, reject)
+        return this.afterMiddleware(result, args, ctx, resolve, reject)
       }, reject)
   }
 
-  afterMiddleware (result, args, resolve, reject) {
+  afterMiddleware (result, args, ctx, resolve, reject) {
     // if there is no middleware resolve the result
     if (!this.definition._middleware.after.length) return resolve(result)
 
@@ -122,17 +128,17 @@ export default class GraphQLFactoryTypeGenerator {
         clearTimeout(timeout)
         return resolve(res)
       }
-      return hooks[0].apply(this.fnContext, [args, res, next])
+      return hooks[0].apply(ctx, [args, res, next])
     }
-    return hooks[0].apply(this.fnContext, [args, result, next])
+    return hooks[0].apply(ctx, [args, result, next])
   }
 
-  bindFunction (fn) {
+  bindFunction (fn, fieldDef) {
     if (!fn) return
     let resolver = _.isFunction(fn) ? fn : this.definition.get(`functions["${fn}"]`)
-    if (!_.isFunction(resolver)) console.error(`could not resolve function ${fn}`)
+    if (!_.isFunction(resolver)) console.error(`GraphQLFactoryError: Could not find resolver function "${fn}"`)
     return (source, args, context, info) => {
-      return this.processMiddleware(resolver, { source, args, context, info })
+      return this.processMiddleware(resolver, { source, args, context, info }, fieldDef)
     }
   }
 
@@ -200,7 +206,7 @@ export default class GraphQLFactoryTypeGenerator {
           this._types[useName] = FactoryGQLUnionType(this, definition, nameDefault)
           break
         default:
-          throw new Error(`${type} is an invalid base type`)
+          throw new Error(`GraphQLFactoryError: "${type}" is an invalid base type`)
       }
     })
     return this

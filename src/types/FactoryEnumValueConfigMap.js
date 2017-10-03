@@ -7,6 +7,6 @@ export default function FactoryEnumValueConfigMap (_this, values) {
       return FactoryEnumValueConfig(_this, value)
     })
   } catch (err) {
-    console.error('FactoryEnumValueConfigMap', err)
+    console.error('GraphQLFactoryError: FactoryEnumValueConfigMap', err)
   }
 }

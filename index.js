@@ -14,7 +14,118 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 
 
+var asyncGenerator = function () {
+  function AwaitValue(value) {
+    this.value = value;
+  }
 
+  function AsyncGenerator(gen) {
+    var front, back;
+
+    function send(key, arg) {
+      return new Promise(function (resolve, reject) {
+        var request = {
+          key: key,
+          arg: arg,
+          resolve: resolve,
+          reject: reject,
+          next: null
+        };
+
+        if (back) {
+          back = back.next = request;
+        } else {
+          front = back = request;
+          resume(key, arg);
+        }
+      });
+    }
+
+    function resume(key, arg) {
+      try {
+        var result = gen[key](arg);
+        var value = result.value;
+
+        if (value instanceof AwaitValue) {
+          Promise.resolve(value.value).then(function (arg) {
+            resume("next", arg);
+          }, function (arg) {
+            resume("throw", arg);
+          });
+        } else {
+          settle(result.done ? "return" : "normal", result.value);
+        }
+      } catch (err) {
+        settle("throw", err);
+      }
+    }
+
+    function settle(type, value) {
+      switch (type) {
+        case "return":
+          front.resolve({
+            value: value,
+            done: true
+          });
+          break;
+
+        case "throw":
+          front.reject(value);
+          break;
+
+        default:
+          front.resolve({
+            value: value,
+            done: false
+          });
+          break;
+      }
+
+      front = front.next;
+
+      if (front) {
+        resume(front.key, front.arg);
+      } else {
+        back = null;
+      }
+    }
+
+    this._invoke = send;
+
+    if (typeof gen.return !== "function") {
+      this.return = undefined;
+    }
+  }
+
+  if (typeof Symbol === "function" && Symbol.asyncIterator) {
+    AsyncGenerator.prototype[Symbol.asyncIterator] = function () {
+      return this;
+    };
+  }
+
+  AsyncGenerator.prototype.next = function (arg) {
+    return this._invoke("next", arg);
+  };
+
+  AsyncGenerator.prototype.throw = function (arg) {
+    return this._invoke("throw", arg);
+  };
+
+  AsyncGenerator.prototype.return = function (arg) {
+    return this._invoke("return", arg);
+  };
+
+  return {
+    wrap: function (fn) {
+      return function () {
+        return new AsyncGenerator(fn.apply(this, arguments));
+      };
+    },
+    await: function (value) {
+      return new AwaitValue(value);
+    }
+  };
+}();
 
 
 
@@ -493,7 +604,7 @@ var objectToString = objectProto.toString;
 var reIsNative = RegExp('^' + funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&').replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$');
 
 /* Built-in value references. */
-var Buffer = moduleExports ? root.Buffer : undefined;
+var Buffer$1 = moduleExports ? root.Buffer : undefined;
 var _Symbol = root.Symbol;
 var Uint8Array = root.Uint8Array;
 var getPrototype = overArg(Object.getPrototypeOf, Object);
@@ -503,7 +614,7 @@ var splice = arrayProto.splice;
 
 /* Built-in method references for those with the same name as other `lodash` methods. */
 var nativeGetSymbols = Object.getOwnPropertySymbols;
-var nativeIsBuffer = Buffer ? Buffer.isBuffer : undefined;
+var nativeIsBuffer = Buffer$1 ? Buffer$1.isBuffer : undefined;
 var nativeKeys = overArg(Object.keys, Object);
 var nativeMax = Math.max;
 
@@ -3149,6 +3260,191 @@ var GraphQLFactoryCompiler = function () {
   return GraphQLFactoryCompiler;
 }();
 
+var FactoryBase64 = {
+  type: 'Scalar',
+  name: 'Base64',
+  description: 'Converts value to and from base64',
+  serialize: function serialize(value) {
+    return new Buffer(value, 'base64').toString();
+  },
+  parseValue: function parseValue(value) {
+    return new Buffer(value).toString('base64');
+  },
+  parseLiteral: function parseLiteral(ast) {
+    var _graphql = this.graphql,
+        GraphQLError = _graphql.GraphQLError,
+        Kind = _graphql.Kind;
+
+
+    if (ast.kind !== Kind.STRING) {
+      throw new GraphQLError('Query error: expected Base64 to be a string but got a: ' + ast.kind, [ast]);
+    }
+
+    return new Buffer(ast.value).toString('base64');
+  }
+};
+
+/*
+ * Ported type from https://github.com/soundtrackyourbrand/graphql-custom-datetype
+ */
+
+function coerceDate(value) {
+  if (!(value instanceof Date)) {
+    // Is this how you raise a 'field error'?
+    throw new Error('Field error: value is not an instance of Date');
+  }
+  if (isNaN(value.getTime())) {
+    throw new Error('Field error: value is an invalid Date');
+  }
+  return value.toJSON();
+}
+
+var FactoryDateTime = {
+  type: 'Scalar',
+  name: 'DateTime',
+  description: 'Represents a Date object',
+  serialize: coerceDate,
+  parseValue: coerceDate,
+  parseLiteral: function parseLiteral(ast) {
+    var _graphql = this.graphql,
+        GraphQLError = _graphql.GraphQLError,
+        Kind = _graphql.Kind;
+
+
+    if (ast.kind !== Kind.STRING) {
+      throw new GraphQLError('Query error: Can only parse strings to dates but got a: ' + ast.kind, [ast]);
+    }
+    var result = new Date(ast.value);
+    if (isNaN(result.getTime())) {
+      throw new GraphQLError('Query error: Invalid date', [ast]);
+    }
+    if (ast.value !== result.toJSON()) {
+      throw new GraphQLError('Query error: Invalid date format, only accepts: YYYY-MM-DDTHH:MM:SS.SSSZ', [ast]);
+    }
+    return result;
+  }
+};
+
+var FactoryEmail = {
+  type: 'Scalar',
+  name: 'Email',
+  description: 'The Email scalar type represents E-Mail addresses compliant to RFC 822.',
+  serialize: function serialize(value) {
+    return value;
+  },
+  parseValue: function parseValue(value) {
+    return value;
+  },
+  parseLiteral: function parseLiteral(ast) {
+    var _graphql = this.graphql,
+        GraphQLError = _graphql.GraphQLError,
+        Kind = _graphql.Kind;
+
+    // regex taken from https://github.com/stylesuxx/graphql-custom-types
+
+    var rx = /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
+
+    if (ast.kind !== Kind.STRING) {
+      throw new GraphQLError('Query error: expected Email to be a string but got a: ' + ast.kind, [ast]);
+    }
+
+    if (!ast.value.match(rx)) {
+      throw new GraphQLError('Query error: invalid Email', [ast]);
+    }
+
+    return ast.value;
+  }
+};
+
+/*
+ * Ported type from https://github.com/taion/graphql-type-json
+ */
+
+function identity(value) {
+  return value;
+}
+
+function parseLiteral(ast) {
+  var boundParseLiteral = parseLiteral.bind(this);
+  var Kind = this.graphql.Kind;
+
+  switch (ast.kind) {
+    case Kind.STRING:
+    case Kind.BOOLEAN:
+      return ast.value;
+    case Kind.INT:
+    case Kind.FLOAT:
+      return parseFloat(ast.value);
+    case Kind.OBJECT:
+      {
+        var value = Object.create(null);
+        ast.fields.forEach(function (field) {
+          value[field.name.value] = boundParseLiteral(field.value);
+        });
+        return value;
+      }
+    case Kind.LIST:
+      return ast.values.map(boundParseLiteral);
+    default:
+      return null;
+  }
+}
+
+var FactoryJSON = {
+  type: 'Scalar',
+  name: 'JSON',
+  description: 'The `JSON` scalar type represents JSON values as specified by ' + '[ECMA-404](http://www.ecma-international.org/ publications/files/ECMA-ST/ECMA-404.pdf).',
+  serialize: identity,
+  parseValue: identity,
+  parseLiteral: parseLiteral
+};
+
+var FactoryURL = {
+  type: 'Scalar',
+  name: 'URL',
+  description: 'The URL scalar type represents URL addresses.',
+  serialize: function serialize(value) {
+    return value;
+  },
+  parseValue: function parseValue(value) {
+    return value;
+  },
+  parseLiteral: function parseLiteral(ast) {
+    var _graphql = this.graphql,
+        GraphQLError = _graphql.GraphQLError,
+        Kind = _graphql.Kind;
+
+    // regex taken from https://github.com/stylesuxx/graphql-custom-types
+
+    var rx = new RegExp('^(?:(?:https?|ftp)://)(?:\\S+(?::\\S*)?@)?(?:(?!(?:10|127)(?:\\.\\d{1,3}){3})(?!(?:169\\.254|192\\.168)(?:\\.\\d{1,3}){2})(?!172\\.(?:1[6-9]|2\\d|3[0-1])(?:\\.\\d{1,3}){2})(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}(?:\\.(?:[1-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)(?:\\.(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)*(?:\\.(?:[a-z\\u00a1-\\uffff]{2,}))\\.?)(?::\\d{2,5})?(?:[/?#]\\S*)?$', 'i');
+
+    if (ast.kind !== Kind.STRING) {
+      throw new GraphQLError('Query error: expected URL to be a string but got a: ' + ast.kind, [ast]);
+    }
+
+    if (!ast.value.match(rx)) {
+      throw new GraphQLError('Query error: invalid URL', [ast]);
+    }
+
+    return ast.value;
+  }
+};
+
+var types = {
+  name: 'FactoryTypes',
+  types: {
+    Base64: FactoryBase64,
+    DateTime: FactoryDateTime,
+    Email: FactoryEmail,
+    JSON: FactoryJSON,
+    URL: FactoryURL
+  }
+};
+
+var factoryPlugins = {
+  types: types
+};
+
 var DEFAULT_MIDDLEWARE_TIMEOUT = 5000;
 
 var GraphQLFactoryDefinition = function () {
@@ -3208,6 +3504,16 @@ var GraphQLFactoryDefinition = function () {
       var plugins = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
 
       _$1.forEach(_$1.ensureArray(plugins), function (plugin) {
+        // first check for included plugins that can be specified by their string name
+        if (_$1.isString(plugin) && plugin) {
+          if (factoryPlugins[plugin]) {
+            plugin = factoryPlugins[plugin];
+          } else {
+            console.error('GraphQLFactoryError: Plugin "' + plugin + '" not found');
+            return true;
+          }
+        }
+
         var name = _$1.get(plugin, 'name', 'unnamedPlugin' + _$1.keys(_this.pluginRegistry).length);
         _this.pluginRegistry[name] = plugin;
         _this.merge(plugin);
@@ -3358,7 +3664,7 @@ function FactoryEnumValueConfig(_this, val) {
       description: description
     };
   } catch (err) {
-    console.error('FactoryEnumValueConfig', err);
+    console.error('GraphQLFactoryError: FactoryEnumValueConfig', err);
   }
 }
 
@@ -3368,7 +3674,7 @@ function FactoryEnumValueConfigMap(_this, values) {
       return FactoryEnumValueConfig(_this, value);
     });
   } catch (err) {
-    console.error('FactoryEnumValueConfigMap', err);
+    console.error('GraphQLFactoryError: FactoryEnumValueConfigMap', err);
   }
 }
 
@@ -3385,7 +3691,7 @@ function FactoryGQLEnumType(_this, definition, nameDefault) {
       description: description
     });
   } catch (err) {
-    console.error('FactoryGQLEnumType', err);
+    console.error('GraphQLFactoryError: FactoryGQLEnumType', err);
   }
 }
 
@@ -3402,7 +3708,7 @@ function FactoryInputObjectFieldConfig(_this, field, rootType) {
       description: description
     };
   } catch (err) {
-    console.error('FactoryInputObjectFieldConfig', err);
+    console.error('GraphQLFactoryError: FactoryInputObjectFieldConfig', err);
   }
 }
 
@@ -3422,7 +3728,7 @@ function FactoryInputObjectFieldConfigMapThunk(_this, fields, rootType) {
       });
     };
   } catch (err) {
-    console.error('FactoryInputObjectFieldConfigMapThunk', err);
+    console.error('GraphQLFactoryError: FactoryInputObjectFieldConfigMapThunk:', err);
   }
 }
 
@@ -3439,7 +3745,7 @@ function FactoryGQLInputObjectType(_this, definition, nameDefault) {
       description: description
     });
   } catch (err) {
-    console.error('FactoryInputObjectFieldConfigMapThunk', err);
+    console.error('GraphQLFactoryError: FactoryInputObjectFieldConfigMapThunk', err);
   }
 }
 
@@ -3461,11 +3767,11 @@ function FactoryArgumentConfig(_this) {
       description: description
     };
   } catch (err) {
-    console.error('FactoryArgumentConfig', err);
+    console.error('GraphQLFactoryError: FactoryArgumentConfig', err);
   }
 }
 
-function FactoryFieldConfigMapThunk(_this, fields, rootType) {
+function FactoryFieldConfigMapThunk(_this, fields, rootType, definition) {
   try {
     fields = _$1.omitBy(fields, function (field) {
       var omitFrom = field.omitFrom;
@@ -3490,14 +3796,14 @@ function FactoryFieldConfigMapThunk(_this, fields, rootType) {
           args: _$1.mapValues(args, function (arg) {
             return FactoryArgumentConfig(_this, arg, rootType);
           }),
-          resolve: _this.bindFunction(resolve),
+          resolve: _this.bindFunction(resolve, definition),
           deprecationReason: deprecationReason,
           description: description
         };
       });
     };
   } catch (err) {
-    console.error('FactoryFieldConfigMapThunk', err);
+    console.error('GraphQLFactoryError: FactoryFieldConfigMapThunk', err);
   }
 }
 
@@ -3511,12 +3817,12 @@ function FactoryGQLInterfaceType(_this, definition, nameDefault) {
 
     return new _this.graphql.GraphQLInterfaceType({
       name: name || nameDefault,
-      fields: FactoryFieldConfigMapThunk(_this, fields, 'Interface'),
-      resolveType: _this.bindFunction(resolveType),
+      fields: FactoryFieldConfigMapThunk(_this, fields, 'Interface', definition),
+      resolveType: _this.bindFunction(resolveType, definition),
       description: description
     });
   } catch (err) {
-    console.error('FactoryGQLInterfaceType', err);
+    console.error('GraphQLFactoryError: FactoryGQLInterfaceType', err);
   }
 }
 
@@ -3536,7 +3842,7 @@ function FactoryInterfacesThunk(_this) {
       return thunk;
     } : undefined;
   } catch (err) {
-    console.error('FactoryInterfacesThunk', err);
+    console.error('GraphQLFactoryError: FactoryInterfacesThunk', err);
   }
 }
 
@@ -3552,12 +3858,12 @@ function FactoryGQLObjectType(_this, definition, nameDefault) {
     return new _this.graphql.GraphQLObjectType(_$1.merge({}, definition, {
       name: name || nameDefault,
       interfaces: FactoryInterfacesThunk(_this, interfaces),
-      fields: FactoryFieldConfigMapThunk(_this, fields, 'Object'),
-      isTypeOf: _this.bindFunction(isTypeOf),
+      fields: FactoryFieldConfigMapThunk(_this, fields, 'Object', definition),
+      isTypeOf: _this.bindFunction(isTypeOf, definition),
       description: description
     }));
   } catch (err) {
-    console.error('FactoryGQLObjectType', err);
+    console.error('GraphQLFactoryError: FactoryGQLObjectType', err);
   }
 }
 
@@ -3573,12 +3879,12 @@ function FactoryGQLScalarType(_this, definition, nameDefault) {
     return new _this.graphql.GraphQLScalarType({
       name: name || nameDefault,
       description: description,
-      serialize: _this.bindFunction(serialize),
-      parseValue: _this.bindFunction(parseValue),
-      parseLiteral: _this.bindFunction(parseLiteral)
+      serialize: _this.bindFunction(serialize, definition),
+      parseValue: _this.bindFunction(parseValue, definition),
+      parseLiteral: _this.bindFunction(parseLiteral, definition)
     });
   } catch (err) {
-    console.error('FactoryGQLScalarType', err);
+    console.error('GraphQLFactoryError: FactoryGQLScalarType', err);
   }
 }
 
@@ -3604,7 +3910,7 @@ function FactoryGQLSchema(_this, definition, nameDefault) {
 
     return schema;
   } catch (err) {
-    console.error('FactoryGQLSchema', err);
+    console.error('GraphQLFactoryError: FactoryGQLSchema', err);
   }
 }
 
@@ -3621,11 +3927,11 @@ function FactoryGQLUnionType(_this, definition, nameDefault) {
       types: _$1.map(types, function (type) {
         return _this.resolveType(type);
       }),
-      resolveType: _this.bindFunction(resolveType),
+      resolveType: _this.bindFunction(resolveType, definition),
       description: description
     });
   } catch (err) {
-    console.error('FactoryGQLUnionType', err);
+    console.error('GraphQLFactoryError: FactoryGQLUnionType', err);
   }
 }
 
@@ -3646,6 +3952,7 @@ var GraphQLFactoryTypeGenerator = function () {
     this._schemas = {};
     this.typeMap = (_typeMap = {}, defineProperty(_typeMap, BOOLEAN$1, graphql.GraphQLBoolean), defineProperty(_typeMap, FLOAT$1, graphql.GraphQLFloat), defineProperty(_typeMap, ID, graphql.GraphQLID), defineProperty(_typeMap, INT$1, graphql.GraphQLInt), defineProperty(_typeMap, STRING$1, graphql.GraphQLString), _typeMap);
 
+    // create a new function context
     this.fnContext = {
       lib: lib,
       definition: definition.definition,
@@ -3668,14 +3975,17 @@ var GraphQLFactoryTypeGenerator = function () {
 
   createClass(GraphQLFactoryTypeGenerator, [{
     key: 'processMiddleware',
-    value: function processMiddleware(resolver, args) {
+    value: function processMiddleware(resolver, args, fieldDef) {
       var _this2 = this;
 
       return new Promise(function (resolve, reject) {
         var status = { resolved: false, rejected: false, isFulfilled: false
 
-          // create a reject handler so that reject is only called once
-        };var doReject = function doReject(error) {
+          // create a new resolver context by merging the type context with a new object and the fieldDef
+        };var ctx = Object.assign({}, _this2.fnContext, { fieldDef: fieldDef });
+
+        // create a reject handler so that reject is only called once
+        var doReject = function doReject(error) {
           if (status.isFulfilled) return;
           status.isFulfilled = true;
           status.rejected = true;
@@ -3691,11 +4001,13 @@ var GraphQLFactoryTypeGenerator = function () {
         };
 
         // if there is no middleware proceed to the resolver
-        if (!_this2.definition._middleware.before.length) return _this2.processResolver(resolver, args, doResolve, doReject);
+        if (!_this2.definition._middleware.before.length) {
+          return _this2.processResolver(resolver, args, ctx, doResolve, doReject);
+        }
 
         // add a timeout to the middleware
         var timeout = setTimeout(function () {
-          _this2.processResolver(resolver, args, doResolve, doReject);
+          _this2.processResolver(resolver, args, fieldDef, doResolve, doReject);
         }, _this2.definition._middleware.beforeTimeout);
 
         var hooks = _this2.definition._middleware.before.slice();
@@ -3704,27 +4016,25 @@ var GraphQLFactoryTypeGenerator = function () {
           if (error) return reject(error);
           if (!hooks.length) {
             clearTimeout(timeout);
-            return _this2.processResolver(resolver, args, doResolve, doReject);
+            return _this2.processResolver(resolver, args, fieldDef, doResolve, doReject);
           }
-          return hooks[0].apply(_this2.fnContext, [args, next]);
+          return hooks[0].apply(ctx, [args, next]);
         };
-        return hooks[0].apply(_this2.fnContext, [args, next]);
+        return hooks[0].apply(ctx, [args, next]);
       });
     }
   }, {
     key: 'processResolver',
-    value: function processResolver(resolver, args, resolve, reject) {
+    value: function processResolver(resolver, args, ctx, resolve, reject) {
       var _this3 = this;
 
-      return Promise.resolve(resolver.apply(this.fnContext, _$1.values(args))).then(function (result) {
-        return _this3.afterMiddleware(result, args, resolve, reject);
+      return Promise.resolve(resolver.apply(ctx, _$1.values(args))).then(function (result) {
+        return _this3.afterMiddleware(result, args, ctx, resolve, reject);
       }, reject);
     }
   }, {
     key: 'afterMiddleware',
-    value: function afterMiddleware(result, args, resolve, reject) {
-      var _this4 = this;
-
+    value: function afterMiddleware(result, args, ctx, resolve, reject) {
       // if there is no middleware resolve the result
       if (!this.definition._middleware.after.length) return resolve(result);
 
@@ -3742,20 +4052,20 @@ var GraphQLFactoryTypeGenerator = function () {
           clearTimeout(timeout);
           return resolve(res);
         }
-        return hooks[0].apply(_this4.fnContext, [args, res, next]);
+        return hooks[0].apply(ctx, [args, res, next]);
       };
-      return hooks[0].apply(this.fnContext, [args, result, next]);
+      return hooks[0].apply(ctx, [args, result, next]);
     }
   }, {
     key: 'bindFunction',
-    value: function bindFunction(fn) {
-      var _this5 = this;
+    value: function bindFunction(fn, fieldDef) {
+      var _this4 = this;
 
       if (!fn) return;
       var resolver = _$1.isFunction(fn) ? fn : this.definition.get('functions["' + fn + '"]');
-      if (!_$1.isFunction(resolver)) console.error('could not resolve function ' + fn);
+      if (!_$1.isFunction(resolver)) console.error('GraphQLFactoryError: Could not find resolver function "' + fn + '"');
       return function (source, args, context, info) {
-        return _this5.processMiddleware(resolver, { source: source, args: args, context: context, info: info });
+        return _this4.processMiddleware(resolver, { source: source, args: args, context: context, info: info }, fieldDef);
       };
     }
   }, {
@@ -3794,19 +4104,19 @@ var GraphQLFactoryTypeGenerator = function () {
   }, {
     key: 'makeSchemas',
     value: function makeSchemas() {
-      var _this6 = this;
+      var _this5 = this;
 
       _$1.forEach(this.definition.schemas, function (definition, nameDefault) {
         var name = definition.name;
 
-        _this6._schemas[name || nameDefault] = FactoryGQLSchema(_this6, definition, nameDefault);
+        _this5._schemas[name || nameDefault] = FactoryGQLSchema(_this5, definition, nameDefault);
       });
       return this;
     }
   }, {
     key: 'makeType',
     value: function makeType(typeToMake) {
-      var _this7 = this;
+      var _this6 = this;
 
       _$1.forEach(this.definition.types, function (definition, nameDefault) {
         var name = definition.name,
@@ -3817,25 +4127,25 @@ var GraphQLFactoryTypeGenerator = function () {
 
         switch (type) {
           case ENUM$1:
-            _this7._types[useName] = FactoryGQLEnumType(_this7, definition, nameDefault);
+            _this6._types[useName] = FactoryGQLEnumType(_this6, definition, nameDefault);
             break;
           case INPUT:
-            _this7._types[useName] = FactoryGQLInputObjectType(_this7, definition, nameDefault);
+            _this6._types[useName] = FactoryGQLInputObjectType(_this6, definition, nameDefault);
             break;
           case INTERFACE:
-            _this7._types[useName] = FactoryGQLInterfaceType(_this7, definition, nameDefault);
+            _this6._types[useName] = FactoryGQLInterfaceType(_this6, definition, nameDefault);
             break;
           case OBJECT$1:
-            _this7._types[useName] = FactoryGQLObjectType(_this7, definition, nameDefault);
+            _this6._types[useName] = FactoryGQLObjectType(_this6, definition, nameDefault);
             break;
           case SCALAR:
-            _this7._types[useName] = FactoryGQLScalarType(_this7, definition, nameDefault);
+            _this6._types[useName] = FactoryGQLScalarType(_this6, definition, nameDefault);
             break;
           case UNION:
-            _this7._types[useName] = FactoryGQLUnionType(_this7, definition, nameDefault);
+            _this6._types[useName] = FactoryGQLUnionType(_this6, definition, nameDefault);
             break;
           default:
-            throw new Error(type + ' is an invalid base type');
+            throw new Error('GraphQLFactoryError: "' + type + '" is an invalid base type');
         }
       });
       return this;

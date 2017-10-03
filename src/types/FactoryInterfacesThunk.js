@@ -12,6 +12,6 @@ export default function FactoryInterfacesThunk (_this, interfaces = []) {
 
     return thunk.length > 0 ? () => thunk : undefined
   } catch (err) {
-    console.error('FactoryInterfacesThunk', err)
+    console.error('GraphQLFactoryError: FactoryInterfacesThunk', err)
   }
 }

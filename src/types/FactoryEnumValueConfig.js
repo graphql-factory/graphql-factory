@@ -10,6 +10,6 @@ export default function FactoryEnumValueConfig (_this, val) {
       description
     }
   } catch (err) {
-    console.error('FactoryEnumValueConfig', err)
+    console.error('GraphQLFactoryError: FactoryEnumValueConfig', err)
   }
 }

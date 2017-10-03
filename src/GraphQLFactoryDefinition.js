@@ -1,4 +1,5 @@
 import _ from './utils/index'
+import factoryPlugins from './plugins/index'
 import GraphQLFactoryCompiler from './GraphQLFactoryCompiler'
 
 const DEFAULT_MIDDLEWARE_TIMEOUT = 5000
@@ -44,6 +45,16 @@ export default class GraphQLFactoryDefinition {
 
   registerPlugin (plugins = []) {
     _.forEach(_.ensureArray(plugins), plugin => {
+      // first check for included plugins that can be specified by their string name
+      if (_.isString(plugin) && plugin) {
+        if (factoryPlugins[plugin]) {
+          plugin = factoryPlugins[plugin]
+        } else {
+          console.error(`GraphQLFactoryError: Plugin "${plugin}" not found`)
+          return true
+        }
+      }
+
       let name = _.get(plugin, 'name', `unnamedPlugin${_.keys(this.pluginRegistry).length}`)
       this.pluginRegistry[name] = plugin
       this.merge(plugin)

@@ -17,6 +17,6 @@ export default function FactoryGQLSchema (_this, definition, nameDefault) {
 
     return schema
   } catch (err) {
-    console.error('FactoryGQLSchema', err)
+    console.error('GraphQLFactoryError: FactoryGQLSchema', err)
   }
 }

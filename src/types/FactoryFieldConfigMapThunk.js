@@ -1,7 +1,7 @@
 import _ from '../utils/index'
 import FactoryArgumentConfig from './FactoryArgumentConfig'
 
-export default function FactoryFieldConfigMapThunk (_this, fields, rootType) {
+export default function FactoryFieldConfigMapThunk (_this, fields, rootType, definition) {
   try {
     fields = _.omitBy(fields, (field) => {
       let { omitFrom } = field
@@ -17,12 +17,12 @@ export default function FactoryFieldConfigMapThunk (_this, fields, rootType) {
       return {
         type: _this.resolveType(field, rootType),
         args: _.mapValues(args, (arg) => FactoryArgumentConfig(_this, arg, rootType)),
-        resolve: _this.bindFunction(resolve),
+        resolve: _this.bindFunction(resolve, definition),
         deprecationReason,
         description
       }
     })
   } catch (err) {
-    console.error('FactoryFieldConfigMapThunk', err)
+    console.error('GraphQLFactoryError: FactoryFieldConfigMapThunk', err)
   }
 }

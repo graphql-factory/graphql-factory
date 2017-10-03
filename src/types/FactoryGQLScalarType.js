@@ -5,11 +5,11 @@ export default function FactoryGQLScalarType (_this, definition, nameDefault) {
     return new _this.graphql.GraphQLScalarType({
       name: name || nameDefault,
       description,
-      serialize: _this.bindFunction(serialize),
-      parseValue: _this.bindFunction(parseValue),
-      parseLiteral: _this.bindFunction(parseLiteral)
+      serialize: _this.bindFunction(serialize, definition),
+      parseValue: _this.bindFunction(parseValue, definition),
+      parseLiteral: _this.bindFunction(parseLiteral, definition)
     })
   } catch (err) {
-    console.error('FactoryGQLScalarType', err)
+    console.error('GraphQLFactoryError: FactoryGQLScalarType', err)
   }
 }

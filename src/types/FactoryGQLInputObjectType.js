@@ -10,6 +10,6 @@ export default function FactoryGQLInputObjectType (_this, definition, nameDefaul
       description
     })
   } catch (err) {
-    console.error('FactoryInputObjectFieldConfigMapThunk', err)
+    console.error('GraphQLFactoryError: FactoryInputObjectFieldConfigMapThunk', err)
   }
 }

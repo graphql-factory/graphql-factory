@@ -12,6 +12,6 @@ export default function FactoryArgumentConfig (_this, arg = {}, rootType) {
       description
     }
   } catch (err) {
-    console.error('FactoryArgumentConfig', err)
+    console.error('GraphQLFactoryError: FactoryArgumentConfig', err)
   }
 }
