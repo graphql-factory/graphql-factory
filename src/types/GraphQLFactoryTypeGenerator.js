@@ -22,6 +22,9 @@ import {
 
 /*
  * Type generator class
+ * NOTES:
+ *   - Adding to base resolver context done in this.fnContext
+ *   - Adding to individual field resolver context done in processMiddleware ctx variable
  */
 export default class GraphQLFactoryTypeGenerator {
   constructor (graphql, definition, lib, options) {
@@ -86,7 +89,7 @@ export default class GraphQLFactoryTypeGenerator {
 
       // add a timeout to the middleware
       let timeout = setTimeout(() => {
-        this.processResolver(resolver, args, fieldDef, doResolve, doReject)
+        this.processResolver(resolver, args, ctx, doResolve, doReject)
       }, this.definition._middleware.beforeTimeout)
 
       let hooks = this.definition._middleware.before.slice()
@@ -95,7 +98,7 @@ export default class GraphQLFactoryTypeGenerator {
         if (error) return reject(error)
         if (!hooks.length) {
           clearTimeout(timeout)
-          return this.processResolver(resolver, args, fieldDef, doResolve, doReject)
+          return this.processResolver(resolver, args, ctx, doResolve, doReject)
         }
         return hooks[0].apply(ctx, [args, next])
       }

@@ -3771,7 +3771,7 @@ function FactoryArgumentConfig(_this) {
   }
 }
 
-function FactoryFieldConfigMapThunk(_this, fields, rootType, definition) {
+function FactoryFieldConfigMapThunk(_this, fields, rootType) {
   try {
     fields = _$1.omitBy(fields, function (field) {
       var omitFrom = field.omitFrom;
@@ -3796,7 +3796,7 @@ function FactoryFieldConfigMapThunk(_this, fields, rootType, definition) {
           args: _$1.mapValues(args, function (arg) {
             return FactoryArgumentConfig(_this, arg, rootType);
           }),
-          resolve: _this.bindFunction(resolve, definition),
+          resolve: _this.bindFunction(resolve, field),
           deprecationReason: deprecationReason,
           description: description
         };
@@ -3817,7 +3817,7 @@ function FactoryGQLInterfaceType(_this, definition, nameDefault) {
 
     return new _this.graphql.GraphQLInterfaceType({
       name: name || nameDefault,
-      fields: FactoryFieldConfigMapThunk(_this, fields, 'Interface', definition),
+      fields: FactoryFieldConfigMapThunk(_this, fields, 'Interface'),
       resolveType: _this.bindFunction(resolveType, definition),
       description: description
     });
@@ -3858,7 +3858,7 @@ function FactoryGQLObjectType(_this, definition, nameDefault) {
     return new _this.graphql.GraphQLObjectType(_$1.merge({}, definition, {
       name: name || nameDefault,
       interfaces: FactoryInterfacesThunk(_this, interfaces),
-      fields: FactoryFieldConfigMapThunk(_this, fields, 'Object', definition),
+      fields: FactoryFieldConfigMapThunk(_this, fields, 'Object'),
       isTypeOf: _this.bindFunction(isTypeOf, definition),
       description: description
     }));
@@ -3937,6 +3937,9 @@ function FactoryGQLUnionType(_this, definition, nameDefault) {
 
 /*
  * Type generator class
+ * NOTES:
+ *   - Adding to base resolver context done in this.fnContext
+ *   - Adding to individual field resolver context done in processMiddleware ctx variable
  */
 
 var GraphQLFactoryTypeGenerator = function () {
@@ -4007,7 +4010,7 @@ var GraphQLFactoryTypeGenerator = function () {
 
         // add a timeout to the middleware
         var timeout = setTimeout(function () {
-          _this2.processResolver(resolver, args, fieldDef, doResolve, doReject);
+          _this2.processResolver(resolver, args, ctx, doResolve, doReject);
         }, _this2.definition._middleware.beforeTimeout);
 
         var hooks = _this2.definition._middleware.before.slice();
@@ -4016,7 +4019,7 @@ var GraphQLFactoryTypeGenerator = function () {
           if (error) return reject(error);
           if (!hooks.length) {
             clearTimeout(timeout);
-            return _this2.processResolver(resolver, args, fieldDef, doResolve, doReject);
+            return _this2.processResolver(resolver, args, ctx, doResolve, doReject);
           }
           return hooks[0].apply(ctx, [args, next]);
         };

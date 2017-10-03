@@ -9,7 +9,7 @@ export default function FactoryGQLObjectType (_this, definition, nameDefault) {
     return new _this.graphql.GraphQLObjectType(_.merge({}, definition, {
       name: name || nameDefault,
       interfaces: FactoryInterfacesThunk(_this, interfaces),
-      fields: FactoryFieldConfigMapThunk(_this, fields, 'Object', definition),
+      fields: FactoryFieldConfigMapThunk(_this, fields, 'Object'),
       isTypeOf: _this.bindFunction(isTypeOf, definition),
       description
     }))
