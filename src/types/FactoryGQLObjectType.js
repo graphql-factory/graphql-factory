@@ -10,7 +10,7 @@ export default function FactoryGQLObjectType (_this, definition, nameDefault) {
       name: name || nameDefault,
       interfaces: FactoryInterfacesThunk(_this, interfaces),
       fields: FactoryFieldConfigMapThunk(_this, fields, 'Object'),
-      isTypeOf: _this.bindFunction(isTypeOf, definition),
+      isTypeOf: _this.bindFunction(isTypeOf, definition, true),
       description
     }))
   } catch (err) {

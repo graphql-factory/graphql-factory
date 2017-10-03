@@ -7,7 +7,7 @@ export default function FactoryGQLInterfaceType (_this, definition, nameDefault)
     return new _this.graphql.GraphQLInterfaceType({
       name: name || nameDefault,
       fields: FactoryFieldConfigMapThunk(_this, fields, 'Interface'),
-      resolveType: _this.bindFunction(resolveType, definition),
+      resolveType: _this.bindFunction(resolveType, definition, true),
       description
     })
   } catch (err) {

@@ -3796,7 +3796,7 @@ function FactoryFieldConfigMapThunk(_this, fields, rootType) {
           args: _$1.mapValues(args, function (arg) {
             return FactoryArgumentConfig(_this, arg, rootType);
           }),
-          resolve: _this.bindFunction(resolve, field),
+          resolve: _this.bindFunction(resolve, field, false),
           deprecationReason: deprecationReason,
           description: description
         };
@@ -3818,7 +3818,7 @@ function FactoryGQLInterfaceType(_this, definition, nameDefault) {
     return new _this.graphql.GraphQLInterfaceType({
       name: name || nameDefault,
       fields: FactoryFieldConfigMapThunk(_this, fields, 'Interface'),
-      resolveType: _this.bindFunction(resolveType, definition),
+      resolveType: _this.bindFunction(resolveType, definition, true),
       description: description
     });
   } catch (err) {
@@ -3859,7 +3859,7 @@ function FactoryGQLObjectType(_this, definition, nameDefault) {
       name: name || nameDefault,
       interfaces: FactoryInterfacesThunk(_this, interfaces),
       fields: FactoryFieldConfigMapThunk(_this, fields, 'Object'),
-      isTypeOf: _this.bindFunction(isTypeOf, definition),
+      isTypeOf: _this.bindFunction(isTypeOf, definition, true),
       description: description
     }));
   } catch (err) {
@@ -3879,9 +3879,9 @@ function FactoryGQLScalarType(_this, definition, nameDefault) {
     return new _this.graphql.GraphQLScalarType({
       name: name || nameDefault,
       description: description,
-      serialize: _this.bindFunction(serialize, definition),
-      parseValue: _this.bindFunction(parseValue, definition),
-      parseLiteral: _this.bindFunction(parseLiteral, definition)
+      serialize: _this.bindFunction(serialize, definition, true),
+      parseValue: _this.bindFunction(parseValue, definition, true),
+      parseLiteral: _this.bindFunction(parseLiteral, definition, true)
     });
   } catch (err) {
     console.error('GraphQLFactoryError: FactoryGQLScalarType', err);
@@ -3927,7 +3927,7 @@ function FactoryGQLUnionType(_this, definition, nameDefault) {
       types: _$1.map(types, function (type) {
         return _this.resolveType(type);
       }),
-      resolveType: _this.bindFunction(resolveType, definition),
+      resolveType: _this.bindFunction(resolveType, definition, true),
       description: description
     });
   } catch (err) {
@@ -4061,14 +4061,14 @@ var GraphQLFactoryTypeGenerator = function () {
     }
   }, {
     key: 'bindFunction',
-    value: function bindFunction(fn, fieldDef) {
+    value: function bindFunction(fn, fieldDef, ignoreMiddleware) {
       var _this4 = this;
 
       if (!fn) return;
       var resolver = _$1.isFunction(fn) ? fn : this.definition.get('functions["' + fn + '"]');
       if (!_$1.isFunction(resolver)) console.error('GraphQLFactoryError: Could not find resolver function "' + fn + '"');
       return function (source, args, context, info) {
-        return _this4.processMiddleware(resolver, { source: source, args: args, context: context, info: info }, fieldDef);
+        return ignoreMiddleware === true ? resolver.call(Object.assign({}, _this4.fnContext, { fieldDef: fieldDef }), source, args, context, info) : _this4.processMiddleware(resolver, { source: source, args: args, context: context, info: info }, fieldDef);
       };
     }
   }, {

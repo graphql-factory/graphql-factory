@@ -7,7 +7,7 @@ export default function FactoryGQLUnionType (_this, definition, nameDefault) {
     return new _this.graphql.GraphQLUnionType({
       name: name || nameDefault,
       types: _.map(types, (type) => _this.resolveType(type)),
-      resolveType: _this.bindFunction(resolveType, definition),
+      resolveType: _this.bindFunction(resolveType, definition, true),
       description
     })
   } catch (err) {

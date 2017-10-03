@@ -17,7 +17,7 @@ export default function FactoryFieldConfigMapThunk (_this, fields, rootType) {
       return {
         type: _this.resolveType(field, rootType),
         args: _.mapValues(args, (arg) => FactoryArgumentConfig(_this, arg, rootType)),
-        resolve: _this.bindFunction(resolve, field),
+        resolve: _this.bindFunction(resolve, field, false),
         deprecationReason,
         description
       }

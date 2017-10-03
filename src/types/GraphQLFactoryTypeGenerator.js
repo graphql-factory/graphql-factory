@@ -136,12 +136,14 @@ export default class GraphQLFactoryTypeGenerator {
     return hooks[0].apply(ctx, [args, result, next])
   }
 
-  bindFunction (fn, fieldDef) {
+  bindFunction (fn, fieldDef, ignoreMiddleware) {
     if (!fn) return
     let resolver = _.isFunction(fn) ? fn : this.definition.get(`functions["${fn}"]`)
     if (!_.isFunction(resolver)) console.error(`GraphQLFactoryError: Could not find resolver function "${fn}"`)
     return (source, args, context, info) => {
-      return this.processMiddleware(resolver, { source, args, context, info }, fieldDef)
+      return ignoreMiddleware === true
+        ? resolver.call(Object.assign({}, this.fnContext, { fieldDef }), source, args, context, info)
+        : this.processMiddleware(resolver, { source, args, context, info }, fieldDef)
     }
   }
 
