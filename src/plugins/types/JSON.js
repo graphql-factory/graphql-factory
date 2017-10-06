@@ -2,13 +2,13 @@
  * Ported type from https://github.com/taion/graphql-type-json
  */
 
-function identity(value) {
+function identity (value) {
   return value
 }
 
 function parseLiteral (ast) {
-  let boundParseLiteral = parseLiteral.bind(this)
-  let { Kind } = this.graphql
+  const boundParseLiteral = parseLiteral.bind(this)
+  const { Kind } = this.graphql
   switch (ast.kind) {
     case Kind.STRING:
     case Kind.BOOLEAN:
@@ -33,8 +33,8 @@ function parseLiteral (ast) {
 export default {
   type: 'Scalar',
   name: 'JSON',
-  description: 'The `JSON` scalar type represents JSON values as specified by ' +
-  '[ECMA-404](http://www.ecma-international.org/ publications/files/ECMA-ST/ECMA-404.pdf).',
+  description: 'The `JSON` scalar type represents JSON values as specified by '
+  + '[ECMA-404](http://www.ecma-international.org/ publications/files/ECMA-ST/ECMA-404.pdf).',
   serialize: identity,
   parseValue: identity,
   parseLiteral

@@ -1,8 +1,8 @@
 export default function FactoryGQLSchema (_this, definition, nameDefault) {
   try {
-    let { query, mutation, subscription } = definition
+    const { query, mutation, subscription } = definition
 
-    let schema = new _this.graphql.GraphQLSchema({
+    const schema = new _this.graphql.GraphQLSchema({
       query: _this.types[query],
       mutation: _this.types[mutation],
       subscription: _this.types[subscription]
@@ -17,6 +17,11 @@ export default function FactoryGQLSchema (_this, definition, nameDefault) {
 
     return schema
   } catch (err) {
-    console.error('GraphQLFactoryError: FactoryGQLSchema', err)
+    _this.factory.emit('log', {
+      source: 'types',
+      level: 'error',
+      error: new Error('FactoryGQLSchema: ' + err.message),
+      stack: err.stack
+    })
   }
 }

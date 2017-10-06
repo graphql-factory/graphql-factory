@@ -9,6 +9,7 @@
     "url": "git+https://github.com/graphql-factory/graphql-factory.git"
   },
   "scripts": {
+    "lint": "eslint src",
     "build:copybrc": "cp build/.build.babelrc src/.babelrc",
     "build:rmbrc": "rm -f src/.babelrc",
     "buildexample": "npm run build && rollup example/example.js --output example/build.js --format cjs && node example/build.js --harmony",
@@ -25,6 +26,7 @@
   "dependencies": {},
   "devDependencies": {
     "babel-core": "^6.26.0",
+    "babel-eslint": "^8.0.1",
     "babel-plugin-transform-runtime": "^6.23.0",
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-es2015-rollup": "^3.0.0",
@@ -33,6 +35,8 @@
     "babel-runtime": "^6.26.0",
     "chai": "^4.1.2",
     "chalk": "^2.0.1",
+    "eslint": "^4.8.0",
+    "eslint-plugin-babel": "^4.1.2",
     "graphql": "^0.11.6",
     "lodash": "^4.17.4",
     "mocha": "^3.2.0",

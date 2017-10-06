@@ -9,17 +9,18 @@ export default {
     return value
   },
   parseLiteral (ast) {
-    let { GraphQLError, Kind } = this.graphql
+    const { GraphQLError, Kind } = this.graphql
 
     // regex taken from https://github.com/stylesuxx/graphql-custom-types
-    let rx = /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i
+    const rx = /^(([^<>()[\].,;:\s@"]+(\.[^<>()[\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{2,})$/i
 
     if (ast.kind !== Kind.STRING) {
-      throw new GraphQLError('Query error: expected Email to be a string but got a: ' + ast.kind, [ast])
+      throw new GraphQLError('Query error: expected Email to be a '
+        + 'string but got a: ' + ast.kind, [ ast ])
     }
 
     if (!ast.value.match(rx)) {
-      throw new GraphQLError('Query error: invalid Email', [ast])
+      throw new GraphQLError('Query error: invalid Email', [ ast ])
     }
 
     return ast.value

@@ -4,7 +4,7 @@ import FactoryFieldConfigMapThunk from './FactoryFieldConfigMapThunk'
 
 export default function FactoryGQLObjectType (_this, definition, nameDefault) {
   try {
-    let { name, interfaces, fields, isTypeOf, description } = definition
+    const { name, interfaces, fields, isTypeOf, description } = definition
 
     return new _this.graphql.GraphQLObjectType(_.merge({}, definition, {
       name: name || nameDefault,
@@ -14,6 +14,11 @@ export default function FactoryGQLObjectType (_this, definition, nameDefault) {
       description
     }))
   } catch (err) {
-    console.error('GraphQLFactoryError: FactoryGQLObjectType', err)
+    _this.factory.emit('log', {
+      source: 'types',
+      level: 'error',
+      error: new Error('FactoryGQLObjectType: ' + err.message),
+      stack: err.stack
+    })
   }
 }

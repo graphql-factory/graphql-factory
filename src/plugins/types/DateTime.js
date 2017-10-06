@@ -20,17 +20,19 @@ export default {
   serialize: coerceDate,
   parseValue: coerceDate,
   parseLiteral (ast) {
-    let { GraphQLError, Kind } = this.graphql
+    const { GraphQLError, Kind } = this.graphql
 
     if (ast.kind !== Kind.STRING) {
-      throw new GraphQLError('Query error: Can only parse strings to dates but got a: ' + ast.kind, [ast])
+      throw new GraphQLError('Query error: Can only parse strings '
+        + 'to dates but got a: ' + ast.kind, [ ast ])
     }
-    let result = new Date(ast.value)
+    const result = new Date(ast.value)
     if (isNaN(result.getTime())) {
-      throw new GraphQLError('Query error: Invalid date', [ast])
+      throw new GraphQLError('Query error: Invalid date', [ ast ])
     }
     if (ast.value !== result.toJSON()) {
-      throw new GraphQLError('Query error: Invalid date format, only accepts: YYYY-MM-DDTHH:MM:SS.SSSZ', [ast])
+      throw new GraphQLError('Query error: Invalid date format, only '
+        + 'accepts: YYYY-MM-DDTHH:MM:SS.SSSZ', [ ast ])
     }
     return result
   }

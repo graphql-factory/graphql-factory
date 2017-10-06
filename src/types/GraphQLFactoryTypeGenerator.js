@@ -27,9 +27,10 @@ import {
  *   - Adding to individual field resolver context done in processMiddleware ctx variable
  */
 export default class GraphQLFactoryTypeGenerator {
-  constructor (graphql, definition, lib, options) {
+  constructor (graphql, definition, lib, factory) {
     this.graphql = graphql
     this.definition = definition
+    this.factory = factory
     this._types = {}
     this._schemas = {}
     this.typeMap = {
@@ -56,18 +57,28 @@ export default class GraphQLFactoryTypeGenerator {
     })
   }
 
-  /****************************************************************************
-   * Helpers
-   ****************************************************************************/
+
+  /**
+   * Processes middleware
+   * @param resolver
+   * @param args
+   * @param fieldDef
+   * @returns {Promise}
+   */
   processMiddleware (resolver, args, fieldDef) {
     return new Promise((resolve, reject) => {
-      let status = { resolved: false, rejected: false, isFulfilled: false }
+      const status = {
+        resolved: false,
+        rejected: false,
+        isFulfilled: false
+      }
 
-      // create a new resolver context by merging the type context with a new object and the fieldDef
-      let ctx = Object.assign({}, this.fnContext, { fieldDef })
+      // create a new resolver context by merging the
+      // type context with a new object and the fieldDef
+      const ctx = Object.assign({}, this.fnContext, { fieldDef })
 
       // create a reject handler so that reject is only called once
-      let doReject = error => {
+      const doReject = error => {
         if (status.isFulfilled) return
         status.isFulfilled = true
         status.rejected = true
@@ -75,7 +86,7 @@ export default class GraphQLFactoryTypeGenerator {
       }
 
       // create a resolve handler so that resolve is only called once
-      let doResolve = result => {
+      const doResolve = result => {
         if (status.isFulfilled) return
         status.isFulfilled = true
         status.resolved = true
@@ -88,21 +99,21 @@ export default class GraphQLFactoryTypeGenerator {
       }
 
       // add a timeout to the middleware
-      let timeout = setTimeout(() => {
+      const timeout = setTimeout(() => {
         this.processResolver(resolver, args, ctx, doResolve, doReject)
       }, this.definition._middleware.beforeTimeout)
 
       let hooks = this.definition._middleware.before.slice()
-      let next = error => {
+      const next = error => {
         hooks = hooks.splice(1)
         if (error) return reject(error)
         if (!hooks.length) {
           clearTimeout(timeout)
           return this.processResolver(resolver, args, ctx, doResolve, doReject)
         }
-        return hooks[0].apply(ctx, [args, next])
+        return hooks[0].apply(ctx, [ args, next ])
       }
-      return hooks[0].apply(ctx, [args, next])
+      return hooks[0].apply(ctx, [ args, next ])
     })
   }
 
@@ -118,40 +129,54 @@ export default class GraphQLFactoryTypeGenerator {
     if (!this.definition._middleware.after.length) return resolve(result)
 
     // add a timeout to the middleware
-    let timeout = setTimeout(() => {
+    const timeout = setTimeout(() => {
       resolve(result)
     }, this.definition._middleware.afterTimeout)
 
     let hooks = this.definition._middleware.after.slice()
-    let next = (error, res) => {
-      res = res === undefined ? result : res // default to original result if not supplied
+    const next = (error, res) => {
+      const nextResult = res === undefined
+        ? result
+        : res
       hooks = hooks.splice(1)
       if (error) return reject(error)
       if (!hooks.length) {
         clearTimeout(timeout)
-        return resolve(res)
+        return resolve(nextResult)
       }
-      return hooks[0].apply(ctx, [args, res, next])
+      return hooks[0].apply(ctx, [ args, nextResult, next ])
     }
-    return hooks[0].apply(ctx, [args, result, next])
+    return hooks[0].apply(ctx, [ args, result, next ])
   }
 
   bindFunction (fn, fieldDef, ignoreMiddleware) {
     if (!fn) return
-    let resolver = _.isFunction(fn) ? fn : this.definition.get(`functions["${fn}"]`)
-    if (!_.isFunction(resolver)) console.error(`GraphQLFactoryError: Could not find resolver function "${fn}"`)
+    const resolver = _.isFunction(fn)
+      ? fn
+      : this.definition.get(`functions["${fn}"]`)
+    if (!_.isFunction(resolver)) {
+      this.factory.emit('log', {
+        source: 'typeGenerator',
+        level: 'error',
+        error: new Error(`TypeGeneratorError: Could not find resolver function "${fn}"`)
+      })
+    }
     return (source, args, context, info) => {
       return ignoreMiddleware === true
-        ? resolver.call(Object.assign({}, this.fnContext, { fieldDef }), source, args, context, info)
+        ? resolver.call(
+          Object.assign({}, this.fnContext, { fieldDef }), source, args, context, info
+        )
         : this.processMiddleware(resolver, { source, args, context, info }, fieldDef)
     }
   }
 
   makeFieldType (field) {
-    let { type, nullable, primary } = field
-    let isList = _.isArray(type) && type.length > 0
-    let nonNull = nullable === false || primary === true
-    let typeName = isList ? type[0] : type
+    const { type, nullable, primary } = field
+    const isList = _.isArray(type) && type.length > 0
+    const nonNull = nullable === false || primary === true
+    const typeName = isList
+      ? type[0]
+      : type
     let typeObj = null
 
     if (_.has(this.types, `["${typeName}"]`)) typeObj = this.types[typeName]
@@ -160,26 +185,33 @@ export default class GraphQLFactoryTypeGenerator {
     else if (_.has(this.graphql, `["${typeName}"]`)) typeObj = this.graphql[typeName]
     else throw new Error(`invalid type ${typeName}`)
 
-    let gqlType = isList ? new this.graphql.GraphQLList(typeObj) : typeObj
-    return nonNull ? new this.graphql.GraphQLNonNull(gqlType) : gqlType
+    const gqlType = isList
+      ? new this.graphql.GraphQLList(typeObj)
+      : typeObj
+
+    return nonNull
+      ? new this.graphql.GraphQLNonNull(gqlType)
+      : gqlType
   }
 
   resolveType (field, rootType) {
-    field = _.isString(field) || _.isArray(field) ? { type: field } : field
-    let { type } = field
+    const f = _.isString(field) || _.isArray(field)
+      ? { type: field }
+      : field
+    const { type } = f
 
-    if (!type && _.has(field, `["${rootType}"]`)) {
-      return this.makeFieldType(_.merge({}, field, {
-        type: field[rootType]
+    if (!type && _.has(f, `["${rootType}"]`)) {
+      return this.makeFieldType(_.merge({}, f, {
+        type: f[rootType]
       }))
     }
 
-    return this.makeFieldType(field)
+    return this.makeFieldType(f)
   }
 
   makeSchemas () {
     _.forEach(this.definition.schemas, (definition, nameDefault) => {
-      let { name } = definition
+      const { name } = definition
       this._schemas[name || nameDefault] = FactoryGQLSchema(this, definition, nameDefault)
     })
     return this
@@ -187,8 +219,8 @@ export default class GraphQLFactoryTypeGenerator {
 
   makeType (typeToMake) {
     _.forEach(this.definition.types, (definition, nameDefault) => {
-      let { name, type } = definition
-      let useName = name || nameDefault
+      const { name, type } = definition
+      const useName = name || nameDefault
       if (type !== typeToMake) return
 
       switch (type) {
@@ -235,9 +267,6 @@ export default class GraphQLFactoryTypeGenerator {
       .values()
   }
 
-  /****************************************************************************
-   * Getters
-   ****************************************************************************/
   get types () {
     if (_.keys(this._types).length) return this._types
     this.generate()

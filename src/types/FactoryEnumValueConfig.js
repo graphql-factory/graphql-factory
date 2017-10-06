@@ -2,7 +2,9 @@ import _ from '../utils/index'
 
 export default function FactoryEnumValueConfig (_this, val) {
   try {
-    let { value, deprecationReason, description } = _.isObject(val) ? val : { value: val }
+    const { value, deprecationReason, description } = _.isObject(val)
+      ? val
+      : { value: val }
 
     return {
       value,
@@ -10,6 +12,11 @@ export default function FactoryEnumValueConfig (_this, val) {
       description
     }
   } catch (err) {
-    console.error('GraphQLFactoryError: FactoryEnumValueConfig', err)
+    _this.factory.emit('log', {
+      source: 'types',
+      level: 'error',
+      error: new Error('FactoryEnumValueConfig: ' + err.message),
+      stack: err.stack
+    })
   }
 }

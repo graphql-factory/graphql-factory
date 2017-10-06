@@ -1,3 +1,4 @@
+import EventEmitter from 'events'
 import GraphQLFactoryCompiler from './GraphQLFactoryCompiler'
 import GraphQLFactoryDefinition from './GraphQLFactoryDefinition'
 import GraphQLFactoryLibrary from './GraphQLFactoryLibrary'
@@ -12,7 +13,7 @@ function define (definition = {}, options = {}) {
 
 // standalone compiler
 function compile (definition = {}, options = {}) {
-  let { plugin } = options
+  const { plugin } = options
   if (definition instanceof GraphQLFactoryDefinition) {
     return definition.registerPlugin(plugin).compile()
   }
@@ -25,8 +26,9 @@ function compile (definition = {}, options = {}) {
  * @property {ConstantsEnum} constants
  * @property {FactoryUtils} utils - Util functions
  */
-export class GraphQLFactory {
+export class GraphQLFactory extends EventEmitter {
   constructor (graphql) {
+    super()
     /**
      * Compiles a {@link FactoryDefinition}
      * @function compile
@@ -59,10 +61,20 @@ export class GraphQLFactory {
    * @returns {GraphQLFactoryLibrary}
    */
   make (definition = {}, options = {}) {
-    let { plugin, beforeResolve, afterResolve, beforeTimeout, afterTimeout } = options
-    let factoryDef = definition instanceof GraphQLFactoryDefinition
+    const { plugin, beforeResolve, afterResolve, beforeTimeout, afterTimeout } = options
+    const factoryDef = definition instanceof GraphQLFactoryDefinition
       ? definition
       : new GraphQLFactoryDefinition(definition)
+
+    // emit an error event when log-level is error which throws an error
+    this.on('log', ({ level, error }) => {
+      if (level === 'error') this.emit('error', error)
+    })
+
+    // forward definition logs to the main factory emitter
+    factoryDef.on('log', payload => {
+      this.emit('log', payload)
+    })
 
     factoryDef.registerPlugin(plugin)
       .beforeResolve(beforeResolve)
@@ -71,7 +83,7 @@ export class GraphQLFactory {
       .afterTimeout(afterTimeout)
       .compile()
 
-    return new GraphQLFactoryLibrary(this.graphql, factoryDef, options)
+    return new GraphQLFactoryLibrary(this.graphql, factoryDef, this)
   }
 }
 
@@ -90,7 +102,7 @@ export class GraphQLFactory {
  * import GraphQLFactory from 'graphql-factory'
  * let factory = GraphQLFactory(graphql)
  */
-let factory = function (graphql) {
+const factory = function (graphql) {
   return new GraphQLFactory(graphql)
 }
 

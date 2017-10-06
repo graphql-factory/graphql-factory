@@ -2,7 +2,7 @@ import FactoryInputObjectFieldConfigMapThunk from './FactoryInputObjectFieldConf
 
 export default function FactoryGQLInputObjectType (_this, definition, nameDefault) {
   try {
-    let { name, fields, description } = definition
+    const { name, fields, description } = definition
 
     return new _this.graphql.GraphQLInputObjectType({
       name: name || nameDefault,
@@ -10,6 +10,11 @@ export default function FactoryGQLInputObjectType (_this, definition, nameDefaul
       description
     })
   } catch (err) {
-    console.error('GraphQLFactoryError: FactoryInputObjectFieldConfigMapThunk', err)
+    _this.factory.emit('log', {
+      source: 'types',
+      level: 'error',
+      error: new Error('FactoryGQLInputObjectType: ' + err.message),
+      stack: err.stack
+    })
   }
 }

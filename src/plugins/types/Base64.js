@@ -9,10 +9,11 @@ export default {
     return (new Buffer(value)).toString('base64')
   },
   parseLiteral (ast) {
-    let { GraphQLError, Kind } = this.graphql
+    const { GraphQLError, Kind } = this.graphql
 
     if (ast.kind !== Kind.STRING) {
-      throw new GraphQLError('Query error: expected Base64 to be a string but got a: ' + ast.kind, [ast])
+      throw new GraphQLError('Query error: expected Base64 '
+        + 'to be a string but got a: ' + ast.kind, [ ast ])
     }
 
     return (new Buffer(ast.value)).toString('base64')

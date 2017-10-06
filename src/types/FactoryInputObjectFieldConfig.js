@@ -1,7 +1,7 @@
 export default function FactoryInputObjectFieldConfig (_this, field, rootType) {
   try {
-    let { defaultValue, description } = field
-    let type = _this.resolveType(field, rootType)
+    const { defaultValue, description } = field
+    const type = _this.resolveType(field, rootType)
 
     return {
       type,
@@ -9,6 +9,11 @@ export default function FactoryInputObjectFieldConfig (_this, field, rootType) {
       description
     }
   } catch (err) {
-    console.error('GraphQLFactoryError: FactoryInputObjectFieldConfig', err)
+    _this.factory.emit('log', {
+      source: 'types',
+      level: 'error',
+      error: new Error('FactoryInputObjectFieldConfig: ' + err.message),
+      stack: err.stack
+    })
   }
 }

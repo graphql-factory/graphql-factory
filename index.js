@@ -238,6 +238,7 @@ var toConsumableArray = function (arr) {
   }
 };
 
+/* eslint-disable */
 /*
  * lodash (Custom Build) <https://lodash.com/>
  * Build: `lodash modularize exports="npm" -o ./`
@@ -2420,11 +2421,17 @@ function getType(obj) {
   } else if (obj instanceof Enum) {
     return { obj: obj.value, type: ENUM };
   } else if ((typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === STRING) {
-    if (obj.match(RX_BOOLEAN)) return { obj: Boolean(obj.replace(RX_BOOLEAN, '')), type: BOOLEAN };
-    if (obj.match(RX_DATE)) return { obj: new Date(obj.replace(RX_DATE, '')), type: DATE };
-    if (obj.match(RX_ENUM)) return { obj: obj.replace(RX_ENUM, ''), type: ENUM };
-    if (obj.match(RX_FLOAT)) return { obj: obj.replace(RX_FLOAT, ''), type: FLOAT };
-    if (obj.match(RX_INT)) return { obj: obj.replace(RX_INT, ''), type: INT };
+    if (obj.match(RX_BOOLEAN)) {
+      return { obj: Boolean(obj.replace(RX_BOOLEAN, '')), type: BOOLEAN };
+    } else if (obj.match(RX_DATE)) {
+      return { obj: new Date(obj.replace(RX_DATE, '')), type: DATE };
+    } else if (obj.match(RX_ENUM)) {
+      return { obj: obj.replace(RX_ENUM, ''), type: ENUM };
+    } else if (obj.match(RX_FLOAT)) {
+      return { obj: obj.replace(RX_FLOAT, ''), type: FLOAT };
+    } else if (obj.match(RX_INT)) {
+      return { obj: obj.replace(RX_INT, ''), type: INT };
+    }
     return { obj: obj, type: STRING };
   } else if ((typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === BOOLEAN) {
     return { obj: obj, type: BOOLEAN };
@@ -2436,16 +2443,15 @@ function getType(obj) {
     return { obj: obj, type: DATE };
   } else if ((typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === OBJECT) {
     return { obj: obj, type: OBJECT };
-  } else {
-    return { obj: obj, type: UNDEFINED };
   }
+  return { obj: obj, type: UNDEFINED };
 }
 
-var toArguments = function toArguments(obj) {
+var toArguments = function toArguments(object) {
   var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
-  var keepNulls = options.keepNulls === true ? true : false;
-  var noOuterBraces = options.noOuterBraces === true ? true : false;
+  var keepNulls = options.keepNulls === true;
+  var noOuterBraces = options.noOuterBraces === true;
 
   var toLiteral = function toLiteral(o) {
     var _getType = getType(o),
@@ -2457,14 +2463,18 @@ var toArguments = function toArguments(obj) {
         var arrList = [];
         forEach(obj, function (v) {
           var arrVal = toLiteral(v);
-          if (arrVal === NULL && keepNulls || arrVal && arrVal !== NULL) arrList.push(arrVal);
+          if (arrVal === NULL && keepNulls || arrVal && arrVal !== NULL) {
+            arrList.push(arrVal);
+          }
         });
         return '[' + arrList.join(',') + ']';
       case OBJECT:
         var objList = [];
         forEach(obj, function (v, k) {
           var objVal = toLiteral(v);
-          if (objVal === NULL && keepNulls || objVal && objVal !== NULL) objList.push(k + ':' + objVal);
+          if (objVal === NULL && keepNulls || objVal && objVal !== NULL) {
+            objList.push(k + ':' + objVal);
+          }
         });
         return '{' + objList.join(',') + '}';
       case DATE:
@@ -2483,7 +2493,7 @@ var toArguments = function toArguments(obj) {
     }
   };
 
-  var objStr = toLiteral(circular(obj));
+  var objStr = toLiteral(circular(object));
   return noOuterBraces ? objStr.replace(RX_OUTER_BRACES, '') : objStr;
 };
 
@@ -2491,6 +2501,8 @@ toArguments.Enum = Enum;
 toArguments.escapeString = escapeString;
 
 /* lodash like functions to remove dependency on lodash accept lodash.merge */
+function noop() {}
+
 // enum type for use with toObjectString function
 function Enum(value) {
   if (!(this instanceof Enum)) return new Enum(value);
@@ -2557,6 +2569,10 @@ function ensureArray() {
   return isArray(obj) ? obj : [obj];
 }
 
+function castArray(obj) {
+  return ensureArray(obj);
+}
+
 function isEmpty(obj) {
   if (!obj) return true;else if (isArray(obj) && !obj.length) return true;else if (isHash(obj) && !keys(obj).length) return true;
   return false;
@@ -2574,7 +2590,7 @@ function capitalize(str) {
   if (isString(str) && str.length > 0) {
     var first = str[0];
     var rest = str.length > 1 ? str.substring(1) : '';
-    str = [first.toUpperCase(), rest.toLowerCase()].join('');
+    return [first.toUpperCase(), rest.toLowerCase()].join('');
   }
   return str;
 }
@@ -2586,11 +2602,16 @@ function stringToPathArray(pathString) {
 
   if (isString(pathString)) {
     pathString.replace(pathRx, function (match, number, quote, string) {
-      pathArray.push(quote ? string : number !== undefined ? Number(number) : match);
+      var part = quote ? string : number !== undefined ? Number(number) : match;
+      pathArray.push(part);
       return pathArray[pathArray.length - 1];
     });
   }
   return pathArray;
+}
+
+function toPath(pathString) {
+  return stringToPathArray(pathString);
 }
 
 function has(obj, path) {
@@ -2599,7 +2620,8 @@ function has(obj, path) {
   if (fields.length === 0) return false;
   try {
     for (var f in fields) {
-      if (value[fields[f]] === undefined) return false;else value = value[fields[f]];
+      if (value[fields[f]] === undefined) return false;
+      value = value[fields[f]];
     }
   } catch (err) {
     return false;
@@ -2642,7 +2664,7 @@ function forEach(obj, fn) {
       }
     }
   } catch (err) {
-    return;
+    
   }
 }
 
@@ -2669,7 +2691,9 @@ function map(obj, fn) {
   var output = [];
   try {
     for (var key in obj) {
-      output.push(fn(obj[key], key));
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        output.push(fn(obj[key], key));
+      }
     }
   } catch (err) {
     return [];
@@ -2693,7 +2717,11 @@ function remap(obj, fn) {
   var newObj = {};
   forEach(obj, function (v, k) {
     var newMap = fn(v, k);
-    if (has(newMap, 'key') && has(newMap, 'value')) newObj[newMap.key] = newMap.value;else newMap[k] = v;
+    if (has(newMap, 'key') && has(newMap, 'value')) {
+      newObj[newMap.key] = newMap.value;
+    } else {
+      newMap[k] = v;
+    }
   });
   return newObj;
 }
@@ -2720,9 +2748,8 @@ function omit(obj) {
   var omits = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
 
   var newObj = {};
-  omits = ensureArray(omits);
   forEach(obj, function (v, k) {
-    if (!includes(omits, k)) newObj[k] = v;
+    if (!includes(ensureArray(omits), k)) newObj[k] = v;
   });
   return newObj;
 }
@@ -2740,26 +2767,41 @@ function pick(obj) {
   var picks = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
 
   var newObj = {};
-  picks = ensureArray(picks);
   forEach(obj, function (v, k) {
-    if (includes(picks, k)) newObj[k] = v;
+    if (includes(ensureArray(picks), k)) newObj[k] = v;
   });
   return newObj;
 }
 
 function get(obj, path, defaultValue) {
   var value = obj;
-  var fields = isArray(path) ? path : stringToPathArray(path);
+  var fields = isArray(path) ? path : toPath(path);
   if (fields.length === 0) return defaultValue;
 
   try {
     for (var f in fields) {
-      if (value[fields[f]] === undefined) return defaultValue;else value = value[fields[f]];
+      if (value[fields[f]] === undefined) return defaultValue;
+      value = value[fields[f]];
     }
   } catch (err) {
     return defaultValue;
   }
   return value;
+}
+
+function intersection() {
+  var args = [].concat(Array.prototype.slice.call(arguments));
+  if (!args.length) return [];
+
+  return args.reduce(function (prev, cur) {
+    if (!Array.isArray(prev) || !Array.isArray(cur)) return [];
+    var left = new Set(prev);
+    var right = new Set(cur);
+    var i = [].concat(toConsumableArray(left)).filter(function (item) {
+      return right.has(item);
+    });
+    return [].concat(toConsumableArray(i));
+  }, args[0]);
 }
 
 function union() {
@@ -2804,31 +2846,35 @@ function typeOf(obj) {
 }
 
 /*
- * Gets the path of a value by getting the location of the field and traversing the selectionSet
+ * Gets the path of a value by getting the location
+ * of the field and traversing the selectionSet
  */
-function getFieldPath(info, maxDepth) {
-  maxDepth = maxDepth || 50;
+function getFieldPath(info) {
+  var maxDepth = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 50;
 
   var loc = get(info, 'fieldNodes[0].loc') || get(info, 'fieldASTs[0].loc');
   var stackCount = 0;
 
   var traverseFieldPath = function traverseFieldPath(selections, start, end, fieldPath) {
-    fieldPath = fieldPath || [];
+    var fPath = fieldPath || [];
 
     var sel = get(filter(selections, function (s) {
       return s.loc.start <= start && s.loc.end >= end;
     }), '[0]');
+
     if (sel) {
-      fieldPath.push(sel.name.value);
-      if (sel.name.loc.start !== start && sel.name.loc.end !== end && stackCount < maxDepth) {
+      var l = sel.name.loc;
+      fPath.push(sel.name.value);
+      if (l.start !== start && l.end !== end && stackCount < maxDepth) {
         stackCount++;
-        traverseFieldPath(sel.selectionSet.selections, start, end, fieldPath);
+        traverseFieldPath(sel.selectionSet.selections, start, end, fPath);
       }
     }
-    return fieldPath;
+    return fPath;
   };
-  if (!info.operation.selectionSet.selections || isNaN(loc.start) || isNaN(loc.end)) return;
-  return traverseFieldPath(info.operation.selectionSet.selections, loc.start, loc.end);
+  var selections = info.operation.selectionSet.selections;
+  if (!selections || isNaN(loc.start) || isNaN(loc.end)) return;
+  return traverseFieldPath(selections, loc.start, loc.end);
 }
 
 function getSchemaOperation(info) {
@@ -2837,11 +2883,13 @@ function getSchemaOperation(info) {
 }
 
 /*
- * Gets the return type name of a query (returns shortened GraphQL primitive type names)
+ * Gets the return type name of a query
+ * (returns shortened GraphQL primitive type names)
  */
 function getReturnTypeName(info) {
   try {
-    var typeObj = get(getSchemaOperation(info), '_fields["' + info.fieldName + '"].type', {});
+    var p = '_fields["' + info.fieldName + '"].type';
+    var typeObj = get(getSchemaOperation(info), p, {});
 
     while (!typeObj.name) {
       typeObj = typeObj.ofType;
@@ -2849,7 +2897,7 @@ function getReturnTypeName(info) {
     }
     return typeObj.name;
   } catch (err) {
-    console.error(err.message);
+    return null;
   }
 }
 
@@ -2864,7 +2912,7 @@ function getRootFieldDef(info, path) {
 
   //  if a field def cannot be found, try to find it in the extendFields
   if (!fieldDef && has(opDef, 'extendFields')) {
-    forEach(opDef.extendFields, function (v, k) {
+    forEach(opDef.extendFields, function (v) {
       if (has(v, fldPath)) fieldDef = get(v, '["' + fldPath + '"]', {});
     });
   }
@@ -2878,8 +2926,8 @@ function getRootFieldDef(info, path) {
  * to access those variables
  */
 function getTypeConfig(info, path) {
-  path = path ? '_typeConfig.'.concat(path) : '_typeConfig';
-  return get(getSchemaOperation(info), path, {});
+  var p = path ? '_typeConfig.'.concat(path) : '_typeConfig';
+  return get(getSchemaOperation(info), p, {});
 }
 
 // removes circular references
@@ -2893,7 +2941,11 @@ function circular(obj) {
     seen.push(_obj);
     if (isObject(_obj)) {
       forEach(_obj, function (o, i) {
-        if (includes(seen, o)) _obj[i] = isFunction(value) ? value(_obj, key, seen.slice(0)) : value;else circularEx(o, i, seen.slice(0));
+        if (includes(seen, o)) {
+          _obj[i] = isFunction(value) ? value(_obj, key, seen.slice(0)) : value;
+        } else {
+          circularEx(o, i, seen.slice(0));
+        }
       });
     }
     return _obj;
@@ -2923,6 +2975,7 @@ var utils = {};
 var _$1 = Object.freeze({
 	toObjectString: toArguments,
 	merge: merge,
+	noop: noop,
 	Enum: Enum,
 	isBoolean: isBoolean,
 	isEnum: isEnum,
@@ -2937,10 +2990,12 @@ var _$1 = Object.freeze({
 	toLower: toLower,
 	toUpper: toUpper,
 	ensureArray: ensureArray,
+	castArray: castArray,
 	isEmpty: isEmpty,
 	keys: keys,
 	capitalize: capitalize,
 	stringToPathArray: stringToPathArray,
+	toPath: toPath,
 	has: has,
 	forEach: forEach,
 	values: values,
@@ -2954,6 +3009,7 @@ var _$1 = Object.freeze({
 	pickBy: pickBy,
 	pick: pick,
 	get: get,
+	intersection: intersection,
 	union: union,
 	set: set,
 	clone: clone,
@@ -3055,6 +3111,7 @@ var GraphQLFactoryCompiler = function () {
   function GraphQLFactoryCompiler(definition) {
     classCallCheck(this, GraphQLFactoryCompiler);
 
+    this._definition = definition;
     this.definition = definition.clone();
     this.compiled = {
       fields: this.definition.fields || {},
@@ -3091,10 +3148,18 @@ var GraphQLFactoryCompiler = function () {
   }, {
     key: 'normalizeTypes',
     value: function normalizeTypes() {
+      var _this2 = this;
+
       var types = this.compiled.types;
 
       _$1.forEach(this.definition.types, function (_typeDef, name) {
-        if (!_$1.isHash(_typeDef)) return console.error(name + ' type definition is not an object');
+        if (!_$1.isHash(_typeDef)) {
+          _this2._definition.emit('log', {
+            source: 'compiler',
+            level: 'error',
+            error: new Error('CompileError: ' + name + ' type definition is not an object')
+          });
+        }
         var type = _typeDef.type;
 
 
@@ -3121,7 +3186,13 @@ var GraphQLFactoryCompiler = function () {
 
           default:
             _$1.forEach(type, function (multi, mName) {
-              if (mName === OBJECT$1 && !multi) types[name] = { type: mName, _typeDef: _typeDef };else if (mName !== OBJECT$1 && !multi) types['' + name + mName] = { type: mName, _typeDef: _typeDef };else types[multi] = { type: mName, _typeDef: _typeDef };
+              if (mName === OBJECT$1 && !multi) {
+                types[name] = { type: mName, _typeDef: _typeDef };
+              } else if (mName !== OBJECT$1 && !multi) {
+                types['' + name + mName] = { type: mName, _typeDef: _typeDef };
+              } else {
+                types[multi] = { type: mName, _typeDef: _typeDef };
+              }
             });
             break;
         }
@@ -3132,7 +3203,7 @@ var GraphQLFactoryCompiler = function () {
     key: 'mergeBase',
     value: function mergeBase() {
       var fields = this.compiled.fields;
-      _$1.forEach(this.compiled.types, function (definition, n) {
+      _$1.forEach(this.compiled.types, function (definition) {
         var type = definition.type,
             _typeDef = definition._typeDef;
         var extendFields = _typeDef.extendFields;
@@ -3171,8 +3242,8 @@ var GraphQLFactoryCompiler = function () {
           case 'HASH':
             _$1.forEach(extendFields, function (extendDef, name) {
               var ext = _$1.get(fields, '["' + name + '"]', {});
-              _$1.forEach(extendDef, function (field, name) {
-                var config = _$1.get(ext, name);
+              _$1.forEach(extendDef, function (field, fieldName) {
+                var config = _$1.get(ext, fieldName);
                 if (!config) return true;
                 config = normalizeType(config);
                 if (_$1.isArray(field) && field.length > 1) {
@@ -3181,7 +3252,7 @@ var GraphQLFactoryCompiler = function () {
                   });
                   return true;
                 }
-                extendDef[name] = _$1.merge({}, config, normalizeType(field));
+                extendDef[fieldName] = _$1.merge({}, config, normalizeType(field));
               });
               _$1.merge(definition.fields, ext, extendDef);
             });
@@ -3197,8 +3268,8 @@ var GraphQLFactoryCompiler = function () {
     key: 'extendTemplates',
     value: function extendTemplates() {
       _$1.forEach(this.compiled.types, function (definition) {
-        var omits = [];
         var fieldBase = null;
+        var omits = [];
         var fields = definition.fields;
 
         if (!fields) return true;
@@ -3241,9 +3312,18 @@ var GraphQLFactoryCompiler = function () {
                   omitFrom = field.omitFrom;
 
               if (!type) {
-                if (field[definition.type]) definition.fields[name] = normalizeType(field[definition.type]);else omits.push(name);
+                if (field[definition.type]) {
+                  definition.fields[name] = normalizeType(field[definition.type]);
+                } else {
+                  omits.push(name);
+                }
               } else if (omitFrom) {
-                if (_$1.includes(_$1.isArray(omitFrom) ? omitFrom : [omitFrom], definition.type)) omits.push(name);else fields[name] = normalizeArgs(_$1.omit(fields[name], 'omitFrom'));
+                var omit = _$1.isArray(omitFrom) ? omitFrom : [omitFrom];
+                if (_$1.includes(omit, definition.type)) {
+                  omits.push(name);
+                } else {
+                  fields[name] = normalizeArgs(_$1.omit(fields[name], 'omitFrom'));
+                }
               }
               break;
 
@@ -3277,7 +3357,7 @@ var FactoryBase64 = {
 
 
     if (ast.kind !== Kind.STRING) {
-      throw new GraphQLError('Query error: expected Base64 to be a string but got a: ' + ast.kind, [ast]);
+      throw new GraphQLError('Query error: expected Base64 ' + 'to be a string but got a: ' + ast.kind, [ast]);
     }
 
     return new Buffer(ast.value).toString('base64');
@@ -3312,14 +3392,14 @@ var FactoryDateTime = {
 
 
     if (ast.kind !== Kind.STRING) {
-      throw new GraphQLError('Query error: Can only parse strings to dates but got a: ' + ast.kind, [ast]);
+      throw new GraphQLError('Query error: Can only parse strings ' + 'to dates but got a: ' + ast.kind, [ast]);
     }
     var result = new Date(ast.value);
     if (isNaN(result.getTime())) {
       throw new GraphQLError('Query error: Invalid date', [ast]);
     }
     if (ast.value !== result.toJSON()) {
-      throw new GraphQLError('Query error: Invalid date format, only accepts: YYYY-MM-DDTHH:MM:SS.SSSZ', [ast]);
+      throw new GraphQLError('Query error: Invalid date format, only ' + 'accepts: YYYY-MM-DDTHH:MM:SS.SSSZ', [ast]);
     }
     return result;
   }
@@ -3342,10 +3422,10 @@ var FactoryEmail = {
 
     // regex taken from https://github.com/stylesuxx/graphql-custom-types
 
-    var rx = /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
+    var rx = /^(([^<>()[\].,;:\s@"]+(\.[^<>()[\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{2,})$/i;
 
     if (ast.kind !== Kind.STRING) {
-      throw new GraphQLError('Query error: expected Email to be a string but got a: ' + ast.kind, [ast]);
+      throw new GraphQLError('Query error: expected Email to be a ' + 'string but got a: ' + ast.kind, [ast]);
     }
 
     if (!ast.value.match(rx)) {
@@ -3416,10 +3496,10 @@ var FactoryURL = {
 
     // regex taken from https://github.com/stylesuxx/graphql-custom-types
 
-    var rx = new RegExp('^(?:(?:https?|ftp)://)(?:\\S+(?::\\S*)?@)?(?:(?!(?:10|127)(?:\\.\\d{1,3}){3})(?!(?:169\\.254|192\\.168)(?:\\.\\d{1,3}){2})(?!172\\.(?:1[6-9]|2\\d|3[0-1])(?:\\.\\d{1,3}){2})(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}(?:\\.(?:[1-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)(?:\\.(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)*(?:\\.(?:[a-z\\u00a1-\\uffff]{2,}))\\.?)(?::\\d{2,5})?(?:[/?#]\\S*)?$', 'i');
+    var rx = new RegExp('^(?:(?:https?|ftp)://)(?:\\S+(?::\\S*)?@)?' + '(?:(?!(?:10|127)(?:\\.\\d{1,3}){3})(?!(?:169\\.254|192\\.168)' + '(?:\\.\\d{1,3}){2})(?!172\\.(?:1[6-9]|2\\d|3[0-1])(?:\\.\\d{1,3})' + '{2})(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|' + '2[0-4]\\d|25[0-5])){2}(?:\\.(?:[1-9]\\d?|1\\d\\d|2[0-4]\\d|25' + '[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)' + '(?:\\.(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)*' + '(?:\\.(?:[a-z\\u00a1-\\uffff]{2,}))\\.?)(?::\\d{2,5})?(?:[/?#]\\S*)' + '?$', 'i');
 
     if (ast.kind !== Kind.STRING) {
-      throw new GraphQLError('Query error: expected URL to be a string but got a: ' + ast.kind, [ast]);
+      throw new GraphQLError('Query error: expected URL to be a ' + 'string but got a: ' + ast.kind, [ast]);
     }
 
     if (!ast.value.match(rx)) {
@@ -3447,11 +3527,16 @@ var factoryPlugins = {
 
 var DEFAULT_MIDDLEWARE_TIMEOUT = 5000;
 
-var GraphQLFactoryDefinition = function () {
+var GraphQLFactoryDefinition = function (_EventEmitter) {
+  inherits(GraphQLFactoryDefinition, _EventEmitter);
+
   function GraphQLFactoryDefinition() {
     var definition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
     var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
     classCallCheck(this, GraphQLFactoryDefinition);
+
+    var _this = possibleConstructorReturn(this, (GraphQLFactoryDefinition.__proto__ || Object.getPrototypeOf(GraphQLFactoryDefinition)).call(this));
+
     var plugin = options.plugin;
     var globals = definition.globals,
         fields = definition.fields,
@@ -3460,20 +3545,21 @@ var GraphQLFactoryDefinition = function () {
         schemas = definition.schemas,
         externalTypes = definition.externalTypes;
 
-    this.globals = globals || {};
-    this.fields = fields || {};
-    this.functions = functions || {};
-    this.types = types || {};
-    this.schemas = schemas || {};
-    this.externalTypes = externalTypes || {};
-    this.pluginRegistry = {};
-    this._middleware = {
+    _this.globals = globals || {};
+    _this.fields = fields || {};
+    _this.functions = functions || {};
+    _this.types = types || {};
+    _this.schemas = schemas || {};
+    _this.externalTypes = externalTypes || {};
+    _this.pluginRegistry = {};
+    _this._middleware = {
       before: [],
       after: [],
       beforeTimeout: DEFAULT_MIDDLEWARE_TIMEOUT,
       afterTimeout: DEFAULT_MIDDLEWARE_TIMEOUT
     };
-    this.registerPlugin(plugin);
+    _this.registerPlugin(plugin);
+    return _this;
   }
 
   createClass(GraphQLFactoryDefinition, [{
@@ -3487,8 +3573,9 @@ var GraphQLFactoryDefinition = function () {
           schemas = definition.schemas,
           externalTypes = definition.externalTypes;
 
+      // assign is used to prevent overwriting instantiated classes
 
-      Object.assign(this.globals, globals || {}); // assign is used to prevent overwriting instantiated classes
+      Object.assign(this.globals, globals || {});
       _$1.merge(this.fields, fields || {});
       _$1.merge(this.functions, functions || {});
       _$1.merge(this.types, types || {});
@@ -3499,68 +3586,81 @@ var GraphQLFactoryDefinition = function () {
   }, {
     key: 'registerPlugin',
     value: function registerPlugin() {
-      var _this = this;
+      var _this2 = this;
 
       var plugins = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
 
       _$1.forEach(_$1.ensureArray(plugins), function (plugin) {
+        var p = plugin;
         // first check for included plugins that can be specified by their string name
         if (_$1.isString(plugin) && plugin) {
           if (factoryPlugins[plugin]) {
-            plugin = factoryPlugins[plugin];
+            p = factoryPlugins[plugin];
           } else {
-            console.error('GraphQLFactoryError: Plugin "' + plugin + '" not found');
+            _this2.emit('log', {
+              source: 'types',
+              level: 'error',
+              error: new Error('DefinitionError: Plugin "' + p + '" not found')
+            });
             return true;
           }
         }
 
-        var name = _$1.get(plugin, 'name', 'unnamedPlugin' + _$1.keys(_this.pluginRegistry).length);
-        _this.pluginRegistry[name] = plugin;
-        _this.merge(plugin);
-        if (_$1.isFunction(plugin.install)) plugin.install(_this);
+        var name = _$1.get(p, 'name', 'unnamedPlugin' + _$1.keys(_this2.pluginRegistry).length);
+        _this2.pluginRegistry[name] = p;
+        _this2.merge(p);
+        if (_$1.isFunction(p.install)) p.install(_this2);
       });
       return this;
     }
   }, {
     key: 'beforeResolve',
     value: function beforeResolve(middleware) {
-      var _this2 = this;
+      var _this3 = this;
 
       _$1.forEach(_$1.ensureArray(middleware), function (mw) {
-        if (_$1.isFunction(mw)) _this2._middleware.before = _$1.union(_this2._middleware.before, [mw]);
+        if (_$1.isFunction(mw)) {
+          _this3._middleware.before = _$1.union(_this3._middleware.before, [mw]);
+        }
       });
       return this;
     }
   }, {
     key: 'afterResolve',
     value: function afterResolve(middleware) {
-      var _this3 = this;
+      var _this4 = this;
 
       _$1.forEach(_$1.ensureArray(middleware), function (mw) {
-        if (_$1.isFunction(mw)) _this3._middleware.after = _$1.union(_this3._middleware.after, [mw]);
+        if (_$1.isFunction(mw)) {
+          _this4._middleware.after = _$1.union(_this4._middleware.after, [mw]);
+        }
       });
       return this;
     }
   }, {
     key: 'beforeTimeout',
     value: function beforeTimeout(timeout) {
-      if (_$1.isNumber(timeout)) this._middleware.beforeTimeout = Math.ceil(timeout);
+      if (_$1.isNumber(timeout)) {
+        this._middleware.beforeTimeout = Math.ceil(timeout);
+      }
       return this;
     }
   }, {
     key: 'afterTimeout',
     value: function afterTimeout(timeout) {
-      if (_$1.isNumber(timeout)) this._middleware.afterTimeout = Math.ceil(timeout);
+      if (_$1.isNumber(timeout)) {
+        this._middleware.afterTimeout = Math.ceil(timeout);
+      }
       return this;
     }
   }, {
     key: 'processDefinitionHooks',
     value: function processDefinitionHooks() {
-      var _this4 = this;
+      var _this5 = this;
 
       _$1.forEach(this.pluginRegistry, function (plugin) {
         var hook = _$1.get(plugin, 'hooks.definition');
-        if (_$1.isFunction(hook)) hook(_this4);
+        if (_$1.isFunction(hook)) hook(_this5);
       });
       return this;
     }
@@ -3649,7 +3749,7 @@ var GraphQLFactoryDefinition = function () {
     }
   }]);
   return GraphQLFactoryDefinition;
-}();
+}(EventEmitter);
 
 function FactoryEnumValueConfig(_this, val) {
   try {
@@ -3664,7 +3764,12 @@ function FactoryEnumValueConfig(_this, val) {
       description: description
     };
   } catch (err) {
-    console.error('GraphQLFactoryError: FactoryEnumValueConfig', err);
+    _this.factory.emit('log', {
+      source: 'types',
+      level: 'error',
+      error: new Error('FactoryEnumValueConfig: ' + err.message),
+      stack: err.stack
+    });
   }
 }
 
@@ -3674,7 +3779,12 @@ function FactoryEnumValueConfigMap(_this, values) {
       return FactoryEnumValueConfig(_this, value);
     });
   } catch (err) {
-    console.error('GraphQLFactoryError: FactoryEnumValueConfigMap', err);
+    _this.factory.emit('log', {
+      source: 'types',
+      level: 'error',
+      error: new Error('FactoryEnumValueConfigMap: ' + err.message),
+      stack: err.stack
+    });
   }
 }
 
@@ -3691,7 +3801,12 @@ function FactoryGQLEnumType(_this, definition, nameDefault) {
       description: description
     });
   } catch (err) {
-    console.error('GraphQLFactoryError: FactoryGQLEnumType', err);
+    _this.factory.emit('log', {
+      source: 'types',
+      level: 'error',
+      error: new Error('FactoryGQLEnumType: ' + err.message),
+      stack: err.stack
+    });
   }
 }
 
@@ -3708,27 +3823,37 @@ function FactoryInputObjectFieldConfig(_this, field, rootType) {
       description: description
     };
   } catch (err) {
-    console.error('GraphQLFactoryError: FactoryInputObjectFieldConfig', err);
+    _this.factory.emit('log', {
+      source: 'types',
+      level: 'error',
+      error: new Error('FactoryInputObjectFieldConfig: ' + err.message),
+      stack: err.stack
+    });
   }
 }
 
 function FactoryInputObjectFieldConfigMapThunk(_this, fields, rootType) {
   try {
-    fields = _$1.omitBy(fields, function (field) {
+    var f = _$1.omitBy(fields, function (field) {
       var omitFrom = field.omitFrom;
 
       return omitFrom && (_$1.includes(omitFrom, rootType) || omitFrom === rootType);
     });
 
-    if (!_$1.keys(fields).length) return;
+    if (!_$1.keys(f).length) return;
 
     return function () {
-      return _$1.mapValues(fields, function (field) {
+      return _$1.mapValues(f, function (field) {
         return FactoryInputObjectFieldConfig(_this, field, rootType);
       });
     };
   } catch (err) {
-    console.error('GraphQLFactoryError: FactoryInputObjectFieldConfigMapThunk:', err);
+    _this.factory.emit('log', {
+      source: 'types',
+      level: 'error',
+      error: new Error('FactoryInputObjectFieldConfigMapThunk: ' + err.message),
+      stack: err.stack
+    });
   }
 }
 
@@ -3745,7 +3870,12 @@ function FactoryGQLInputObjectType(_this, definition, nameDefault) {
       description: description
     });
   } catch (err) {
-    console.error('GraphQLFactoryError: FactoryInputObjectFieldConfigMapThunk', err);
+    _this.factory.emit('log', {
+      source: 'types',
+      level: 'error',
+      error: new Error('FactoryGQLInputObjectType: ' + err.message),
+      stack: err.stack
+    });
   }
 }
 
@@ -3754,12 +3884,11 @@ function FactoryArgumentConfig(_this) {
   var rootType = arguments[2];
 
   try {
-    arg = _$1.isString(arg) || _$1.isArray(arg) ? { type: arg } : arg;
-    var _arg = arg,
-        defaultValue = _arg.defaultValue,
-        description = _arg.description;
+    var a = _$1.isString(arg) || _$1.isArray(arg) ? { type: arg } : arg;
+    var defaultValue = a.defaultValue,
+        description = a.description;
 
-    var type = _this.resolveType(arg, rootType);
+    var type = _this.resolveType(a, rootType);
 
     return {
       type: type,
@@ -3767,43 +3896,52 @@ function FactoryArgumentConfig(_this) {
       description: description
     };
   } catch (err) {
-    console.error('GraphQLFactoryError: FactoryArgumentConfig', err);
+    _this.factory.emit('log', {
+      source: 'types',
+      level: 'error',
+      error: new Error('FactoryArgumentConfig: ' + err.message),
+      stack: err.stack
+    });
   }
 }
 
 function FactoryFieldConfigMapThunk(_this, fields, rootType) {
   try {
-    fields = _$1.omitBy(fields, function (field) {
+    var flds = _$1.omitBy(fields, function (field) {
       var omitFrom = field.omitFrom;
 
       return omitFrom && (_$1.includes(omitFrom, rootType) || omitFrom === rootType);
     });
 
-    if (!_$1.keys(fields).length) return;
+    if (!_$1.keys(flds).length) return;
 
     return function () {
-      return _$1.mapValues(fields, function (field) {
-        field = !_$1.has(field, 'type') && _$1.has(field, rootType) ? field[rootType] : field;
-        var _field = field,
-            args = _field.args,
-            resolve = _field.resolve,
-            deprecationReason = _field.deprecationReason,
-            description = _field.description;
+      return _$1.mapValues(flds, function (field) {
+        var f = !_$1.has(field, 'type') && _$1.has(field, rootType) ? field[rootType] : field;
+        var args = field.args,
+            resolve = field.resolve,
+            deprecationReason = field.deprecationReason,
+            description = field.description;
 
 
         return {
-          type: _this.resolveType(field, rootType),
+          type: _this.resolveType(f, rootType),
           args: _$1.mapValues(args, function (arg) {
             return FactoryArgumentConfig(_this, arg, rootType);
           }),
-          resolve: _this.bindFunction(resolve, field, false),
+          resolve: _this.bindFunction(resolve, f, false),
           deprecationReason: deprecationReason,
           description: description
         };
       });
     };
   } catch (err) {
-    console.error('GraphQLFactoryError: FactoryFieldConfigMapThunk', err);
+    _this.factory.emit('log', {
+      source: 'types',
+      level: 'error',
+      error: new Error('FactoryFieldConfigMapThunk: ' + err.message),
+      stack: err.stack
+    });
   }
 }
 
@@ -3822,7 +3960,12 @@ function FactoryGQLInterfaceType(_this, definition, nameDefault) {
       description: description
     });
   } catch (err) {
-    console.error('GraphQLFactoryError: FactoryGQLInterfaceType', err);
+    _this.factory.emit('log', {
+      source: 'types',
+      level: 'error',
+      error: new Error('FactoryGQLInterfaceType: ' + err.message),
+      stack: err.stack
+    });
   }
 }
 
@@ -3842,7 +3985,12 @@ function FactoryInterfacesThunk(_this) {
       return thunk;
     } : undefined;
   } catch (err) {
-    console.error('GraphQLFactoryError: FactoryInterfacesThunk', err);
+    _this.factory.emit('log', {
+      source: 'types',
+      level: 'error',
+      error: new Error('FactoryInterfacesThunk: ' + err.message),
+      stack: err.stack
+    });
   }
 }
 
@@ -3863,7 +4011,12 @@ function FactoryGQLObjectType(_this, definition, nameDefault) {
       description: description
     }));
   } catch (err) {
-    console.error('GraphQLFactoryError: FactoryGQLObjectType', err);
+    _this.factory.emit('log', {
+      source: 'types',
+      level: 'error',
+      error: new Error('FactoryGQLObjectType: ' + err.message),
+      stack: err.stack
+    });
   }
 }
 
@@ -3884,7 +4037,12 @@ function FactoryGQLScalarType(_this, definition, nameDefault) {
       parseLiteral: _this.bindFunction(parseLiteral, definition, true)
     });
   } catch (err) {
-    console.error('GraphQLFactoryError: FactoryGQLScalarType', err);
+    _this.factory.emit('log', {
+      source: 'types',
+      level: 'error',
+      error: new Error('FactoryGQLScalarType: ' + err.message),
+      stack: err.stack
+    });
   }
 }
 
@@ -3910,7 +4068,12 @@ function FactoryGQLSchema(_this, definition, nameDefault) {
 
     return schema;
   } catch (err) {
-    console.error('GraphQLFactoryError: FactoryGQLSchema', err);
+    _this.factory.emit('log', {
+      source: 'types',
+      level: 'error',
+      error: new Error('FactoryGQLSchema: ' + err.message),
+      stack: err.stack
+    });
   }
 }
 
@@ -3931,7 +4094,12 @@ function FactoryGQLUnionType(_this, definition, nameDefault) {
       description: description
     });
   } catch (err) {
-    console.error('GraphQLFactoryError: FactoryGQLUnionType', err);
+    _this.factory.emit('log', {
+      source: 'types',
+      level: 'error',
+      error: new Error('FactoryGQLUnionType: ' + err.message),
+      stack: err.stack
+    });
   }
 }
 
@@ -3943,7 +4111,7 @@ function FactoryGQLUnionType(_this, definition, nameDefault) {
  */
 
 var GraphQLFactoryTypeGenerator = function () {
-  function GraphQLFactoryTypeGenerator(graphql, definition, lib, options) {
+  function GraphQLFactoryTypeGenerator(graphql, definition, lib, factory) {
     var _typeMap,
         _this = this;
 
@@ -3951,6 +4119,7 @@ var GraphQLFactoryTypeGenerator = function () {
 
     this.graphql = graphql;
     this.definition = definition;
+    this.factory = factory;
     this._types = {};
     this._schemas = {};
     this.typeMap = (_typeMap = {}, defineProperty(_typeMap, BOOLEAN$1, graphql.GraphQLBoolean), defineProperty(_typeMap, FLOAT$1, graphql.GraphQLFloat), defineProperty(_typeMap, ID, graphql.GraphQLID), defineProperty(_typeMap, INT$1, graphql.GraphQLInt), defineProperty(_typeMap, STRING$1, graphql.GraphQLString), _typeMap);
@@ -3971,9 +4140,13 @@ var GraphQLFactoryTypeGenerator = function () {
     });
   }
 
-  /****************************************************************************
-   * Helpers
-   ****************************************************************************/
+  /**
+   * Processes middleware
+   * @param resolver
+   * @param args
+   * @param fieldDef
+   * @returns {Promise}
+   */
 
 
   createClass(GraphQLFactoryTypeGenerator, [{
@@ -3982,9 +4155,13 @@ var GraphQLFactoryTypeGenerator = function () {
       var _this2 = this;
 
       return new Promise(function (resolve, reject) {
-        var status = { resolved: false, rejected: false, isFulfilled: false
+        var status = {
+          resolved: false,
+          rejected: false,
+          isFulfilled: false
 
-          // create a new resolver context by merging the type context with a new object and the fieldDef
+          // create a new resolver context by merging the
+          // type context with a new object and the fieldDef
         };var ctx = Object.assign({}, _this2.fnContext, { fieldDef: fieldDef });
 
         // create a reject handler so that reject is only called once
@@ -4048,14 +4225,14 @@ var GraphQLFactoryTypeGenerator = function () {
 
       var hooks = this.definition._middleware.after.slice();
       var next = function next(error, res) {
-        res = res === undefined ? result : res; // default to original result if not supplied
+        var nextResult = res === undefined ? result : res;
         hooks = hooks.splice(1);
         if (error) return reject(error);
         if (!hooks.length) {
           clearTimeout(timeout);
-          return resolve(res);
+          return resolve(nextResult);
         }
-        return hooks[0].apply(ctx, [args, res, next]);
+        return hooks[0].apply(ctx, [args, nextResult, next]);
       };
       return hooks[0].apply(ctx, [args, result, next]);
     }
@@ -4066,7 +4243,13 @@ var GraphQLFactoryTypeGenerator = function () {
 
       if (!fn) return;
       var resolver = _$1.isFunction(fn) ? fn : this.definition.get('functions["' + fn + '"]');
-      if (!_$1.isFunction(resolver)) console.error('GraphQLFactoryError: Could not find resolver function "' + fn + '"');
+      if (!_$1.isFunction(resolver)) {
+        this.factory.emit('log', {
+          source: 'typeGenerator',
+          level: 'error',
+          error: new Error('TypeGeneratorError: Could not find resolver function "' + fn + '"')
+        });
+      }
       return function (source, args, context, info) {
         return ignoreMiddleware === true ? resolver.call(Object.assign({}, _this4.fnContext, { fieldDef: fieldDef }), source, args, context, info) : _this4.processMiddleware(resolver, { source: source, args: args, context: context, info: info }, fieldDef);
       };
@@ -4086,23 +4269,23 @@ var GraphQLFactoryTypeGenerator = function () {
       if (_$1.has(this.types, '["' + typeName + '"]')) typeObj = this.types[typeName];else if (_$1.has(this.typeMap, '["' + typeName + '"]')) typeObj = this.typeMap[typeName];else if (this.definition.hasExtType(typeName)) typeObj = this.definition.getExtType(typeName);else if (_$1.has(this.graphql, '["' + typeName + '"]')) typeObj = this.graphql[typeName];else throw new Error('invalid type ' + typeName);
 
       var gqlType = isList ? new this.graphql.GraphQLList(typeObj) : typeObj;
+
       return nonNull ? new this.graphql.GraphQLNonNull(gqlType) : gqlType;
     }
   }, {
     key: 'resolveType',
     value: function resolveType(field, rootType) {
-      field = _$1.isString(field) || _$1.isArray(field) ? { type: field } : field;
-      var _field = field,
-          type = _field.type;
+      var f = _$1.isString(field) || _$1.isArray(field) ? { type: field } : field;
+      var type = f.type;
 
 
-      if (!type && _$1.has(field, '["' + rootType + '"]')) {
-        return this.makeFieldType(_$1.merge({}, field, {
-          type: field[rootType]
+      if (!type && _$1.has(f, '["' + rootType + '"]')) {
+        return this.makeFieldType(_$1.merge({}, f, {
+          type: f[rootType]
         }));
       }
 
-      return this.makeFieldType(field);
+      return this.makeFieldType(f);
     }
   }, {
     key: 'makeSchemas',
@@ -4166,11 +4349,6 @@ var GraphQLFactoryTypeGenerator = function () {
     value: function generate() {
       return this.makeType(ENUM$1).makeType(SCALAR).makeType(INPUT).makeType(OBJECT$1).makeType(INTERFACE).makeType(UNION).makeSchemas().values();
     }
-
-    /****************************************************************************
-     * Getters
-     ****************************************************************************/
-
   }, {
     key: 'types',
     get: function get() {
@@ -4192,14 +4370,12 @@ var GraphQLFactoryTypeGenerator = function () {
 var GraphQLFactoryLibrary = function (_EventEmitter) {
   inherits(GraphQLFactoryLibrary, _EventEmitter);
 
-  function GraphQLFactoryLibrary(graphql, definition, options) {
+  function GraphQLFactoryLibrary(graphql, definition, _factory) {
     classCallCheck(this, GraphQLFactoryLibrary);
 
     var _this = possibleConstructorReturn(this, (GraphQLFactoryLibrary.__proto__ || Object.getPrototypeOf(GraphQLFactoryLibrary)).call(this));
 
-    options = _$1.isHash(options) ? options : {};
-
-    var _ref = new GraphQLFactoryTypeGenerator(graphql, definition, _this, options),
+    var _ref = new GraphQLFactoryTypeGenerator(graphql, definition, _this, _factory),
         types = _ref.types,
         schemas = _ref.schemas;
 
@@ -4217,6 +4393,9 @@ var GraphQLFactoryLibrary = function (_EventEmitter) {
       _this[name] = function (requestString, rootValue, contextValue, variableValues, operationName) {
         return graphql.graphql(schema, requestString, rootValue, contextValue, variableValues, operationName);
       };
+
+      // add the schema to the function to make it easily accessible
+      _this[name].schema = schema;
     });
     return _this;
   }
@@ -4250,7 +4429,9 @@ function compile() {
  * @property {ConstantsEnum} constants
  * @property {FactoryUtils} utils - Util functions
  */
-var GraphQLFactory$1 = function () {
+var GraphQLFactory$1 = function (_EventEmitter) {
+  inherits(GraphQLFactory, _EventEmitter);
+
   function GraphQLFactory(graphql) {
     classCallCheck(this, GraphQLFactory);
 
@@ -4262,8 +4443,10 @@ var GraphQLFactory$1 = function () {
      * @param {String|Array} options.plugin - Plugin or array of plugins
      * @returns {GraphQLFactoryDefinition}
      */
-    this.compile = compile;
-    this.constants = constants;
+    var _this = possibleConstructorReturn(this, (GraphQLFactory.__proto__ || Object.getPrototypeOf(GraphQLFactory)).call(this));
+
+    _this.compile = compile;
+    _this.constants = constants;
 
     /**
      * Creates an un-compiled {@link FactoryDefinition}
@@ -4273,9 +4456,10 @@ var GraphQLFactory$1 = function () {
      * @param {String|Array} options.plugin - Plugin or array of plugins
      * @returns {GraphQLFactoryDefinition}
      */
-    this.define = define;
-    this.graphql = graphql;
-    this.utils = _$1;
+    _this.define = define;
+    _this.graphql = graphql;
+    _this.utils = _$1;
+    return _this;
   }
 
   /**
@@ -4290,6 +4474,8 @@ var GraphQLFactory$1 = function () {
   createClass(GraphQLFactory, [{
     key: 'make',
     value: function make() {
+      var _this2 = this;
+
       var definition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
       var plugin = options.plugin,
@@ -4300,13 +4486,26 @@ var GraphQLFactory$1 = function () {
 
       var factoryDef = definition instanceof GraphQLFactoryDefinition ? definition : new GraphQLFactoryDefinition(definition);
 
+      // emit an error event when log-level is error which throws an error
+      this.on('log', function (_ref) {
+        var level = _ref.level,
+            error = _ref.error;
+
+        if (level === 'error') _this2.emit('error', error);
+      });
+
+      // forward definition logs to the main factory emitter
+      factoryDef.on('log', function (payload) {
+        _this2.emit('log', payload);
+      });
+
       factoryDef.registerPlugin(plugin).beforeResolve(beforeResolve).beforeTimeout(beforeTimeout).afterResolve(afterResolve).afterTimeout(afterTimeout).compile();
 
-      return new GraphQLFactoryLibrary(this.graphql, factoryDef, options);
+      return new GraphQLFactoryLibrary(this.graphql, factoryDef, this);
     }
   }]);
   return GraphQLFactory;
-}();
+}(EventEmitter);
 
 /**
  * Create a new instance of graphql-factory
