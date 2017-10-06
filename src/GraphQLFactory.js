@@ -61,14 +61,27 @@ export class GraphQLFactory extends EventEmitter {
    * @returns {GraphQLFactoryLibrary}
    */
   make (definition = {}, options = {}) {
-    const { plugin, beforeResolve, afterResolve, beforeTimeout, afterTimeout } = options
+    const {
+      plugin,
+      beforeResolve,
+      afterResolve,
+      beforeTimeout,
+      afterTimeout,
+      logger
+    } = options
+
     const factoryDef = definition instanceof GraphQLFactoryDefinition
       ? definition
       : new GraphQLFactoryDefinition(definition)
 
+    const _logger = typeof logger === 'object'
+      ? logger
+      : {}
+
     // emit an error event when log-level is error which throws an error
-    this.on('log', ({ level, error }) => {
-      if (level === 'error') this.emit('error', error)
+    this.on('log', log => {
+      if (typeof _logger[log.level] === 'function') _logger[log.level](log)
+      if (log.level === 'error') this.emit('error', log.error)
     })
 
     // forward definition logs to the main factory emitter

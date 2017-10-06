@@ -4482,16 +4482,18 @@ var GraphQLFactory$1 = function (_EventEmitter) {
           beforeResolve = options.beforeResolve,
           afterResolve = options.afterResolve,
           beforeTimeout = options.beforeTimeout,
-          afterTimeout = options.afterTimeout;
+          afterTimeout = options.afterTimeout,
+          logger = options.logger;
+
 
       var factoryDef = definition instanceof GraphQLFactoryDefinition ? definition : new GraphQLFactoryDefinition(definition);
 
-      // emit an error event when log-level is error which throws an error
-      this.on('log', function (_ref) {
-        var level = _ref.level,
-            error = _ref.error;
+      var _logger = (typeof logger === 'undefined' ? 'undefined' : _typeof(logger)) === 'object' ? logger : {};
 
-        if (level === 'error') _this2.emit('error', error);
+      // emit an error event when log-level is error which throws an error
+      this.on('log', function (log) {
+        if (typeof _logger[log.level] === 'function') _logger[log.level](log);
+        if (log.level === 'error') _this2.emit('error', log.error);
       });
 
       // forward definition logs to the main factory emitter
