@@ -3123,7 +3123,98 @@ var GraphQLFactoryCompiler = function () {
   createClass(GraphQLFactoryCompiler, [{
     key: 'compile',
     value: function compile() {
-      return this.moveSchema().normalizeTypes().mergeBase().extendTemplates().conditionalTypes().value();
+      return this.moveSchema().normalizeTypes().mergeBase().extendTemplates().conditionalTypes().validate().value();
+    }
+  }, {
+    key: 'validateTypeFields',
+    value: function validateTypeFields(msg, typeDef, typeName) {
+      var _this = this;
+
+      var foundErrors = false;
+
+      if (_$1.get(typeDef, 'type') !== 'Object') return false;
+
+      if (!_$1.isHash(_$1.get(typeDef, 'fields'))) {
+        foundErrors = true;
+        this._definition.emit('log', {
+          source: 'compiler',
+          level: 'error',
+          error: new Error('CompileError: ' + msg + ' type "' + typeName + '" has no definition')
+        });
+        return true;
+      }
+
+      _$1.forEach(typeDef.fields, function (fieldDef, fieldName) {
+        if (!_$1.get(fieldDef, 'type')) {
+          foundErrors = true;
+          _this._definition.emit('log', {
+            source: 'compiler',
+            level: 'error',
+            error: new Error('CompileError: ' + msg + '" type "' + typeName + '" field "' + fieldName + '" has no type')
+          });
+          return true;
+        } else if (_$1.get(fieldDef, 'args')) {
+          // attempt to normalize the args first, this will be the only
+          // mutation to the definition during validation
+          normalizeArgs(fieldDef);
+          _$1.forEach(fieldDef.args, function (argDef, argName) {
+
+            if (!_$1.get(argDef, 'type')) {
+              foundErrors = true;
+              _this._definition.emit('log', {
+                source: 'compiler',
+                level: 'error',
+                error: new Error('CompileError: ' + msg + '" type "' + typeName + '" field "' + fieldName + '" argument "' + argName + '" has no type')
+              });
+              return true;
+            }
+          });
+        }
+      });
+
+      return foundErrors;
+    }
+
+    /**
+     * method to validate the definition
+     */
+
+  }, {
+    key: 'validate',
+    value: function validate() {
+      var _this2 = this;
+
+      var foundErrors = false;
+
+      // first evaluate types
+      _$1.forEach(this.compiled.types, function (typeDef, typeName) {
+        if (_this2.validateTypeFields('', typeDef, typeName)) foundErrors = true;
+      });
+
+      // if no type errors evaluate the schema
+      if (!foundErrors) {
+        _$1.forEach(this.compiled.schemas, function (schemaDef, schemaName) {
+          _$1.forEach(schemaDef, function (opDef, opName) {
+            var typeName = typeof opDef === 'string' ? opDef : opDef.name;
+
+            // only validate operation fields
+            if (['query', 'mutation', 'subscription'].indexOf(opName) === -1) return true;
+
+            // check for type name
+            if (!typeName) {
+              _this2._definition.emit('log', {
+                source: 'compiler',
+                level: 'error',
+                error: new Error('CompileError: schema "' + schemaName + '" ' + opName + ' has no definition')
+              });
+            } else {
+              var typeDef = _$1.get(_this2.compiled, 'types["' + typeName + '"]');
+              _this2.validateTypeFields('schema "' + schemaName + '"', typeDef, typeName);
+            }
+          });
+        });
+      }
+      return this;
     }
   }, {
     key: 'value',
@@ -3133,13 +3224,13 @@ var GraphQLFactoryCompiler = function () {
   }, {
     key: 'moveSchema',
     value: function moveSchema() {
-      var _this = this;
+      var _this3 = this;
 
       _$1.forEach(this.definition.schemas, function (schema, schemaName) {
-        _this.compiled.schemas[schemaName] = _$1.mapValues(schema, function (definition, operation) {
+        _this3.compiled.schemas[schemaName] = _$1.mapValues(schema, function (definition, operation) {
           if (_$1.isString(definition)) return definition;
           var opName = definition.name || '' + schemaName + _$1.capitalize(operation);
-          _$1.set(_this.definition, 'types["' + opName + '"]', definition);
+          _$1.set(_this3.definition, 'types["' + opName + '"]', definition);
           return opName;
         });
       });
@@ -3148,13 +3239,13 @@ var GraphQLFactoryCompiler = function () {
   }, {
     key: 'normalizeTypes',
     value: function normalizeTypes() {
-      var _this2 = this;
+      var _this4 = this;
 
       var types = this.compiled.types;
 
       _$1.forEach(this.definition.types, function (_typeDef, name) {
         if (!_$1.isHash(_typeDef)) {
-          _this2._definition.emit('log', {
+          _this4._definition.emit('log', {
             source: 'compiler',
             level: 'error',
             error: new Error('CompileError: ' + name + ' type definition is not an object')
@@ -3197,6 +3288,7 @@ var GraphQLFactoryCompiler = function () {
             break;
         }
       });
+
       return this;
     }
   }, {
@@ -3299,7 +3391,9 @@ var GraphQLFactoryCompiler = function () {
   }, {
     key: 'conditionalTypes',
     value: function conditionalTypes() {
-      _$1.forEach(this.compiled.types, function (definition) {
+      var _this5 = this;
+
+      _$1.forEach(this.compiled.types, function (definition, typeName) {
         var omits = [];
         var fields = definition.fields;
 
@@ -3314,6 +3408,13 @@ var GraphQLFactoryCompiler = function () {
               if (!type) {
                 if (field[definition.type]) {
                   definition.fields[name] = normalizeType(field[definition.type]);
+                } else if (!_$1.intersection(_$1.keys(field), ['Object', 'Input']).length) {
+                  _this5._definition.emit('log', {
+                    source: 'compiler',
+                    level: 'error',
+                    error: new Error('CompileError: Definition of type "' + typeName + '" field "' + name + '" has no type defined')
+                  });
+                  omits.push(name);
                 } else {
                   omits.push(name);
                 }
@@ -3334,6 +3435,7 @@ var GraphQLFactoryCompiler = function () {
         });
         definition.fields = _$1.omit(definition.fields, omits);
       });
+
       return this;
     }
   }]);
@@ -4048,18 +4150,25 @@ function FactoryGQLScalarType(_this, definition, nameDefault) {
 
 function FactoryGQLSchema(_this, definition, nameDefault) {
   try {
-    var query = definition.query,
+    var name = definition.name,
+        query = definition.query,
         mutation = definition.mutation,
         subscription = definition.subscription;
 
 
+    if (!_this.types || !_this.types[query]) {
+      throw new Error('Type "' + query + '" not found');
+    }
+
     var schema = new _this.graphql.GraphQLSchema({
+      name: name || nameDefault,
       query: _this.types[query],
       mutation: _this.types[mutation],
       subscription: _this.types[subscription]
     });
 
     schema._factory = {
+      name: name || nameDefault,
       key: nameDefault,
       query: _this.definition.getType(query),
       mutation: _this.definition.getType(mutation),
@@ -4117,6 +4226,7 @@ var GraphQLFactoryTypeGenerator = function () {
 
     classCallCheck(this, GraphQLFactoryTypeGenerator);
 
+    this._generated = false;
     this.graphql = graphql;
     this.definition = definition;
     this.factory = factory;
@@ -4266,7 +4376,23 @@ var GraphQLFactoryTypeGenerator = function () {
       var typeName = isList ? type[0] : type;
       var typeObj = null;
 
-      if (_$1.has(this.types, '["' + typeName + '"]')) typeObj = this.types[typeName];else if (_$1.has(this.typeMap, '["' + typeName + '"]')) typeObj = this.typeMap[typeName];else if (this.definition.hasExtType(typeName)) typeObj = this.definition.getExtType(typeName);else if (_$1.has(this.graphql, '["' + typeName + '"]')) typeObj = this.graphql[typeName];else throw new Error('invalid type ' + typeName);
+      if (_$1.has(this.types, '["' + typeName + '"]')) {
+        typeObj = this.types[typeName];
+      } else if (_$1.has(this.typeMap, '["' + typeName + '"]')) {
+        typeObj = this.typeMap[typeName];
+      } else if (this.definition.hasExtType(typeName)) {
+        typeObj = this.definition.getExtType(typeName);
+      } else if (_$1.has(this.graphql, '["' + typeName + '"]')) {
+        typeObj = this.graphql[typeName];
+      } else {
+        var err = new Error('TypeGeneratorError: Invalid type "' + typeName + '"');
+        this.factory.emit('log', {
+          source: 'typeGenerator',
+          level: 'error',
+          error: err
+        });
+        throw err;
+      }
 
       var gqlType = isList ? new this.graphql.GraphQLList(typeObj) : typeObj;
 
@@ -4331,7 +4457,13 @@ var GraphQLFactoryTypeGenerator = function () {
             _this6._types[useName] = FactoryGQLUnionType(_this6, definition, nameDefault);
             break;
           default:
-            throw new Error('GraphQLFactoryError: "' + type + '" is an invalid base type');
+            var err = new Error('TypeGeneratorError: "' + type + '" is an invalid base type');
+            _this6.factory.emit('log', {
+              source: 'typeGenerator',
+              level: 'error',
+              error: err
+            });
+            throw err;
         }
       });
       return this;
@@ -4347,6 +4479,10 @@ var GraphQLFactoryTypeGenerator = function () {
   }, {
     key: 'generate',
     value: function generate() {
+      // generate should only be called once
+      if (this._generated) return;
+      this._generated = true;
+
       return this.makeType(ENUM$1).makeType(SCALAR).makeType(INPUT).makeType(OBJECT$1).makeType(INTERFACE).makeType(UNION).makeSchemas().values();
     }
   }, {
@@ -4447,6 +4583,7 @@ var GraphQLFactory$1 = function (_EventEmitter) {
 
     _this.compile = compile;
     _this.constants = constants;
+    _this.errors = [];
 
     /**
      * Creates an un-compiled {@link FactoryDefinition}
@@ -4485,15 +4622,17 @@ var GraphQLFactory$1 = function (_EventEmitter) {
           afterTimeout = options.afterTimeout,
           logger = options.logger;
 
+      // ensure that the factory def is an instance of the class
 
       var factoryDef = definition instanceof GraphQLFactoryDefinition ? definition : new GraphQLFactoryDefinition(definition);
 
+      // setup a logger
       var _logger = (typeof logger === 'undefined' ? 'undefined' : _typeof(logger)) === 'object' ? logger : {};
 
       // emit an error event when log-level is error which throws an error
       this.on('log', function (log) {
         if (typeof _logger[log.level] === 'function') _logger[log.level](log);
-        if (log.level === 'error') _this2.emit('error', log.error);
+        if (log.level === 'error') _this2.errors.push(log.error.message);
       });
 
       // forward definition logs to the main factory emitter
@@ -4501,9 +4640,20 @@ var GraphQLFactory$1 = function (_EventEmitter) {
         _this2.emit('log', payload);
       });
 
+      // build the definition
       factoryDef.registerPlugin(plugin).beforeResolve(beforeResolve).beforeTimeout(beforeTimeout).afterResolve(afterResolve).afterTimeout(afterTimeout).compile();
 
-      return new GraphQLFactoryLibrary(this.graphql, factoryDef, this);
+      // create a new lib
+      var lib = new GraphQLFactoryLibrary(this.graphql, factoryDef, this);
+
+      // check for error and throw
+      if (this.errors.length) {
+        var errorMessage = 'GraphQLFactoryMakeError: ' + this.errors.join(', ');
+        throw new Error(errorMessage);
+      }
+
+      // otherwise return the lib
+      return lib;
     }
   }]);
   return GraphQLFactory;

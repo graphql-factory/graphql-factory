@@ -39,6 +39,7 @@ export class GraphQLFactory extends EventEmitter {
      */
     this.compile = compile
     this.constants = constants
+    this.errors = []
 
     /**
      * Creates an un-compiled {@link FactoryDefinition}
@@ -70,10 +71,12 @@ export class GraphQLFactory extends EventEmitter {
       logger
     } = options
 
+    // ensure that the factory def is an instance of the class
     const factoryDef = definition instanceof GraphQLFactoryDefinition
       ? definition
       : new GraphQLFactoryDefinition(definition)
 
+    // setup a logger
     const _logger = typeof logger === 'object'
       ? logger
       : {}
@@ -81,7 +84,7 @@ export class GraphQLFactory extends EventEmitter {
     // emit an error event when log-level is error which throws an error
     this.on('log', log => {
       if (typeof _logger[log.level] === 'function') _logger[log.level](log)
-      if (log.level === 'error') this.emit('error', log.error)
+      if (log.level === 'error') this.errors.push(log.error.message)
     })
 
     // forward definition logs to the main factory emitter
@@ -89,6 +92,7 @@ export class GraphQLFactory extends EventEmitter {
       this.emit('log', payload)
     })
 
+    // build the definition
     factoryDef.registerPlugin(plugin)
       .beforeResolve(beforeResolve)
       .beforeTimeout(beforeTimeout)
@@ -96,7 +100,17 @@ export class GraphQLFactory extends EventEmitter {
       .afterTimeout(afterTimeout)
       .compile()
 
-    return new GraphQLFactoryLibrary(this.graphql, factoryDef, this)
+    // create a new lib
+    const lib = new GraphQLFactoryLibrary(this.graphql, factoryDef, this)
+
+    // check for error and throw
+    if (this.errors.length) {
+      const errorMessage = 'GraphQLFactoryMakeError: ' + this.errors.join(', ')
+      throw new Error(errorMessage)
+    }
+
+    // otherwise return the lib
+    return lib
   }
 }
 

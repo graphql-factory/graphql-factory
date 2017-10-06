@@ -28,6 +28,7 @@ import {
  */
 export default class GraphQLFactoryTypeGenerator {
   constructor (graphql, definition, lib, factory) {
+    this._generated = false
     this.graphql = graphql
     this.definition = definition
     this.factory = factory
@@ -179,11 +180,23 @@ export default class GraphQLFactoryTypeGenerator {
       : type
     let typeObj = null
 
-    if (_.has(this.types, `["${typeName}"]`)) typeObj = this.types[typeName]
-    else if (_.has(this.typeMap, `["${typeName}"]`)) typeObj = this.typeMap[typeName]
-    else if (this.definition.hasExtType(typeName)) typeObj = this.definition.getExtType(typeName)
-    else if (_.has(this.graphql, `["${typeName}"]`)) typeObj = this.graphql[typeName]
-    else throw new Error(`invalid type ${typeName}`)
+    if (_.has(this.types, `["${typeName}"]`)) {
+      typeObj = this.types[typeName]
+    } else if (_.has(this.typeMap, `["${typeName}"]`)) {
+      typeObj = this.typeMap[typeName]
+    } else if (this.definition.hasExtType(typeName)) {
+      typeObj = this.definition.getExtType(typeName)
+    } else if (_.has(this.graphql, `["${typeName}"]`)) {
+      typeObj = this.graphql[typeName]
+    } else {
+      const err = new Error(`TypeGeneratorError: Invalid type "${typeName}"`)
+      this.factory.emit('log', {
+        source: 'typeGenerator',
+        level: 'error',
+        error: err
+      })
+      throw err
+    }
 
     const gqlType = isList
       ? new this.graphql.GraphQLList(typeObj)
@@ -243,7 +256,13 @@ export default class GraphQLFactoryTypeGenerator {
           this._types[useName] = FactoryGQLUnionType(this, definition, nameDefault)
           break
         default:
-          throw new Error(`GraphQLFactoryError: "${type}" is an invalid base type`)
+          const err = new Error(`TypeGeneratorError: "${type}" is an invalid base type`)
+          this.factory.emit('log', {
+            source: 'typeGenerator',
+            level: 'error',
+            error: err
+          })
+          throw err
       }
     })
     return this
@@ -257,6 +276,10 @@ export default class GraphQLFactoryTypeGenerator {
   }
 
   generate () {
+    // generate should only be called once
+    if (this._generated) return
+    this._generated = true
+
     return this.makeType(ENUM)
       .makeType(SCALAR)
       .makeType(INPUT)

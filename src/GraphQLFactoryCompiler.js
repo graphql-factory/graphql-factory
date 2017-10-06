@@ -41,7 +41,100 @@ export default class GraphQLFactoryCompiler {
       .mergeBase()
       .extendTemplates()
       .conditionalTypes()
+      .validate()
       .value()
+  }
+
+  validateTypeFields (msg, typeDef, typeName) {
+    let foundErrors = false
+
+    if (_.get(typeDef, 'type') !== 'Object') return false
+
+    if (!_.isHash(_.get(typeDef, 'fields'))) {
+      foundErrors = true
+      this._definition.emit('log', {
+        source: 'compiler',
+        level: 'error',
+        error: new Error('CompileError: '
+          + msg + ' type "' + typeName + '" has no definition')
+      })
+      return true
+    }
+
+    _.forEach(typeDef.fields, (fieldDef, fieldName) => {
+      if (!_.get(fieldDef, 'type')) {
+        foundErrors = true
+        this._definition.emit('log', {
+          source: 'compiler',
+          level: 'error',
+          error: new Error('CompileError: '
+            + msg + '" type "' + typeName
+            + '" field "' + fieldName + '" has no type')
+        })
+        return true
+      } else if (_.get(fieldDef, 'args')) {
+        // attempt to normalize the args first, this will be the only
+        // mutation to the definition during validation
+        normalizeArgs(fieldDef)
+        _.forEach(fieldDef.args, (argDef, argName) => {
+
+          if (!_.get(argDef, 'type')) {
+            foundErrors = true
+            this._definition.emit('log', {
+              source: 'compiler',
+              level: 'error',
+              error: new Error('CompileError: '
+                + msg + '" type "' + typeName
+                + '" field "' + fieldName + '" argument "'
+                + argName + '" has no type')
+            })
+            return true
+          }
+        })
+      }
+    })
+
+    return foundErrors
+  }
+
+  /**
+   * method to validate the definition
+   */
+  validate () {
+    let foundErrors = false
+
+    // first evaluate types
+    _.forEach(this.compiled.types, (typeDef, typeName) => {
+      if (this.validateTypeFields('', typeDef, typeName)) foundErrors = true
+    })
+
+    // if no type errors evaluate the schema
+    if (!foundErrors) {
+      _.forEach(this.compiled.schemas, (schemaDef, schemaName) => {
+        _.forEach(schemaDef, (opDef, opName) => {
+          const typeName = typeof opDef === 'string'
+            ? opDef
+            : opDef.name
+
+          // only validate operation fields
+          if ([ 'query', 'mutation', 'subscription' ].indexOf(opName) === -1) return true
+
+          // check for type name
+          if (!typeName) {
+            this._definition.emit('log', {
+              source: 'compiler',
+              level: 'error',
+              error: new Error('CompileError: schema "'
+                + schemaName + '" ' + opName + ' has no definition')
+            })
+          } else {
+            const typeDef = _.get(this.compiled, `types["${typeName}"]`)
+            this.validateTypeFields(`schema "${schemaName}"`, typeDef, typeName)
+          }
+        })
+      })
+    }
+    return this
   }
 
   value () {
@@ -109,6 +202,7 @@ export default class GraphQLFactoryCompiler {
           break
       }
     })
+
     return this
   }
 
@@ -204,7 +298,7 @@ export default class GraphQLFactoryCompiler {
   }
 
   conditionalTypes () {
-    _.forEach(this.compiled.types, definition => {
+    _.forEach(this.compiled.types, (definition, typeName) => {
       const omits = []
       const { fields } = definition
       if (!fields) return true
@@ -216,6 +310,14 @@ export default class GraphQLFactoryCompiler {
             if (!type) {
               if (field[definition.type]) {
                 definition.fields[name] = normalizeType(field[definition.type])
+              } else if (!_.intersection(_.keys(field), [ 'Object', 'Input' ]).length) {
+                this._definition.emit('log', {
+                  source: 'compiler',
+                  level: 'error',
+                  error: new Error('CompileError: Definition of type "'
+                    + typeName + '" field "' + name + '" has no type defined')
+                })
+                omits.push(name)
               } else {
                 omits.push(name)
               }
@@ -238,6 +340,7 @@ export default class GraphQLFactoryCompiler {
       })
       definition.fields = _.omit(definition.fields, omits)
     })
+
     return this
   }
 }

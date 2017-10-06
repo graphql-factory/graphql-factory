@@ -6,6 +6,12 @@ var factory = global.factory = require('../index')(graphql)
 var expect = global.expect = chai.expect
 var utils = require('./utils')
 
+global.logger = {
+  error: function (log) {
+    console.log(log)
+  }
+}
+
 var opt = require('node-getopt').create([
   ['t', 'test=ARG', 'tests to run using comma separated']
 ]).bindHelp().parseSystem()
