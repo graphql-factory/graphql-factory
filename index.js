@@ -3136,22 +3136,16 @@ var GraphQLFactoryCompiler = function () {
 
       if (!_$1.isHash(_$1.get(typeDef, 'fields'))) {
         foundErrors = true;
-        this._definition.emit('log', {
-          source: 'compiler',
-          level: 'error',
-          error: new Error('CompileError: ' + msg + ' type "' + typeName + '" has no definition')
-        });
+        var err = new Error('CompileError: ' + msg + ' type "' + typeName + '" has no definition');
+        this._definition.log('error', 'compiler', err.message, err);
         return true;
       }
 
       _$1.forEach(typeDef.fields, function (fieldDef, fieldName) {
         if (!_$1.get(fieldDef, 'type')) {
           foundErrors = true;
-          _this._definition.emit('log', {
-            source: 'compiler',
-            level: 'error',
-            error: new Error('CompileError: ' + msg + '" type "' + typeName + '" field "' + fieldName + '" has no type')
-          });
+          var _err = new Error('CompileError: ' + msg + '" type "' + typeName + '" field "' + fieldName + '" has no type');
+          _this._definition.log('error', 'compiler', _err.message, _err);
           return true;
         } else if (_$1.get(fieldDef, 'args')) {
           // attempt to normalize the args first, this will be the only
@@ -3161,11 +3155,8 @@ var GraphQLFactoryCompiler = function () {
 
             if (!_$1.get(argDef, 'type')) {
               foundErrors = true;
-              _this._definition.emit('log', {
-                source: 'compiler',
-                level: 'error',
-                error: new Error('CompileError: ' + msg + '" type "' + typeName + '" field "' + fieldName + '" argument "' + argName + '" has no type')
-              });
+              var _err2 = new Error('CompileError: ' + msg + '" type "' + typeName + '" field "' + fieldName + '" argument "' + argName + '" has no type');
+              _this._definition.log('error', 'compiler', _err2.message, _err2);
               return true;
             }
           });
@@ -3202,11 +3193,8 @@ var GraphQLFactoryCompiler = function () {
 
             // check for type name
             if (!typeName) {
-              _this2._definition.emit('log', {
-                source: 'compiler',
-                level: 'error',
-                error: new Error('CompileError: schema "' + schemaName + '" ' + opName + ' has no definition')
-              });
+              var err = new Error('CompileError: schema "' + schemaName + '" ' + opName + ' has no definition');
+              _this2._definition.log('error', 'compiler', err.message, err);
             } else {
               var typeDef = _$1.get(_this2.compiled, 'types["' + typeName + '"]');
               _this2.validateTypeFields('schema "' + schemaName + '"', typeDef, typeName);
@@ -3245,11 +3233,8 @@ var GraphQLFactoryCompiler = function () {
 
       _$1.forEach(this.definition.types, function (_typeDef, name) {
         if (!_$1.isHash(_typeDef)) {
-          _this4._definition.emit('log', {
-            source: 'compiler',
-            level: 'error',
-            error: new Error('CompileError: ' + name + ' type definition is not an object')
-          });
+          var err = new Error('CompileError: ' + name + ' type definition is not an object');
+          _this4._definition.log('error', 'compiler', err.message, err);
         }
         var type = _typeDef.type;
 
@@ -3409,11 +3394,8 @@ var GraphQLFactoryCompiler = function () {
                 if (field[definition.type]) {
                   definition.fields[name] = normalizeType(field[definition.type]);
                 } else if (!_$1.intersection(_$1.keys(field), ['Object', 'Input']).length) {
-                  _this5._definition.emit('log', {
-                    source: 'compiler',
-                    level: 'error',
-                    error: new Error('CompileError: Definition of type "' + typeName + '" field "' + name + '" has no type defined')
-                  });
+                  var err = new Error('CompileError: Definition of type "' + typeName + '" field "' + name + '" has no type defined');
+                  _this5._definition.log('error', 'compiler', err.message, err);
                   omits.push(name);
                 } else {
                   omits.push(name);
@@ -3699,11 +3681,8 @@ var GraphQLFactoryDefinition = function (_EventEmitter) {
           if (factoryPlugins[plugin]) {
             p = factoryPlugins[plugin];
           } else {
-            _this2.emit('log', {
-              source: 'types',
-              level: 'error',
-              error: new Error('DefinitionError: Plugin "' + p + '" not found')
-            });
+            var err = new Error('DefinitionError: Plugin "' + p + '" not found');
+            _this2.log('error', 'types', err.message, err);
             return true;
           }
         }
@@ -3714,6 +3693,17 @@ var GraphQLFactoryDefinition = function (_EventEmitter) {
         if (_$1.isFunction(p.install)) p.install(_this2);
       });
       return this;
+    }
+  }, {
+    key: 'log',
+    value: function log(level, source, message, error) {
+      var payload = { level: level, source: source, message: message };
+
+      if (error instanceof Error) {
+        payload.error = error;
+        payload.stack = error.stack;
+      }
+      this.emit('log', payload);
     }
   }, {
     key: 'beforeResolve',

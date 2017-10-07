@@ -54,11 +54,8 @@ export default class GraphQLFactoryDefinition extends EventEmitter {
         if (factoryPlugins[plugin]) {
           p = factoryPlugins[plugin]
         } else {
-          this.emit('log', {
-            source: 'types',
-            level: 'error',
-            error: new Error(`DefinitionError: Plugin "${p}" not found`)
-          })
+          const err = new Error(`DefinitionError: Plugin "${p}" not found`)
+          this.log('error', 'types', err.message, err)
           return true
         }
       }
@@ -69,6 +66,16 @@ export default class GraphQLFactoryDefinition extends EventEmitter {
       if (_.isFunction(p.install)) p.install(this)
     })
     return this
+  }
+
+  log (level, source, message, error) {
+    const payload = { level, source, message }
+
+    if (error instanceof Error) {
+      payload.error = error
+      payload.stack = error.stack
+    }
+    this.emit('log', payload)
   }
 
   beforeResolve (middleware) {

@@ -52,25 +52,19 @@ export default class GraphQLFactoryCompiler {
 
     if (!_.isHash(_.get(typeDef, 'fields'))) {
       foundErrors = true
-      this._definition.emit('log', {
-        source: 'compiler',
-        level: 'error',
-        error: new Error('CompileError: '
-          + msg + ' type "' + typeName + '" has no definition')
-      })
+      const err = new Error('CompileError: '
+        + msg + ' type "' + typeName + '" has no definition')
+      this._definition.log('error', 'compiler', err.message, err)
       return true
     }
 
     _.forEach(typeDef.fields, (fieldDef, fieldName) => {
       if (!_.get(fieldDef, 'type')) {
         foundErrors = true
-        this._definition.emit('log', {
-          source: 'compiler',
-          level: 'error',
-          error: new Error('CompileError: '
-            + msg + '" type "' + typeName
-            + '" field "' + fieldName + '" has no type')
-        })
+        const err = new Error('CompileError: '
+          + msg + '" type "' + typeName
+          + '" field "' + fieldName + '" has no type')
+        this._definition.log('error', 'compiler', err.message, err)
         return true
       } else if (_.get(fieldDef, 'args')) {
         // attempt to normalize the args first, this will be the only
@@ -80,14 +74,11 @@ export default class GraphQLFactoryCompiler {
 
           if (!_.get(argDef, 'type')) {
             foundErrors = true
-            this._definition.emit('log', {
-              source: 'compiler',
-              level: 'error',
-              error: new Error('CompileError: '
-                + msg + '" type "' + typeName
-                + '" field "' + fieldName + '" argument "'
-                + argName + '" has no type')
-            })
+            const err = new Error('CompileError: '
+              + msg + '" type "' + typeName
+              + '" field "' + fieldName + '" argument "'
+              + argName + '" has no type')
+            this._definition.log('error', 'compiler', err.message, err)
             return true
           }
         })
@@ -121,12 +112,9 @@ export default class GraphQLFactoryCompiler {
 
           // check for type name
           if (!typeName) {
-            this._definition.emit('log', {
-              source: 'compiler',
-              level: 'error',
-              error: new Error('CompileError: schema "'
-                + schemaName + '" ' + opName + ' has no definition')
-            })
+            const err = new Error('CompileError: schema "'
+              + schemaName + '" ' + opName + ' has no definition')
+            this._definition.log('error', 'compiler', err.message, err)
           } else {
             const typeDef = _.get(this.compiled, `types["${typeName}"]`)
             this.validateTypeFields(`schema "${schemaName}"`, typeDef, typeName)
@@ -158,11 +146,8 @@ export default class GraphQLFactoryCompiler {
 
     _.forEach(this.definition.types, (_typeDef, name) => {
       if (!_.isHash(_typeDef)) {
-        this._definition.emit('log', {
-          source: 'compiler',
-          level: 'error',
-          error: new Error(`CompileError: ${name} type definition is not an object`)
-        })
+        const err = new Error(`CompileError: ${name} type definition is not an object`)
+        this._definition.log('error', 'compiler', err.message, err)
       }
       const { type } = _typeDef
 
@@ -311,12 +296,9 @@ export default class GraphQLFactoryCompiler {
               if (field[definition.type]) {
                 definition.fields[name] = normalizeType(field[definition.type])
               } else if (!_.intersection(_.keys(field), [ 'Object', 'Input' ]).length) {
-                this._definition.emit('log', {
-                  source: 'compiler',
-                  level: 'error',
-                  error: new Error('CompileError: Definition of type "'
-                    + typeName + '" field "' + name + '" has no type defined')
-                })
+                const err = new Error('CompileError: Definition of type "'
+                  + typeName + '" field "' + name + '" has no type defined')
+                this._definition.log('error', 'compiler', err.message, err)
                 omits.push(name)
               } else {
                 omits.push(name)
