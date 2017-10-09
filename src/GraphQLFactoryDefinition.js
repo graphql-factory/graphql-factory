@@ -1,12 +1,15 @@
 import _ from './utils/index'
+import EventEmitter from 'events'
+import factoryPlugins from './plugins/index'
 import GraphQLFactoryCompiler from './GraphQLFactoryCompiler'
 
 const DEFAULT_MIDDLEWARE_TIMEOUT = 5000
 
-export default class GraphQLFactoryDefinition {
+export default class GraphQLFactoryDefinition extends EventEmitter {
   constructor (definition = {}, options = {}) {
-    let { plugin } = options
-    let { globals, fields, functions, types, schemas, externalTypes } = definition
+    super()
+    const { plugin } = options
+    const { globals, fields, functions, types, schemas, externalTypes } = definition
     this.globals = globals || {}
     this.fields = fields || {}
     this.functions = functions || {}
@@ -24,7 +27,7 @@ export default class GraphQLFactoryDefinition {
   }
 
   merge (definition = {}) {
-    let {
+    const {
       globals,
       fields,
       functions,
@@ -33,7 +36,8 @@ export default class GraphQLFactoryDefinition {
       externalTypes
     } = definition
 
-    Object.assign(this.globals, globals || {}) // assign is used to prevent overwriting instantiated classes
+    // assign is used to prevent overwriting instantiated classes
+    Object.assign(this.globals, globals || {})
     _.merge(this.fields, fields || {})
     _.merge(this.functions, functions || {})
     _.merge(this.types, types || {})
@@ -44,41 +48,71 @@ export default class GraphQLFactoryDefinition {
 
   registerPlugin (plugins = []) {
     _.forEach(_.ensureArray(plugins), plugin => {
-      let name = _.get(plugin, 'name', `unnamedPlugin${_.keys(this.pluginRegistry).length}`)
-      this.pluginRegistry[name] = plugin
-      this.merge(plugin)
-      if (_.isFunction(plugin.install)) plugin.install(this)
+      let p = plugin
+      // first check for included plugins that can be specified by their string name
+      if (_.isString(plugin) && plugin) {
+        if (factoryPlugins[plugin]) {
+          p = factoryPlugins[plugin]
+        } else {
+          const err = new Error(`DefinitionError: Plugin "${p}" not found`)
+          this.log('error', 'types', err.message, err)
+          return true
+        }
+      }
+
+      const name = _.get(p, 'name', `unnamedPlugin${_.keys(this.pluginRegistry).length}`)
+      this.pluginRegistry[name] = p
+      this.merge(p)
+      if (_.isFunction(p.install)) p.install(this)
     })
     return this
   }
 
+  log (level, source, message, error) {
+    const payload = { level, source, message }
+
+    if (error instanceof Error) {
+      payload.error = error
+      payload.stack = error.stack
+    }
+    this.emit('log', payload)
+  }
+
   beforeResolve (middleware) {
     _.forEach(_.ensureArray(middleware), mw => {
-      if (_.isFunction(mw)) this._middleware.before = _.union(this._middleware.before, [mw])
+      if (_.isFunction(mw)) {
+        this._middleware.before = _.union(this._middleware.before, [ mw ])
+      }
     })
     return this
   }
 
   afterResolve (middleware) {
     _.forEach(_.ensureArray(middleware), mw => {
-      if (_.isFunction(mw)) this._middleware.after = _.union(this._middleware.after, [mw])
+      if (_.isFunction(mw)) {
+        this._middleware.after = _.union(this._middleware.after, [ mw ])
+      }
     })
     return this
   }
 
   beforeTimeout (timeout) {
-    if (_.isNumber(timeout)) this._middleware.beforeTimeout = Math.ceil(timeout)
+    if (_.isNumber(timeout)) {
+      this._middleware.beforeTimeout = Math.ceil(timeout)
+    }
     return this
   }
 
   afterTimeout (timeout) {
-    if (_.isNumber(timeout)) this._middleware.afterTimeout = Math.ceil(timeout)
+    if (_.isNumber(timeout)) {
+      this._middleware.afterTimeout = Math.ceil(timeout)
+    }
     return this
   }
 
   processDefinitionHooks () {
-    _.forEach(this.pluginRegistry, (plugin) => {
-      let hook = _.get(plugin, 'hooks.definition')
+    _.forEach(this.pluginRegistry, plugin => {
+      const hook = _.get(plugin, 'hooks.definition')
       if (_.isFunction(hook)) hook(this)
     })
     return this
@@ -86,9 +120,9 @@ export default class GraphQLFactoryDefinition {
 
   compile () {
     this.processDefinitionHooks()
-    let compiler = new GraphQLFactoryCompiler(this)
-    let compiled = compiler.compile()
-    let { fields, types, schemas } = compiled
+    const compiler = new GraphQLFactoryCompiler(this)
+    const compiled = compiler.compile()
+    const { fields, types, schemas } = compiled
     this.fields = fields || {}
     this.types = types || {}
     this.schemas = schemas || {}

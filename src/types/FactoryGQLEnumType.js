@@ -2,7 +2,7 @@ import FactoryEnumValueConfigMap from './FactoryEnumValueConfigMap'
 
 export default function FactoryGQLEnumType (_this, definition, nameDefault) {
   try {
-    let { name, values, description } = definition
+    const { name, values, description } = definition
 
     return new _this.graphql.GraphQLEnumType({
       name: name || nameDefault,
@@ -10,6 +10,11 @@ export default function FactoryGQLEnumType (_this, definition, nameDefault) {
       description
     })
   } catch (err) {
-    console.error('FactoryGQLEnumType', err)
+    _this.factory.emit('log', {
+      source: 'types',
+      level: 'error',
+      error: new Error('FactoryGQLEnumType: ' + err.message),
+      stack: err.stack
+    })
   }
 }

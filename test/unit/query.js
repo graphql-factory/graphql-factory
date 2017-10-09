@@ -102,6 +102,7 @@ describe('Query', function () {
 
   // make lib
   var lib = factory.make(def, {
+    logger,
     beforeResolve: [
       function (args, next) {
         console.log('before middleware1')

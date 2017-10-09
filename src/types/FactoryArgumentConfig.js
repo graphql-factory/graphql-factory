@@ -2,9 +2,11 @@ import _ from '../utils/index'
 
 export default function FactoryArgumentConfig (_this, arg = {}, rootType) {
   try {
-    arg = _.isString(arg) || _.isArray(arg) ? { type: arg } : arg
-    let { defaultValue, description } = arg
-    let type = _this.resolveType(arg, rootType)
+    const a = _.isString(arg) || _.isArray(arg)
+      ? { type: arg }
+      : arg
+    const { defaultValue, description } = a
+    const type = _this.resolveType(a, rootType)
 
     return {
       type,
@@ -12,6 +14,11 @@ export default function FactoryArgumentConfig (_this, arg = {}, rootType) {
       description
     }
   } catch (err) {
-    console.error('FactoryArgumentConfig', err)
+    _this.factory.emit('log', {
+      source: 'types',
+      level: 'error',
+      error: new Error('FactoryArgumentConfig: ' + err.message),
+      stack: err.stack
+    })
   }
 }

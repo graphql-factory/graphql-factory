@@ -1,9 +1,26 @@
-import babel from 'rollup-plugin-babel';
+import babel from 'rollup-plugin-babel'
+import babelrc from 'babelrc-rollup'
+
+const babelConfig = {
+  presets: [
+    ['env']
+  ]
+}
 
 export default {
-  entry: 'src/index.js',
-  format: 'cjs',
+  input: 'src/index.js',
   external: ['events'],
-  plugins: [ babel() ],
-  dest: 'index.js'
+  plugins: [
+    babel(
+      babelrc({
+        addExternalHelpersPlugin: true,
+        config: babelConfig,
+        exclude: 'node_modules/**'
+      })
+    )
+  ],
+  output: {
+    format: 'cjs',
+    file: 'index.js'
+  }
 }
