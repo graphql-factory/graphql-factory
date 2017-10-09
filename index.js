@@ -4293,8 +4293,10 @@ var GraphQLFactoryTypeGenerator = function () {
         var hooks = _this2.definition._middleware.before.slice();
         var next = function next(error) {
           hooks = hooks.splice(1);
-          if (error) return reject(error);
-          if (!hooks.length) {
+          if (error) {
+            clearTimeout(timeout);
+            return reject(error);
+          } else if (!hooks.length) {
             clearTimeout(timeout);
             return _this2.processResolver(resolver, args, ctx, doResolve, doReject);
           }
@@ -4327,8 +4329,10 @@ var GraphQLFactoryTypeGenerator = function () {
       var next = function next(error, res) {
         var nextResult = res === undefined ? result : res;
         hooks = hooks.splice(1);
-        if (error) return reject(error);
-        if (!hooks.length) {
+        if (error) {
+          clearTimeout(timeout);
+          return reject(error);
+        } else if (!hooks.length) {
           clearTimeout(timeout);
           return resolve(nextResult);
         }

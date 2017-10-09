@@ -107,8 +107,10 @@ export default class GraphQLFactoryTypeGenerator {
       let hooks = this.definition._middleware.before.slice()
       const next = error => {
         hooks = hooks.splice(1)
-        if (error) return reject(error)
-        if (!hooks.length) {
+        if (error) {
+          clearTimeout(timeout)
+          return reject(error)
+        } else if (!hooks.length) {
           clearTimeout(timeout)
           return this.processResolver(resolver, args, ctx, doResolve, doReject)
         }
@@ -140,8 +142,10 @@ export default class GraphQLFactoryTypeGenerator {
         ? result
         : res
       hooks = hooks.splice(1)
-      if (error) return reject(error)
-      if (!hooks.length) {
+      if (error) {
+        clearTimeout(timeout)
+        return reject(error)
+      } else if (!hooks.length) {
         clearTimeout(timeout)
         return resolve(nextResult)
       }
