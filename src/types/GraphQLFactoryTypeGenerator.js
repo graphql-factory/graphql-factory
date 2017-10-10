@@ -121,7 +121,7 @@ export default class GraphQLFactoryTypeGenerator {
   }
 
   processResolver (resolver, args, ctx, resolve, reject) {
-    return Promise.resolve(resolver.apply(ctx, _.values(args)))
+    return Promise.resolve(resolver.apply(ctx, _.map(args, arg => arg)))
       .then(result => {
         return this.afterMiddleware(result, args, ctx, resolve, reject)
       }, reject)

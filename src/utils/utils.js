@@ -1,5 +1,5 @@
 /* lodash like functions to remove dependency on lodash accept lodash.merge */
-import merge from './lodash.merge'
+import merge from './lodash.merge.min'
 import toObjectString from './obj2arg'
 
 export { toObjectString }
@@ -42,11 +42,48 @@ export function isObject (obj) {
 }
 
 export function isNumber (obj) {
-  return !isNaN(obj)
+  return typeof obj === 'number'
 }
 
 export function isHash (obj) {
-  return isObject(obj) && !isArray(obj) && !isDate(obj) && obj !== null
+  return isObject(obj)
+    && !isArray(obj)
+    && !isDate(obj)
+    && obj !== null
+}
+
+export function range (start, end, step) {
+  let _end = end
+  let _start = start
+  let _step = step
+  if (end === undefined && step === undefined) {
+    _end = start
+    _start = 0
+    _step = 1
+  } else if (step === undefined) {
+    _step = 1
+  }
+
+  // non numbers return empty array
+  if (!isNumber(_start) || !isNumber(_end) || !isNumber(_step) || !_step) return []
+  if (_start === _end) return [ _start ]
+
+  let count = _start
+  const _range = []
+
+  if (_start < _end) {
+    while (count < _end) {
+      _range.push(count)
+      count += Math.abs(_step)
+    }
+  } else {
+    while (count > _end) {
+      _range.push(count)
+      count -= Math.abs(_step)
+    }
+  }
+
+  return _range
 }
 
 export function includes (obj, key) {
@@ -84,19 +121,16 @@ export function isEmpty (obj) {
 
 export function keys (obj) {
   try {
-    return Object.keys(obj)
+    return isArray(obj) ? range(obj.length) : Object.keys(obj)
   } catch (err) {
     return []
   }
 }
 
 export function capitalize (str) {
-  if (isString(str) && str.length > 0) {
-    const first = str[0]
-    const rest = str.length > 1 ? str.substring(1) : ''
-    return [ first.toUpperCase(), rest.toLowerCase() ].join('')
-  }
-  return str
+  return isString(str) && str.length
+    ? `${str.charAt(0).toUpperCase()}${str.slice(1).toLowerCase()}`
+    : str
 }
 
 export function stringToPathArray (pathString) {
@@ -123,18 +157,23 @@ export function toPath (pathString) {
 }
 
 export function has (obj, path) {
-  let value = obj
-  const fields = isArray(path) ? path : stringToPathArray(path)
-  if (fields.length === 0) return false
-  try {
-    for (const f in fields) {
-      if (value[fields[f]] === undefined) return false
-      value = value[fields[f]]
+  let o = obj
+  const p = toPath(path)
+
+  let index = -1
+  const { length } = p
+  let result = false
+  let key
+
+  while (++index < length) {
+    key = p[index]
+    if (!(result = o != null && Object.prototype.hasOwnProperty.call(o, key))) {
+      break
     }
-  } catch (err) {
-    return false
+    o = o[key]
   }
-  return true
+
+  return result
 }
 
 export function forEach (obj, fn) {
@@ -155,20 +194,12 @@ export function forEach (obj, fn) {
   }
 }
 
-export function values (obj) {
-  const _values = []
-  forEach(obj, val => {
-    _values.push(val)
-  })
-  return _values
-}
-
 export function without () {
   const output = []
   const args = [ ...arguments ]
-  if (args.length === 0) return output
-  else if (args.length === 1) return args[0]
+  if (args.length < 2) return args.length ? args[0] : []
   const search = args.slice(1)
+
   forEach(args[0], function (val) {
     if (!includes(search, val)) output.push(val)
   })
@@ -177,15 +208,7 @@ export function without () {
 
 export function map (obj, fn) {
   const output = []
-  try {
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        output.push(fn(obj[key], key))
-      }
-    }
-  } catch (err) {
-    return []
-  }
+  forEach(obj, (v, k) => output.push(fn(v, k)))
   return output
 }
 
@@ -304,9 +327,7 @@ export function union () {
 
 export function set (obj, path, val) {
   let value = obj
-  const fields = isArray(path)
-    ? path
-    : stringToPathArray(path)
+  const fields = isArray(path) ? path : toPath(path)
   forEach(fields, (p, idx) => {
     if (idx === fields.length - 1) value[p] = val
     else if (value[p] === undefined) value[p] = isNumber(p) ? [] : {}

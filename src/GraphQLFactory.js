@@ -40,6 +40,7 @@ export class GraphQLFactory extends EventEmitter {
     this.compile = compile
     this.constants = constants
     this.errors = []
+    this.middleware = []
 
     /**
      * Creates an un-compiled {@link FactoryDefinition}
@@ -52,6 +53,16 @@ export class GraphQLFactory extends EventEmitter {
     this.define = define
     this.graphql = graphql
     this.utils = utils
+  }
+
+  /**
+   * Middleware/plugin registration function that can be called on the factory
+   * itself to use the same pattern as express, and other frameworks that support
+   * middleware
+   * @param plugin
+   */
+  use (plugin) {
+    this.middleware.push(plugin)
   }
 
   /**
@@ -93,7 +104,9 @@ export class GraphQLFactory extends EventEmitter {
     })
 
     // build the definition
-    factoryDef.registerPlugin(plugin)
+    factoryDef
+      .registerPlugin(this.middleware)
+      .registerPlugin(plugin)
       .beforeResolve(beforeResolve)
       .beforeTimeout(beforeTimeout)
       .afterResolve(afterResolve)
