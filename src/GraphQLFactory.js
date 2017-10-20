@@ -3,12 +3,18 @@ import GraphQLFactoryCompiler from './GraphQLFactoryCompiler'
 import GraphQLFactoryDefinition from './GraphQLFactoryDefinition'
 import GraphQLFactoryLibrary from './GraphQLFactoryLibrary'
 import GraphQLFactoryTypeGenerator from './types/GraphQLFactoryTypeGenerator'
+import GraphQLFactoryDecomposer from './GraphQLFactoryDecomposer'
 import utils from './utils/index'
 import constants from './types/constants'
 
 // standalone definition builder
 function define (definition = {}, options = {}) {
   return new GraphQLFactoryDefinition(definition, options)
+}
+
+// standalone definition decompiler
+function unmake (graphqlType, name) {
+  return new GraphQLFactoryDecomposer(graphqlType, name)
 }
 
 // standalone compiler
@@ -125,6 +131,36 @@ export class GraphQLFactory extends EventEmitter {
     // otherwise return the lib
     return lib
   }
+
+  /**
+   * Creates a graphql-factory definition from a graphqlType
+   * @param graphqlType
+   * @param name
+   * @returns {GraphQLFactoryDecomposer}
+   */
+  unmake (graphqlType, name) {
+    return new GraphQLFactoryDecomposer(graphqlType, name)
+  }
+
+  /**
+   * Merges definitions and schemas into a single factory definition
+   */
+  merge () {
+    const args = [...arguments]
+    const definition = new GraphQLFactoryDefinition({})
+
+    // loop through all of the arguments and merge the definitions
+    args.forEach(obj => {
+      const constructorName = utils.constructorName(obj)
+      definition.merge(
+        utils.includes(constants.DECOMPOSABLE, constructorName)
+          ? unmake(obj)
+          : obj
+      )
+    })
+
+    return definition
+  }
 }
 
 /**
@@ -150,6 +186,7 @@ const factory = function (graphql) {
 factory.compile = compile
 factory.constants = constants
 factory.define = define
+factory.unmake = unmake
 factory.utils = utils
 
 // add classes to main module

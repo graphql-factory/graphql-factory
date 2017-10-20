@@ -7,6 +7,10 @@ export { merge }
 
 export function noop () {}
 
+export function identity (value) {
+  return value
+}
+
 // enum type for use with toObjectString function
 export function Enum (value) {
   if (!(this instanceof Enum)) return new Enum(value)
@@ -150,6 +154,12 @@ export function stringToPathArray (pathString) {
     })
   }
   return pathArray
+}
+
+export function constructorName (obj) {
+  return typeof obj === 'object'
+    ? obj.constructor.name
+    : undefined
 }
 
 export function toPath (pathString) {
@@ -337,6 +347,30 @@ export function set (obj, path, val) {
 
 export function clone (obj) {
   return merge({}, obj)
+}
+
+export function reduce (collection, iteratee, accumulator) {
+  if (!isObject(collection) && !isArray(collection)) return undefined
+  if (!isFunction(iteratee)) {
+    accumulator = iteratee
+    iteratee = identity
+  }
+
+  accumulator = (accumulator !== undefined)
+    ? accumulator
+    : isArray(collection)
+      ? collection.length
+        ? collection[0]
+        : undefined
+      : keys(collection).length
+        ? collection[keys(collection)[0]]
+        : undefined
+
+  forEach(collection, (value, key) => {
+    accumulator = iteratee(accumulator, value, key, collection)
+  })
+
+  return accumulator
 }
 
 export function typeOf (obj) {

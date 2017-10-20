@@ -54,26 +54,24 @@ export const DECOMPOSABLE = [
   'GraphQLUnionType'
 ]
 
+export const OUTPUT_TYPES = [
+  'GraphQLEnumType',
+  'GraphQLObjectType',
+  'GraphQLScalarType',
+  'GraphQLBoolean',
+  'GraphQLFloat',
+  'GraphQLID',
+  'GraphQLInt',
+  'GraphQLString',
+  'GraphQLList',
+  'GraphQLNonNull'
+]
+
+export const BEFORE_MIDDLEWARE = 'BEFORE'
+export const AFTER_MIDDLEWARE = 'AFTER'
+export const ERROR_MIDDLEWARE = 'ERROR'
+
 // types with fields
 export const HAS_FIELDS = [ OBJECT, INPUT, INTERFACE ]
 
-export default {
-  DECOMPOSABLE,
-  PRIMITIVES,
-  BOOLEAN,
-  ENUM,
-  FLOAT,
-  ID,
-  INPUT,
-  INT,
-  INTERFACE,
-  LIST,
-  NONNULL,
-  OBJECT,
-  SCALAR,
-  SCHEMA,
-  STRING,
-  UNION,
-  TYPE_ALIAS,
-  HAS_FIELDS
-}
+export const DEFAULT_MIDDLEWARE_TIMEOUT = 5000

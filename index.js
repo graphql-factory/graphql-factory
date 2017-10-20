@@ -785,6 +785,10 @@ toArguments.escapeString = escapeString;
 /* lodash like functions to remove dependency on lodash accept lodash.merge */
 function noop() {}
 
+function identity(value) {
+  return value;
+}
+
 // enum type for use with toObjectString function
 function Enum(value) {
   if (!(this instanceof Enum)) return new Enum(value);
@@ -919,6 +923,10 @@ function stringToPathArray(pathString) {
     });
   }
   return pathArray;
+}
+
+function constructorName(obj) {
+  return (typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object' ? obj.constructor.name : undefined;
 }
 
 function toPath(pathString) {
@@ -1137,6 +1145,22 @@ function clone(obj) {
   return merge({}, obj);
 }
 
+function reduce(collection, iteratee, accumulator) {
+  if (!isObject(collection) && !isArray(collection)) return undefined;
+  if (!isFunction(iteratee)) {
+    accumulator = iteratee;
+    iteratee = identity;
+  }
+
+  accumulator = accumulator !== undefined ? accumulator : isArray(collection) ? collection.length ? collection[0] : undefined : keys(collection).length ? collection[keys(collection)[0]] : undefined;
+
+  forEach(collection, function (value, key) {
+    accumulator = iteratee(accumulator, value, key, collection);
+  });
+
+  return accumulator;
+}
+
 function typeOf(obj) {
   if (obj === undefined) return 'UNDEFINED';
   if (obj === null) return 'NULL';
@@ -1280,6 +1304,7 @@ var _$1 = Object.freeze({
 	toObjectString: toArguments,
 	merge: merge,
 	noop: noop,
+	identity: identity,
 	Enum: Enum,
 	isBoolean: isBoolean,
 	isEnum: isEnum,
@@ -1300,6 +1325,7 @@ var _$1 = Object.freeze({
 	keys: keys,
 	capitalize: capitalize,
 	stringToPathArray: stringToPathArray,
+	constructorName: constructorName,
 	toPath: toPath,
 	has: has,
 	forEach: forEach,
@@ -1317,6 +1343,7 @@ var _$1 = Object.freeze({
 	union: union,
 	set: set,
 	clone: clone,
+	reduce: reduce,
 	typeOf: typeOf,
 	getFieldPath: getFieldPath,
 	getSchemaOperation: getSchemaOperation,
@@ -1365,11 +1392,20 @@ var TYPE_ALIAS = {
   GraphQLScalarType: SCALAR,
   GraphQLSchema: SCHEMA,
   GraphQLUnionType: UNION
+};
+
+var PRIMITIVES = {
+  GraphQLBoolean: BOOLEAN$1,
+  GraphQLFloat: FLOAT$1,
+  GraphQLID: ID,
+  GraphQLInt: INT$1,
+  GraphQLString: STRING$1
 
   // types with fields
 };var HAS_FIELDS = [OBJECT$1, INPUT, INTERFACE];
 
 var constants = {
+  PRIMITIVES: PRIMITIVES,
   BOOLEAN: BOOLEAN$1,
   ENUM: ENUM$1,
   FLOAT: FLOAT$1,
@@ -1828,7 +1864,7 @@ var FactoryEmail = {
  * Ported type from https://github.com/taion/graphql-type-json
  */
 
-function identity(value) {
+function identity$1(value) {
   return value;
 }
 
@@ -1862,8 +1898,8 @@ var FactoryJSON = {
   type: 'Scalar',
   name: 'JSON',
   description: 'The `JSON` scalar type represents JSON values as specified by ' + '[ECMA-404](http://www.ecma-international.org/ publications/files/ECMA-ST/ECMA-404.pdf).',
-  serialize: identity,
-  parseValue: identity,
+  serialize: identity$1,
+  parseValue: identity$1,
   parseLiteral: parseLiteral
 };
 
@@ -2839,12 +2875,334 @@ var GraphQLFactoryLibrary = function (_EventEmitter) {
   return GraphQLFactoryLibrary;
 }(EventEmitter);
 
+/**
+ * Strips away nonnull and list objects to
+ * build an info object containing the type
+ * @param obj
+ * @param info
+ * @returns {*}
+ */
+function getTypeInfo(obj, info) {
+  var constructorName = _$1.constructorName(obj);
+  var _info = info || {
+    type: null,
+    name: null,
+    isList: false,
+    isNonNull: false
+  };
+
+  switch (constructorName) {
+    case 'GraphQLNonNull':
+      _info.isNonNull = true;
+      return getTypeInfo(obj.ofType, _info);
+    case 'GraphQLList':
+      _info.isList = true;
+      return getTypeInfo(obj.ofType, _info);
+    default:
+      _info.type = obj;
+      _info.name = obj.name;
+  }
+  return _info;
+}
+
+/**
+ * creates a base def object
+ * @param info
+ * @returns {{type: [null]}}
+ */
+function baseDef(info) {
+  var name = info.name,
+      isList = info.isList,
+      isNonNull = info.isNonNull;
+
+  var def = {
+    type: isList ? [name] : name
+  };
+  if (isNonNull) def.nullable = false;
+  return def;
+}
+
+/**
+ * Returns the return value of a thunk
+ * or just the value if not a thunk
+ * @param thunk
+ * @returns {*}
+ */
+function resolveThunk(thunk) {
+  return _$1.isFunction(thunk) ? thunk() : thunk;
+}
+
+/**
+ * Decomposes a graphql object into a graphql-factory definition
+ */
+
+var GraphQLFactoryDecomposer = function () {
+  function GraphQLFactoryDecomposer(type, name) {
+    classCallCheck(this, GraphQLFactoryDecomposer);
+
+    this.definition = {};
+
+    if (!this._routeDecompose(type, name)) {
+      throw new Error('Invalid GraphQL type passed for de-compose.');
+    }
+
+    return this.definition;
+  }
+
+  /**
+   * Decompose a GraphQLSchema
+   * @param schema
+   * @param schemaName
+   * @constructor
+   */
+
+
+  createClass(GraphQLFactoryDecomposer, [{
+    key: 'GraphQLSchema',
+    value: function GraphQLSchema(schema) {
+      var _this = this;
+
+      var schemaName = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'Root';
+
+      var opMap = {
+        query: '_queryType',
+        mutation: '_mutationType',
+        subscription: '_subscriptionType'
+
+        // add the object type names to the operation
+      };_$1.forEach(opMap, function (opField, opType) {
+        var opObj = _$1.get(schema, '["' + opField + '"]');
+        var opName = _$1.get(opObj, 'name');
+        if (opName && _$1.isString(opName)) {
+          _$1.set(_this.definition, 'schemas["' + schemaName + '"].' + opType, opName);
+          // decompose the operation object
+          _this.GraphQLObjectType(opObj, opName);
+        }
+      });
+    }
+
+    /**
+     * Decompose a GraphQLEnumType
+     * @param enumeration
+     * @param enumName
+     * @constructor
+     */
+
+  }, {
+    key: 'GraphQLEnumType',
+    value: function GraphQLEnumType(enumeration, enumName) {
+      this._decomposeType(enumeration, enumName);
+    }
+
+    /**
+     * Decompose a GraphQLInputObjectType
+     * @param input
+     * @param inputName
+     * @constructor
+     */
+
+  }, {
+    key: 'GraphQLInputObjectType',
+    value: function GraphQLInputObjectType(input, inputName) {
+      this._decomposeType(input, inputName);
+    }
+
+    /**
+     * Decompose a GraphQLInterfaceType
+     * @param iface
+     * @param interfaceName
+     * @constructor
+     */
+
+  }, {
+    key: 'GraphQLInterfaceType',
+    value: function GraphQLInterfaceType(iface, interfaceName) {
+      this._decomposeType(iface, interfaceName);
+    }
+
+    /**
+     * Decompose a GraphQLObjectType
+     * @param object
+     * @param objectName
+     * @constructor
+     */
+
+  }, {
+    key: 'GraphQLObjectType',
+    value: function GraphQLObjectType(object, objectName) {
+      this._decomposeType(object, objectName);
+    }
+
+    /**
+     * Decompose a GraphQLScalarType
+     * @param scalar
+     * @param scalarName
+     * @constructor
+     */
+
+  }, {
+    key: 'GraphQLScalarType',
+    value: function GraphQLScalarType(scalar, scalarName) {
+      this._decomposeType(scalar, scalarName);
+    }
+
+    /**
+     * Decompose a GraphQLUnionType
+     * @param union
+     * @param unionName
+     * @constructor
+     */
+
+  }, {
+    key: 'GraphQLUnionType',
+    value: function GraphQLUnionType(union, unionName) {
+      this._decomposeType(union, unionName);
+    }
+
+    /**
+     * Routes a decompose to the appropriate type if it exists
+     * and returns a boolean whether the type was found
+     * @param type
+     * @param name
+     * @returns {boolean}
+     * @private
+     */
+
+  }, {
+    key: '_routeDecompose',
+    value: function _routeDecompose(type, name) {
+      var typeName = _$1.constructorName(type);
+
+      if (_$1.isFunction(this[typeName])) {
+        this[typeName](type, name);
+        return true;
+      }
+      return false;
+    }
+
+    /**
+     * Generic type decompose
+     * @param type
+     * @param typeName
+     * @private
+     */
+
+  }, {
+    key: '_decomposeType',
+    value: function _decomposeType(type, typeName) {
+      var name = typeName || type.name;
+      if (_$1.get(this.definition, 'types["' + name + '"]')) return;
+      var constructorName = _$1.constructorName(type);
+      var shortType = TYPE_ALIAS[constructorName];
+      var config = type._typeConfig || type._enumConfig;
+
+      // if there is no config object, exit
+      // otherwise create a placeholder for the type
+      if (!config) return;
+      _$1.set(this.definition, 'types["' + name + '"]', {});
+
+      // set the type value to the decomposed config
+      _$1.set(this.definition, 'types["' + name + '"]', this._decomposeTypeConfig(config, shortType));
+    }
+
+    /**
+     * Decomposes typeConfig fields and args
+     * @param fieldMap
+     * @private
+     */
+
+  }, {
+    key: '_decomposeFields',
+    value: function _decomposeFields(fieldMap) {
+      var _this2 = this;
+
+      return _$1.reduce(fieldMap, function (fields, fieldDef, fieldName) {
+        fields[fieldName] = _$1.reduce(fieldDef, function (config, value, key) {
+          switch (key) {
+            case 'type':
+              var info = getTypeInfo(value);
+              _this2._routeDecompose(info.type);
+              return Object.assign(config, baseDef(info));
+
+            case 'args':
+              config[key] = _this2._decomposeFields(value);
+              break;
+
+            default:
+              config[key] = value;
+              break;
+          }
+
+          return config;
+        }, {});
+
+        return fields;
+      }, {});
+    }
+
+    /**
+     * Decomposes a type configuration into a graphql-factory definition
+     * @param typeConfig
+     * @returns {*}
+     */
+
+  }, {
+    key: '_decomposeTypeConfig',
+    value: function _decomposeTypeConfig(typeConfig, type) {
+      var _this3 = this;
+
+      return _$1.reduce(typeConfig, function (def, value, key) {
+        switch (key) {
+          // used by various
+          case 'fields':
+            def.fields = _this3._decomposeFields(resolveThunk(value));
+            break;
+
+          // used by unions
+          case 'types':
+            var types = resolveThunk(value);
+            if (_$1.isArray(types) && types.length) {
+              def[key] = types.map(function (t) {
+                _this3.GraphQLUnionType(t);
+                return t.name;
+              });
+            }
+            break;
+
+          // used by object types
+          case 'interfaces':
+            var interfaces = resolveThunk(value);
+            if (_$1.isArray(interfaces) && interfaces.length) {
+              def[key] = interfaces.map(function (i) {
+                _this3.GraphQLInterfaceType(i);
+                return i.name;
+              });
+            }
+            break;
+
+          default:
+            def[key] = value;
+            break;
+        }
+
+        return def;
+      }, { type: type });
+    }
+  }]);
+  return GraphQLFactoryDecomposer;
+}();
+
 // standalone definition builder
 function define() {
   var definition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
   var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
   return new GraphQLFactoryDefinition(definition, options);
+}
+
+// standalone definition decompiler
+function unmake(graphqlType, name) {
+  return new GraphQLFactoryDecomposer(graphqlType, name);
 }
 
 // standalone compiler
@@ -2969,6 +3327,19 @@ var GraphQLFactory$1 = function (_EventEmitter) {
       // otherwise return the lib
       return lib;
     }
+
+    /**
+     * Creates a graphql-factory definition from a graphqlType
+     * @param graphqlType
+     * @param name
+     * @returns {GraphQLFactoryDeCompiler}
+     */
+
+  }, {
+    key: 'unmake',
+    value: function unmake(graphqlType, name) {
+      return new GraphQLFactoryDecomposer(graphqlType, name);
+    }
   }]);
   return GraphQLFactory;
 }(EventEmitter);
@@ -2996,6 +3367,7 @@ var factory = function factory(graphql) {
 factory.compile = compile;
 factory.constants = constants;
 factory.define = define;
+factory.unmake = unmake;
 factory.utils = _$1;
 
 // add classes to main module
