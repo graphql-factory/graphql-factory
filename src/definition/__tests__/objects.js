@@ -37,6 +37,13 @@ export const FooInput = new GraphQLInputObjectType({
   }
 })
 
+export function listFooResolve () {
+  return [
+    { bar: 'bar', baz: ['1', '2'] },
+    { bar: 'baz', baz: ['3', '4'] }
+  ]
+}
+
 export const FooQuery = new GraphQLObjectType({
   name: 'FooQuery',
   fields: {
@@ -51,12 +58,7 @@ export const FooQuery = new GraphQLObjectType({
           type: new GraphQLList(GraphQLInt)
         }
       },
-      resolve () {
-        return [
-          { bar: 'bar', baz: ['1', '2'] },
-          { bar: 'baz', baz: ['3', '4'] }
-        ]
-      }
+      resolve: listFooResolve
     }
   }
 })
