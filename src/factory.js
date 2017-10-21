@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import Definition from './definition/index'
+import Definition from './definition/definition'
 
 class FactoryChain {
   constructor (graphql, definition) {

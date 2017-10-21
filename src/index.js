@@ -1,5 +1,5 @@
 import GraphQLFactory from './factory'
-import Definition from './definition/index'
+import Definition from './definition/definition'
 import Decomposer from './definition/decompose'
 import Expander from './definition/expand'
 

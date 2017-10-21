@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { TYPE_ALIAS } from '../common/const'
+import { TYPE_ALIAS, SCALAR_NAMES } from '../common/const'
 import {
   baseDef,
   getTypeInfo,
@@ -106,6 +106,8 @@ export default class GraphQLFactoryDecomposer {
    * @constructor
    */
   GraphQLScalarType (scalar, scalarName) {
+    // do not decompose built in scalar types
+    if (_.includes(SCALAR_NAMES, scalar.name)) return
     this._decomposeType(scalar, scalarName)
   }
 
@@ -148,7 +150,9 @@ export default class GraphQLFactoryDecomposer {
     if (_.get(this.definition, `types["${name}"]`)) return
     const structName = constructorName(type)
     const shortType = TYPE_ALIAS[structName]
-    const config = type._typeConfig || type._enumConfig
+    const config = type._typeConfig
+      || type._enumConfig
+      || type._scalarConfig
 
     // if there is no config object, exit
     // otherwise create a placeholder for the type

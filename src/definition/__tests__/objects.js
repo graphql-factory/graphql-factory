@@ -29,6 +29,20 @@ export const Foo = new GraphQLObjectType({
   _factory: true
 })
 
+export const FooDef = {
+  types: {
+    Foo: {
+      type: 'Object',
+      name: 'Foo',
+      fields: {
+        bar: { type: 'String' },
+        baz: { type: ['String'] }
+      },
+      _factory: true
+    }
+  }
+}
+
 export const FooInput = new GraphQLInputObjectType({
   name: 'FooInput',
   fields: {
@@ -65,4 +79,64 @@ export const FooQuery = new GraphQLObjectType({
 
 export const FooSchema = new GraphQLSchema({
   query: FooQuery
+})
+
+export const EntityType = new GraphQLInterfaceType({
+  name: 'Entity',
+  description: 'Entity Description',
+  fields: {
+    name: {
+      type: GraphQLString
+    }
+  }
+})
+
+export const DogType = new GraphQLObjectType({
+  name: 'Dog',
+  fields: {
+    name: { type: GraphQLString },
+    dog: { type: GraphQLString }
+  }
+})
+
+export const CatType = new GraphQLObjectType({
+  name: 'Cat',
+  fields: {
+    name: { type: GraphQLString },
+    cat: { type: GraphQLString }
+  }
+})
+
+export function resolvePetType (value) {
+  if (value instanceof Dog) {
+    return DogType;
+  }
+  if (value instanceof Cat) {
+    return CatType;
+  }
+}
+
+export const PetType = new GraphQLUnionType({
+  name: 'Pet',
+  types: [ DogType, CatType ],
+  resolveType: resolvePetType
+})
+
+export function oddParseLiteral (ast) {
+  if (ast.kind === Kind.INT) {
+    const value = ast.value
+    return value % 2 === 1 ? value : null
+  }
+  return null
+}
+
+export function oddValue (value) {
+  return value % 2 === 1 ? value : null
+}
+
+export const OddType = new GraphQLScalarType({
+  name: 'Odd',
+  serialize: oddValue,
+  parseValue: oddValue,
+  parseLiteral: oddParseLiteral
 })

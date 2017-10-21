@@ -17,7 +17,8 @@ import {
   UNION,
   ENUM,
   SCALAR,
-  OUTPUT_TYPES
+  OUTPUT_TYPES,
+  SCALAR_NAMES
 } from '../common/const'
 
 const NON_SCHEMA = _.without(DECOMPOSABLE, 'GraphQLSchema')
@@ -39,8 +40,8 @@ export default class GraphQLFactoryDefinitionExpander extends EventEmitter {
     // keep the original definition
     this._def = definition
 
-    // clone a working copy
-    this.definition = _.merge({}, definition)
+    // build a new definition
+    this.definition = {}
 
     // expand the definition
     this
@@ -89,27 +90,37 @@ export default class GraphQLFactoryDefinitionExpander extends EventEmitter {
     if (this.error) return
     return _.mapValues(fields, (field, fieldName) => {
       if (this.error) return
-
-      // check for args and expand them using this function
-      if (field.args
-        && _.isObject(field.args)
-        && _.keys(field.args).length) {
-        field.args = this._expandFields(field.args)
-      }
+      const fieldStruct = constructorName(field)
 
       // check the type configuration
       if (valueString(field) || isListTypeDef(field)) {
         return { type: field }
+      } else if (_.includes(OUTPUT_TYPES, fieldStruct)) {
+        const info = getTypeInfo(field)
+        if (_.includes(DECOMPOSABLE, constructorName(info.type))
+          && !_.includes(SCALAR_NAMES, info.name)) {
+          this.merge(new Decomposer().decompose(info.type))
+        }
+        return baseDef(info)
       } else if (_.has(field, 'type')) {
         const structName = constructorName(field.type)
+
+        // check for args and expand them using this function
+        if (field.args
+          && _.isObject(field.args)
+          && _.keys(field.args).length) {
+          field.args = this._expandFields(field.args)
+        }
+
         if (valueString(field.type) || isListTypeDef(field.type)) {
           return field
         } else if (_.includes(OUTPUT_TYPES, structName)) {
           const info = getTypeInfo(field.type)
-          if (_.includes(DECOMPOSABLE, constructorName(info.type))) {
+          if (_.includes(DECOMPOSABLE, constructorName(info.type))
+            && !_.includes(SCALAR_NAMES, info.name)) {
             this.merge(new Decomposer().decompose(info.type))
           }
-          return _.merge({}, field, baseDef(info))
+          return _.assign({}, field, baseDef(info))
         }
       }
       this.error = new Error('GraphQLFactoryExpandError: '

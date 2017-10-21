@@ -44,6 +44,14 @@ export const PRIMITIVES = {
   GraphQLString: STRING
 }
 
+export const SCALAR_NAMES = [
+  'Int',
+  'Boolean',
+  'String',
+  'ID',
+  'Float'
+]
+
 export const DECOMPOSABLE = [
   'GraphQLEnumType',
   'GraphQLInputObjectType',
