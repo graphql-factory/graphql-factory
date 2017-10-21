@@ -1,5 +1,5 @@
 import * as graphql from 'graphql'
-import GraphQLFactory from '../src/index'
+import GraphQLFactory from '../../src/index'
 import _ from 'lodash'
 
 const logger = {

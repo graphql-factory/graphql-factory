@@ -6,9 +6,7 @@ import _ from 'lodash'
  * @returns {undefined}
  */
 export function constructorName (obj) {
-  return obj && (_.isObject(obj) || _.isFunction(obj))
-    ? obj.constructor.name
-    : undefined
+  return _.get(obj, 'constructor.name')
 }
 
 export function ensureValue (type, value, _default) {
@@ -34,7 +32,6 @@ export function ensureValue (type, value, _default) {
  * @returns {*}
  */
 export function getTypeInfo (obj, info) {
-  const constructorName = constructorName(obj)
   const _info = info || {
     type: null,
     name: null,
@@ -42,7 +39,7 @@ export function getTypeInfo (obj, info) {
     isNonNull: false
   }
 
-  switch (constructorName) {
+  switch (constructorName(obj)) {
     case 'GraphQLNonNull':
       _info.isNonNull = true
       return getTypeInfo(obj.ofType, _info)
@@ -88,7 +85,7 @@ export function isListTypeDef (value) {
  * @returns {*}
  */
 export function valueString (value) {
-  return value && _.isString(value)
+  return _.isString(value) && value !== ''
 }
 
 /**

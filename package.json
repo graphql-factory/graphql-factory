@@ -8,13 +8,18 @@
     "type": "git",
     "url": "git+https://github.com/graphql-factory/graphql-factory.git"
   },
+  "options": {
+    "mocha": "--check-leaks --full-trace src/**/__tests__/**/*-test.js"
+  },
   "scripts": {
     "lint": "eslint src",
     "build": "rollup -c build/rollup.config.js && uglifyjs index.js > index.min.js",
-    "test": "npm run build && mocha test/index.js"
+    "test": "npm run build && mocha test/index.js",
+    "mocha": "babel-node ./node_modules/.bin/_mocha $npm_package_options_mocha"
   },
   "author": "Branden Horiuchi <bhoriuchi@gmail.com>",
   "dependencies": {
+    "babel-cli": "^6.26.0",
     "graphql-factory-plugin": "^0.1.0",
     "lodash": "^4.17.4"
   },

@@ -1,5 +1,5 @@
 import * as graphql from 'graphql'
-import GraphQLFactory from '../../src'
+import GraphQLFactory from '../../../src/index'
 import definition from './definition'
 
 let factory = GraphQLFactory(graphql)

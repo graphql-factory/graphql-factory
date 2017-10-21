@@ -128,7 +128,7 @@ export default class GraphQLFactoryDecomposer {
    * @private
    */
   _routeDecompose (type, name) {
-    const typeName = _.constructorName(type)
+    const typeName = constructorName(type)
 
     if (_.isFunction(this[typeName])) {
       this[typeName](type, name)
@@ -146,8 +146,8 @@ export default class GraphQLFactoryDecomposer {
   _decomposeType (type, typeName) {
     const name = typeName || type.name
     if (_.get(this.definition, `types["${name}"]`)) return
-    const constructorName = constructorName(type)
-    const shortType = TYPE_ALIAS[constructorName]
+    const structName = constructorName(type)
+    const shortType = TYPE_ALIAS[structName]
     const config = type._typeConfig || type._enumConfig
 
     // if there is no config object, exit

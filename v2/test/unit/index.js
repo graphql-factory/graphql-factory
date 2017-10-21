@@ -1,4 +1,4 @@
-var utils = require('../utils')
+var utils = require('../utils/index')
 
 module.exports = function (tests) {
   describe('Unit Tests', function () {

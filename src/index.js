@@ -1,31 +1,17 @@
-import GraphQLFactory from './GraphQLFactory'
+import GraphQLFactory from './factory'
+import Definition from './definition/index'
+import Decomposer from './definition/decompose'
+import Expander from './definition/expand'
 
-/**
- * Instance of {@link http://graphql.org/graphql-js/ graphql-js}
- * @typedef {Object} GraphQL
- */
+// create a factory function that creates a new instance
+const Factory = function (graphql) {
+  return new GraphQLFactory(graphql)
+}
 
-/**
- * Factory Definition
- * @typedef {Object} FactoryDefinition
- * @property {Object} globals
- * @property {Object} fields
- * @property {Object.<String, FactoryTypeDefinition>} types
- * @property {Object} schemas
- * @property {Object} functions
- * @property {Object} externalTypes
- * @property {Object} hooks
- */
+// add objects to the default export
+Factory.Definition = Definition
+Factory.Decomposer = Decomposer
+Factory.Expander = Expander
 
-/**
- * Factory Type Definition
- * @typedef {Object} FactoryTypeDefinition
- * @property {String|Array} type - Type name or array of type names
- * @property {Object} fields - Object and Input types
- * @property {Object} values - Enum type only
- */
-
-/**
- * @ignore
- */
-export default GraphQLFactory
+// export the factory function
+export default Factory
