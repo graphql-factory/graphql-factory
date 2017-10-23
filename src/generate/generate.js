@@ -8,6 +8,7 @@ import UnionType from './types/UnionType'
 import ScalarType from './types/ScalarType'
 import Schema from './types/Schema'
 import TypeDependency from './dependency'
+import middleware from './middleware'
 import {
   BOOLEAN,
   INT,
@@ -176,8 +177,22 @@ export default class Generator extends EventEmitter {
    * @param fn
    * @param def
    */
-  bindResolve (fn, def) {
+  bindResolve (fn, fieldDef) {
+    const resolve = _.isString(fn)
+      ? _.get(this.functions, `["${fn}"]`)
+      : fn
+    const ctx = _.assign({}, this._context, { fieldDef })
 
+    if (!_.isFunction(resolve)) {
+      this.error = new Error('GraphQLFactoryGenerateError: No resolve found')
+      return
+    }
+
+    // return the middleware resolvers
+    return function (source, args, context, info) {
+      const params = { source, args, context, info }
+      return middleware(this._def, resolve, ctx, params)
+    }
   }
 
   /**
@@ -196,8 +211,9 @@ export default class Generator extends EventEmitter {
       return
     }
 
-    return function () {
-      return func.apply(ctx, [...arguments])
+    // return the wrapped function
+    return function (source, args, context, info) {
+      return func.apply(ctx, source, args, context, info)
     }
   }
 
