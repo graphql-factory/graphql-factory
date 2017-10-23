@@ -8,7 +8,7 @@ import {
   GraphQLNonNull
 } from 'graphql'
 
-describe('expand tests', () => {
+describe('definition.expand tests', () => {
   it('expands a typedef with an object field', () => {
     const ex1 = new Expander().expand({
       types: {

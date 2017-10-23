@@ -1,4 +1,9 @@
 import _ from 'lodash'
+import {
+  BEFORE_MIDDLEWARE,
+  AFTER_MIDDLEWARE,
+  ERROR_MIDDLEWARE
+} from '../common/const'
 
 /**
  * Processes the resolver function
@@ -14,7 +19,10 @@ function processResolver (resolver, ctx, params, done) {
     const value = resolver.call(ctx, source, args, context, info)
 
     return Promise.resolve(value)
-      .then(result => done(undefined, result), done)
+      .then(result => {
+        return done(undefined, result)
+      })
+      .catch(done)
   } catch (err) {
     return done(err)
   }
@@ -34,18 +42,29 @@ function processMiddleware (type, middlewares, ctx, params, value, done) {
   let queue = middlewares.slice()
   let resolved = false
 
-  // create a done function that catches calls to done
-  // after it has already been resolved
-  let _done = error => {
+  // create an end function that can only call done once
+  let end = (error, result) => {
     if (resolved) return
     resolved = true
-    return done(error)
+    return done(error, result)
   }
 
-  const next = (error, newValue) => {
+  // create a next function that will be passed to each
+  // middleware function. each call to next calls the
+  // next middleware in the queue until there are no
+  // more. additionally a timeout is created to prevent
+  // hanging if the middleware never calls next or
+  // takes too long
+  const next = (error, result) => {
     clearTimeout(timeout)
-    if (error) return _done(error)
-    else if (!queue.length) return _done(undefined, newValue)
+
+    if (type === ERROR_MIDDLEWARE) {
+      if (!queue.length) return end(error)
+    } else if (error) {
+      return end(error)
+    } else if (!queue.length) {
+      return end(undefined, result)
+    }
 
     // set the current middleware and de-queue it
     const mw = _.first(queue)
@@ -53,21 +72,31 @@ function processMiddleware (type, middlewares, ctx, params, value, done) {
 
     // create a new timeout
     timeout = setTimeout(() => {
-      _done(new Error(type + ' middleware timed out'))
+      end(new Error(type + ' middleware timed out'))
     }, mw.timeout)
 
     // call the resolver method and catch any errors
     try {
-      return type === 'before'
-        ? mw.resolver.call(ctx, params, next)
-        : mw.resolver.call(ctx, params, newValue, next)
+      switch (type) {
+        case BEFORE_MIDDLEWARE:
+          return mw.resolver.call(ctx, params, next)
+        case AFTER_MIDDLEWARE:
+          return mw.resolver.call(ctx, params, result, next)
+        case ERROR_MIDDLEWARE:
+          return mw.resolver.call(ctx, params, error, next)
+        default:
+          return end(new Error('Invalid middleware type "' + type + '"'))
+      }
     } catch (err) {
-      return _done(err)
+      return end(err)
     }
   }
 
-  // call the first next
-  next(undefined, value)
+  // call the first next. if error middleware call
+  // the value in the error position
+  type === ERROR_MIDDLEWARE
+    ? next(value)
+    : next(undefined, value)
 }
 
 /**
@@ -79,7 +108,7 @@ function processMiddleware (type, middlewares, ctx, params, value, done) {
  * @param done
  */
 function errorMiddleware (middlewares, ctx, params, error, done) {
-  processMiddleware('error', middlewares, ctx, params, error, done)
+  processMiddleware(ERROR_MIDDLEWARE, middlewares, ctx, params, error, done)
 }
 
 /**
@@ -91,7 +120,7 @@ function errorMiddleware (middlewares, ctx, params, error, done) {
  * @param done
  */
 function afterMiddleware (middlewares, ctx, params, result, done) {
-  processMiddleware('after', middlewares, ctx, params, result, done)
+  processMiddleware(AFTER_MIDDLEWARE, middlewares, ctx, params, result, done)
 }
 
 /**
@@ -102,7 +131,7 @@ function afterMiddleware (middlewares, ctx, params, result, done) {
  * @param done
  */
 function beforeMiddleware (middlewares, ctx, params, done) {
-  processMiddleware('before', middlewares, ctx, params, undefined, done)
+  processMiddleware(BEFORE_MIDDLEWARE, middlewares, ctx, params, undefined, done)
 }
 
 /**
@@ -116,33 +145,11 @@ export default function middleware (definition, resolver, ctx, params) {
   const { _before, _after, _error } = definition
 
   return new Promise((resolve, reject) => {
-    const status = {
-      resolved: false,
-      rejected: false,
-      isFulfilled: false
-    }
-
-    // create a reject handler so that reject is only called once
-    const doReject = error => {
-      if (status.isFulfilled) return
-      status.isFulfilled = true
-      status.rejected = true
-      reject(error)
-    }
-
-    // create a resolve handler so that resolve is only called once
-    const doResolve = result => {
-      if (status.isFulfilled) return
-      status.isFulfilled = true
-      status.resolved = true
-      resolve(result)
-    }
-
     // start by processing the before middleware
     return beforeMiddleware(_before, ctx, params, beforeErr => {
       if (beforeErr) {
         return errorMiddleware(_error, ctx, params, beforeErr, bError => {
-          return doReject(bError)
+          return reject(bError)
         })
       }
 
@@ -150,7 +157,7 @@ export default function middleware (definition, resolver, ctx, params) {
       return processResolver(resolver, ctx, params, (resErr, result) => {
         if (resErr) {
           return errorMiddleware(_error, ctx, params, resErr, rError => {
-            return doReject(rError)
+            return reject(rError)
           })
         }
 
@@ -158,12 +165,12 @@ export default function middleware (definition, resolver, ctx, params) {
         return afterMiddleware(_after, ctx, params, result, (afterErr, finalResult) => {
           if (afterErr) {
             return errorMiddleware(_error, ctx, params, afterErr, aError => {
-              return doReject(aError)
+              return reject(aError)
             })
           }
 
           // at this point all middleware has been resolved
-          return doResolve(finalResult)
+          return resolve(finalResult)
         })
       })
     })

@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { SCALAR_NAMES } from '../common/const'
+import { SCALAR_NAMES } from '../src/common/const'
 
 export default class TypeDependency {
   constructor () {
@@ -28,7 +28,7 @@ export default class TypeDependency {
     _.forEach(fields, field => {
       const { type, args } = field
       const typeName = _.first(_.castArray(type))
-      this._graphFields(args, type)
+      this._graphFields(args, graphType)
       this._addDependency(graphType, typeName)
     })
   }
@@ -38,7 +38,11 @@ export default class TypeDependency {
    * @param typeDefinitions
    * @returns {{}|*}
    */
-  graph (typeDefinitions, asMap) {
+  graph (typeDefinitions) {
+    // first add all types with no dependencies
+    this._graph = _.mapValues(typeDefinitions, v => [])
+
+    // then process each type for dependencies
     _.forEach(typeDefinitions, (typeDef, typeName) => {
       const { fields, interfaces, types } = typeDef
 

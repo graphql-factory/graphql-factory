@@ -1,3 +1,4 @@
+import _ from 'lodash'
 import FieldConfigMapThunk from './FieldConfigMapThunk'
 
 export default function InterfaceType (definition) {

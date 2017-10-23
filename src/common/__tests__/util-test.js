@@ -30,7 +30,7 @@ const FooList = new GraphQLList(Foo)
 const FooNonNull = new GraphQLNonNull(Foo)
 const FooListNonNull = new GraphQLNonNull(new GraphQLList(Foo))
 
-describe('util tests', () => {
+describe('common.util tests', () => {
   it('gets the constructor name', () => {
     const structName1 = constructorName(obj)
     const structName2 = constructorName(Foo)

@@ -6,9 +6,11 @@ export default function UnionType (definition) {
     const def = _.merge({}, definition)
     const { types, resolveType } = definition
 
-    def.types = _.map(types, type => {
-      return _.get(this.types, `["${type}"]`)
-    })
+    def.types = () => {
+      return _.map(types, type => {
+        return _.get(this.types, `["${type}"]`)
+      })
+    }
 
     def.resolveType = this.bindFunction(resolveType, definition)
 

@@ -6,9 +6,9 @@ import {
   FooDef
 } from './objects'
 
-describe('definition tests', () => {
+describe('definition.definition tests', () => {
   it('creates an empty definition', () => {
-    const def1 = new Definition({})
+    const def1 = new Definition()
 
     expect(def1.definition).to.deep.equal({
       functions: {},
@@ -18,7 +18,7 @@ describe('definition tests', () => {
   })
 
   it('creates a type definition', () => {
-    const def1 = new Definition(FooDef)
+    const def1 = new Definition().use(FooDef)
     expect(def1._types).to.deep.equal(FooDef.types)
   })
 })

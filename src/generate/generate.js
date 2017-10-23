@@ -1,14 +1,15 @@
 import _ from 'lodash'
 import EventEmitter from 'events'
-import EnumType from './types/EnumType'
-import ObjectType from './types/ObjectType'
-import InputObjectType from './types/InputObjectType'
-import InterfaceType from './types/InterfaceType'
-import UnionType from './types/UnionType'
-import ScalarType from './types/ScalarType'
-import Schema from './types/Schema'
-import TypeDependency from './dependency'
 import middleware from './middleware'
+import {
+  EnumType,
+  InputObjectType,
+  InterfaceType,
+  ObjectType,
+  ScalarType,
+  Schema,
+  UnionType
+} from '../types/index'
 import {
   BOOLEAN,
   INT,
@@ -33,7 +34,6 @@ export default class Generator extends EventEmitter {
     this.types = {}
     this.schemas = {}
     this.functions = {}
-    this._toResolve = {}
     this._context = {}
     this._scalars = {
       [BOOLEAN]: graphql.GraphQLBoolean,
@@ -49,75 +49,51 @@ export default class Generator extends EventEmitter {
    * @param definition
    * @private
    */
-  _makeContext (definition) {
-    this._context = {
+  _makeContext (def) {
+    const { definition, _context } = def
+    const context = _.assign({}, _context)
+
+    // add the plugin context
+    _.forEach(definition._pluginRegistry, p => {
+      _.assign(context, _.get(p, 'context', {}))
+    })
+
+    // finally add the default context values
+    this._context = _.assign(context, {
       lib: this.lib,
-      definition: definition.definition,
-      globals: definition.plugin.globals,
+      definition,
       graphql: this.graphql,
       lodash: _,
       types: this.types,
       schemas: this.schemas
-    }
-
-    // add plugin context values
-    _.forEach(definition._pluginRegistry, p => {
-      const ctx = _.get(p, 'context')
-      if (ctx) this._context = _.assign(this._context, ctx)
     })
+
+    return this
   }
 
   /**
    * Resolves the current resolvable types
    * @private
    */
-  _resolveTypes () {
-    if (this.error) return
-
-    const types = _.keys(this.types)
-    const canResolve = []
-    const unresolved = _.keys(this._toResolve).length
-    if (!unresolved) return
-
-    // build a list of types that can be resolved
-    _.forEach(this._toResolve, (deps, name) => {
-      const count = deps.length
-      const matches = _.intersection(types, deps)
-      if (count === 0 || matches.length === count) {
-        canResolve.push(name)
-      }
+  _makeTypes (types) {
+    _.forEach(types, (typeDef, typeName) => {
+      if (this.error) return false
+      this._buildType(typeName, typeDef)
     })
 
-    // if there are no resolve matches
-    if (!canResolve.length) {
-      // check if there is anything left to resolve
-      // if there is that means there are unresolvable types
-      if (unresolved) {
-        this.error = new Error('GraphQLFactoryGenerateError: '
-          + 'Failed to resolve [ '
-          + _.keys(this._toResolve).join(', ')
-          + ' ]')
-      }
-      return
-    }
-
-    // attempt to resolve the types
-    _.forEach(canResolve, typeName => {
-      this._buildType(typeName)
-    })
-
-    // attempt to resolve the remaining types
-    this._resolveTypes()
+    return this
   }
 
   /**
    * Creates schemas
    * @private
    */
-  _resolveSchemas () {
-    _.forEach(this._def.schemas, (def, name) => {
+  _makeSchemas (schemas) {
+    _.forEach(schemas, (def, name) => {
       this.schemas[name] = Schema(def, name)
     })
+
+    return this
   }
 
   /**
@@ -125,10 +101,8 @@ export default class Generator extends EventEmitter {
    * @param typeName
    * @private
    */
-  _buildType (typeName) {
+  _buildType (typeName, typeDef) {
     if (this.error) return
-
-    const typeDef = _.get(this._def, `types["${typeName}"]`)
 
     if (!typeDef) {
       this.error = new Error('GraphQLFactoryGenerateError: '
@@ -136,8 +110,11 @@ export default class Generator extends EventEmitter {
       return
     }
 
+    // get the actual graphql type
+    const { type } = typeDef
+
     // build the appropriate type
-    switch (typeName) {
+    switch (type) {
       case ENUM:
         this.types[typeName] = EnumType.call(this, typeDef)
         break
@@ -167,9 +144,6 @@ export default class Generator extends EventEmitter {
           + typeName + '" is not a valid graphql type to generate')
         return
     }
-
-    // remove the type from the toResolve hash
-    _.unset(this._toResolve, `["${typeName}"]`)
   }
 
   /**
@@ -178,6 +152,8 @@ export default class Generator extends EventEmitter {
    * @param def
    */
   bindResolve (fn, fieldDef) {
+    if (!fn) return
+
     const resolve = _.isString(fn)
       ? _.get(this.functions, `["${fn}"]`)
       : fn
@@ -201,6 +177,8 @@ export default class Generator extends EventEmitter {
    * @param def
    */
   bindFunction (fn, fieldDef) {
+    if (!fn) return
+
     const func = _.isString(fn)
       ? _.get(this.functions, `["${fn}"]`)
       : fn
@@ -222,30 +200,30 @@ export default class Generator extends EventEmitter {
    * @param field
    */
   makeType (field) {
-    const { type, nullable } = field
+    const { type, nullable, primary } = field
     const isList = _.isArray(type)
-    const isNonNull = nullable === false
+    const isNonNull = nullable === false || primary === true
     const typeName = _.first(_.castArray(type))
-    let type = _.get(
+    let gqlType = _.get(
       this.types,
       `["${typeName}"]`,
       _.get(this._scalars, `["${typeName}"]`)
     )
 
-    if (!type) {
+    if (!gqlType) {
       this.error = new Error('GraphQLFactoryGenerateError: ' +
         'Cannot make type "' + typeName + '"')
     }
 
-    type = isList
-      ? new this.graphql.GraphQLList(type)
-      : type
+    gqlType = isList
+      ? new this.graphql.GraphQLList(gqlType)
+      : gqlType
 
-    type = isNonNull
-      ? this.graphql.GraphQLNonNull(type)
-      : type
+    gqlType = isNonNull
+      ? this.graphql.GraphQLNonNull(gqlType)
+      : gqlType
 
-    return type
+    return gqlType
   }
 
   /**
@@ -253,14 +231,17 @@ export default class Generator extends EventEmitter {
    * @param definition
    */
   generate (definition) {
+    const { _types, _schemas, _functions } = definition
     this._def = definition
-    this.functions = definition._functions
-    this._toResolve = new TypeDependency().graph(definition)
+    this.functions = _functions
 
     // resolve types then schemas
-    this._resolveTypes()
-    this._resolveSchemas()
+    this
+      ._makeContext(definition)
+      ._makeTypes(_types)
+      ._makeSchemas(_schemas)
 
+    if (this.error) throw this.error
     return this
   }
 }

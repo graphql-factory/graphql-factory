@@ -3,6 +3,7 @@ export default function EnumType (definition) {
     const { GraphQLEnumType } = this.graphql
     return new GraphQLEnumType(definition)
   } catch (err) {
+    console.log(err)
     this.emit('log', {
       source: 'types',
       level: 'error',

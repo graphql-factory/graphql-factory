@@ -19,7 +19,7 @@
   },
   "author": "Branden Horiuchi <bhoriuchi@gmail.com>",
   "dependencies": {
-    "graphql-factory-plugin": "^0.1.0",
+    "graphql-factory-plugin": "^0.2.0",
     "lodash": "^4.17.4"
   },
   "devDependencies": {

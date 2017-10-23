@@ -18,7 +18,7 @@ import {
 
 import Decomposer from '../decompose'
 
-describe('decompose tests', () => {
+describe('definition.decompose tests', () => {
   it('decomposes an Object', () => {
     const def1 = new Decomposer().decompose(Foo)
 

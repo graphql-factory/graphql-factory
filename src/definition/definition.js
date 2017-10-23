@@ -5,7 +5,7 @@ import EventEmitter from 'events'
 import Expander from './expand'
 import Decomposer from './decompose'
 import Middleware from './middleware'
-import { constructorName, ensureValue } from '../common/util'
+import { constructorName } from '../common/util'
 import {
   BEFORE_MIDDLEWARE,
   AFTER_MIDDLEWARE,
@@ -13,24 +13,15 @@ import {
 } from '../common/const'
 
 export default class GraphQLFactoryDefinition extends EventEmitter {
-  constructor (definition) {
+  constructor () {
     super()
-    const {
-      globals,
-      functions,
-      types,
-      schemas,
-      before,
-      after,
-      error
-    } = definition
-    this._globals = ensureValue('object', globals, {})
-    this._functions = ensureValue('object', functions, {})
-    this._types = ensureValue('object', types, {})
-    this._schemas = ensureValue('object', schemas, {})
-    this._before = ensureValue('array', before, [])
-    this._after = ensureValue('array', after, [])
-    this._error = ensureValue('array', error, [])
+    this._context = {}
+    this._functions = {}
+    this._types = {}
+    this._schemas = {}
+    this._before = []
+    this._after = []
+    this._error = []
     this._pluginRegistry = {}
   }
 
@@ -40,8 +31,11 @@ export default class GraphQLFactoryDefinition extends EventEmitter {
    * @param timeout
    */
   before (middleware, timeout) {
-    const mw = new Middleware(BEFORE_MIDDLEWARE, middleware, timeout)
+    const mw = middleware instanceof Middleware
+      ? middleware
+      : new Middleware(BEFORE_MIDDLEWARE, middleware, timeout)
     this._before.push(mw)
+    return this
   }
 
   /**
@@ -50,8 +44,11 @@ export default class GraphQLFactoryDefinition extends EventEmitter {
    * @param timeout
    */
   after (middleware, timeout) {
-    const mw = new Middleware(AFTER_MIDDLEWARE, middleware, timeout)
+    const mw = middleware instanceof Middleware
+      ? middleware
+      : new Middleware(AFTER_MIDDLEWARE, middleware, timeout)
     this._after.push(mw)
+    return this
   }
 
   /**
@@ -60,8 +57,11 @@ export default class GraphQLFactoryDefinition extends EventEmitter {
    * @param timeout
    */
   error (middleware, timeout) {
-    const mw = new Middleware(ERROR_MIDDLEWARE, middleware, timeout)
+    const mw = middleware instanceof Middleware
+      ? middleware
+      : new Middleware(ERROR_MIDDLEWARE, middleware, timeout)
     this._error.push(mw)
+    return this
   }
 
   /**
@@ -69,8 +69,8 @@ export default class GraphQLFactoryDefinition extends EventEmitter {
    * @returns {GraphQLFactoryDefinition}
    */
   clone () {
-    return new GraphQLFactoryDefinition({
-      globals: _.assign({}, this._globals),
+    return new GraphQLFactoryDefinition().use({
+      context: _.assign({}, this._context),
       functions: _.assign({}, this._functions),
       types: _.assign({}, this._types),
       schemas: _.assign({}, this._schemas),
@@ -138,6 +138,7 @@ export default class GraphQLFactoryDefinition extends EventEmitter {
         }
         break
     }
+    return this
   }
 
   /**
@@ -160,7 +161,7 @@ export default class GraphQLFactoryDefinition extends EventEmitter {
    */
   _mergeDefinition (definition) {
     const {
-      globals,
+      context,
       functions,
       types,
       schemas,
@@ -168,7 +169,7 @@ export default class GraphQLFactoryDefinition extends EventEmitter {
       after,
       error
     } = definition
-    _.assign(this._globals, globals)
+    _.assign(this._context, context)
     _.assign(this._functions, functions)
     _.assign(this._types, types)
     _.assign(this._schemas, schemas)
@@ -253,12 +254,21 @@ export default class GraphQLFactoryDefinition extends EventEmitter {
    * @returns {{globals: *, functions: *, types: *, schemas: *}}
    */
   get plugin () {
-    const p = new Plugin()
-    p._name = 'CustomGraphQLFactoryPlugin'
-    p.globals = this._globals
-    p.functions = this._functions
-    p.types = this._types
-    p.schemas = this._schemas
+    const p = new Plugin(
+      'CustomGraphQLFactoryPlugin',
+      this._context,
+      this._functions,
+      this._types,
+      this._schemas
+    )
+
+    // add any middleware in the install
+    p.install = function (def) {
+      _.forEach(this._before, mw => def.before(mw))
+      _.forEach(this._after, mw => def.after(mw))
+      _.forEach(this._error, mw => def.error(mw))
+    }
+
     return p
   }
 }
