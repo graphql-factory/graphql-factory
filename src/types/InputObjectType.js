@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import _ from '../common/lodash.custom'
 import InputObjectFieldConfigMapThunk from './InputObjectFieldConfigMapThunk'
 
 export default function InputObjectType (definition) {

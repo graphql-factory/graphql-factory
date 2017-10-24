@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import _ from '../common/lodash.custom'
 
 export default function UnionType (definition) {
   try {
@@ -12,7 +12,9 @@ export default function UnionType (definition) {
       })
     }
 
-    def.resolveType = this.bindFunction(resolveType, definition)
+    if (_.isFunction(resolveType) || _.isString(resolveType)) {
+      def.resolveType = this.bindFunction(resolveType, definition)
+    }
 
     return new GraphQLUnionType(def)
   } catch (err) {

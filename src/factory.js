@@ -1,10 +1,23 @@
-import _ from 'lodash'
+import _ from './common/lodash.custom'
 import Definition from './definition/definition'
+import Generator from './generate/generate'
 
 class FactoryChain {
   constructor (graphql, definition) {
     this.graphql = graphql
-    this._definition = definition || new Definition()
+    this._definition = definition instanceof Definition
+      ? definition
+      : new Definition()
+    this._logger = {}
+  }
+
+  /**
+   * Creates a new clone of the factory definition
+   * logger settings are not cloned
+   * @returns {FactoryChain}
+   */
+  clone () {
+    return new FactoryChain(this.graphql, this._definition.clone())
   }
 
   /**
@@ -24,7 +37,7 @@ class FactoryChain {
    * @param timeout
    * @returns {*}
    */
-  after(middleware, timeout) {
+  after (middleware, timeout) {
     this._definition.after(middleware, timeout)
     return this
   }
@@ -56,49 +69,50 @@ class FactoryChain {
    * @param log
    */
   logger (log) {
+    if (!log || !_.isObject(log)) {
+      throw new Error('GraphQLFactoryError:'
+        + 'Logger must be an object')
+    }
+    this._logger = log
     return this
   }
 
   /**
-   * Returns the current combined definition
+   * Returns a merged or cloned definition object
+   * @param options
+   * @returns {*}
    */
-  get definition () {
-    return this._definition
+  definition (options) {
+    const { mergeSchemas } = options && _.isObject(options)
+      ? options
+      : {}
+
+    return _.isString(mergeSchemas) && mergeSchemas !== ''
+      ? this._definition.mergeSchemas(mergeSchemas, options)
+      : this._definition.clone()
   }
 
   /**
-   * Returns a new factory library of schema request functions
+   * Generates a registry
+   * @param options
    */
-  get library () {
-
+  registry (options) {
+    const def = this.definition(options)
+    return new Generator(this.graphql)
+      .generate(def)
+      .registry
   }
 
   /**
-   * Returns a combined schema request function
+   * Returns a new library
+   * @param options
+   * @returns {*}
    */
-  get request () {
-
-  }
-
-  /**
-   * Returns a hash of schema objects
-   */
-  get schemas () {
-
-  }
-
-  /**
-   * Returns a combined schema object
-   */
-  get schema () {
-
-  }
-
-  /**
-   * Returns the type objects
-   */
-  get types () {
-
+  library (options) {
+    const def = this.definition(options)
+    return new Generator(this.graphql)
+      .generate(def)
+      .lib
   }
 }
 
@@ -111,7 +125,17 @@ export default class GraphQLFactory {
   }
 
   /**
+   * Adds a logger and returns a new factory chain
+   * @param log
+   * @returns {*}
+   */
+  logger (log) {
+    return new FactoryChain(this.graphql).logger(log)
+  }
+
+  /**
    * Adds an object to the definition
+   * and returns a new factory chain
    * @param obj
    * @param name
    * @returns {*}
@@ -133,17 +157,15 @@ export default class GraphQLFactory {
       beforeTimeout,
       afterTimeout,
       logger
-    } = options &&_.isObject(options)
+    } = options && _.isObject(options)
       ? options
       : {}
 
     const chain = new FactoryChain(this.graphql)
 
-    if (logger) {
-      chain.logger(logger)
-    }
-
+    if (logger) chain.logger(logger)
     chain.use(definition)
+
     if (plugin) {
       _.forEach(_.castArray(plugin), p => {
         chain.use(p)
@@ -164,7 +186,7 @@ export default class GraphQLFactory {
       })
     }
 
-    const lib = chain.library
+    const lib = chain.library()
     return lib
   }
 }

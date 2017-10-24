@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import _ from '../common/lodash.custom'
 import EventEmitter from 'events'
 import Decomposer from './decompose'
 import {
@@ -142,8 +142,8 @@ export default class GraphQLFactoryDefinitionExpander extends EventEmitter {
       if (valueString(value)) {
         return { value }
       } else if (!_.has(value, 'value')) {
-        this.error = new Error('GraphQLFactoryExpandError: ' +
-          'Enum definition for "' + name + '" is missing a value field')
+        this.error = new Error('GraphQLFactoryExpandError: '
+          + 'Enum definition for "' + name + '" is missing a value field')
       } else {
         return value
       }
@@ -167,9 +167,9 @@ export default class GraphQLFactoryDefinitionExpander extends EventEmitter {
         return t.name
       }
 
-      this.error = new Error('GraphQLFactoryExpandError: ' +
-        'types defintion should contain an array of ' +
-        'strings or GraphQLObjectType')
+      this.error = new Error('GraphQLFactoryExpandError: '
+        + 'types defintion should contain an array of '
+        + 'strings or GraphQLObjectType')
     })
   }
 
@@ -190,9 +190,9 @@ export default class GraphQLFactoryDefinitionExpander extends EventEmitter {
         return i.name
       }
 
-      this.error = new Error('GraphQLFactoryExpandError: ' +
-        'interfaces defintion should contain an array of ' +
-        'strings or GraphQLInterfaceType')
+      this.error = new Error('GraphQLFactoryExpandError: '
+        + 'interfaces defintion should contain an array of '
+        + 'strings or GraphQLInterfaceType')
     })
   }
 
@@ -249,7 +249,7 @@ export default class GraphQLFactoryDefinitionExpander extends EventEmitter {
         break
 
       case UNION:
-        this.error = assertField('object', type, useName, types, 'types')
+        this.error = assertField('array', type, useName, types, 'types')
         if (this.error) return
         t.types = this._mapTypes(types)
         break

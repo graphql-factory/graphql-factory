@@ -1,6 +1,7 @@
-import _ from 'lodash'
+import _ from '../common/lodash.custom'
 import EventEmitter from 'events'
 import middleware from './middleware'
+import Library from './library'
 import {
   EnumType,
   InputObjectType,
@@ -25,9 +26,8 @@ import {
 } from '../common/const'
 
 export default class Generator extends EventEmitter {
-  constructor (graphql, lib) {
+  constructor (graphql) {
     super()
-    this.lib = lib
     this.graphql = graphql
     this.error = null
     this._def = {}
@@ -42,6 +42,33 @@ export default class Generator extends EventEmitter {
       [FLOAT]: graphql.GraphQLFloat,
       [ID]: graphql.GraphQLID
     }
+
+    // create a read only registry
+    const registry = {}
+    Object.defineProperty(registry, 'types', {
+      enumerable: true,
+      configurable: false,
+      get: () => {
+        return this.types
+      }
+    })
+    Object.defineProperty(registry, 'schemas', {
+      enumerable: true,
+      configurable: false,
+      get: () => {
+        return this.schemas
+      }
+    })
+    Object.defineProperty(registry, 'definition', {
+      enumerable: true,
+      configurable: false,
+      get: () => {
+        return this._def.definition
+      }
+    })
+
+    // create a new library and pass the registry
+    this.lib = new Library(graphql, registry)
   }
 
   /**
@@ -90,7 +117,7 @@ export default class Generator extends EventEmitter {
    */
   _makeSchemas (schemas) {
     _.forEach(schemas, (def, name) => {
-      this.schemas[name] = Schema(def, name)
+      this.schemas[name] = Schema.call(this, def, name)
     })
 
     return this
@@ -142,7 +169,7 @@ export default class Generator extends EventEmitter {
       default:
         this.error = new Error('GraphQLFactoryGenerateError: "'
           + typeName + '" is not a valid graphql type to generate')
-        return
+        break
     }
   }
 
@@ -211,8 +238,8 @@ export default class Generator extends EventEmitter {
     )
 
     if (!gqlType) {
-      this.error = new Error('GraphQLFactoryGenerateError: ' +
-        'Cannot make type "' + typeName + '"')
+      this.error = new Error('GraphQLFactoryGenerateError: '
+        + 'Cannot make type "' + typeName + '"')
     }
 
     gqlType = isList

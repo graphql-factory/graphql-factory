@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import _ from '../common/lodash.custom'
 import { TYPE_ALIAS, SCALAR_NAMES } from '../common/const'
 import {
   baseDef,
@@ -24,8 +24,8 @@ export default class GraphQLFactoryDecomposer {
    */
   decompose (type, name) {
     if (!this._routeDecompose(type, name)) {
-      throw new Error('GraphQLFactoryDecomposeError: ' +
-        'Invalid GraphQL type passed for de-compose.')
+      throw new Error('GraphQLFactoryDecomposeError: '
+        + 'Invalid GraphQL type passed for de-compose.')
     }
     return this.definition
   }

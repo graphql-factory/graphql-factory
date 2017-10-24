@@ -34,8 +34,8 @@ describe('definition.expand tests', () => {
             str1: { type: 'String' },
             str2: { type: 'String' },
             str3: { type: 'String' },
-            str4: { type: ['String'] },
-            str5: { type: ['String'], nullable: false }
+            str4: { type: [ 'String' ] },
+            str5: { type: [ 'String' ], nullable: false }
           }
         }
       }
@@ -59,7 +59,7 @@ describe('definition.expand tests', () => {
             name: 'FooQuery',
             fields: {
               listFoo: {
-                type: ['Foo'],
+                type: [ 'Foo' ],
                 args: {
                   arg1: 'String',
                   arg2: new GraphQLList(GraphQLString)
@@ -86,10 +86,10 @@ describe('definition.expand tests', () => {
           name: 'FooQuery',
           fields: {
             listFoo: {
-              type: ['Foo'],
+              type: [ 'Foo' ],
               args: {
                 arg1: { type: 'String' },
-                arg2: { type: ['String'] }
+                arg2: { type: [ 'String' ] }
               },
               resolve: resolver1
             }

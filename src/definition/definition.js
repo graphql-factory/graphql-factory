@@ -1,20 +1,19 @@
-import _ from 'lodash'
+import _ from '../common/lodash.custom'
 import Plugin from 'graphql-factory-plugin'
-import basePlugins from '../plugins'
-import EventEmitter from 'events'
+import basePlugins from '../plugins/index'
 import Expander from './expand'
 import Decomposer from './decompose'
 import Middleware from './middleware'
-import { constructorName } from '../common/util'
+import { constructorName, capitalCase } from '../common/util'
 import {
+  OBJECT,
   BEFORE_MIDDLEWARE,
   AFTER_MIDDLEWARE,
   ERROR_MIDDLEWARE
 } from '../common/const'
 
-export default class GraphQLFactoryDefinition extends EventEmitter {
+export default class GraphQLFactoryDefinition {
   constructor () {
-    super()
     this._context = {}
     this._functions = {}
     this._types = {}
@@ -108,15 +107,17 @@ export default class GraphQLFactoryDefinition extends EventEmitter {
       // types that require a name parameter
       case 'GraphQLSchema':
       case 'Function':
-        if (!name || !_.isString(name)) {
+        if (name === '' || !_.isString(name)) {
           throw new Error('GraphQLFactoryUseError: '
             + structName + ' requires a name')
         }
-        structName === 'Function'
-          ? this._functions[name] = obj
-          : this._mergeDefinition(
+        if (structName === 'Function') {
+          this._functions[name] = obj
+        } else {
+          this._mergeDefinition(
             new Decomposer().decompose(obj, name)
           )
+        }
         break
 
       // all other objects should attempt decomposition
@@ -178,11 +179,93 @@ export default class GraphQLFactoryDefinition extends EventEmitter {
     this._error = _.union(this._error, error)
   }
 
+
   /**
-   * Clones the plugin definition
+   * Exports the definition as a plugin
+   * @param name
+   * @returns {GraphQLFactoryPlugin}
    */
-  clone () {
-    return _.merge({}, this.plugin)
+  export (name) {
+    if (!_.isString(name) || name === '') {
+      throw new Error('GraphQLFactoryDefinitionError: '
+        + 'Exporting definition as a plugin requires a plugin name')
+    }
+    const p = new Plugin(
+      name,
+      this.context,
+      this.functions,
+      this.types,
+      this.schemas
+  )
+
+    // add any middleware in the install
+    p.install = function (def) {
+      _.forEach(this._before, mw => def.before(mw))
+      _.forEach(this._after, mw => def.after(mw))
+      _.forEach(this._error, mw => def.error(mw))
+    }
+
+    return p
+  }
+
+  /**
+   * Combines operation fields into a single object and
+   * sets that new object on a new schema definition
+   * @param name
+   */
+  mergeSchemas (name, options) {
+    if (!_.isString(name) || name === '') {
+      throw new Error('GraphQLFactoryDefinitionError: '
+        + 'Merging schemas requires a schema name')
+    }
+
+    const { clean } = _.isObject(options) && options
+      ? options
+      : {}
+
+    const def = this.clone()
+    const schema = {}
+
+    _.forEach(this._schemas, s => {
+      _.forEach(s, (opRef, opType) => {
+        // only process operation fields
+        if (!_.includes([ 'query', 'mutation', 'subscription' ], opType)) {
+          return true
+        }
+        const singleName = capitalCase(name, opType, 'object')
+        const opObj = _.get(def._types, `["${opRef}"]`)
+        schema[opType] = singleName
+
+        // create the initial definition
+        if (!_.has(def._types, `["${singleName}"]`)) {
+          this._types[singleName] = {
+            type: OBJECT,
+            name: singleName,
+            fields: {}
+          }
+        }
+
+        // assign the fields to the existing def
+        // and remove the original type
+        _.assign(def._types[singleName], opObj.fields)
+        if (clean !== false) {
+          _.unset(def._types, `["${opRef}"]`)
+        }
+      })
+    })
+
+    // add the new schema or make it the only
+    // depending on the clean argument
+    if (clean === false) {
+      def._schemas[name] = schema
+    } else {
+      def._schemas = {
+        [name]: schema
+      }
+    }
+
+    // return the new definition
+    return def
   }
 
   /**
@@ -238,37 +321,46 @@ export default class GraphQLFactoryDefinition extends EventEmitter {
   }
 
   /**
+   * Context getter
+   * @returns {{}|*}
+   */
+  get context () {
+    return this._context
+  }
+
+  /**
+   * Types getter
+   * @returns {{}|*}
+   */
+  get types () {
+    return this._types
+  }
+
+  /**
+   * Schemas getter
+   * @returns {{}|*}
+   */
+  get schemas () {
+    return this._schemas
+  }
+
+  /**
+   * Functions getter
+   * @returns {{}|*}
+   */
+  get functions () {
+    return this._functions
+  }
+
+  /**
    * Returns a definition object
    * @returns {{functions: *, types: *, schemas: *}}
    */
   get definition () {
     return {
-      functions: this._functions,
-      types: this._types,
-      schemas: this._schemas
+      functions: this.functions,
+      types: this.types,
+      schemas: this.schemas
     }
-  }
-
-  /**
-   * Returns a new plugin instance
-   * @returns {{globals: *, functions: *, types: *, schemas: *}}
-   */
-  get plugin () {
-    const p = new Plugin(
-      'CustomGraphQLFactoryPlugin',
-      this._context,
-      this._functions,
-      this._types,
-      this._schemas
-    )
-
-    // add any middleware in the install
-    p.install = function (def) {
-      _.forEach(this._before, mw => def.before(mw))
-      _.forEach(this._after, mw => def.after(mw))
-      _.forEach(this._error, mw => def.error(mw))
-    }
-
-    return p
   }
 }

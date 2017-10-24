@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import _ from './lodash.custom'
 
 /**
  * Returns the name of the constructor
@@ -128,7 +128,15 @@ export function assertField (fieldType, fieldTypeName, typeName, field, fieldKey
 
   return !error
     ? null
-    : new Error('GraphQLFactoryExpandError: ' +
-      'Missing ' + fieldKey + ' for ' + fieldTypeName
+    : new Error('GraphQLFactoryExpandError: '
+      + 'Missing ' + fieldKey + ' for ' + fieldTypeName
       + ' "' + typeName + '"')
+}
+
+/**
+ * Creates a string with all words capitalized
+ * @returns {string|*}
+ */
+export function capitalCase () {
+  return _.map([ ...arguments ], _.capitalize).join('')
 }

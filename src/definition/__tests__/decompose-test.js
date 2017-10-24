@@ -10,6 +10,7 @@ import {
   EntityType,
   PetType,
   OddType,
+  ObjWithThunk,
   listFooResolve,
   resolvePetType,
   oddParseLiteral,
@@ -52,7 +53,7 @@ describe('definition.decompose tests', () => {
           name: 'FooInput',
           fields: {
             bar: { type: 'String', nullable: false },
-            baz: { type: ['Int'] }
+            baz: { type: [ 'Int' ] }
           }
         }
       }
@@ -135,7 +136,7 @@ describe('definition.decompose tests', () => {
           name: 'Foo',
           fields: {
             bar: { type: 'String' },
-            baz: { type: ['String'] }
+            baz: { type: [ 'String' ] }
           },
           _factory: true
         },
@@ -144,7 +145,7 @@ describe('definition.decompose tests', () => {
           name: 'FooQuery',
           fields: {
             listFoo: {
-              type: ['Foo'],
+              type: [ 'Foo' ],
               args: {
                 bar: {
                   type: 'String',
@@ -152,7 +153,7 @@ describe('definition.decompose tests', () => {
                   defaultValue: 'bar'
                 },
                 baz: {
-                  type: ['Int']
+                  type: [ 'Int' ]
                 }
               },
               resolve: listFooResolve
@@ -164,6 +165,25 @@ describe('definition.decompose tests', () => {
         FooSchema: {
           query: 'FooQuery'
         }
+      }
+    })
+  })
+
+  it('decomposes an object with a field config thunk map', () => {
+    const def1 = new Decomposer().decompose(ObjWithThunk)
+
+    expect(def1).to.deep.equal({
+      types: {
+        ObjWithThunk: {
+          type: 'Object',
+          name: 'ObjWithThunk',
+          fields: {
+            foo: {
+              type: 'Foo'
+            }
+          }
+        },
+        Foo: FooDef.types.Foo
       }
     })
   })

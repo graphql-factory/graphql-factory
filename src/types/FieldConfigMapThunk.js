@@ -1,14 +1,14 @@
-import _ from 'lodash'
+import _ from '../common/lodash.custom'
 
 export default function FieldConfigMapThunk (fields) {
-  try {
-    return () => _.mapValues(fields, field => {
+  return () => _.mapValues(fields, field => {
+    try {
       const { args, resolve } = field
 
       field.type = this.makeType(field)
 
       if (args) {
-        field.args = _.map(args, arg => {
+        field.args = _.mapValues(args, arg => {
           arg.type = this.makeType(arg)
           return arg
         })
@@ -18,13 +18,13 @@ export default function FieldConfigMapThunk (fields) {
       }
 
       return field
-    })
-  } catch (err) {
-    this.emit('log', {
-      source: 'types',
-      level: 'error',
-      error: new Error('FieldConfigMapThunk: ' + err.message),
-      stack: err.stack
-    })
-  }
+    } catch (err) {
+      this.emit('log', {
+        source: 'types',
+        level: 'error',
+        error: new Error('FieldConfigMapThunk: ' + err.message),
+        stack: err.stack
+      })
+    }
+  })
 }

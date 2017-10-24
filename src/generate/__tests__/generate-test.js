@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import _ from '../../common/lodash.custom'
 import { describe, it } from 'mocha'
 import { expect } from 'chai'
 import * as graphql from 'graphql'
@@ -10,9 +10,11 @@ const {
   GraphQLObjectType,
   GraphQLInputObjectType,
   GraphQLInterfaceType,
+  GraphQLUnionType,
+  GraphQLScalarType,
+  GraphQLSchema,
   GraphQLString,
   GraphQLInt,
-  GraphQLNonNull,
   GraphQLList
 } = graphql
 
@@ -40,6 +42,32 @@ const FooObjectDef = {
 
 const FooObject = new GraphQLObjectType(FooObjectDef)
 
+/*
+const BarObjectDef = {
+  type: 'Object',
+  name: 'BarObject',
+  fields: {
+    field1: {
+      type: GraphQLInt
+    }
+  }
+}
+
+const BarObject = new GraphQLObjectType(BarObjectDef)
+
+
+const BazObjectDef = {
+  type: 'Object',
+  name: 'BazObject',
+  fields: {
+    field1: {
+      type: new GraphQLNonNull(GraphQLString)
+    }
+  }
+}
+
+const BazObject = new GraphQLObjectType(BazObjectDef)
+*/
 const FooInputDef = {
   type: 'Input',
   name: 'FooInput',
@@ -64,6 +92,7 @@ const FooInterface1Def = {
 
 const FooInterface1 = new GraphQLInterfaceType(FooInterface1Def)
 
+/*
 const FooInterface2Def = {
   type: 'Interface',
   name: 'FooInterface2',
@@ -75,10 +104,51 @@ const FooInterface2Def = {
 }
 
 const FooInterface2 = new GraphQLInterfaceType(FooInterface2Def)
+*/
 
+const FooUnionDef = {
+  type: 'Union',
+  name: 'FooUnion',
+  types: [ 'FooObject', 'BarObject', 'BazObject' ]
+}
+
+const FooUnion = new GraphQLUnionType(FooUnionDef)
+
+const FooScalarDef = {
+  type: 'Scalar',
+  name: 'FooScalar',
+  serialize () {
+    return 1
+  }
+}
+
+const FooScalar = new GraphQLScalarType(FooScalarDef)
+
+const FooSchemaQuery = new GraphQLObjectType({
+  name: 'FooSchemaQuery',
+  fields: {
+    foo: {
+      type: GraphQLString,
+      args: {
+        arg1: { type: GraphQLString }
+      },
+      resolve () {
+        return 'result'
+      }
+    }
+  }
+})
+
+const FooSchemaDef = {
+  query: FooSchemaQuery
+}
+
+/*
+ * Start tests
+ */
 describe('generate.generate tests', () => {
   it('generates an Enum', () => {
-    const reg = new Generator(graphql, {}).generate(
+    const reg = new Generator(graphql).generate(
       new Definition().use({
         types: {
           FooEnum: FooEnumDef
@@ -90,7 +160,7 @@ describe('generate.generate tests', () => {
   })
 
   it('generates an Object', () => {
-    const reg = new Generator(graphql, {}).generate(
+    const reg = new Generator(graphql).generate(
       new Definition().use({
         types: {
           FooObject: FooObjectDef
@@ -98,12 +168,12 @@ describe('generate.generate tests', () => {
       })
     )
 
-    expect(_.omit(reg.types.FooObject, ['_typeConfig']))
-      .to.deep.equal(_.omit(FooObject, ['_typeConfig']))
+    expect(_.omit(reg.types.FooObject, [ '_typeConfig' ]))
+      .to.deep.equal(_.omit(FooObject, [ '_typeConfig' ]))
   })
 
   it('generates an Input', () => {
-    const reg = new Generator(graphql, {}).generate(
+    const reg = new Generator(graphql).generate(
       new Definition().use({
         types: {
           FooInput: FooInputDef
@@ -111,12 +181,12 @@ describe('generate.generate tests', () => {
       })
     )
 
-    expect(_.omit(reg.types.FooInput, ['_typeConfig']))
-      .to.deep.equal(_.omit(FooInput, ['_typeConfig']))
+    expect(_.omit(reg.types.FooInput, [ '_typeConfig' ]))
+      .to.deep.equal(_.omit(FooInput, [ '_typeConfig' ]))
   })
 
   it('generates an Interface', () => {
-    const reg = new Generator(graphql, {}).generate(
+    const reg = new Generator(graphql).generate(
       new Definition().use({
         types: {
           FooInterface1: FooInterface1Def
@@ -124,7 +194,48 @@ describe('generate.generate tests', () => {
       })
     )
 
-    expect(_.omit(reg.types.FooInterface1, ['_typeConfig']))
-      .to.deep.equal(_.omit(FooInterface1, ['_typeConfig']))
+    expect(_.omit(reg.types.FooInterface1, [ '_typeConfig' ]))
+      .to.deep.equal(_.omit(FooInterface1, [ '_typeConfig' ]))
+  })
+
+  it('generates a Union', () => {
+    const reg = new Generator(graphql).generate(
+      new Definition().use({
+        types: {
+          FooUnion: FooUnionDef
+        }
+      })
+    )
+
+    expect(_.omit(reg.types.FooUnion, [ '_typeConfig' ]))
+      .to.deep.equal(_.omit(FooUnion, [ '_typeConfig' ]))
+  })
+
+  it('generates a Scalar', () => {
+    const reg = new Generator(graphql).generate(
+      new Definition().use({
+        types: {
+          FooScalar: FooScalarDef
+        }
+      })
+    )
+
+    expect(_.omit(reg.types.FooScalar, [ '_scalarConfig' ]))
+      .to.deep.equal(_.omit(FooScalar, [ '_scalarConfig' ]))
+  })
+
+  it('generates a Schema', () => {
+    const reg = new Generator(graphql).generate(
+      new Definition().use({
+        types: {
+          FooSchemaQuery
+        },
+        schemas: {
+          FooSchema: FooSchemaDef
+        }
+      })
+    )
+
+    expect(reg.schemas.FooSchema).to.be.an.instanceOf(GraphQLSchema)
   })
 })

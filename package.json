@@ -1,7 +1,7 @@
 {
   "name": "graphql-factory",
   "version": "3.0.0",
-  "description": "Compose GraphQL objects with JSON definitions",
+  "description": "Compose GraphQL types & schemas + middleware",
   "license": "MIT",
   "main": "index.js",
   "repository": {
@@ -9,18 +9,21 @@
     "url": "git+https://github.com/graphql-factory/graphql-factory.git"
   },
   "options": {
-    "mocha": "--check-leaks --full-trace src/**/__tests__/**/*-test.js"
+    "mocha": "--check-leaks --full-trace src/**/__tests__/**/*-test.js",
+    "lodash": "assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without"
   },
   "scripts": {
     "lint": "eslint src",
-    "build": "rollup -c build/rollup.config.js && uglifyjs index.js > index.min.js",
-    "test": "npm run mocha",
-    "mocha": "babel-node ./node_modules/.bin/_mocha $npm_package_options_mocha"
+    "build:lodash": "lodash modularize exports=es include=$npm_package_options_lodash -o src/common/lodash",
+    "build": "npm run lint && rollup -c build/rollup.config.js && uglifyjs index.js > index.min.js && npm run test",
+    "test": "babel-node ./node_modules/.bin/_mocha $npm_package_options_mocha"
   },
   "author": "Branden Horiuchi <bhoriuchi@gmail.com>",
+  "peerDependencies": {
+    "graphql": ">=0.9.0"
+  },
   "dependencies": {
-    "graphql-factory-plugin": "^0.2.0",
-    "lodash": "^4.17.4"
+    "graphql-factory-plugin": "^0.2.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
@@ -37,10 +40,9 @@
     "eslint": "^4.8.0",
     "eslint-plugin-babel": "^4.1.2",
     "graphql": "^0.11.6",
+    "lodash": "^4.17.4",
+    "lodash-cli": "^4.17.4",
     "mocha": "^3.2.0",
-    "node-getopt": "^0.2.3",
-    "rethinkdbdash": "^2.3.31",
-    "rewire": "^2.5.2",
     "rollup": "^0.50.0",
     "rollup-plugin-babel": "^3.0.2",
     "uglify-js": "^3.1.3"

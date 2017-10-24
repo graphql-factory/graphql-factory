@@ -9,7 +9,10 @@ const babelConfig = {
 
 export default {
   input: 'src/index.js',
-  external: ['events'],
+  external: [
+    'events',
+    'graphql-factory-plugin'
+  ],
   plugins: [
     babel(
       babelrc({

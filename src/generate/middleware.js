@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import _ from '../common/lodash.custom'
 import {
   BEFORE_MIDDLEWARE,
   AFTER_MIDDLEWARE,
@@ -43,7 +43,7 @@ function processMiddleware (type, middlewares, ctx, params, value, done) {
   let resolved = false
 
   // create an end function that can only call done once
-  let end = (error, result) => {
+  const end = (error, result) => {
     if (resolved) return
     resolved = true
     return done(error, result)
@@ -94,7 +94,7 @@ function processMiddleware (type, middlewares, ctx, params, value, done) {
 
   // call the first next. if error middleware call
   // the value in the error position
-  type === ERROR_MIDDLEWARE
+  return type === ERROR_MIDDLEWARE
     ? next(value)
     : next(undefined, value)
 }

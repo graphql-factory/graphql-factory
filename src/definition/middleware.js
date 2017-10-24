@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import _ from '../common/lodash.custom'
 import {
   BEFORE_MIDDLEWARE,
   AFTER_MIDDLEWARE,
@@ -21,8 +21,8 @@ export default class Middleware {
       throw new Error('GraphQLFactoryMiddlewareError: '
         + 'Resolver must be a function')
     } else if (timeout && (!_.isNumber(timeout) || timeout < 1)) {
-      throw new Error('GraphQLFactoryMiddlewareError: ' +
-        'Timeout must be an integer greater than 0')
+      throw new Error('GraphQLFactoryMiddlewareError: '
+        + 'Timeout must be an integer greater than 0')
     }
     this.type = type
     this.resolver = resolver

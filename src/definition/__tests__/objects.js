@@ -9,7 +9,8 @@ import {
   GraphQLString,
   GraphQLInt,
   GraphQLList,
-  GraphQLNonNull
+  GraphQLNonNull,
+  Kind
 } from 'graphql'
 
 export const FooEnum = new GraphQLEnumType({
@@ -36,7 +37,7 @@ export const FooDef = {
       name: 'Foo',
       fields: {
         bar: { type: 'String' },
-        baz: { type: ['String'] }
+        baz: { type: [ 'String' ] }
       },
       _factory: true
     }
@@ -53,8 +54,8 @@ export const FooInput = new GraphQLInputObjectType({
 
 export function listFooResolve () {
   return [
-    { bar: 'bar', baz: ['1', '2'] },
-    { bar: 'baz', baz: ['3', '4'] }
+    { bar: 'bar', baz: [ '1', '2' ] },
+    { bar: 'baz', baz: [ '3', '4' ] }
   ]
 }
 
@@ -108,11 +109,11 @@ export const CatType = new GraphQLObjectType({
 })
 
 export function resolvePetType (value) {
-  if (value instanceof Dog) {
-    return DogType;
+  if (value instanceof DogType) {
+    return DogType
   }
-  if (value instanceof Cat) {
-    return CatType;
+  if (value instanceof CatType) {
+    return CatType
   }
 }
 
@@ -139,4 +140,13 @@ export const OddType = new GraphQLScalarType({
   serialize: oddValue,
   parseValue: oddValue,
   parseLiteral: oddParseLiteral
+})
+
+export const ObjWithThunk = new GraphQLObjectType({
+  name: 'ObjWithThunk',
+  fields: () => {
+    return {
+      foo: { type: Foo }
+    }
+  }
 })

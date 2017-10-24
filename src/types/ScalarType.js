@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import _ from '../common/lodash.custom'
 
 export default function ScalarType (definition) {
   try {
@@ -7,8 +7,14 @@ export default function ScalarType (definition) {
     const { serialize, parseValue, parseLiteral } = definition
 
     def.serialize = this.bindFunction(serialize, definition)
-    def.parseValue = this.bindFunction(parseValue, definition)
-    def.parseLiteral = this.bindFunction(parseLiteral, definition)
+
+    if (_.isFunction(parseValue) || _.isString(parseValue)) {
+      def.parseValue = this.bindFunction(parseValue, definition)
+    }
+
+    if (_.isFunction(parseLiteral) || _.isString(parseLiteral)) {
+      def.parseLiteral = this.bindFunction(parseLiteral, definition)
+    }
 
     return new GraphQLScalarType(def)
   } catch (err) {

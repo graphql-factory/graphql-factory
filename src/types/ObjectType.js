@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import _ from '../common/lodash.custom'
 import InterfacesThunk from './InterfacesThunk'
 import FieldConfigMapThunk from './FieldConfigMapThunk'
 
@@ -11,7 +11,10 @@ export default function ObjectType (definition) {
     // update fields with types and functions
     def.interfaces = InterfacesThunk.call(this, interfaces)
     def.fields = FieldConfigMapThunk.call(this, fields)
-    def.isTypeOf = this.bindFunction(isTypeOf, definition)
+
+    if (_.isFunction(isTypeOf) || _.isString(isTypeOf)) {
+      def.isTypeOf = this.bindFunction(isTypeOf, definition)
+    }
 
     return new GraphQLObjectType(def)
   } catch (err) {

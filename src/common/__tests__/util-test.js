@@ -48,14 +48,14 @@ describe('common.util tests', () => {
     const ensure1 = ensureValue('object', undefined, {})
     const ensure2 = ensureValue('object', {}, { foo: true })
     const ensure3 = ensureValue('array', undefined, [])
-    const ensure4 = ensureValue('array', [], [1])
-    const ensure5 = ensureValue('array', [1], [])
+    const ensure4 = ensureValue('array', [], [ 1 ])
+    const ensure5 = ensureValue('array', [ 1 ], [])
 
     expect(ensure1).to.deep.equal({})
     expect(ensure2).to.deep.equal({})
     expect(ensure3).to.deep.equal([])
     expect(ensure4).to.deep.equal([])
-    expect(ensure5).to.deep.equal([1])
+    expect(ensure5).to.deep.equal([ 1 ])
   })
 
   it('gets type info', () => {
@@ -101,14 +101,14 @@ describe('common.util tests', () => {
 
     expect(def1).to.deep.equal({ type: 'Foo' })
     expect(def2).to.deep.equal({ type: 'Foo', nullable: false })
-    expect(def3).to.deep.equal({ type: ['Foo'] })
-    expect(def4).to.deep.equal({ type: ['Foo'], nullable: false })
+    expect(def3).to.deep.equal({ type: [ 'Foo' ] })
+    expect(def4).to.deep.equal({ type: [ 'Foo' ], nullable: false })
   })
 
   it('checks if the typeDef is a list', () => {
-    const islist1 = isListTypeDef(['Foo'])
+    const islist1 = isListTypeDef([ 'Foo' ])
     const islist2 = isListTypeDef('Foo')
-    const islist3 = isListTypeDef(['Foo', 'Bar'])
+    const islist3 = isListTypeDef([ 'Foo', 'Bar' ])
 
     expect(islist1).to.equal(true)
     expect(islist2).to.equal(false)
@@ -141,7 +141,7 @@ describe('common.util tests', () => {
     const asrt1 = assertField('object', 'Object', 'Foo', {}, 'fields')
     const asrt2 = assertField('object', 'Object', 'Foo', { f: true }, 'fields')
     const asrt3 = assertField('array', 'Object', 'Foo', [], 'fields')
-    const asrt4 = assertField('array', 'Object', 'Foo', [1], 'fields')
+    const asrt4 = assertField('array', 'Object', 'Foo', [ 1 ], 'fields')
     const asrt5 = assertField('function', 'Object', 'Foo', () => true, 'fields')
     const asrt6 = assertField('object', 'Object', 'Foo', undefined, 'fields')
 
