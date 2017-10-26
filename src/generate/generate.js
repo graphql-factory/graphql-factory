@@ -2,6 +2,7 @@ import _ from '../common/lodash.custom'
 import EventEmitter from 'events'
 import middleware from './middleware'
 import Library from './library'
+import { toObjectType } from '../common/util'
 import {
   EnumType,
   InputObjectType,
@@ -220,30 +221,20 @@ export default class Generator extends EventEmitter {
    * @param field
    */
   makeType (field) {
-    const { type, nullable, primary } = field
-    const isList = _.isArray(type)
-    const isNonNull = nullable === false || primary === true
-    const typeName = _.first(_.castArray(type))
-    let gqlType = _.get(
-      this.types,
-      `["${typeName}"]`,
-      _.get(this._scalars, `["${typeName}"]`)
-    )
+    const { type } = field
+    return toObjectType(this.graphql, type, name => {
+      const gqlType = _.get(
+        this.types,
+        `["${name}"]`,
+        _.get(this._scalars, `["${name}"]`)
+      )
 
-    if (!gqlType) {
-      this.error = new Error('GraphQLFactoryGenerateError: '
-        + 'Cannot make type "' + typeName + '"')
-    }
-
-    gqlType = isList
-      ? new this.graphql.GraphQLList(gqlType)
-      : gqlType
-
-    gqlType = isNonNull
-      ? this.graphql.GraphQLNonNull(gqlType)
-      : gqlType
-
-    return gqlType
+      if (!gqlType) {
+        this.error = new Error('GraphQLFactoryGenerateError: '
+          + 'Cannot make type "' + name + '"')
+      }
+      return gqlType
+    })
   }
 
   /**

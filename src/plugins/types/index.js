@@ -7,16 +7,18 @@ import FactoryURL from './URL'
 
 export default class GraphQLFactoryTypesPlugin extends Plugin {
   constructor () {
-    super('GraphQLFactoryTypesPlugin')
-  }
-
-  get types () {
-    return {
-      Base64: FactoryBase64,
-      DateTime: FactoryDateTime,
-      Email: FactoryEmail,
-      JSON: FactoryJSON,
-      URL: FactoryURL
-    }
+    super(
+      'GraphQLFactoryTypesPlugin',
+      {},
+      {},
+      {
+        Base64: FactoryBase64,
+        DateTime: FactoryDateTime,
+        Email: FactoryEmail,
+        JSON: FactoryJSON,
+        URL: FactoryURL
+      },
+      {}
+    )
   }
 }

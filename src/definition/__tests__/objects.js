@@ -37,7 +37,7 @@ export const FooDef = {
       name: 'Foo',
       fields: {
         bar: { type: 'String' },
-        baz: { type: [ 'String' ] }
+        baz: { type: '[String]' }
       },
       _factory: true
     }

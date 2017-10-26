@@ -92,9 +92,9 @@ export default class GraphQLFactoryDefinition {
     const structName = constructorName(obj)
     switch (structName) {
       case 'String':
-        const p = _.get(basePlugins, `["${obj}"]`)
-        if (p && p instanceof Plugin) {
-          this._registerPlugin(p)
+        const BasePlugin = _.get(basePlugins, `["${obj}"]`)
+        if (BasePlugin instanceof Plugin) {
+          this._registerPlugin(new BasePlugin())
         } else {
           throw new Error('GraphQLFactoryUserError: Invalid plugin')
         }

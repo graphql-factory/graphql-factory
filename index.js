@@ -2,8 +2,8 @@
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var Plugin = _interopDefault(require('graphql-factory-plugin'));
 var EventEmitter = _interopDefault(require('events'));
+var Plugin = _interopDefault(require('graphql-factory-plugin'));
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
@@ -310,7 +310,7 @@ function baseGetTag(value) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -349,7 +349,7 @@ function isObject(value) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -621,7 +621,7 @@ function copyObject(source, props, object, customizer) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -1051,7 +1051,7 @@ var isArguments = baseIsArguments(function () {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -1315,7 +1315,7 @@ function baseKeys(object) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -1355,7 +1355,7 @@ function keys(object) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -1684,7 +1684,7 @@ var upperFirst = createCaseFirst('toUpperCase');
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -1711,7 +1711,7 @@ function capitalize(string) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -1760,7 +1760,7 @@ function castArray() {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -1911,7 +1911,7 @@ function castFunction(value) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -2539,7 +2539,7 @@ function baseGet(object, path) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -2625,7 +2625,7 @@ function hasPath(object, path, hasFunc) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -2733,7 +2733,7 @@ function baseIndexOf(array, value, fromIndex) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -2943,7 +2943,7 @@ function values(object) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -3751,7 +3751,7 @@ function baseIsEqual(value, other, bitmask, customizer, stack) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -3791,7 +3791,7 @@ function isEqual(value, other) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -4107,7 +4107,7 @@ function baseMap(collection, iteratee) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -4162,7 +4162,7 @@ function map(collection, iteratee) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -4626,7 +4626,7 @@ function baseMerge(object, source, srcIndex, customizer, stack) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -4669,7 +4669,7 @@ var merge = createAssigner(function (object, source, srcIndex) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -5255,7 +5255,7 @@ function flatRest(func) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -5308,6 +5308,113 @@ var omit = flatRest(function (object, paths) {
   return result;
 });
 
+/**
+ * The base implementation of `_.set`.
+ *
+ * @private
+ * @param {Object} object The object to modify.
+ * @param {Array|string} path The path of the property to set.
+ * @param {*} value The value to set.
+ * @param {Function} [customizer] The function to customize path creation.
+ * @returns {Object} Returns `object`.
+ */
+function baseSet(object, path, value, customizer) {
+  if (!isObject(object)) {
+    return object;
+  }
+  path = castPath(path, object);
+
+  var index = -1,
+      length = path.length,
+      lastIndex = length - 1,
+      nested = object;
+
+  while (nested != null && ++index < length) {
+    var key = toKey(path[index]),
+        newValue = value;
+
+    if (index != lastIndex) {
+      var objValue = nested[key];
+      newValue = customizer ? customizer(objValue, key, nested) : undefined;
+      if (newValue === undefined) {
+        newValue = isObject(objValue) ? objValue : isIndex(path[index + 1]) ? [] : {};
+      }
+    }
+    assignValue(nested, key, newValue);
+    nested = nested[key];
+  }
+  return object;
+}
+
+/**
+ * The base implementation of  `_.pickBy` without support for iteratee shorthands.
+ *
+ * @private
+ * @param {Object} object The source object.
+ * @param {string[]} paths The property paths to pick.
+ * @param {Function} predicate The function invoked per property.
+ * @returns {Object} Returns the new object.
+ */
+function basePickBy(object, paths, predicate) {
+  var index = -1,
+      length = paths.length,
+      result = {};
+
+  while (++index < length) {
+    var path = paths[index],
+        value = baseGet(object, path);
+
+    if (predicate(value, path)) {
+      baseSet(result, castPath(path, object), value);
+    }
+  }
+  return result;
+}
+
+/**
+ * The base implementation of `_.pick` without support for individual
+ * property identifiers.
+ *
+ * @private
+ * @param {Object} object The source object.
+ * @param {string[]} paths The property paths to pick.
+ * @returns {Object} Returns the new object.
+ */
+function basePick(object, paths) {
+  return basePickBy(object, paths, function (value, path) {
+    return hasIn(object, path);
+  });
+}
+
+/**
+ * Lodash (Custom Build) <https://lodash.com/>
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Copyright JS Foundation and other contributors <https://js.foundation/>
+ * Released under MIT license <https://lodash.com/license>
+ * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
+ * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ */
+/**
+ * Creates an object composed of the picked `object` properties.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Object
+ * @param {Object} object The source object.
+ * @param {...(string|string[])} [paths] The property paths to pick.
+ * @returns {Object} Returns the new object.
+ * @example
+ *
+ * var object = { 'a': 1, 'b': '2', 'c': 3 };
+ *
+ * _.pick(object, ['a', 'c']);
+ * // => { 'a': 1, 'c': 3 }
+ */
+var pick = flatRest(function (object, paths) {
+  return object == null ? {} : basePick(object, paths);
+});
+
 /* Built-in method references for those with the same name as other `lodash` methods. */
 var nativeFloor = Math.floor;
 var nativeRandom$1 = Math.random;
@@ -5327,7 +5434,7 @@ function baseRandom(lower, upper) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -5430,7 +5537,7 @@ function baseReduce(collection, iteratee, accumulator, initAccum, eachFunc) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -5481,46 +5588,8 @@ function reduce(collection, iteratee, accumulator) {
 }
 
 /**
- * The base implementation of `_.set`.
- *
- * @private
- * @param {Object} object The object to modify.
- * @param {Array|string} path The path of the property to set.
- * @param {*} value The value to set.
- * @param {Function} [customizer] The function to customize path creation.
- * @returns {Object} Returns `object`.
- */
-function baseSet(object, path, value, customizer) {
-  if (!isObject(object)) {
-    return object;
-  }
-  path = castPath(path, object);
-
-  var index = -1,
-      length = path.length,
-      lastIndex = length - 1,
-      nested = object;
-
-  while (nested != null && ++index < length) {
-    var key = toKey(path[index]),
-        newValue = value;
-
-    if (index != lastIndex) {
-      var objValue = nested[key];
-      newValue = customizer ? customizer(objValue, key, nested) : undefined;
-      if (newValue === undefined) {
-        newValue = isObject(objValue) ? objValue : isIndex(path[index + 1]) ? [] : {};
-      }
-    }
-    assignValue(nested, key, newValue);
-    nested = nested[key];
-  }
-  return object;
-}
-
-/**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -5669,7 +5738,7 @@ function baseUniq(array, iteratee, comparator) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -5697,7 +5766,7 @@ var union = baseRest(function (arrays) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -5792,7 +5861,7 @@ function baseDifference(array, values, iteratee, comparator) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -5844,6 +5913,7 @@ var _ = {
   merge: merge,
   noop: noop,
   omit: omit,
+  pick: pick,
   random: random,
   reduce: reduce,
   set: set$1,
@@ -6027,21 +6097,15 @@ var GraphQLFactoryTypesPlugin = function (_Plugin) {
 
   function GraphQLFactoryTypesPlugin() {
     classCallCheck(this, GraphQLFactoryTypesPlugin);
-    return possibleConstructorReturn(this, (GraphQLFactoryTypesPlugin.__proto__ || Object.getPrototypeOf(GraphQLFactoryTypesPlugin)).call(this, 'GraphQLFactoryTypesPlugin'));
+    return possibleConstructorReturn(this, (GraphQLFactoryTypesPlugin.__proto__ || Object.getPrototypeOf(GraphQLFactoryTypesPlugin)).call(this, 'GraphQLFactoryTypesPlugin', {}, {}, {
+      Base64: FactoryBase64,
+      DateTime: FactoryDateTime,
+      Email: FactoryEmail,
+      JSON: FactoryJSON,
+      URL: FactoryURL
+    }, {}));
   }
 
-  createClass(GraphQLFactoryTypesPlugin, [{
-    key: 'types',
-    get: function get$$1() {
-      return {
-        Base64: FactoryBase64,
-        DateTime: FactoryDateTime,
-        Email: FactoryEmail,
-        JSON: FactoryJSON,
-        URL: FactoryURL
-      };
-    }
-  }]);
   return GraphQLFactoryTypesPlugin;
 }(Plugin);
 
@@ -6065,7 +6129,7 @@ var SCHEMA = 'Schema';
 var STRING = 'String';
 var UNION = 'Union';
 
-// build a type alias
+// type alias values
 var TYPE_ALIAS = {
   Enum: ENUM,
   Input: INPUT,
@@ -6087,18 +6151,29 @@ var TYPE_ALIAS = {
   GraphQLUnionType: UNION
 };
 
-
-
 var SCALAR_NAMES = ['Int', 'Boolean', 'String', 'ID', 'Float'];
 
+// decomposable types
 var DECOMPOSABLE = ['GraphQLEnumType', 'GraphQLInputObjectType', 'GraphQLInterfaceType', 'GraphQLObjectType', 'GraphQLScalarType', 'GraphQLSchema', 'GraphQLUnionType'];
 
 var OUTPUT_TYPES = ['GraphQLEnumType', 'GraphQLObjectType', 'GraphQLScalarType', 'GraphQLBoolean', 'GraphQLFloat', 'GraphQLID', 'GraphQLInt', 'GraphQLString', 'GraphQLList', 'GraphQLNonNull'];
 
+// middleware types
 var BEFORE_MIDDLEWARE = 'BEFORE';
 var AFTER_MIDDLEWARE = 'AFTER';
 var ERROR_MIDDLEWARE = 'ERROR';
 var RESOLVE_MIDDLEWARE = 'RESOLVE';
+
+// event names
+var EVENT_REQUEST = 'request';
+
+var EVENT_ERROR = 'error';
+var EVENT_WARN = 'warn';
+
+
+
+
+// option defaults and constants
 var DEFAULT_MIDDLEWARE_TIMEOUT = 300000; // 5 minutes
 var RANDOM_MAX = 1000000000000000;
 
@@ -6865,15 +6940,16 @@ var Middleware = function Middleware(type, resolver, options) {
   }
   this.type = type;
   this.resolver = resolver;
-  this.name = _.isString(name) && name !== '' ? name : _.get(resolver, 'name', type);
+  this.name = _.isString(name) && name !== '' ? name : _.get(resolver, 'name') || type;
   this.timeout = _.isNumber(timeout) ? Math.floor(timeout) : DEFAULT_MIDDLEWARE_TIMEOUT;
   this.priority = _.isNumber(priority) ? Math.floor(priority) : null;
 };
 
 var GraphQLFactoryDefinition = function () {
-  function GraphQLFactoryDefinition() {
+  function GraphQLFactoryDefinition(factory) {
     classCallCheck(this, GraphQLFactoryDefinition);
 
+    this._factory = factory;
     this._context = {};
     this._functions = {};
     this._types = {};
@@ -6938,7 +7014,7 @@ var GraphQLFactoryDefinition = function () {
   }, {
     key: 'clone',
     value: function clone() {
-      return new GraphQLFactoryDefinition().use({
+      return new GraphQLFactoryDefinition(this._factory).use({
         context: _.assign({}, this._context),
         functions: _.assign({}, this._functions),
         types: _.assign({}, this._types),
@@ -6961,9 +7037,9 @@ var GraphQLFactoryDefinition = function () {
       var structName = constructorName(obj);
       switch (structName) {
         case 'String':
-          var p = _.get(basePlugins, '["' + obj + '"]');
-          if (p && p instanceof Plugin) {
-            this._registerPlugin(p);
+          var BasePlugin = _.get(basePlugins, '["' + obj + '"]');
+          if (BasePlugin instanceof Plugin) {
+            this._registerPlugin(new BasePlugin());
           } else {
             throw new Error('GraphQLFactoryUserError: Invalid plugin');
           }
@@ -6990,8 +7066,8 @@ var GraphQLFactoryDefinition = function () {
 
         // all other objects should attempt decomposition
         default:
-          // check for instance of plugin
-          if (obj && obj instanceof Plugin) {
+          // check for instance of plugin or presence of an install function
+          if (obj instanceof Plugin || _.isFunction(_.get(obj, 'install'))) {
             this._registerPlugin(obj);
             break;
           }
@@ -7018,7 +7094,7 @@ var GraphQLFactoryDefinition = function () {
       if (plugin.name && !_.has(this._pluginRegistry, '["' + plugin.name + '"]')) {
         this._pluginRegistry[plugin.name] = plugin;
         this._mergeDefinition(plugin);
-        if (_.isFunction(plugin.install)) plugin.install(this);
+        if (_.isFunction(plugin.install)) plugin.install(this._factory);
       }
     }
 
@@ -7096,7 +7172,6 @@ var GraphQLFactoryDefinition = function () {
       var _ref = _.isObject(options) && options ? options : {},
           clean = _ref.clean;
 
-      var def = this.clone();
       var schema = {};
 
       _.forEach(this._schemas, function (s) {
@@ -7106,11 +7181,11 @@ var GraphQLFactoryDefinition = function () {
             return true;
           }
           var singleName = capitalCase(name, opType, 'object');
-          var opObj = _.get(def._types, '["' + opRef + '"]');
+          var opObj = _.get(_this._types, '["' + opRef + '"]');
           schema[opType] = singleName;
 
           // create the initial definition
-          if (!_.has(def._types, '["' + singleName + '"]')) {
+          if (!_.has(_this._types, '["' + singleName + '"]')) {
             _this._types[singleName] = {
               type: OBJECT,
               name: singleName,
@@ -7120,9 +7195,9 @@ var GraphQLFactoryDefinition = function () {
 
           // assign the fields to the existing def
           // and remove the original type
-          _.assign(def._types[singleName], opObj.fields);
+          _.assign(_this._types[singleName], opObj.fields);
           if (clean !== false) {
-            _.unset(def._types, '["' + opRef + '"]');
+            _.unset(_this._types, '["' + opRef + '"]');
           }
         });
       });
@@ -7130,13 +7205,13 @@ var GraphQLFactoryDefinition = function () {
       // add the new schema or make it the only
       // depending on the clean argument
       if (clean === false) {
-        def._schemas[name] = schema;
+        this._schemas[name] = schema;
       } else {
-        def._schemas = defineProperty$2({}, name, schema);
+        this._schemas = defineProperty$2({}, name, schema);
       }
 
-      // return the new definition
-      return def;
+      // return the definition
+      return this;
     }
 
     /**
@@ -7286,7 +7361,8 @@ function resolverMiddleware(resolver) {
           context = req.context,
           info = req.info;
 
-      var value = resolver(source, args, context, info);
+      var ctx = { req: req, res: res, next: next };
+      var value = resolver.call(ctx, source, args, context, info);
 
       return Promise.resolve(value).then(function (result) {
         req.result = result;
@@ -7304,13 +7380,14 @@ function resolverMiddleware(resolver) {
  * @param info
  * @returns {*}
  */
-function nextMiddleware(mw, info) {
+function nextMiddleware(factory, mw, info) {
   var resolved = info.resolved,
       index = info.index,
       resolverIndex = info.resolverIndex,
       errorMiddleware = info.errorMiddleware,
       req = info.req,
-      res = info.res;
+      res = info.res,
+      metrics = info.metrics;
 
 
   var local = {
@@ -7322,6 +7399,14 @@ function nextMiddleware(mw, info) {
 
   // get the current middleware
   var current = mw[index];
+  var exec = {
+    name: current.name,
+    started: Date.now(),
+    ended: null,
+    data: null
+  };
+
+  metrics.executions.push(exec);
 
   // create a next method
   var next = function next(data) {
@@ -7329,28 +7414,32 @@ function nextMiddleware(mw, info) {
     if (local.finished || info.resolved) return;
     local.finished = true;
 
-    // check if there is any more middleware in the chain
-    // if not, call end to complete the request
-    if (info.index === mw.length) return res.end();
+    // add the result
+    exec.ended = Date.now();
+    exec.data = data;
 
     // allow the middleware to route back to the
     // resolve function this may be useful for retries
     if (data === 'resolve') {
       info.index = resolverIndex;
-      return nextMiddleware(mw, info);
+      return nextMiddleware(factory, mw, info);
     }
 
     // check for an error passed to the next method and not
     // already in the error middleware chain. if condition met
     // start processing error middleware
-    if (data instanceof Error && current.type !== ERROR_MIDDLEWARE) {
-      info.index = 0;
-      req.error = data;
-      return nextMiddleware(errorMiddleware, info);
+    if (data instanceof Error) {
+      if (current.type !== ERROR_MIDDLEWARE && errorMiddleware.length) {
+        info.index = 0;
+        req.error = data;
+        return nextMiddleware(factory, errorMiddleware, info);
+      }
+      res.end(data);
     }
 
-    // if no errors and not done, move to the next middleware
-    return nextMiddleware(mw, info);
+    // check if there is any more middleware in the chain
+    // if not, call end to complete the request
+    return info.index === mw.length ? res.end() : nextMiddleware(factory, mw, info);
   };
 
   // create a timeout for the middleware if timeout > 0
@@ -7359,11 +7448,15 @@ function nextMiddleware(mw, info) {
       local.finished = true;
       req.error = new Error(current.name + ' middleware timed out');
 
+      // add the result
+      exec.ended = Date.now();
+      exec.data = req.error;
+
       // if already in error middleware and timed out
       // end the entire request, othewise move to error mw
-      if (current.type !== ERROR_MIDDLEWARE) {
+      if (current.type !== ERROR_MIDDLEWARE && errorMiddleware.length) {
         info.index = 0;
-        return nextMiddleware(errorMiddleware, info);
+        return nextMiddleware(factory, errorMiddleware, info);
       }
       return res.end();
     }, current.timeout);
@@ -7378,11 +7471,16 @@ function nextMiddleware(mw, info) {
   } catch (err) {
     clearTimeout(local.timeout);
     local.finished = true;
+    factory.emit(EVENT_ERROR, err);
     req.error = err;
 
-    if (current.type !== ERROR_MIDDLEWARE) {
+    // add the result
+    exec.ended = Date.now();
+    exec.data = req.error;
+
+    if (current.type !== ERROR_MIDDLEWARE && errorMiddleware.length) {
       info.index = 0;
-      return nextMiddleware(errorMiddleware, info);
+      return nextMiddleware(factory, errorMiddleware, info);
     }
     return res.end();
   }
@@ -7400,12 +7498,14 @@ function middleware(generator, resolver, req) {
       _def = generator._def;
   var _before = _def._before,
       _after = _def._after,
-      _error = _def._error;
+      _error = _def._error,
+      _factory = _def._factory;
 
   var requestTimeout = _.get(req, 'context.requestTimeout');
-  // create middleware from the resolver, name it RESOLVER with no timeout
+
+  // create middleware from the resolver with no timeout
   var _resolver = new Middleware(RESOLVE_MIDDLEWARE, resolverMiddleware(resolver), {
-    name: 'RESOLVER',
+    name: resolver.name || 'RESOLVER',
     timeout: _.get(req, 'context.resolverTimeout', 0)
   });
 
@@ -7422,22 +7522,33 @@ function middleware(generator, resolver, req) {
       id: _id,
       metrics: {
         started: Date.now(),
-        ended: null
+        ended: null,
+        executions: []
       },
       resolved: false,
       index: 0,
       resolverIndex: _before.length,
       errorMiddleware: _error,
       req: req,
-      res: {
+      res: Object.freeze({
         end: function end(data) {
           clearTimeout(local.timeout);
-          if (info.resolved) return;
+
+          // generate an event data object
+          var eventData = _.assign({}, _.pick(info, ['id', 'metrics', 'req']), { data: data });
+
+          // check if the request is already resolved
+          if (info.resolved) {
+            _factory.emit(EVENT_WARN, eventData, 'end/send can only be called once');
+            return;
+          }
+
+          // update the info to resolved
           info.resolved = true;
           info.metrics.ended = Date.now();
 
-          // emit a metrics event from the generator
-          generator.log('request', _.omit(info, ['req', 'res', 'errorMiddleware', 'resolverIndex', 'index']));
+          // emit the request from the factory
+          _factory.emit(EVENT_REQUEST, eventData);
 
           // if the data is an error or there is an error in the request
           // reject the request otherwise resolve with the data or result
@@ -7449,30 +7560,34 @@ function middleware(generator, resolver, req) {
           info.req.result = data;
           return info.res.end();
         }
-      }
+      })
 
       // create a request timeout if it is set in the request context
     };if (_.isNumber(requestTimeout) && requestTimeout > 0) {
       local.timeout = setTimeout(function () {
+        if (info.resolved) return;
         return info.res.end(new Error('Request timed out'));
       }, Math.floor(requestTimeout));
     }
 
     // make an initial call to the process the middleware
-    return nextMiddleware(middlewares, info);
+    return nextMiddleware(_factory, middlewares, info);
   });
 }
 
 var GraphQLFactoryLibrary = function (_EventEmitter) {
   inherits(GraphQLFactoryLibrary, _EventEmitter);
 
-  function GraphQLFactoryLibrary(graphql, registry) {
+  function GraphQLFactoryLibrary(graphql, registry, generator) {
     classCallCheck(this, GraphQLFactoryLibrary);
 
     var _this = possibleConstructorReturn(this, (GraphQLFactoryLibrary.__proto__ || Object.getPrototypeOf(GraphQLFactoryLibrary)).call(this));
 
     _this.graphql = graphql;
     _this.registry = registry;
+    _this._bindResolver = function (resolve) {
+      generator.bindResolve(resolve, {});
+    };
     return _this;
   }
 
@@ -7526,6 +7641,9 @@ var GraphQLFactoryLibrary = function (_EventEmitter) {
       if (!(schema instanceof GraphQLSchema)) {
         throw new Error('GraphQLFactoryError: Schema "' + _schema + '" was not found in the registry');
       }
+
+      // bind the default resolver to the middleware
+      _resolver = _.isFunction(_resolver) ? this._bindResolver(_resolver) : _resolver;
 
       // make the request
       return graphql(schema, _request, _root, _context, _variables, _operation, _resolver);
@@ -7808,79 +7926,29 @@ var Generator = function (_EventEmitter) {
     _this.schemas = {};
     _this.functions = {};
     _this._context = {};
-    _this._logger = {};
     _this._scalars = (_this$_scalars = {}, defineProperty$2(_this$_scalars, BOOLEAN, graphql.GraphQLBoolean), defineProperty$2(_this$_scalars, INT, graphql.GraphQLInt), defineProperty$2(_this$_scalars, STRING, graphql.GraphQLString), defineProperty$2(_this$_scalars, FLOAT, graphql.GraphQLFloat), defineProperty$2(_this$_scalars, ID, graphql.GraphQLID), _this$_scalars);
 
     // create a read only registry
-    var registry = {};
-    Object.defineProperty(registry, 'types', {
-      enumerable: true,
-      configurable: false,
-      get: function get$$1() {
-        return _this.types;
-      }
-    });
-    Object.defineProperty(registry, 'schemas', {
-      enumerable: true,
-      configurable: false,
-      get: function get$$1() {
-        return _this.schemas;
-      }
-    });
-    Object.defineProperty(registry, 'definition', {
-      enumerable: true,
-      configurable: false,
-      get: function get$$1() {
-        return _this._def.definition;
-      }
+    var registry = Object.freeze({
+      types: _this.types,
+      schemas: _this.schemas,
+      definition: _this._def.definition
     });
 
-    // create a new library and pass the registry
-    _this.lib = new GraphQLFactoryLibrary(graphql, registry);
+    // create a new library and pass
+    // the registry and this generator
+    _this.lib = Object.freeze(new GraphQLFactoryLibrary(graphql, registry, _this));
     return _this;
   }
 
   /**
-   * Adds a logger
-   * @param log
+   * Makes a context object
+   * @param definition
+   * @private
    */
 
 
   createClass(Generator, [{
-    key: 'logger',
-    value: function logger(log) {
-      if (_.isObject(log) && log !== null) this._logger = log;
-    }
-
-    /**
-     * Log function, sends logs to the logger
-     */
-
-  }, {
-    key: 'log',
-    value: function log() {
-      var args = [].concat(Array.prototype.slice.call(arguments));
-      if (!args.length || !_.isString(args[0]) || args[0] === '') {
-        throw new Error('GraphQLFactoryLogError: ' + 'A log type is required. Log types ' + 'must be specified as strings');
-      }
-
-      // get the log type
-      var logType = args.shift();
-      var handler = _.get(this._logger, '["' + logType + '"]');
-
-      // check that the log type exists
-      if (_.isFunction(handler)) {
-        return handler.apply(handler, args);
-      }
-    }
-
-    /**
-     * Makes a context object
-     * @param definition
-     * @private
-     */
-
-  }, {
     key: '_makeContext',
     value: function _makeContext(def) {
       var definition = def.definition,
@@ -7896,11 +7964,7 @@ var Generator = function (_EventEmitter) {
       // finally add the default context values
       this._context = _.assign(context, {
         lib: this.lib,
-        definition: definition,
-        graphql: this.graphql,
-        lodash: _,
-        types: this.types,
-        schemas: this.schemas
+        graphql: this.graphql
       });
 
       return this;
@@ -8106,39 +8170,32 @@ var Generator = function (_EventEmitter) {
   return Generator;
 }(EventEmitter);
 
-var FactoryChain = function () {
-  function FactoryChain(graphql, definition) {
+var FactoryChain = function (_EventEmitter) {
+  inherits(FactoryChain, _EventEmitter);
+
+  function FactoryChain(graphql) {
     classCallCheck(this, FactoryChain);
 
-    this.graphql = graphql;
-    this._definition = definition instanceof GraphQLFactoryDefinition ? definition : new GraphQLFactoryDefinition();
-    this._logger = {};
+    var _this = possibleConstructorReturn(this, (FactoryChain.__proto__ || Object.getPrototypeOf(FactoryChain)).call(this));
+
+    _this.graphql = graphql;
+    _this.definition = new GraphQLFactoryDefinition(_this);
+    _this.generator = new Generator(graphql);
+    return _this;
   }
 
   /**
-   * Creates a new clone of the factory definition
-   * logger settings are not cloned
-   * @returns {FactoryChain}
+   * Adds before middleware
+   * @param middleware
+   * @param timeout
+   * @returns {*}
    */
 
 
   createClass(FactoryChain, [{
-    key: 'clone',
-    value: function clone() {
-      return new FactoryChain(this.graphql, this._definition.clone());
-    }
-
-    /**
-     * Adds before middleware
-     * @param middleware
-     * @param timeout
-     * @returns {*}
-     */
-
-  }, {
     key: 'before',
     value: function before(middleware, timeout) {
-      this._definition.before(middleware, timeout);
+      this.definition.before(middleware, timeout);
       return this;
     }
 
@@ -8152,7 +8209,7 @@ var FactoryChain = function () {
   }, {
     key: 'after',
     value: function after(middleware, timeout) {
-      this._definition.after(middleware, timeout);
+      this.definition.after(middleware, timeout);
       return this;
     }
 
@@ -8166,7 +8223,7 @@ var FactoryChain = function () {
   }, {
     key: 'error',
     value: function error(middleware, timeout) {
-      this._definition.error(middleware, timeout);
+      this.definition.error(middleware, timeout);
       return this;
     }
 
@@ -8180,50 +8237,31 @@ var FactoryChain = function () {
   }, {
     key: 'use',
     value: function use(obj, name) {
-      this._definition.use(obj, name);
+      this.definition.use(obj, name);
       return this;
     }
 
     /**
-     * Adds a logger
-     * @param log
-     */
-
-  }, {
-    key: 'logger',
-    value: function logger(log) {
-      if (!log || !_.isObject(log)) {
-        throw new Error('GraphQLFactoryError:' + 'Logger must be an object');
-      }
-      this._logger = log;
-      return this;
-    }
-
-    /**
-     * Returns a merged or cloned definition object
+     * Regenerates the types
      * @param options
      * @returns {*}
      */
 
   }, {
-    key: 'definition',
-    value: function definition(options) {
+    key: 'regenerate',
+    value: function regenerate(options) {
       var _ref = options && _.isObject(options) ? options : {},
           mergeSchemas = _ref.mergeSchemas;
 
-      return _.isString(mergeSchemas) && mergeSchemas !== '' ? this._definition.mergeSchemas(mergeSchemas, options) : this._definition.clone();
-    }
+      // check for merge schema options
 
-    /**
-     * Generates a registry
-     * @param options
-     */
 
-  }, {
-    key: 'registry',
-    value: function registry(options) {
-      var def = this.definition(options);
-      return new Generator(this.graphql).generate(def).registry;
+      if (_.isString(mergeSchemas) && mergeSchemas !== '') {
+        this.definition.mergeSchemas(mergeSchemas, options);
+      }
+
+      // generate a new library
+      return this.generator.generate(this.definition);
     }
 
     /**
@@ -8235,12 +8273,11 @@ var FactoryChain = function () {
   }, {
     key: 'library',
     value: function library(options) {
-      var def = this.definition(options);
-      return new Generator(this.graphql).generate(def).lib;
+      return this.regenerate(options).lib;
     }
   }]);
   return FactoryChain;
-}();
+}(EventEmitter);
 
 /**
  * Entry point for a new graphql factory chain
@@ -8255,84 +8292,38 @@ var GraphQLFactory = function () {
   }
 
   /**
-   * Adds a logger and returns a new factory chain
-   * @param log
+   * Adds an object to the definition
+   * and returns a new factory chain
+   * @param obj
+   * @param name
    * @returns {*}
    */
 
 
   createClass(GraphQLFactory, [{
-    key: 'logger',
-    value: function logger(log) {
-      return new FactoryChain(this.graphql).logger(log);
-    }
-
-    /**
-     * Adds an object to the definition
-     * and returns a new factory chain
-     * @param obj
-     * @param name
-     * @returns {*}
-     */
-
-  }, {
     key: 'use',
     value: function use(obj, name) {
       return new FactoryChain(this.graphql).use(obj, name);
-    }
-
-    /**
-     * Legacy interface for backward compatibility
-     * @param definition
-     * @param options
-     */
-
-  }, {
-    key: 'make',
-    value: function make(definition, options) {
-      var _ref2 = options && _.isObject(options) ? options : {},
-          plugin = _ref2.plugin,
-          beforeResolve = _ref2.beforeResolve,
-          afterResolve = _ref2.afterResolve,
-          beforeTimeout = _ref2.beforeTimeout,
-          afterTimeout = _ref2.afterTimeout,
-          logger = _ref2.logger;
-
-      var chain = new FactoryChain(this.graphql);
-
-      if (logger) chain.logger(logger);
-      chain.use(definition);
-
-      if (plugin) {
-        _.forEach(_.castArray(plugin), function (p) {
-          chain.use(p);
-        });
-      }
-      if (beforeResolve) {
-        _.forEach(_.castArray(beforeResolve), function (b) {
-          if (_.isFunction(b)) {
-            chain.before(b, beforeTimeout);
-          }
-        });
-      }
-      if (afterResolve) {
-        _.forEach(_.castArray(afterResolve), function (a) {
-          if (_.isFunction(a)) {
-            chain.before(a, afterTimeout);
-          }
-        });
-      }
-
-      var lib = chain.library();
-      return lib;
     }
   }]);
   return GraphQLFactory;
 }();
 
+/**
+ * Export a new factory generator
+ * Each call to factory.use() will create a new
+ * chain and potential library
+ * @param graphql
+ * @returns {GraphQLFactory}
+ * @constructor
+ */
+function Factory$2(graphql) {
+  return new GraphQLFactory(graphql);
+}
+
 // create a factory function that creates a new instance
 var Factory = function Factory(graphql) {
-  return new GraphQLFactory(graphql);
+  return new Factory$2(graphql);
 };
 
 // add objects to the default export

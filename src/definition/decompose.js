@@ -1,11 +1,9 @@
 import _ from '../common/lodash.custom'
 import { TYPE_ALIAS, SCALAR_NAMES } from '../common/const'
 import {
-  baseDef,
-  getTypeInfo,
   resolveThunk,
   constructorName,
-  valueString
+  valueString, toTypeString, getBaseType
 } from '../common/util'
 
 /**
@@ -177,9 +175,10 @@ export default class GraphQLFactoryDecomposer {
       fields[fieldName] = _.reduce(fieldDef, (config, value, key) => {
         switch (key) {
           case 'type':
-            const info = getTypeInfo(value)
-            this._routeDecompose(info.type)
-            return Object.assign(config, baseDef(info))
+            const baseType = getBaseType(value)
+            this._routeDecompose(baseType)
+            config.type = toTypeString(value)
+            return config
 
           case 'args':
             config[key] = this._decomposeFields(value)

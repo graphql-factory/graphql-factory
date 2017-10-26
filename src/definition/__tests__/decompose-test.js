@@ -22,7 +22,6 @@ import Decomposer from '../decompose'
 describe('definition.decompose tests', () => {
   it('decomposes an Object', () => {
     const def1 = new Decomposer().decompose(Foo)
-
     expect(def1).to.deep.equal(FooDef)
   })
 
@@ -52,8 +51,8 @@ describe('definition.decompose tests', () => {
           type: 'Input',
           name: 'FooInput',
           fields: {
-            bar: { type: 'String', nullable: false },
-            baz: { type: [ 'Int' ] }
+            bar: { type: 'String!' },
+            baz: { type: '[Int]' }
           }
         }
       }
@@ -136,7 +135,7 @@ describe('definition.decompose tests', () => {
           name: 'Foo',
           fields: {
             bar: { type: 'String' },
-            baz: { type: [ 'String' ] }
+            baz: { type: '[String]' }
           },
           _factory: true
         },
@@ -145,15 +144,14 @@ describe('definition.decompose tests', () => {
           name: 'FooQuery',
           fields: {
             listFoo: {
-              type: [ 'Foo' ],
+              type: '[Foo]',
               args: {
                 bar: {
-                  type: 'String',
-                  nullable: false,
+                  type: 'String!',
                   defaultValue: 'bar'
                 },
                 baz: {
-                  type: [ 'Int' ]
+                  type: '[Int]'
                 }
               },
               resolve: listFooResolve

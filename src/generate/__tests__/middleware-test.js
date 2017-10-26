@@ -12,7 +12,7 @@ import {
 const DEBUG = false
 const factory = new EventEmitter()
 
-
+/* eslint-disable */
 if (DEBUG) {
   factory
     .on(EVENT_REQUEST, data => {
@@ -23,6 +23,7 @@ if (DEBUG) {
       console.error(err)
     })
 }
+/* eslint-enable */
 
 describe('generate.middleware tests', () => {
   it('pass through with no middleware', () => {
@@ -261,7 +262,7 @@ describe('generate.middleware tests', () => {
 
     const generator = new Generator(graphql).generate(def)
     const req = { source: null, args: { value: false }, context: {}, info: {} }
-    const resolver = function (source, args) {
+    const resolver = function () {
       if (!this.req.result) return 1
       return this.req.result + 1
     }

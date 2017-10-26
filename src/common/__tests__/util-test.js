@@ -1,12 +1,12 @@
 import { describe, it } from 'mocha'
 import { expect } from 'chai'
-
-import {
+import * as graphql from 'graphql'
+const {
   GraphQLObjectType,
   GraphQLString,
   GraphQLList,
   GraphQLNonNull
-} from 'graphql'
+} = graphql
 
 import {
   constructorName,
@@ -16,7 +16,9 @@ import {
   isListTypeDef,
   valueString,
   resolveThunk,
-  assertField
+  assertField,
+  toTypeString,
+  toObjectType
 } from '../util'
 
 const obj = {}
@@ -151,5 +153,70 @@ describe('common.util tests', () => {
     expect(asrt4).to.equal(null)
     expect(asrt5).to.equal(null)
     expect(asrt6).to.be.an.instanceOf(Error)
+  })
+
+  it('converts graphql types to type string', () => {
+    const t1 = GraphQLString
+    const t2 = new GraphQLNonNull(GraphQLString)
+    const t3 = new GraphQLList(GraphQLString)
+    const t4 = new GraphQLList(new GraphQLNonNull(GraphQLString))
+    const t5 = new GraphQLNonNull(new GraphQLList(GraphQLString))
+    const t6 = new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(GraphQLString)))
+    const t7 = Foo
+    const t8 = new GraphQLNonNull(Foo)
+    const t9 = new GraphQLList(Foo)
+    const t10 = new GraphQLList(new GraphQLNonNull(Foo))
+    const t11 = new GraphQLNonNull(new GraphQLList(Foo))
+    const t12 = new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(Foo)))
+
+    expect(toTypeString(t1)).to.equal('String')
+    expect(toTypeString(t2)).to.equal('String!')
+    expect(toTypeString(t3)).to.equal('[String]')
+    expect(toTypeString(t4)).to.equal('[String!]')
+    expect(toTypeString(t5)).to.equal('[String]!')
+    expect(toTypeString(t6)).to.equal('[String!]!')
+    expect(toTypeString(t7)).to.equal('Foo')
+    expect(toTypeString(t8)).to.equal('Foo!')
+    expect(toTypeString(t9)).to.equal('[Foo]')
+    expect(toTypeString(t10)).to.equal('[Foo!]')
+    expect(toTypeString(t11)).to.equal('[Foo]!')
+    expect(toTypeString(t12)).to.equal('[Foo!]!')
+  })
+
+  it('converts a type string into an object type', () => {
+    const t1 = GraphQLString
+    const t2 = new GraphQLNonNull(GraphQLString)
+    const t3 = new GraphQLList(GraphQLString)
+    const t4 = new GraphQLList(new GraphQLNonNull(GraphQLString))
+    const t5 = new GraphQLNonNull(new GraphQLList(GraphQLString))
+    const t6 = new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(GraphQLString)))
+    const t7 = Foo
+    const t8 = new GraphQLNonNull(Foo)
+    const t9 = new GraphQLList(Foo)
+    const t10 = new GraphQLList(new GraphQLNonNull(Foo))
+    const t11 = new GraphQLNonNull(new GraphQLList(Foo))
+    const t12 = new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(Foo)))
+
+    const typeHash = {
+      String: GraphQLString,
+      Foo: Foo
+    }
+
+    const typeResolver = name => {
+      return typeHash[name]
+    }
+
+    expect(toObjectType(graphql, 'String', typeResolver)).to.deep.equal(t1)
+    expect(toObjectType(graphql, 'String!', typeResolver)).to.deep.equal(t2)
+    expect(toObjectType(graphql, '[String]', typeResolver)).to.deep.equal(t3)
+    expect(toObjectType(graphql, '[String!]', typeResolver)).to.deep.equal(t4)
+    expect(toObjectType(graphql, '[String]!', typeResolver)).to.deep.equal(t5)
+    expect(toObjectType(graphql, '[String!]!', typeResolver)).to.deep.equal(t6)
+    expect(toObjectType(graphql, 'Foo', typeResolver)).to.deep.equal(t7)
+    expect(toObjectType(graphql, 'Foo!', typeResolver)).to.deep.equal(t8)
+    expect(toObjectType(graphql, '[Foo]', typeResolver)).to.deep.equal(t9)
+    expect(toObjectType(graphql, '[Foo!]', typeResolver)).to.deep.equal(t10)
+    expect(toObjectType(graphql, '[Foo]!', typeResolver)).to.deep.equal(t11)
+    expect(toObjectType(graphql, '[Foo!]!', typeResolver)).to.deep.equal(t12)
   })
 })
