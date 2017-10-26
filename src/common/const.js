@@ -14,7 +14,7 @@ export const SCHEMA = 'Schema'
 export const STRING = 'String'
 export const UNION = 'Union'
 
-// build a type alias
+// type alias values
 export const TYPE_ALIAS = {
   Enum: ENUM,
   Input: INPUT,
@@ -44,6 +44,7 @@ export const PRIMITIVES = {
   GraphQLString: STRING
 }
 
+// built in scalars. do not decompose
 export const SCALAR_NAMES = [
   'Int',
   'Boolean',
@@ -52,6 +53,7 @@ export const SCALAR_NAMES = [
   'Float'
 ]
 
+// decomposable types
 export const DECOMPOSABLE = [
   'GraphQLEnumType',
   'GraphQLInputObjectType',
@@ -75,11 +77,23 @@ export const OUTPUT_TYPES = [
   'GraphQLNonNull'
 ]
 
+// middleware types
 export const BEFORE_MIDDLEWARE = 'BEFORE'
 export const AFTER_MIDDLEWARE = 'AFTER'
 export const ERROR_MIDDLEWARE = 'ERROR'
+export const RESOLVE_MIDDLEWARE = 'RESOLVE'
 
-// types with fields
-export const HAS_FIELDS = [ OBJECT, INPUT, INTERFACE ]
+// event names
+export const EVENT_REQUEST = 'request'
+export const EVENT_FATAL = 'fatal'
+export const EVENT_ERROR = 'error'
+export const EVENT_WARN = 'warn'
+export const EVENT_INFO = 'info'
+export const EVENT_DEBUG = 'debug'
+export const EVENT_TRACE = 'trace'
 
-export const DEFAULT_MIDDLEWARE_TIMEOUT = 5000
+// option defaults and constants
+export const DEFAULT_MIDDLEWARE_TIMEOUT = 300000 // 5 minutes
+export const RANDOM_MAX = 1000000000000000
+
+

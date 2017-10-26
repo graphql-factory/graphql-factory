@@ -19,6 +19,8 @@ import mapValues from './lodash/mapValues'
 import merge from './lodash/merge'
 import noop from './lodash/noop'
 import omit from './lodash/omit'
+import pick from './lodash/pick'
+import random from './lodash/random'
 import reduce from './lodash/reduce'
 import set from './lodash/set'
 import union from './lodash/union'
@@ -47,6 +49,8 @@ export default {
   merge,
   noop,
   omit,
+  pick,
+  random,
   reduce,
   set,
   union,

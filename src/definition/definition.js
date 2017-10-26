@@ -13,7 +13,8 @@ import {
 } from '../common/const'
 
 export default class GraphQLFactoryDefinition {
-  constructor () {
+  constructor (factory) {
+    this._factory = factory
     this._context = {}
     this._functions = {}
     this._types = {}
@@ -27,12 +28,13 @@ export default class GraphQLFactoryDefinition {
   /**
    * Adds before middleware
    * @param middleware
-   * @param timeout
+   * @param options
+   * @returns {GraphQLFactoryDefinition}
    */
-  before (middleware, timeout) {
+  before (middleware, options) {
     const mw = middleware instanceof Middleware
       ? middleware
-      : new Middleware(BEFORE_MIDDLEWARE, middleware, timeout)
+      : new Middleware(BEFORE_MIDDLEWARE, middleware, options)
     this._before.push(mw)
     return this
   }
@@ -40,12 +42,13 @@ export default class GraphQLFactoryDefinition {
   /**
    * Adds after middleware
    * @param middleware
-   * @param timeout
+   * @param options
+   * @returns {GraphQLFactoryDefinition}
    */
-  after (middleware, timeout) {
+  after (middleware, options) {
     const mw = middleware instanceof Middleware
       ? middleware
-      : new Middleware(AFTER_MIDDLEWARE, middleware, timeout)
+      : new Middleware(AFTER_MIDDLEWARE, middleware, options)
     this._after.push(mw)
     return this
   }
@@ -53,12 +56,13 @@ export default class GraphQLFactoryDefinition {
   /**
    * Adds error middleware
    * @param middleware
-   * @param timeout
+   * @param options
+   * @returns {GraphQLFactoryDefinition}
    */
-  error (middleware, timeout) {
+  error (middleware, options) {
     const mw = middleware instanceof Middleware
       ? middleware
-      : new Middleware(ERROR_MIDDLEWARE, middleware, timeout)
+      : new Middleware(ERROR_MIDDLEWARE, middleware, options)
     this._error.push(mw)
     return this
   }
@@ -68,7 +72,7 @@ export default class GraphQLFactoryDefinition {
    * @returns {GraphQLFactoryDefinition}
    */
   clone () {
-    return new GraphQLFactoryDefinition().use({
+    return new GraphQLFactoryDefinition(this._factory).use({
       context: _.assign({}, this._context),
       functions: _.assign({}, this._functions),
       types: _.assign({}, this._types),
@@ -122,8 +126,8 @@ export default class GraphQLFactoryDefinition {
 
       // all other objects should attempt decomposition
       default:
-        // check for instance of plugin
-        if (obj && obj instanceof Plugin) {
+        // check for instance of plugin or presence of an install function
+        if (obj instanceof Plugin || _.isFunction(_.get(obj, 'install'))) {
           this._registerPlugin(obj)
           break
         }
@@ -151,7 +155,7 @@ export default class GraphQLFactoryDefinition {
     if (plugin.name && !_.has(this._pluginRegistry, `["${plugin.name}"]`)) {
       this._pluginRegistry[plugin.name] = plugin
       this._mergeDefinition(plugin)
-      if (_.isFunction(plugin.install)) plugin.install(this)
+      if (_.isFunction(plugin.install)) plugin.install(this._factory)
     }
   }
 
@@ -223,7 +227,6 @@ export default class GraphQLFactoryDefinition {
       ? options
       : {}
 
-    const def = this.clone()
     const schema = {}
 
     _.forEach(this._schemas, s => {
@@ -233,11 +236,11 @@ export default class GraphQLFactoryDefinition {
           return true
         }
         const singleName = capitalCase(name, opType, 'object')
-        const opObj = _.get(def._types, `["${opRef}"]`)
+        const opObj = _.get(this._types, `["${opRef}"]`)
         schema[opType] = singleName
 
         // create the initial definition
-        if (!_.has(def._types, `["${singleName}"]`)) {
+        if (!_.has(this._types, `["${singleName}"]`)) {
           this._types[singleName] = {
             type: OBJECT,
             name: singleName,
@@ -247,9 +250,9 @@ export default class GraphQLFactoryDefinition {
 
         // assign the fields to the existing def
         // and remove the original type
-        _.assign(def._types[singleName], opObj.fields)
+        _.assign(this._types[singleName], opObj.fields)
         if (clean !== false) {
-          _.unset(def._types, `["${opRef}"]`)
+          _.unset(this._types, `["${opRef}"]`)
         }
       })
     })
@@ -257,15 +260,15 @@ export default class GraphQLFactoryDefinition {
     // add the new schema or make it the only
     // depending on the clean argument
     if (clean === false) {
-      def._schemas[name] = schema
+      this._schemas[name] = schema
     } else {
-      def._schemas = {
+      this._schemas = {
         [name]: schema
       }
     }
 
-    // return the new definition
-    return def
+    // return the definition
+    return this
   }
 
   /**

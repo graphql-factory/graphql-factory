@@ -1,93 +1,103 @@
 import { describe, it } from 'mocha'
 import { expect } from 'chai'
-import Middleware from '../../definition/middleware'
+import * as graphql from 'graphql'
+import EventEmitter from 'events'
+import Definition from '../../definition/definition'
+import Generator from '../generate'
 import middleware from '../middleware'
 import {
-  BEFORE_MIDDLEWARE,
-  AFTER_MIDDLEWARE,
-  ERROR_MIDDLEWARE
+  EVENT_REQUEST,
+  EVENT_ERROR
 } from '../../common/const'
+const DEBUG = false
+const factory = new EventEmitter()
+
+
+if (DEBUG) {
+  factory
+    .on(EVENT_REQUEST, data => {
+      console.log(data)
+      console.log(data.metrics.executions)
+    })
+    .on(EVENT_ERROR, err => {
+      console.error(err)
+    })
+}
 
 describe('generate.middleware tests', () => {
   it('pass through with no middleware', () => {
-    const def = { _before: [], _after: [], _error: [] }
-    const ctx = {}
-    const params = { source: null, args: {}, context: {}, info: {} }
-    const resolver = function () {
-      return true
+    const def = new Definition(factory)
+    const req = { source: null, args: {}, context: {}, info: {} }
+    const resolver = function passthroughResolve () {
+      return new Promise(resolve => {
+        setTimeout(() => {
+          resolve(true)
+        }, 10)
+      })
     }
-
-    return middleware(def, resolver, ctx, params)
+    const generator = new Generator(graphql).generate(def)
+    return middleware(generator, resolver, req)
       .then(result => {
         expect(result).to.equal(true)
       })
   })
 
   it('modifies arguments in before', () => {
-    const _before = [
-      new Middleware(
-        BEFORE_MIDDLEWARE,
-        function (params, next) {
-          const { args } = params
+    const def = new Definition(factory)
+      .before(
+        function beforeMw (req, res, next) {
+          const { args } = req
           args.value = true
-          next()
+          return next()
         }
       )
-    ]
-    const def = { _before, _after: [], _error: [] }
-    const ctx = {}
-    const params = { source: null, args: { value: false }, context: {}, info: {} }
+    const generator = new Generator(graphql).generate(def)
+    const req = { source: null, args: {}, context: {}, info: {} }
     const resolver = function (source, args) {
       return args
     }
 
-    return middleware(def, resolver, ctx, params)
+    return middleware(generator, resolver, req)
       .then(result => {
         expect(result).to.deep.equal({ value: true })
       })
   })
 
   it('modifies a result in after', () => {
-    const _after = [
-      new Middleware(
-        AFTER_MIDDLEWARE,
-        function (params, result, next) {
-          result.value = true
-          next(undefined, result)
+    const def = new Definition(factory)
+      .after(
+        function afterMw (req, res, next) {
+          req.result.value = true
+          return next()
         }
       )
-    ]
-    const def = { _before: [], _after, _error: [] }
-    const ctx = {}
-    const params = { source: null, args: {}, context: {}, info: {} }
+    const generator = new Generator(graphql).generate(def)
+    const req = { source: null, args: {}, context: {}, info: {} }
     const resolver = function () {
       return {}
     }
 
-    return middleware(def, resolver, ctx, params)
+    return middleware(generator, resolver, req)
       .then(result => {
         expect(result).to.deep.equal({ value: true })
       })
   })
 
   it('modifies an error in error', () => {
-    const _error = [
-      new Middleware(
-        ERROR_MIDDLEWARE,
-        function (params, error, next) {
-          const newError = new Error('updated ' + error.message)
+    const def = new Definition(factory)
+      .error(
+        function errorMw (req, res, next) {
+          const newError = new Error('updated ' + req.error.message)
           next(newError)
         }
       )
-    ]
-    const def = { _before: [], _after: [], _error }
-    const ctx = {}
-    const params = { source: null, args: {}, context: {}, info: {} }
+    const generator = new Generator(graphql).generate(def)
+    const req = { source: null, args: {}, context: {}, info: {} }
     const resolver = function () {
       return Promise.reject(new Error('resolver error'))
     }
 
-    return middleware(def, resolver, ctx, params)
+    return middleware(generator, resolver, req)
       .then(result => {
         return result
       })
@@ -98,51 +108,41 @@ describe('generate.middleware tests', () => {
   })
 
   it('modifies before and after multiple times', () => {
-    const def = {
-      _before: [
-        new Middleware(
-          BEFORE_MIDDLEWARE,
-          function (params, next) {
-            const { args } = params
-            args.value1 = 1
-            next()
-          }
-        ),
-        new Middleware(
-          BEFORE_MIDDLEWARE,
-          function (params, next) {
-            const { args } = params
-            args.value2 = 2
-            next()
-          }
-        )
-      ],
-      _after: [
-        new Middleware(
-          AFTER_MIDDLEWARE,
-          function (params, result, next) {
-            const { args } = params
-            result.sum1 = args.value1 + args.value2
-            return next(undefined, result)
-          }
-        ),
-        new Middleware(
-          AFTER_MIDDLEWARE,
-          function (params, result, next) {
-            result.sum2 = result.sum1 + 1
-            return next(undefined, result)
-          }
-        )
-      ],
-      _error: []
-    }
-    const ctx = {}
-    const params = { source: null, args: {}, context: {}, info: {} }
+    const def = new Definition(factory)
+      .before(
+        function before1 (req, res, next) {
+          const { args } = req
+          args.value1 = 1
+          setTimeout(next, 10)
+        }
+      )
+      .before(
+        function before2 (req, res, next) {
+          const { args } = req
+          args.value2 = 2
+          setTimeout(next, 10)
+        }
+      )
+      .after(
+        function after1 (req, res, next) {
+          const { args } = req
+          req.result.sum1 = args.value1 + args.value2
+          setTimeout(next, 10)
+        }
+      )
+      .after(
+        function (req, res, next) {
+          req.result.sum2 = req.result.sum1 + 1
+          setTimeout(next, 10)
+        }
+      )
+    const generator = new Generator(graphql).generate(def)
+    const req = { source: null, args: {}, context: {}, info: {} }
     const resolver = function (source, args) {
       return args
     }
 
-    return middleware(def, resolver, ctx, params)
+    return middleware(generator, resolver, req)
       .then(result => {
         expect(result).to.deep.equal({
           value1: 1,
@@ -154,48 +154,39 @@ describe('generate.middleware tests', () => {
   })
 
   it('fails in before and updates error twice', () => {
-    const def = {
-      _before: [
-        new Middleware(
-          BEFORE_MIDDLEWARE,
-          function (params, next) {
-            const { args } = params
-            args.value1 = 1
-            next()
-          }
-        ),
-        new Middleware(
-          BEFORE_MIDDLEWARE,
-          function (params, next) {
-            next(new Error('failed before'))
-          }
-        )
-      ],
-      _after: [],
-      _error: [
-        new Middleware(
-          ERROR_MIDDLEWARE,
-          function (params, error, next) {
-            const newError = new Error('updated1 ' + error.message)
-            next(newError)
-          }
-        ),
-        new Middleware(
-          ERROR_MIDDLEWARE,
-          function (params, error, next) {
-            const newError = new Error('updated2 ' + error.message)
-            next(newError)
-          }
-        )
-      ]
-    }
-    const ctx = {}
-    const params = { source: null, args: {}, context: {}, info: {} }
+    const def = new Definition(factory)
+      .before(
+        function (req, res, next) {
+          const { args } = req
+          args.value1 = 1
+          next()
+        }
+      )
+      .before(
+        function (req, res, next) {
+          next(new Error('failed before'))
+        }
+      )
+      .error(
+        function (req, res, next) {
+          req.error = new Error('updated1 ' + req.error.message)
+          next()
+        }
+      )
+      .error(
+        function (req, res, next) {
+          req.error = new Error('updated2 ' + req.error.message)
+          next()
+        }
+      )
+
+    const generator = new Generator(graphql).generate(def)
+    const req = { source: null, args: {}, context: {}, info: {} }
     const resolver = function (source, args) {
       return args
     }
 
-    return middleware(def, resolver, ctx, params)
+    return middleware(generator, resolver, req)
       .then(result => {
         return result
       })
@@ -206,31 +197,25 @@ describe('generate.middleware tests', () => {
   })
 
   it('fails in after', () => {
-    const def = {
-      _before: [],
-      _after: [
-        new Middleware(
-          AFTER_MIDDLEWARE,
-          function (params, result, next) {
-            next(undefined, result)
-          }
-        ),
-        new Middleware(
-          AFTER_MIDDLEWARE,
-          function (params, result, next) {
-            next(new Error('failed after'))
-          }
-        )
-      ],
-      _error: []
-    }
-    const ctx = {}
-    const params = { source: null, args: {}, context: {}, info: {} }
+    const def = new Definition(factory)
+      .after(
+        function (req, res, next) {
+          next()
+        }
+      )
+      .after(
+        function (req, res, next) {
+          next(new Error('failed after'))
+        }
+      )
+
+    const generator = new Generator(graphql).generate(def)
+    const req = { source: null, args: {}, context: {}, info: {} }
     const resolver = function (source, args) {
       return args
     }
 
-    return middleware(def, resolver, ctx, params)
+    return middleware(generator, resolver, req)
       .then(result => {
         return result
       })
@@ -240,43 +225,50 @@ describe('generate.middleware tests', () => {
       })
   })
 
-  it('resolver called with generated context', () => {
-    const def = { _before: [], _after: [], _error: [] }
-    const ctx = { ctx: true }
-    const params = { source: null, args: {}, context: {}, info: {} }
-    const resolver = function () {
-      return this
-    }
-
-    return middleware(def, resolver, ctx, params)
-      .then(result => {
-        expect(result).to.deep.equal({ ctx: true })
-      })
-  })
-
   it('catches errors in middleware', () => {
-    const _before = [
-      new Middleware(
-        BEFORE_MIDDLEWARE,
+    const def = new Definition(factory)
+      .before(
         function () {
           throw new Error('threw in before')
         }
       )
-    ]
-    const def = { _before, _after: [], _error: [] }
-    const ctx = {}
-    const params = { source: null, args: { value: false }, context: {}, info: {} }
+
+    const generator = new Generator(graphql).generate(def)
+    const req = { source: null, args: { value: false }, context: {}, info: {} }
     const resolver = function (source, args) {
       return args
     }
 
-    return middleware(def, resolver, ctx, params)
+    return middleware(generator, resolver, req)
       .then(result => {
         return result
       })
       .catch(error => {
         expect(error).to.be.an.instanceOf(Error)
         expect(error.message).to.equal('threw in before')
+      })
+  })
+
+  it('can route to the resolver', () => {
+    const def = new Definition(factory)
+      .after(
+        function afterResolver (req, res, next) {
+          return req.result < 3
+            ? next('resolve')
+            : next()
+        }
+      )
+
+    const generator = new Generator(graphql).generate(def)
+    const req = { source: null, args: { value: false }, context: {}, info: {} }
+    const resolver = function (source, args) {
+      if (!this.req.result) return 1
+      return this.req.result + 1
+    }
+
+    return middleware(generator, resolver, req)
+      .then(result => {
+        expect(result).to.equal(3)
       })
   })
 })

@@ -22,7 +22,8 @@ import {
   OBJECT,
   INPUT,
   INTERFACE,
-  UNION
+  UNION,
+  RANDOM_MAX
 } from '../common/const'
 
 export default class Generator extends EventEmitter {
@@ -30,6 +31,7 @@ export default class Generator extends EventEmitter {
     super()
     this.graphql = graphql
     this.error = null
+    this._id = String(_.random(RANDOM_MAX))
     this._def = {}
     this.types = {}
     this.schemas = {}
@@ -44,31 +46,17 @@ export default class Generator extends EventEmitter {
     }
 
     // create a read only registry
-    const registry = {}
-    Object.defineProperty(registry, 'types', {
-      enumerable: true,
-      configurable: false,
-      get: () => {
-        return this.types
-      }
-    })
-    Object.defineProperty(registry, 'schemas', {
-      enumerable: true,
-      configurable: false,
-      get: () => {
-        return this.schemas
-      }
-    })
-    Object.defineProperty(registry, 'definition', {
-      enumerable: true,
-      configurable: false,
-      get: () => {
-        return this._def.definition
-      }
+    const registry = Object.freeze({
+      types: this.types,
+      schemas: this.schemas,
+      definition: this._def.definition
     })
 
-    // create a new library and pass the registry
-    this.lib = new Library(graphql, registry)
+    // create a new library and pass
+    // the registry and this generator
+    this.lib = Object.freeze(
+      new Library(graphql, registry, this)
+    )
   }
 
   /**
@@ -88,11 +76,7 @@ export default class Generator extends EventEmitter {
     // finally add the default context values
     this._context = _.assign(context, {
       lib: this.lib,
-      definition,
-      graphql: this.graphql,
-      lodash: _,
-      types: this.types,
-      schemas: this.schemas
+      graphql: this.graphql
     })
 
     return this
@@ -193,8 +177,16 @@ export default class Generator extends EventEmitter {
 
     // return the middleware resolvers
     return function (source, args, context, info) {
-      const params = { source, args, context, info }
-      return middleware(this._def, resolve, ctx, params)
+      // create a request object
+      const req = {
+        source,
+        args,
+        context: _.assign(ctx, context),
+        info
+      }
+
+      // call the middleware
+      return middleware(this, resolve, req)
     }
   }
 
@@ -216,9 +208,10 @@ export default class Generator extends EventEmitter {
       return
     }
 
-    // return the wrapped function
-    return function (source, args, context, info) {
-      return func.apply(ctx, source, args, context, info)
+    // return the wrapped function and call with apply
+    // because arguments may vary
+    return function () {
+      return func.apply(ctx, [ ...arguments ])
     }
   }
 
@@ -257,8 +250,9 @@ export default class Generator extends EventEmitter {
    * Generates types and schemas
    * @param definition
    */
-  generate (definition) {
+  generate (definition, options) {
     const { _types, _schemas, _functions } = definition
+    this._id = _.get(options, 'id', this._id)
     this._def = definition
     this.functions = _functions
 

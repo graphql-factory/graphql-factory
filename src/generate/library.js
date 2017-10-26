@@ -2,10 +2,13 @@ import _ from '../common/lodash.custom'
 import EventEmitter from 'events'
 
 export default class GraphQLFactoryLibrary extends EventEmitter {
-  constructor (graphql, registry) {
+  constructor (graphql, registry, generator) {
     super()
     this.graphql = graphql
     this.registry = registry
+    this._bindResolver = resolve => {
+      generator.bindResolve(resolve, {})
+    }
   }
 
   /**
@@ -61,6 +64,11 @@ export default class GraphQLFactoryLibrary extends EventEmitter {
       throw new Error('GraphQLFactoryError: Schema "'
         + _schema + '" was not found in the registry')
     }
+
+    // bind the default resolver to the middleware
+    _resolver = _.isFunction(_resolver)
+      ? this._bindResolver(_resolver)
+      : _resolver
 
     // make the request
     return graphql(

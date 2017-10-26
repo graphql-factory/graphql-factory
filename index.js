@@ -310,7 +310,7 @@ function baseGetTag(value) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -349,7 +349,7 @@ function isObject(value) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -621,7 +621,7 @@ function copyObject(source, props, object, customizer) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -1051,7 +1051,7 @@ var isArguments = baseIsArguments(function () {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -1315,7 +1315,7 @@ function baseKeys(object) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -1355,7 +1355,7 @@ function keys(object) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -1684,7 +1684,7 @@ var upperFirst = createCaseFirst('toUpperCase');
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -1711,7 +1711,7 @@ function capitalize(string) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -1760,7 +1760,7 @@ function castArray() {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -1911,7 +1911,7 @@ function castFunction(value) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -2539,7 +2539,7 @@ function baseGet(object, path) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -2625,7 +2625,7 @@ function hasPath(object, path, hasFunc) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -2733,7 +2733,7 @@ function baseIndexOf(array, value, fromIndex) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -2943,7 +2943,7 @@ function values(object) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -3751,7 +3751,7 @@ function baseIsEqual(value, other, bitmask, customizer, stack) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -3791,7 +3791,7 @@ function isEqual(value, other) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -4107,7 +4107,7 @@ function baseMap(collection, iteratee) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -4162,7 +4162,7 @@ function map(collection, iteratee) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -4626,7 +4626,7 @@ function baseMerge(object, source, srcIndex, customizer, stack) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -4669,7 +4669,7 @@ var merge = createAssigner(function (object, source, srcIndex) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -5255,7 +5255,7 @@ function flatRest(func) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -5308,6 +5308,106 @@ var omit = flatRest(function (object, paths) {
   return result;
 });
 
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeFloor = Math.floor;
+var nativeRandom$1 = Math.random;
+
+/**
+ * The base implementation of `_.random` without support for returning
+ * floating-point numbers.
+ *
+ * @private
+ * @param {number} lower The lower bound.
+ * @param {number} upper The upper bound.
+ * @returns {number} Returns the random number.
+ */
+function baseRandom(lower, upper) {
+  return lower + nativeFloor(nativeRandom$1() * (upper - lower + 1));
+}
+
+/**
+ * Lodash (Custom Build) <https://lodash.com/>
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
+ * Copyright JS Foundation and other contributors <https://js.foundation/>
+ * Released under MIT license <https://lodash.com/license>
+ * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
+ * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ */
+/** Built-in method references without a dependency on `root`. */
+var freeParseFloat = parseFloat;
+
+/* Built-in method references for those with the same name as other `lodash` methods. */
+var nativeMin = Math.min;
+var nativeRandom = Math.random;
+
+/**
+ * Produces a random number between the inclusive `lower` and `upper` bounds.
+ * If only one argument is provided a number between `0` and the given number
+ * is returned. If `floating` is `true`, or either `lower` or `upper` are
+ * floats, a floating-point number is returned instead of an integer.
+ *
+ * **Note:** JavaScript follows the IEEE-754 standard for resolving
+ * floating-point values which can produce unexpected results.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.7.0
+ * @category Number
+ * @param {number} [lower=0] The lower bound.
+ * @param {number} [upper=1] The upper bound.
+ * @param {boolean} [floating] Specify returning a floating-point number.
+ * @returns {number} Returns the random number.
+ * @example
+ *
+ * _.random(0, 5);
+ * // => an integer between 0 and 5
+ *
+ * _.random(5);
+ * // => also an integer between 0 and 5
+ *
+ * _.random(5, true);
+ * // => a floating-point number between 0 and 5
+ *
+ * _.random(1.2, 5.2);
+ * // => a floating-point number between 1.2 and 5.2
+ */
+function random(lower, upper, floating) {
+  if (floating && typeof floating != 'boolean' && isIterateeCall(lower, upper, floating)) {
+    upper = floating = undefined;
+  }
+  if (floating === undefined) {
+    if (typeof upper == 'boolean') {
+      floating = upper;
+      upper = undefined;
+    } else if (typeof lower == 'boolean') {
+      floating = lower;
+      lower = undefined;
+    }
+  }
+  if (lower === undefined && upper === undefined) {
+    lower = 0;
+    upper = 1;
+  } else {
+    lower = toFinite(lower);
+    if (upper === undefined) {
+      upper = lower;
+      lower = 0;
+    } else {
+      upper = toFinite(upper);
+    }
+  }
+  if (lower > upper) {
+    var temp = lower;
+    lower = upper;
+    upper = temp;
+  }
+  if (floating || lower % 1 || upper % 1) {
+    var rand = nativeRandom();
+    return nativeMin(lower + rand * (upper - lower + freeParseFloat('1e-' + ((rand + '').length - 1))), upper);
+  }
+  return baseRandom(lower, upper);
+}
+
 /**
  * The base implementation of `_.reduce` and `_.reduceRight`, without support
  * for iteratee shorthands, which iterates over `collection` using `eachFunc`.
@@ -5330,7 +5430,7 @@ function baseReduce(collection, iteratee, accumulator, initAccum, eachFunc) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -5420,7 +5520,7 @@ function baseSet(object, path, value, customizer) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -5569,7 +5669,7 @@ function baseUniq(array, iteratee, comparator) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -5597,7 +5697,7 @@ var union = baseRest(function (arrays) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -5692,7 +5792,7 @@ function baseDifference(array, values, iteratee, comparator) {
 
 /**
  * Lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,reduce,set,union,unset,without" -o src/common/lodash`
+ * Build: `lodash modularize exports="es" include="assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,random,reduce,set,union,unset,without" -o src/common/lodash`
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -5744,6 +5844,7 @@ var _ = {
   merge: merge,
   noop: noop,
   omit: omit,
+  random: random,
   reduce: reduce,
   set: set$1,
   union: union,
@@ -5997,11 +6098,9 @@ var OUTPUT_TYPES = ['GraphQLEnumType', 'GraphQLObjectType', 'GraphQLScalarType',
 var BEFORE_MIDDLEWARE = 'BEFORE';
 var AFTER_MIDDLEWARE = 'AFTER';
 var ERROR_MIDDLEWARE = 'ERROR';
-
-// types with fields
-
-
-var DEFAULT_MIDDLEWARE_TIMEOUT = 5000;
+var RESOLVE_MIDDLEWARE = 'RESOLVE';
+var DEFAULT_MIDDLEWARE_TIMEOUT = 300000; // 5 minutes
+var RANDOM_MAX = 1000000000000000;
 
 /**
  * Returns the name of the constructor
@@ -6747,21 +6846,28 @@ var GraphQLFactoryDefinitionExpander = function (_EventEmitter) {
   return GraphQLFactoryDefinitionExpander;
 }(EventEmitter);
 
-var MIDDLEWARE_TYPES = [BEFORE_MIDDLEWARE, AFTER_MIDDLEWARE, ERROR_MIDDLEWARE];
+var MIDDLEWARE_TYPES = [BEFORE_MIDDLEWARE, AFTER_MIDDLEWARE, ERROR_MIDDLEWARE, RESOLVE_MIDDLEWARE];
 
-var Middleware = function Middleware(type, resolver, timeout) {
+var Middleware = function Middleware(type, resolver, options) {
   classCallCheck(this, Middleware);
+
+  var _ref = _.isObject(options) && options !== null ? options : {},
+      timeout = _ref.timeout,
+      priority = _ref.priority,
+      name = _ref.name;
 
   if (!_.includes(MIDDLEWARE_TYPES, type)) {
     throw new Error('GraphQLFactoryMiddlewareError: ' + 'Invalid middleware type "' + type + '"');
   } else if (!_.isFunction(resolver)) {
     throw new Error('GraphQLFactoryMiddlewareError: ' + 'Resolver must be a function');
-  } else if (timeout && (!_.isNumber(timeout) || timeout < 1)) {
-    throw new Error('GraphQLFactoryMiddlewareError: ' + 'Timeout must be an integer greater than 0');
+  } else if (timeout && (!_.isNumber(timeout) || timeout < 0)) {
+    throw new Error('GraphQLFactoryMiddlewareError: ' + 'Timeout must be an integer greater than or equal to 0');
   }
   this.type = type;
   this.resolver = resolver;
+  this.name = _.isString(name) && name !== '' ? name : _.get(resolver, 'name', type);
   this.timeout = _.isNumber(timeout) ? Math.floor(timeout) : DEFAULT_MIDDLEWARE_TIMEOUT;
+  this.priority = _.isNumber(priority) ? Math.floor(priority) : null;
 };
 
 var GraphQLFactoryDefinition = function () {
@@ -6781,14 +6887,15 @@ var GraphQLFactoryDefinition = function () {
   /**
    * Adds before middleware
    * @param middleware
-   * @param timeout
+   * @param options
+   * @returns {GraphQLFactoryDefinition}
    */
 
 
   createClass(GraphQLFactoryDefinition, [{
     key: 'before',
-    value: function before(middleware, timeout) {
-      var mw = middleware instanceof Middleware ? middleware : new Middleware(BEFORE_MIDDLEWARE, middleware, timeout);
+    value: function before(middleware, options) {
+      var mw = middleware instanceof Middleware ? middleware : new Middleware(BEFORE_MIDDLEWARE, middleware, options);
       this._before.push(mw);
       return this;
     }
@@ -6796,13 +6903,14 @@ var GraphQLFactoryDefinition = function () {
     /**
      * Adds after middleware
      * @param middleware
-     * @param timeout
+     * @param options
+     * @returns {GraphQLFactoryDefinition}
      */
 
   }, {
     key: 'after',
-    value: function after(middleware, timeout) {
-      var mw = middleware instanceof Middleware ? middleware : new Middleware(AFTER_MIDDLEWARE, middleware, timeout);
+    value: function after(middleware, options) {
+      var mw = middleware instanceof Middleware ? middleware : new Middleware(AFTER_MIDDLEWARE, middleware, options);
       this._after.push(mw);
       return this;
     }
@@ -6810,13 +6918,14 @@ var GraphQLFactoryDefinition = function () {
     /**
      * Adds error middleware
      * @param middleware
-     * @param timeout
+     * @param options
+     * @returns {GraphQLFactoryDefinition}
      */
 
   }, {
     key: 'error',
-    value: function error(middleware, timeout) {
-      var mw = middleware instanceof Middleware ? middleware : new Middleware(ERROR_MIDDLEWARE, middleware, timeout);
+    value: function error(middleware, options) {
+      var mw = middleware instanceof Middleware ? middleware : new Middleware(ERROR_MIDDLEWARE, middleware, options);
       this._error.push(mw);
       return this;
     }
@@ -7163,132 +7272,120 @@ var GraphQLFactoryDefinition = function () {
 }();
 
 /**
- * Processes the resolver function
+ * Wraps the resolver function in middleware so that it can be
+ * added to a middleware queue and processed the same way as
+ * other middleware
  * @param resolver
- * @param ctx
- * @param params
- * @param done
+ * @returns {Function}
+ */
+function resolverMiddleware(resolver) {
+  return function (req, res, next) {
+    try {
+      var source = req.source,
+          args = req.args,
+          context = req.context,
+          info = req.info;
+
+      var value = resolver(source, args, context, info);
+
+      return Promise.resolve(value).then(function (result) {
+        req.result = result;
+        return next();
+      }).catch(next);
+    } catch (err) {
+      return next(err);
+    }
+  };
+}
+
+/**
+ * Processes the next middleware in the queue
+ * @param mw
+ * @param info
  * @returns {*}
  */
-function processResolver(resolver, ctx, params, done) {
-  try {
-    var source = params.source,
-        args = params.args,
-        context = params.context,
-        info = params.info;
+function nextMiddleware(mw, info) {
+  var resolved = info.resolved,
+      index = info.index,
+      resolverIndex = info.resolverIndex,
+      errorMiddleware = info.errorMiddleware,
+      req = info.req,
+      res = info.res;
 
-    var value = resolver.call(ctx, source, args, context, info);
 
-    return Promise.resolve(value).then(function (result) {
-      return done(undefined, result);
-    }).catch(done);
-  } catch (err) {
-    return done(err);
-  }
-}
+  var local = {
+    finished: false,
+    timeout: null
 
-/**
- * Generic middleware processing function
- * @param type
- * @param middlewares
- * @param ctx
- * @param params
- * @param value
- * @param done
- */
-function processMiddleware(type, middlewares, ctx, params, value, done) {
-  var timeout = null;
-  var queue = middlewares.slice();
-  var resolved = false;
+    // check if the request has already been resolved
+  };if (resolved) return;
 
-  // create an end function that can only call done once
-  var end = function end(error, result) {
-    if (resolved) return;
-    resolved = true;
-    return done(error, result);
-  };
+  // get the current middleware
+  var current = mw[index];
 
-  // create a next function that will be passed to each
-  // middleware function. each call to next calls the
-  // next middleware in the queue until there are no
-  // more. additionally a timeout is created to prevent
-  // hanging if the middleware never calls next or
-  // takes too long
-  var next = function next(error, result) {
-    clearTimeout(timeout);
+  // create a next method
+  var next = function next(data) {
+    clearTimeout(local.timeout);
+    if (local.finished || info.resolved) return;
+    local.finished = true;
 
-    if (type === ERROR_MIDDLEWARE) {
-      if (!queue.length) return end(error);
-    } else if (error) {
-      return end(error);
-    } else if (!queue.length) {
-      return end(undefined, result);
+    // check if there is any more middleware in the chain
+    // if not, call end to complete the request
+    if (info.index === mw.length) return res.end();
+
+    // allow the middleware to route back to the
+    // resolve function this may be useful for retries
+    if (data === 'resolve') {
+      info.index = resolverIndex;
+      return nextMiddleware(mw, info);
     }
 
-    // set the current middleware and de-queue it
-    var mw = _.first(queue);
-    queue = queue.splice(1);
+    // check for an error passed to the next method and not
+    // already in the error middleware chain. if condition met
+    // start processing error middleware
+    if (data instanceof Error && current.type !== ERROR_MIDDLEWARE) {
+      info.index = 0;
+      req.error = data;
+      return nextMiddleware(errorMiddleware, info);
+    }
 
-    // create a new timeout
-    timeout = setTimeout(function () {
-      end(new Error(type + ' middleware timed out'));
-    }, mw.timeout);
+    // if no errors and not done, move to the next middleware
+    return nextMiddleware(mw, info);
+  };
 
-    // call the resolver method and catch any errors
-    try {
-      switch (type) {
-        case BEFORE_MIDDLEWARE:
-          return mw.resolver.call(ctx, params, next);
-        case AFTER_MIDDLEWARE:
-          return mw.resolver.call(ctx, params, result, next);
-        case ERROR_MIDDLEWARE:
-          return mw.resolver.call(ctx, params, error, next);
-        default:
-          return end(new Error('Invalid middleware type "' + type + '"'));
+  // create a timeout for the middleware if timeout > 0
+  if (current.timeout > 0) {
+    local.timeout = setTimeout(function () {
+      local.finished = true;
+      req.error = new Error(current.name + ' middleware timed out');
+
+      // if already in error middleware and timed out
+      // end the entire request, othewise move to error mw
+      if (current.type !== ERROR_MIDDLEWARE) {
+        info.index = 0;
+        return nextMiddleware(errorMiddleware, info);
       }
-    } catch (err) {
-      return end(err);
+      return res.end();
+    }, current.timeout);
+  }
+
+  // try to execute the resolver and if unable
+  // move to error middleware. if already in error
+  // middleware end the request
+  try {
+    info.index += 1;
+    current.resolver(req, res, next);
+  } catch (err) {
+    clearTimeout(local.timeout);
+    local.finished = true;
+    req.error = err;
+
+    if (current.type !== ERROR_MIDDLEWARE) {
+      info.index = 0;
+      return nextMiddleware(errorMiddleware, info);
     }
-  };
-
-  // call the first next. if error middleware call
-  // the value in the error position
-  return type === ERROR_MIDDLEWARE ? next(value) : next(undefined, value);
-}
-
-/**
- * Processes the error middleware
- * @param mws
- * @param ctx
- * @param params
- * @param error
- * @param done
- */
-function errorMiddleware(middlewares, ctx, params, error, done) {
-  processMiddleware(ERROR_MIDDLEWARE, middlewares, ctx, params, error, done);
-}
-
-/**
- * Processes the after middleware
- * @param mws
- * @param ctx
- * @param params
- * @param result
- * @param done
- */
-function afterMiddleware(middlewares, ctx, params, result, done) {
-  processMiddleware(AFTER_MIDDLEWARE, middlewares, ctx, params, result, done);
-}
-
-/**
- * Processes the before middleware
- * @param mws
- * @param ctx
- * @param params
- * @param done
- */
-function beforeMiddleware(middlewares, ctx, params, done) {
-  processMiddleware(BEFORE_MIDDLEWARE, middlewares, ctx, params, undefined, done);
+    return res.end();
+  }
 }
 
 /**
@@ -7298,42 +7395,71 @@ function beforeMiddleware(middlewares, ctx, params, done) {
  * @param params
  * @returns {Promise}
  */
-function middleware(definition, resolver, ctx, params) {
-  var _before = definition._before,
-      _after = definition._after,
-      _error = definition._error;
+function middleware(generator, resolver, req) {
+  var _id = generator._id,
+      _def = generator._def;
+  var _before = _def._before,
+      _after = _def._after,
+      _error = _def._error;
 
+  var requestTimeout = _.get(req, 'context.requestTimeout');
+  // create middleware from the resolver, name it RESOLVER with no timeout
+  var _resolver = new Middleware(RESOLVE_MIDDLEWARE, resolverMiddleware(resolver), {
+    name: 'RESOLVER',
+    timeout: _.get(req, 'context.resolverTimeout', 0)
+  });
 
+  // TODO: this is where middleware can be sorted by priority before it is concatenated
+  var middlewares = _before.concat(_resolver).concat(_after);
+
+  // return a new promise
   return new Promise(function (resolve, reject) {
-    // start by processing the before middleware
-    return beforeMiddleware(_before, ctx, params, function (beforeErr) {
-      if (beforeErr) {
-        return errorMiddleware(_error, ctx, params, beforeErr, function (bError) {
-          return reject(bError);
-        });
+    var local = {
+      timeout: null
+
+      // create a response object and track its resolution
+    };var info = {
+      id: _id,
+      metrics: {
+        started: Date.now(),
+        ended: null
+      },
+      resolved: false,
+      index: 0,
+      resolverIndex: _before.length,
+      errorMiddleware: _error,
+      req: req,
+      res: {
+        end: function end(data) {
+          clearTimeout(local.timeout);
+          if (info.resolved) return;
+          info.resolved = true;
+          info.metrics.ended = Date.now();
+
+          // emit a metrics event from the generator
+          generator.log('request', _.omit(info, ['req', 'res', 'errorMiddleware', 'resolverIndex', 'index']));
+
+          // if the data is an error or there is an error in the request
+          // reject the request otherwise resolve with the data or result
+          return data instanceof Error || info.req.error instanceof Error ? reject(data || info.req.error) : resolve(data || info.req.result);
+        },
+        send: function send(data) {
+          if (info.resolved) return;
+          info.req.error = null;
+          info.req.result = data;
+          return info.res.end();
+        }
       }
 
-      // next process the resolver function
-      return processResolver(resolver, ctx, params, function (resErr, result) {
-        if (resErr) {
-          return errorMiddleware(_error, ctx, params, resErr, function (rError) {
-            return reject(rError);
-          });
-        }
+      // create a request timeout if it is set in the request context
+    };if (_.isNumber(requestTimeout) && requestTimeout > 0) {
+      local.timeout = setTimeout(function () {
+        return info.res.end(new Error('Request timed out'));
+      }, Math.floor(requestTimeout));
+    }
 
-        // finally process the after middleware
-        return afterMiddleware(_after, ctx, params, result, function (afterErr, finalResult) {
-          if (afterErr) {
-            return errorMiddleware(_error, ctx, params, afterErr, function (aError) {
-              return reject(aError);
-            });
-          }
-
-          // at this point all middleware has been resolved
-          return resolve(finalResult);
-        });
-      });
-    });
+    // make an initial call to the process the middleware
+    return nextMiddleware(middlewares, info);
   });
 }
 
@@ -7676,11 +7802,13 @@ var Generator = function (_EventEmitter) {
 
     _this.graphql = graphql;
     _this.error = null;
+    _this._id = String(_.random(RANDOM_MAX));
     _this._def = {};
     _this.types = {};
     _this.schemas = {};
     _this.functions = {};
     _this._context = {};
+    _this._logger = {};
     _this._scalars = (_this$_scalars = {}, defineProperty$2(_this$_scalars, BOOLEAN, graphql.GraphQLBoolean), defineProperty$2(_this$_scalars, INT, graphql.GraphQLInt), defineProperty$2(_this$_scalars, STRING, graphql.GraphQLString), defineProperty$2(_this$_scalars, FLOAT, graphql.GraphQLFloat), defineProperty$2(_this$_scalars, ID, graphql.GraphQLID), _this$_scalars);
 
     // create a read only registry
@@ -7713,13 +7841,46 @@ var Generator = function (_EventEmitter) {
   }
 
   /**
-   * Makes a context object
-   * @param definition
-   * @private
+   * Adds a logger
+   * @param log
    */
 
 
   createClass(Generator, [{
+    key: 'logger',
+    value: function logger(log) {
+      if (_.isObject(log) && log !== null) this._logger = log;
+    }
+
+    /**
+     * Log function, sends logs to the logger
+     */
+
+  }, {
+    key: 'log',
+    value: function log() {
+      var args = [].concat(Array.prototype.slice.call(arguments));
+      if (!args.length || !_.isString(args[0]) || args[0] === '') {
+        throw new Error('GraphQLFactoryLogError: ' + 'A log type is required. Log types ' + 'must be specified as strings');
+      }
+
+      // get the log type
+      var logType = args.shift();
+      var handler = _.get(this._logger, '["' + logType + '"]');
+
+      // check that the log type exists
+      if (_.isFunction(handler)) {
+        return handler.apply(handler, args);
+      }
+    }
+
+    /**
+     * Makes a context object
+     * @param definition
+     * @private
+     */
+
+  }, {
     key: '_makeContext',
     value: function _makeContext(def) {
       var definition = def.definition,
@@ -7853,8 +8014,15 @@ var Generator = function (_EventEmitter) {
 
       // return the middleware resolvers
       return function (source, args, context, info) {
-        var params = { source: source, args: args, context: context, info: info };
-        return middleware(this._def, resolve, ctx, params);
+        // create a request object
+        var req = {
+          source: source,
+          args: args,
+          context: _.assign(ctx, context),
+          info: info
+
+          // call the middleware
+        };return middleware(this, resolve, req);
       };
     }
 
@@ -7877,9 +8045,10 @@ var Generator = function (_EventEmitter) {
         return;
       }
 
-      // return the wrapped function
-      return function (source, args, context, info) {
-        return func.apply(ctx, source, args, context, info);
+      // return the wrapped function and call with apply
+      // because arguments may vary
+      return function () {
+        return func.apply(ctx, [].concat(Array.prototype.slice.call(arguments)));
       };
     }
 
@@ -7918,11 +8087,12 @@ var Generator = function (_EventEmitter) {
 
   }, {
     key: 'generate',
-    value: function generate(definition) {
+    value: function generate(definition, options) {
       var _types = definition._types,
           _schemas = definition._schemas,
           _functions = definition._functions;
 
+      this._id = _.get(options, 'id', this._id);
       this._def = definition;
       this.functions = _functions;
 
