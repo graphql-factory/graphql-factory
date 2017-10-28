@@ -9,6 +9,13 @@ export function constructorName (obj) {
   return _.get(obj, 'constructor.name')
 }
 
+/**
+ * Returns a value if the current one is nil
+ * @param type
+ * @param value
+ * @param _default
+ * @returns {*}
+ */
 export function ensureValue (type, value, _default) {
   switch (type) {
     case 'object':
@@ -22,35 +29,6 @@ export function ensureValue (type, value, _default) {
     default:
       return value || _default
   }
-}
-
-/**
- * Strips away nonnull and list objects to
- * build an info object containing the type
- * @param obj
- * @param info
- * @returns {*}
- */
-export function getTypeInfo (obj, info) {
-  const _info = info || {
-    type: null,
-    name: null,
-    isList: false,
-    isNonNull: false
-  }
-
-  switch (constructorName(obj)) {
-    case 'GraphQLNonNull':
-      _info.isNonNull = true
-      return getTypeInfo(obj.ofType, _info)
-    case 'GraphQLList':
-      _info.isList = true
-      return getTypeInfo(obj.ofType, _info)
-    default:
-      _info.type = obj
-      _info.name = obj.name
-  }
-  return _info
 }
 
 /**
@@ -115,32 +93,6 @@ export function getBaseType (obj) {
   return obj.ofType
     ? getBaseType(obj.ofType)
     : obj
-}
-
-/**
- * creates a base def object
- * @param info
- * @returns {{type: [null]}}
- */
-export function baseDef (info) {
-  const { name, isList, isNonNull } = info
-  const def = {
-    type: isList ? [ name ] : name
-  }
-  if (isNonNull) def.nullable = false
-  return def
-}
-
-/**
- * Determines if the value is a list type def
- * @param value
- * @returns {*|boolean}
- */
-export function isListTypeDef (value) {
-  return _.isArray(value)
-    && value.length === 1
-    && value[0]
-    && _.isString(value[0])
 }
 
 /**

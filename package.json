@@ -15,7 +15,8 @@
   "scripts": {
     "lint": "eslint src",
     "build:lodash": "lodash modularize exports=es include=$npm_package_options_lodash -o src/common/lodash",
-    "build": "npm run lint && rollup -c build/rollup.config.js && uglifyjs index.js > index.min.js && npm run test",
+    "build:src": "rollup -c build/rollup.config.js && uglifyjs index.js > index.min.js",
+    "build": "npm run lint && npm run build:src && npm run test",
     "test": "babel-node ./node_modules/.bin/_mocha $npm_package_options_mocha"
   },
   "author": "Branden Horiuchi <bhoriuchi@gmail.com>",

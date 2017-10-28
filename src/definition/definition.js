@@ -138,7 +138,7 @@ export default class GraphQLFactoryDefinition {
           )
         } catch (err) {
           throw new Error('GraphQLFactoryUseError: '
-            + structName + 'can not be decomposed into '
+            + structName + ' can not be decomposed into '
             + 'a factory definition')
         }
         break

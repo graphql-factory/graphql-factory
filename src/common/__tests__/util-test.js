@@ -11,9 +11,6 @@ const {
 import {
   constructorName,
   ensureValue,
-  getTypeInfo,
-  baseDef,
-  isListTypeDef,
   valueString,
   resolveThunk,
   assertField,
@@ -27,10 +24,6 @@ const Foo = new GraphQLObjectType({
   name: 'Foo',
   fields: { name: GraphQLString }
 })
-
-const FooList = new GraphQLList(Foo)
-const FooNonNull = new GraphQLNonNull(Foo)
-const FooListNonNull = new GraphQLNonNull(new GraphQLList(Foo))
 
 describe('common.util tests', () => {
   it('gets the constructor name', () => {
@@ -58,63 +51,6 @@ describe('common.util tests', () => {
     expect(ensure3).to.deep.equal([])
     expect(ensure4).to.deep.equal([])
     expect(ensure5).to.deep.equal([ 1 ])
-  })
-
-  it('gets type info', () => {
-    const info1 = getTypeInfo(Foo)
-    const info2 = getTypeInfo(FooList)
-    const info3 = getTypeInfo(FooNonNull)
-    const info4 = getTypeInfo(FooListNonNull)
-
-    expect(info1).to.deep.equal({
-      type: Foo,
-      name: 'Foo',
-      isList: false,
-      isNonNull: false
-    })
-
-    expect(info2).to.deep.equal({
-      type: Foo,
-      name: 'Foo',
-      isList: true,
-      isNonNull: false
-    })
-
-    expect(info3).to.deep.equal({
-      type: Foo,
-      name: 'Foo',
-      isList: false,
-      isNonNull: true
-    })
-
-    expect(info4).to.deep.equal({
-      type: Foo,
-      name: 'Foo',
-      isList: true,
-      isNonNull: true
-    })
-  })
-
-  it('creates a base definition', () => {
-    const def1 = baseDef({ name: 'Foo', isNonNull: false, isList: false })
-    const def2 = baseDef({ name: 'Foo', isNonNull: true, isList: false })
-    const def3 = baseDef({ name: 'Foo', isNonNull: false, isList: true })
-    const def4 = baseDef({ name: 'Foo', isNonNull: true, isList: true })
-
-    expect(def1).to.deep.equal({ type: 'Foo' })
-    expect(def2).to.deep.equal({ type: 'Foo', nullable: false })
-    expect(def3).to.deep.equal({ type: [ 'Foo' ] })
-    expect(def4).to.deep.equal({ type: [ 'Foo' ], nullable: false })
-  })
-
-  it('checks if the typeDef is a list', () => {
-    const islist1 = isListTypeDef([ 'Foo' ])
-    const islist2 = isListTypeDef('Foo')
-    const islist3 = isListTypeDef([ 'Foo', 'Bar' ])
-
-    expect(islist1).to.equal(true)
-    expect(islist2).to.equal(false)
-    expect(islist3).to.equal(false)
   })
 
   it('checks for a string with value', () => {
@@ -199,7 +135,7 @@ describe('common.util tests', () => {
 
     const typeHash = {
       String: GraphQLString,
-      Foo: Foo
+      Foo
     }
 
     const typeResolver = name => {

@@ -5891,6 +5891,20 @@ var without = baseRest(function (array, values) {
   return isArrayLikeObject(array) ? baseDifference(array, values) : [];
 });
 
+/*
+ * Sizing
+ * - With lodash
+ *   - index.js: 240kb
+ *   - index.min.js: 100kb
+ * - Custom methods
+ *   - index.js: 164kb
+ *   - index.min.js: 81kb
+ *
+ * - Stub (aka no code)
+ *   - index.js: 72kb
+ *   - index.min.js: 43kb
+ */
+
 var _ = {
   assign: assign,
   capitalize: capitalize,
@@ -6186,61 +6200,71 @@ function constructorName(obj) {
   return _.get(obj, 'constructor.name');
 }
 
+/**
+ * Returns a value if the current one is nil
+ * @param type
+ * @param value
+ * @param _default
+ * @returns {*}
+ */
 
 
 /**
- * Strips away nonnull and list objects to
- * build an info object containing the type
+ * Converts a graphql object into a type string
  * @param obj
- * @param info
- * @returns {*}
+ * @param str
+ * @returns {*|string}
  */
-function getTypeInfo(obj, info) {
-  var _info = info || {
-    type: null,
-    name: null,
-    isList: false,
-    isNonNull: false
-  };
+function toTypeString(obj, str) {
+  var interop = '{{TYPE_NAME}}';
+  var name = str || interop;
 
   switch (constructorName(obj)) {
     case 'GraphQLNonNull':
-      _info.isNonNull = true;
-      return getTypeInfo(obj.ofType, _info);
+      name = name === interop ? name + '!' : name.replace(interop, interop + '!');
+      return toTypeString(obj.ofType, name);
+
     case 'GraphQLList':
-      _info.isList = true;
-      return getTypeInfo(obj.ofType, _info);
+      name = name.replace(interop, '[' + interop + ']');
+      return toTypeString(obj.ofType, name);
+
     default:
-      _info.type = obj;
-      _info.name = obj.name;
+      name = name.replace(interop, obj.name);
+      break;
   }
-  return _info;
+
+  return name;
 }
 
 /**
- * creates a base def object
- * @param info
- * @returns {{type: [null]}}
+ * Converts a type string into a new object
+ * @param graphql
+ * @param str
+ * @param typeResolver
+ * @returns {*}
  */
-function baseDef(info) {
-  var name = info.name,
-      isList = info.isList,
-      isNonNull = info.isNonNull;
+function toObjectType(graphql, str, typeResolver) {
+  var nonNullRx = /!$/;
+  var listRx = /^\[(.+)]$/;
 
-  var def = {
-    type: isList ? [name] : name
-  };
-  if (isNonNull) def.nullable = false;
-  return def;
+  var GraphQLNonNull = graphql.GraphQLNonNull,
+      GraphQLList = graphql.GraphQLList;
+
+  if (str.match(nonNullRx)) {
+    return new GraphQLNonNull(toObjectType(graphql, str.replace(nonNullRx, ''), typeResolver));
+  } else if (str.match(listRx)) {
+    return new GraphQLList(toObjectType(graphql, str.replace(listRx, '$1'), typeResolver));
+  }
+  return typeResolver(str);
 }
 
 /**
- * Determines if the value is a list type def
- * @param value
- * @returns {*|boolean}
+ * Recursively gets the base type
+ * @param obj
+ * @returns {*}
  */
-function isListTypeDef(value) {
-  return _.isArray(value) && value.length === 1 && value[0] && _.isString(value[0]);
+function getBaseType(obj) {
+  return obj.ofType ? getBaseType(obj.ofType) : obj;
 }
 
 /**
@@ -6496,9 +6520,10 @@ var GraphQLFactoryDecomposer = function () {
         fields[fieldName] = _.reduce(fieldDef, function (config, value, key) {
           switch (key) {
             case 'type':
-              var info = getTypeInfo(value);
-              _this2._routeDecompose(info.type);
-              return Object.assign(config, baseDef(info));
+              var baseType = getBaseType(value);
+              _this2._routeDecompose(baseType);
+              config.type = toTypeString(value);
+              return config;
 
             case 'args':
               config[key] = _this2._decomposeFields(value);
@@ -6658,30 +6683,45 @@ var GraphQLFactoryDefinitionExpander = function (_EventEmitter) {
         var fieldStruct = constructorName(field);
 
         // check the type configuration
-        if (valueString(field) || isListTypeDef(field)) {
-          return { type: field };
+        if (valueString(field)) {
+          return {
+            type: field
+          };
         } else if (_.includes(OUTPUT_TYPES, fieldStruct)) {
-          var info = getTypeInfo(field);
-          if (_.includes(DECOMPOSABLE, constructorName(info.type)) && !_.includes(SCALAR_NAMES, info.name)) {
-            _this3.merge(new GraphQLFactoryDecomposer().decompose(info.type));
+          var baseType = getBaseType(field);
+
+          // attempt to decompose
+          if (_.includes(DECOMPOSABLE, constructorName(baseType)) && !_.includes(SCALAR_NAMES, baseType.name)) {
+            _this3.merge(new GraphQLFactoryDecomposer().decompose(baseType));
           }
-          return baseDef(info);
+
+          // return the type string
+          return {
+            type: toTypeString(field)
+          };
         } else if (_.has(field, 'type')) {
-          var structName = constructorName(field.type);
+          var type = field.type,
+              args = field.args;
+
+          var structName = constructorName(type);
 
           // check for args and expand them using this function
-          if (field.args && _.isObject(field.args) && _.keys(field.args).length) {
-            field.args = _this3._expandFields(field.args);
+          if (args && _.isObject(args) && _.keys(args).length) {
+            field.args = _this3._expandFields(args);
           }
 
-          if (valueString(field.type) || isListTypeDef(field.type)) {
+          if (valueString(type)) {
             return field;
           } else if (_.includes(OUTPUT_TYPES, structName)) {
-            var _info = getTypeInfo(field.type);
-            if (_.includes(DECOMPOSABLE, constructorName(_info.type)) && !_.includes(SCALAR_NAMES, _info.name)) {
-              _this3.merge(new GraphQLFactoryDecomposer().decompose(_info.type));
+            var _baseType = getBaseType(type);
+
+            // attempt to decompose
+            if (_.includes(DECOMPOSABLE, constructorName(_baseType)) && !_.includes(SCALAR_NAMES, _baseType.name)) {
+              _this3.merge(new GraphQLFactoryDecomposer().decompose(_baseType));
             }
-            return _.assign({}, field, baseDef(_info));
+
+            field.type = toTypeString(type);
+            return field;
           }
         }
         _this3.error = new Error('GraphQLFactoryExpandError: ' + 'Failed to expand type definition for "' + fieldName + '" because ' + 'it is improperly defined');
@@ -7075,7 +7115,7 @@ var GraphQLFactoryDefinition = function () {
           try {
             this._mergeDefinition(new GraphQLFactoryDecomposer().decompose(obj));
           } catch (err) {
-            throw new Error('GraphQLFactoryUseError: ' + structName + 'can not be decomposed into ' + 'a factory definition');
+            throw new Error('GraphQLFactoryUseError: ' + structName + ' can not be decomposed into ' + 'a factory definition');
           }
           break;
       }
@@ -8124,24 +8164,18 @@ var Generator = function (_EventEmitter) {
   }, {
     key: 'makeType',
     value: function makeType(field) {
-      var type = field.type,
-          nullable = field.nullable,
-          primary = field.primary;
+      var _this4 = this;
 
-      var isList = _.isArray(type);
-      var isNonNull = nullable === false || primary === true;
-      var typeName = _.first(_.castArray(type));
-      var gqlType = _.get(this.types, '["' + typeName + '"]', _.get(this._scalars, '["' + typeName + '"]'));
+      var type = field.type;
 
-      if (!gqlType) {
-        this.error = new Error('GraphQLFactoryGenerateError: ' + 'Cannot make type "' + typeName + '"');
-      }
+      return toObjectType(this.graphql, type, function (name) {
+        var gqlType = _.get(_this4.types, '["' + name + '"]', _.get(_this4._scalars, '["' + name + '"]'));
 
-      gqlType = isList ? new this.graphql.GraphQLList(gqlType) : gqlType;
-
-      gqlType = isNonNull ? this.graphql.GraphQLNonNull(gqlType) : gqlType;
-
-      return gqlType;
+        if (!gqlType) {
+          _this4.error = new Error('GraphQLFactoryGenerateError: ' + 'Cannot make type "' + name + '"');
+        }
+        return gqlType;
+      });
     }
 
     /**

@@ -109,10 +109,7 @@ export default class GraphQLFactoryDefinitionExpander extends EventEmitter {
         return {
           type: toTypeString(field)
         }
-      }
-
-
-      else if (_.has(field, 'type')) {
+      } else if (_.has(field, 'type')) {
         const { type, args } = field
         const structName = constructorName(type)
 
