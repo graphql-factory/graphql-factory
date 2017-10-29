@@ -19,7 +19,7 @@
 # import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
-
+import sphinx_rtd_theme
 
 # -- General configuration ------------------------------------------------
 
@@ -40,8 +40,6 @@ templates_path = ['_templates']
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-import sphinx_rtd_theme
-
 source_suffix = '.rst'
 
 # The master toctree document.
@@ -75,6 +73,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
+highlight_language = 'javascript'
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
