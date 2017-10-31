@@ -2,11 +2,13 @@ import _ from './common/lodash.custom'
 import EventEmitter from 'events'
 import Definition from './definition/definition'
 import Generator from './generate/generate'
+import plugins from './plugins/index'
 
 class FactoryChain extends EventEmitter {
   constructor (graphql) {
     super()
     this.graphql = graphql
+    this.plugins = plugins
     this.definition = new Definition(this)
     this.generator = new Generator(graphql)
   }

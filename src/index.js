@@ -2,6 +2,7 @@ import GraphQLFactory from './factory'
 import Definition from './definition/definition'
 import Decomposer from './definition/decompose'
 import Expander from './definition/expand'
+import plugins from './plugins/index'
 
 // create a factory function that creates a new instance
 const Factory = function (graphql) {
@@ -12,6 +13,7 @@ const Factory = function (graphql) {
 Factory.Definition = Definition
 Factory.Decomposer = Decomposer
 Factory.Expander = Expander
+Factory.plugins = plugins
 
 // export the factory function
 export default Factory

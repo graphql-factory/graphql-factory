@@ -1,9 +1,9 @@
 import _ from '../common/lodash.custom'
 import Plugin from 'graphql-factory-plugin'
-import basePlugins from '../plugins/index'
 import Expander from './expand'
 import Decomposer from './decompose'
 import Middleware from './middleware'
+import Language from './language'
 import { constructorName, capitalCase } from '../common/util'
 import {
   OBJECT,
@@ -88,16 +88,14 @@ export default class GraphQLFactoryDefinition {
    * @param obj
    * @param name
    */
-  use (obj, name) {
+  use (obj, name, extension) {
     const structName = constructorName(obj)
     switch (structName) {
       case 'String':
-        const BasePlugin = _.get(basePlugins, `["${obj}"]`)
-        if (BasePlugin instanceof Plugin) {
-          this._registerPlugin(new BasePlugin())
-        } else {
-          throw new Error('GraphQLFactoryUserError: Invalid plugin')
-        }
+        this._mergeDefinition(
+          new Language(this._factory.graphql)
+            .build(obj, name, extension)
+        )
         break
 
       // definition objects

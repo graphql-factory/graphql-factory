@@ -5891,20 +5891,6 @@ var without = baseRest(function (array, values) {
   return isArrayLikeObject(array) ? baseDifference(array, values) : [];
 });
 
-/*
- * Sizing
- * - With lodash
- *   - index.js: 240kb
- *   - index.min.js: 100kb
- * - Custom methods
- *   - index.js: 164kb
- *   - index.min.js: 81kb
- *
- * - Stub (aka no code)
- *   - index.js: 72kb
- *   - index.min.js: 43kb
- */
-
 var _ = {
   assign: assign,
   capitalize: capitalize,
@@ -5934,197 +5920,6 @@ var _ = {
   union: union,
   unset: unset,
   without: without
-};
-
-var FactoryBase64 = {
-  type: 'Scalar',
-  name: 'Base64',
-  description: 'Converts value to and from base64',
-  serialize: function serialize(value) {
-    return new Buffer(value, 'base64').toString();
-  },
-  parseValue: function parseValue(value) {
-    return new Buffer(value).toString('base64');
-  },
-  parseLiteral: function parseLiteral(ast) {
-    var _graphql = this.graphql,
-        GraphQLError = _graphql.GraphQLError,
-        Kind = _graphql.Kind;
-
-
-    if (ast.kind !== Kind.STRING) {
-      throw new GraphQLError('Query error: expected Base64 ' + 'to be a string but got a: ' + ast.kind, [ast]);
-    }
-
-    return new Buffer(ast.value).toString('base64');
-  }
-};
-
-/*
- * Ported type from https://github.com/soundtrackyourbrand/graphql-custom-datetype
- */
-
-function coerceDate(value) {
-  if (!(value instanceof Date)) {
-    // Is this how you raise a 'field error'?
-    throw new Error('Field error: value is not an instance of Date');
-  }
-  if (isNaN(value.getTime())) {
-    throw new Error('Field error: value is an invalid Date');
-  }
-  return value.toJSON();
-}
-
-var FactoryDateTime = {
-  type: 'Scalar',
-  name: 'DateTime',
-  description: 'Represents a Date object',
-  serialize: coerceDate,
-  parseValue: coerceDate,
-  parseLiteral: function parseLiteral(ast) {
-    var _graphql = this.graphql,
-        GraphQLError = _graphql.GraphQLError,
-        Kind = _graphql.Kind;
-
-
-    if (ast.kind !== Kind.STRING) {
-      throw new GraphQLError('Query error: Can only parse strings ' + 'to dates but got a: ' + ast.kind, [ast]);
-    }
-    var result = new Date(ast.value);
-    if (isNaN(result.getTime())) {
-      throw new GraphQLError('Query error: Invalid date', [ast]);
-    }
-    if (ast.value !== result.toJSON()) {
-      throw new GraphQLError('Query error: Invalid date format, only ' + 'accepts: YYYY-MM-DDTHH:MM:SS.SSSZ', [ast]);
-    }
-    return result;
-  }
-};
-
-var FactoryEmail = {
-  type: 'Scalar',
-  name: 'Email',
-  description: 'The Email scalar type represents E-Mail addresses compliant to RFC 822.',
-  serialize: function serialize(value) {
-    return value;
-  },
-  parseValue: function parseValue(value) {
-    return value;
-  },
-  parseLiteral: function parseLiteral(ast) {
-    var _graphql = this.graphql,
-        GraphQLError = _graphql.GraphQLError,
-        Kind = _graphql.Kind;
-
-    // regex taken from https://github.com/stylesuxx/graphql-custom-types
-
-    var rx = /^(([^<>()[\].,;:\s@"]+(\.[^<>()[\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{2,})$/i;
-
-    if (ast.kind !== Kind.STRING) {
-      throw new GraphQLError('Query error: expected Email to be a ' + 'string but got a: ' + ast.kind, [ast]);
-    }
-
-    if (!ast.value.match(rx)) {
-      throw new GraphQLError('Query error: invalid Email', [ast]);
-    }
-
-    return ast.value;
-  }
-};
-
-/*
- * Ported type from https://github.com/taion/graphql-type-json
- */
-
-function identity$2(value) {
-  return value;
-}
-
-function parseLiteral(ast) {
-  var boundParseLiteral = parseLiteral.bind(this);
-  var Kind = this.graphql.Kind;
-
-  switch (ast.kind) {
-    case Kind.STRING:
-    case Kind.BOOLEAN:
-      return ast.value;
-    case Kind.INT:
-    case Kind.FLOAT:
-      return parseFloat(ast.value);
-    case Kind.OBJECT:
-      {
-        var value = Object.create(null);
-        ast.fields.forEach(function (field) {
-          value[field.name.value] = boundParseLiteral(field.value);
-        });
-        return value;
-      }
-    case Kind.LIST:
-      return ast.values.map(boundParseLiteral);
-    default:
-      return null;
-  }
-}
-
-var FactoryJSON = {
-  type: 'Scalar',
-  name: 'JSON',
-  description: 'The `JSON` scalar type represents JSON values as specified by ' + '[ECMA-404](http://www.ecma-international.org/ publications/files/ECMA-ST/ECMA-404.pdf).',
-  serialize: identity$2,
-  parseValue: identity$2,
-  parseLiteral: parseLiteral
-};
-
-var FactoryURL = {
-  type: 'Scalar',
-  name: 'URL',
-  description: 'The URL scalar type represents URL addresses.',
-  serialize: function serialize(value) {
-    return value;
-  },
-  parseValue: function parseValue(value) {
-    return value;
-  },
-  parseLiteral: function parseLiteral(ast) {
-    var _graphql = this.graphql,
-        GraphQLError = _graphql.GraphQLError,
-        Kind = _graphql.Kind;
-
-    // regex taken from https://github.com/stylesuxx/graphql-custom-types
-
-    var rx = new RegExp('^(?:(?:https?|ftp)://)(?:\\S+(?::\\S*)?@)?' + '(?:(?!(?:10|127)(?:\\.\\d{1,3}){3})(?!(?:169\\.254|192\\.168)' + '(?:\\.\\d{1,3}){2})(?!172\\.(?:1[6-9]|2\\d|3[0-1])(?:\\.\\d{1,3})' + '{2})(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|' + '2[0-4]\\d|25[0-5])){2}(?:\\.(?:[1-9]\\d?|1\\d\\d|2[0-4]\\d|25' + '[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)' + '(?:\\.(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)*' + '(?:\\.(?:[a-z\\u00a1-\\uffff]{2,}))\\.?)(?::\\d{2,5})?(?:[/?#]\\S*)' + '?$', 'i');
-
-    if (ast.kind !== Kind.STRING) {
-      throw new GraphQLError('Query error: expected URL to be a ' + 'string but got a: ' + ast.kind, [ast]);
-    }
-
-    if (!ast.value.match(rx)) {
-      throw new GraphQLError('Query error: invalid URL', [ast]);
-    }
-
-    return ast.value;
-  }
-};
-
-var GraphQLFactoryTypesPlugin = function (_Plugin) {
-  inherits(GraphQLFactoryTypesPlugin, _Plugin);
-
-  function GraphQLFactoryTypesPlugin() {
-    classCallCheck(this, GraphQLFactoryTypesPlugin);
-    return possibleConstructorReturn(this, (GraphQLFactoryTypesPlugin.__proto__ || Object.getPrototypeOf(GraphQLFactoryTypesPlugin)).call(this, 'GraphQLFactoryTypesPlugin', {}, {}, {
-      Base64: FactoryBase64,
-      DateTime: FactoryDateTime,
-      Email: FactoryEmail,
-      JSON: FactoryJSON,
-      URL: FactoryURL
-    }, {}));
-  }
-
-  return GraphQLFactoryTypesPlugin;
-}(Plugin);
-
-var basePlugins = {
-  types: GraphQLFactoryTypesPlugin
 };
 
 // built in type name constants
@@ -6985,6 +6780,159 @@ var Middleware = function Middleware(type, resolver, options) {
   this.priority = _.isNumber(priority) ? Math.floor(priority) : null;
 };
 
+var LanguageBuilder = function () {
+  function LanguageBuilder(graphql) {
+    classCallCheck(this, LanguageBuilder);
+
+    this.error = null;
+    this.graphql = graphql;
+    this.definition = {
+      types: {},
+      schemas: {}
+    };
+  }
+
+  /**
+   * Builds a factory definition from schema language
+   * @param source
+   * @param schemaName
+   * @param extension
+   * @returns {{types: {}, schemas: {}}|*}
+   */
+
+
+  createClass(LanguageBuilder, [{
+    key: 'build',
+    value: function build(source, schemaName, extension) {
+      var _this = this;
+
+      var parse = this.graphql.parse;
+
+      var _parse = parse(source),
+          definitions = _parse.definitions;
+
+      // process each definition
+
+
+      _.forEach(definitions, function (def) {
+        var kind = def.kind;
+
+        if (_.isFunction(_this[kind])) {
+          _this[kind](def, schemaName);
+        }
+      });
+
+      // check for error
+      if (this.error) throw this.error;
+
+      // merge in the custom data
+      _.forEach(extension, function (ext, name) {
+        var target = _.get(_this.definition, 'types["' + name + '"].fields');
+        if (target) _.merge(target, ext);
+      });
+
+      // return the factory definition
+      return this.definition;
+    }
+
+    /**
+     * Builds a type string from definition
+     * @param typeDef
+     * @returns {*}
+     * @private
+     */
+
+  }, {
+    key: '_buildTypeString',
+    value: function _buildTypeString(typeDef) {
+      var kind = typeDef.kind,
+          type = typeDef.type,
+          name = typeDef.name;
+
+      switch (kind) {
+        case 'NonNullType':
+          return this._buildTypeString(type) + '!';
+        case 'ListType':
+          return '[' + this._buildTypeString(type) + ']';
+        default:
+          return name.value;
+      }
+    }
+
+    /**
+     * Returns a fields/args hash
+     * @param fields
+     * @returns {*}
+     * @private
+     */
+
+  }, {
+    key: '_reduceFields',
+    value: function _reduceFields(fields) {
+      var _this2 = this;
+
+      return _.reduce(fields, function (accum, field) {
+        var name = field.name,
+            args = field.arguments,
+            type = field.type;
+
+        var def = { type: _this2._buildTypeString(type) };
+        if (_.isArray(args) && args.length) def.args = _this2._reduceFields(args);
+
+        accum[name.value] = def;
+        return accum;
+      }, {});
+    }
+
+    /**
+     * Processes an object type
+     * @param definition
+     * @constructor
+     */
+
+  }, {
+    key: 'ObjectTypeDefinition',
+    value: function ObjectTypeDefinition(definition) {
+      var name = definition.name,
+          interfaces = definition.interfaces,
+          fields = definition.fields;
+
+      var def = {
+        name: name.value,
+        fields: this._reduceFields(fields)
+      };
+      if (interfaces.length) def.interfaces = interfaces;
+      this.definition.types[def.name] = def;
+    }
+
+    /**
+     * Processes a schema type
+     * @param definition
+     * @param schemaName
+     * @constructor
+     */
+
+  }, {
+    key: 'SchemaDefinition',
+    value: function SchemaDefinition(definition, schemaName) {
+      if (!_.isString(schemaName) || schemaName === '') {
+        this.error = new Error('GraphQLFactoryLanguageError: ' + 'Schema name must be provided as third argument ' + 'in use when using schema definition language to ' + 'define a schema');
+      }
+      var operationTypes = definition.operationTypes;
+
+      var def = _.reduce(operationTypes, function (accum, opDef) {
+        var operation = opDef.operation,
+            type = opDef.type;
+
+        accum[operation] = _.get(type, 'name.value');
+        return accum;
+      }, {});
+      this.definition.schemas[schemaName] = def;
+    }
+  }]);
+  return LanguageBuilder;
+}();
+
 var GraphQLFactoryDefinition = function () {
   function GraphQLFactoryDefinition(factory) {
     classCallCheck(this, GraphQLFactoryDefinition);
@@ -7073,16 +7021,11 @@ var GraphQLFactoryDefinition = function () {
 
   }, {
     key: 'use',
-    value: function use(obj, name) {
+    value: function use(obj, name, extension) {
       var structName = constructorName(obj);
       switch (structName) {
         case 'String':
-          var BasePlugin = _.get(basePlugins, '["' + obj + '"]');
-          if (BasePlugin instanceof Plugin) {
-            this._registerPlugin(new BasePlugin());
-          } else {
-            throw new Error('GraphQLFactoryUserError: Invalid plugin');
-          }
+          this._mergeDefinition(new LanguageBuilder(this._factory.graphql).build(obj, name, extension));
           break;
 
         // definition objects
@@ -8204,6 +8147,197 @@ var Generator = function (_EventEmitter) {
   return Generator;
 }(EventEmitter);
 
+var FactoryBase64 = {
+  type: 'Scalar',
+  name: 'Base64',
+  description: 'Converts value to and from base64',
+  serialize: function serialize(value) {
+    return new Buffer(value, 'base64').toString();
+  },
+  parseValue: function parseValue(value) {
+    return new Buffer(value).toString('base64');
+  },
+  parseLiteral: function parseLiteral(ast) {
+    var _graphql = this.graphql,
+        GraphQLError = _graphql.GraphQLError,
+        Kind = _graphql.Kind;
+
+
+    if (ast.kind !== Kind.STRING) {
+      throw new GraphQLError('Query error: expected Base64 ' + 'to be a string but got a: ' + ast.kind, [ast]);
+    }
+
+    return new Buffer(ast.value).toString('base64');
+  }
+};
+
+/*
+ * Ported type from https://github.com/soundtrackyourbrand/graphql-custom-datetype
+ */
+
+function coerceDate(value) {
+  if (!(value instanceof Date)) {
+    // Is this how you raise a 'field error'?
+    throw new Error('Field error: value is not an instance of Date');
+  }
+  if (isNaN(value.getTime())) {
+    throw new Error('Field error: value is an invalid Date');
+  }
+  return value.toJSON();
+}
+
+var FactoryDateTime = {
+  type: 'Scalar',
+  name: 'DateTime',
+  description: 'Represents a Date object',
+  serialize: coerceDate,
+  parseValue: coerceDate,
+  parseLiteral: function parseLiteral(ast) {
+    var _graphql = this.graphql,
+        GraphQLError = _graphql.GraphQLError,
+        Kind = _graphql.Kind;
+
+
+    if (ast.kind !== Kind.STRING) {
+      throw new GraphQLError('Query error: Can only parse strings ' + 'to dates but got a: ' + ast.kind, [ast]);
+    }
+    var result = new Date(ast.value);
+    if (isNaN(result.getTime())) {
+      throw new GraphQLError('Query error: Invalid date', [ast]);
+    }
+    if (ast.value !== result.toJSON()) {
+      throw new GraphQLError('Query error: Invalid date format, only ' + 'accepts: YYYY-MM-DDTHH:MM:SS.SSSZ', [ast]);
+    }
+    return result;
+  }
+};
+
+var FactoryEmail = {
+  type: 'Scalar',
+  name: 'Email',
+  description: 'The Email scalar type represents E-Mail addresses compliant to RFC 822.',
+  serialize: function serialize(value) {
+    return value;
+  },
+  parseValue: function parseValue(value) {
+    return value;
+  },
+  parseLiteral: function parseLiteral(ast) {
+    var _graphql = this.graphql,
+        GraphQLError = _graphql.GraphQLError,
+        Kind = _graphql.Kind;
+
+    // regex taken from https://github.com/stylesuxx/graphql-custom-types
+
+    var rx = /^(([^<>()[\].,;:\s@"]+(\.[^<>()[\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{2,})$/i;
+
+    if (ast.kind !== Kind.STRING) {
+      throw new GraphQLError('Query error: expected Email to be a ' + 'string but got a: ' + ast.kind, [ast]);
+    }
+
+    if (!ast.value.match(rx)) {
+      throw new GraphQLError('Query error: invalid Email', [ast]);
+    }
+
+    return ast.value;
+  }
+};
+
+/*
+ * Ported type from https://github.com/taion/graphql-type-json
+ */
+
+function identity$2(value) {
+  return value;
+}
+
+function parseLiteral(ast) {
+  var boundParseLiteral = parseLiteral.bind(this);
+  var Kind = this.graphql.Kind;
+
+  switch (ast.kind) {
+    case Kind.STRING:
+    case Kind.BOOLEAN:
+      return ast.value;
+    case Kind.INT:
+    case Kind.FLOAT:
+      return parseFloat(ast.value);
+    case Kind.OBJECT:
+      {
+        var value = Object.create(null);
+        ast.fields.forEach(function (field) {
+          value[field.name.value] = boundParseLiteral(field.value);
+        });
+        return value;
+      }
+    case Kind.LIST:
+      return ast.values.map(boundParseLiteral);
+    default:
+      return null;
+  }
+}
+
+var FactoryJSON = {
+  type: 'Scalar',
+  name: 'JSON',
+  description: 'The `JSON` scalar type represents JSON values as specified by ' + '[ECMA-404](http://www.ecma-international.org/ publications/files/ECMA-ST/ECMA-404.pdf).',
+  serialize: identity$2,
+  parseValue: identity$2,
+  parseLiteral: parseLiteral
+};
+
+var FactoryURL = {
+  type: 'Scalar',
+  name: 'URL',
+  description: 'The URL scalar type represents URL addresses.',
+  serialize: function serialize(value) {
+    return value;
+  },
+  parseValue: function parseValue(value) {
+    return value;
+  },
+  parseLiteral: function parseLiteral(ast) {
+    var _graphql = this.graphql,
+        GraphQLError = _graphql.GraphQLError,
+        Kind = _graphql.Kind;
+
+    // regex taken from https://github.com/stylesuxx/graphql-custom-types
+
+    var rx = new RegExp('^(?:(?:https?|ftp)://)(?:\\S+(?::\\S*)?@)?' + '(?:(?!(?:10|127)(?:\\.\\d{1,3}){3})(?!(?:169\\.254|192\\.168)' + '(?:\\.\\d{1,3}){2})(?!172\\.(?:1[6-9]|2\\d|3[0-1])(?:\\.\\d{1,3})' + '{2})(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|' + '2[0-4]\\d|25[0-5])){2}(?:\\.(?:[1-9]\\d?|1\\d\\d|2[0-4]\\d|25' + '[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)' + '(?:\\.(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)*' + '(?:\\.(?:[a-z\\u00a1-\\uffff]{2,}))\\.?)(?::\\d{2,5})?(?:[/?#]\\S*)' + '?$', 'i');
+
+    if (ast.kind !== Kind.STRING) {
+      throw new GraphQLError('Query error: expected URL to be a ' + 'string but got a: ' + ast.kind, [ast]);
+    }
+
+    if (!ast.value.match(rx)) {
+      throw new GraphQLError('Query error: invalid URL', [ast]);
+    }
+
+    return ast.value;
+  }
+};
+
+var GraphQLFactoryTypesPlugin = function (_Plugin) {
+  inherits(GraphQLFactoryTypesPlugin, _Plugin);
+
+  function GraphQLFactoryTypesPlugin() {
+    classCallCheck(this, GraphQLFactoryTypesPlugin);
+    return possibleConstructorReturn(this, (GraphQLFactoryTypesPlugin.__proto__ || Object.getPrototypeOf(GraphQLFactoryTypesPlugin)).call(this, 'GraphQLFactoryTypesPlugin', {}, {}, {
+      Base64: FactoryBase64,
+      DateTime: FactoryDateTime,
+      Email: FactoryEmail,
+      JSON: FactoryJSON,
+      URL: FactoryURL
+    }, {}));
+  }
+
+  return GraphQLFactoryTypesPlugin;
+}(Plugin);
+
+var plugins = {
+  types: GraphQLFactoryTypesPlugin
+};
+
 var FactoryChain = function (_EventEmitter) {
   inherits(FactoryChain, _EventEmitter);
 
@@ -8213,6 +8347,7 @@ var FactoryChain = function (_EventEmitter) {
     var _this = possibleConstructorReturn(this, (FactoryChain.__proto__ || Object.getPrototypeOf(FactoryChain)).call(this));
 
     _this.graphql = graphql;
+    _this.plugins = plugins;
     _this.definition = new GraphQLFactoryDefinition(_this);
     _this.generator = new Generator(graphql);
     return _this;
@@ -8364,5 +8499,6 @@ var Factory = function Factory(graphql) {
 Factory.Definition = GraphQLFactoryDefinition;
 Factory.Decomposer = GraphQLFactoryDecomposer;
 Factory.Expander = GraphQLFactoryDefinitionExpander;
+Factory.plugins = plugins;
 
 module.exports = Factory;
