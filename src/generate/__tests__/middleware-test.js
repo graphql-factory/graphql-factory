@@ -28,7 +28,7 @@ if (DEBUG) {
 describe('generate.middleware tests', () => {
   it('pass through with no middleware', () => {
     const def = new Definition(factory)
-    const req = { source: null, args: {}, context: {}, info: {} }
+    const req = { source: null, args: {}, context: {}, info: {}, reroutes: 0 }
     const resolver = function passthroughResolve () {
       return new Promise(resolve => {
         setTimeout(() => {
@@ -53,7 +53,7 @@ describe('generate.middleware tests', () => {
         }
       )
     const generator = new Generator(graphql).generate(def)
-    const req = { source: null, args: {}, context: {}, info: {} }
+    const req = { source: null, args: {}, context: {}, info: {}, reroutes: 0 }
     const resolver = function (source, args) {
       return args
     }
@@ -73,7 +73,7 @@ describe('generate.middleware tests', () => {
         }
       )
     const generator = new Generator(graphql).generate(def)
-    const req = { source: null, args: {}, context: {}, info: {} }
+    const req = { source: null, args: {}, context: {}, info: {}, reroutes: 0 }
     const resolver = function () {
       return {}
     }
@@ -138,7 +138,7 @@ describe('generate.middleware tests', () => {
         }
       )
     const generator = new Generator(graphql).generate(def)
-    const req = { source: null, args: {}, context: {}, info: {} }
+    const req = { source: null, args: {}, context: {}, info: {}, reroutes: 0 }
     const resolver = function (source, args) {
       return args
     }
@@ -211,7 +211,7 @@ describe('generate.middleware tests', () => {
       )
 
     const generator = new Generator(graphql).generate(def)
-    const req = { source: null, args: {}, context: {}, info: {} }
+    const req = { source: null, args: {}, context: {}, info: {}, reroutes: 0 }
     const resolver = function (source, args) {
       return args
     }
@@ -235,7 +235,7 @@ describe('generate.middleware tests', () => {
       )
 
     const generator = new Generator(graphql).generate(def)
-    const req = { source: null, args: { value: false }, context: {}, info: {} }
+    const req = { source: null, args: { value: false }, context: {}, info: {}, reroutes: 0 }
     const resolver = function (source, args) {
       return args
     }
@@ -261,7 +261,7 @@ describe('generate.middleware tests', () => {
       )
 
     const generator = new Generator(graphql).generate(def)
-    const req = { source: null, args: { value: false }, context: {}, info: {} }
+    const req = { source: null, args: { value: false }, context: {}, info: {}, reroutes: 0 }
     const resolver = function () {
       if (!this.req.result) return 1
       return this.req.result + 1

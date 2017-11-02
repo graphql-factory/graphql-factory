@@ -183,7 +183,8 @@ export default class Generator extends EventEmitter {
         source,
         args,
         context: _.assign(ctx, context),
-        info
+        info,
+        reroutes: 0
       }
 
       // call the middleware

@@ -6775,7 +6775,9 @@ var Middleware = function Middleware(type, resolver, options) {
   }
   this.type = type;
   this.resolver = resolver;
-  this.name = _.isString(name) && name !== '' ? name : _.get(resolver, 'name') || type;
+  this.name = _.isString(name) && name !== '' ? name : null;
+  this.functionName = this.name || _.get(resolver, 'name') || type;
+
   this.timeout = _.isNumber(timeout) ? Math.floor(timeout) : DEFAULT_MIDDLEWARE_TIMEOUT;
   this.priority = _.isNumber(priority) ? Math.floor(priority) : null;
 };
@@ -7366,7 +7368,8 @@ function resolverMiddleware(resolver) {
 function nextMiddleware(factory, mw, info) {
   var resolved = info.resolved,
       index = info.index,
-      resolverIndex = info.resolverIndex,
+      routes = info.routes,
+      middlewares = info.middlewares,
       errorMiddleware = info.errorMiddleware,
       req = info.req,
       res = info.res,
@@ -7383,7 +7386,7 @@ function nextMiddleware(factory, mw, info) {
   // get the current middleware
   var current = mw[index];
   var exec = {
-    name: current.name,
+    name: current.functionName,
     started: Date.now(),
     ended: null,
     data: null
@@ -7401,11 +7404,25 @@ function nextMiddleware(factory, mw, info) {
     exec.ended = Date.now();
     exec.data = data;
 
-    // allow the middleware to route back to the
-    // resolve function this may be useful for retries
-    if (data === 'resolve') {
-      info.index = resolverIndex;
-      return nextMiddleware(factory, mw, info);
+    // allow reroutes to valid named route paths
+    if (_.isString(data)) {
+      var route = routes[data];
+      if (!route) {
+        if (current.type !== ERROR_MIDDLEWARE && errorMiddleware.length) {
+          info.index = 0;
+          req.error = new Error('No route found for "' + data + '"');
+          return nextMiddleware(factory, errorMiddleware, info);
+        }
+        res.end(data);
+      }
+
+      // get the correct route set
+      var mwSet = route.type === ERROR_MIDDLEWARE ? errorMiddleware : middlewares;
+
+      // increment the re-route counter, set the index and go
+      req.reroutes += 1;
+      info.index = route.index;
+      return nextMiddleware(factory, mwSet, info);
     }
 
     // check for an error passed to the next method and not
@@ -7429,7 +7446,7 @@ function nextMiddleware(factory, mw, info) {
   if (current.timeout > 0) {
     local.timeout = setTimeout(function () {
       local.finished = true;
-      req.error = new Error(current.name + ' middleware timed out');
+      req.error = new Error(current.functionName + ' middleware timed out');
 
       // add the result
       exec.ended = Date.now();
@@ -7488,12 +7505,22 @@ function middleware(generator, resolver, req) {
 
   // create middleware from the resolver with no timeout
   var _resolver = new Middleware(RESOLVE_MIDDLEWARE, resolverMiddleware(resolver), {
-    name: resolver.name || 'RESOLVER',
+    name: 'resolve',
+    functionName: resolver.name || 'RESOLVER',
     timeout: _.get(req, 'context.resolverTimeout', 0)
   });
 
-  // TODO: this is where middleware can be sorted by priority before it is concatenated
   var middlewares = _before.concat(_resolver).concat(_after);
+
+  // add routes for regular and error middleware
+  var routes = {};
+
+  _.forEach(middlewares, function (mw, index) {
+    if (mw.name) routes[mw.name] = { type: mw.type, index: index };
+  });
+  _.forEach(_error, function (mw, index) {
+    if (mw.name) routes[mw.name] = { type: mw.type, index: index };
+  });
 
   // return a new promise
   return new Promise(function (resolve, reject) {
@@ -7510,7 +7537,8 @@ function middleware(generator, resolver, req) {
       },
       resolved: false,
       index: 0,
-      resolverIndex: _before.length,
+      routes: routes,
+      middlewares: middlewares,
       errorMiddleware: _error,
       req: req,
       res: Object.freeze({
@@ -8066,7 +8094,8 @@ var Generator = function (_EventEmitter) {
           source: source,
           args: args,
           context: _.assign(ctx, context),
-          info: info
+          info: info,
+          reroutes: 0
 
           // call the middleware
         };return middleware(this, resolve, req);

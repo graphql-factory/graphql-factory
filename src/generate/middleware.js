@@ -44,7 +44,8 @@ function nextMiddleware (factory, mw, info) {
   const {
     resolved,
     index,
-    resolverIndex,
+    routes,
+    middlewares,
     errorMiddleware,
     req,
     res,
@@ -62,7 +63,7 @@ function nextMiddleware (factory, mw, info) {
   // get the current middleware
   const current = mw[index]
   const exec = {
-    name: current.name,
+    name: current.functionName,
     started: Date.now(),
     ended: null,
     data: null
@@ -80,11 +81,27 @@ function nextMiddleware (factory, mw, info) {
     exec.ended = Date.now()
     exec.data = data
 
-    // allow the middleware to route back to the
-    // resolve function this may be useful for retries
-    if (data === 'resolve') {
-      info.index = resolverIndex
-      return nextMiddleware(factory, mw, info)
+    // allow reroutes to valid named route paths
+    if (_.isString(data)) {
+      const route = routes[data]
+      if (!route) {
+        if (current.type !== ERROR_MIDDLEWARE && errorMiddleware.length) {
+          info.index = 0
+          req.error = new Error(`No route found for "${data}"`)
+          return nextMiddleware(factory, errorMiddleware, info)
+        }
+        res.end(data)
+      }
+
+      // get the correct route set
+      const mwSet = route.type === ERROR_MIDDLEWARE
+        ? errorMiddleware
+        : middlewares
+
+      // increment the re-route counter, set the index and go
+      req.reroutes += 1
+      info.index = route.index
+      return nextMiddleware(factory, mwSet, info)
     }
 
     // check for an error passed to the next method and not
@@ -110,7 +127,7 @@ function nextMiddleware (factory, mw, info) {
   if (current.timeout > 0) {
     local.timeout = setTimeout(() => {
       local.finished = true
-      req.error = new Error(current.name
+      req.error = new Error(current.functionName
         + ' middleware timed out')
 
       // add the result
@@ -168,13 +185,23 @@ export default function middleware (generator, resolver, req) {
     RESOLVE_MIDDLEWARE,
     resolverMiddleware(resolver),
     {
-      name: resolver.name || 'RESOLVER',
+      name: 'resolve',
+      functionName: resolver.name || 'RESOLVER',
       timeout: _.get(req, 'context.resolverTimeout', 0)
     }
   )
 
-  // TODO: this is where middleware can be sorted by priority before it is concatenated
   const middlewares = _before.concat(_resolver).concat(_after)
+
+  // add routes for regular and error middleware
+  const routes = {}
+
+  _.forEach(middlewares, (mw, index) => {
+    if (mw.name) routes[mw.name] = { type: mw.type, index }
+  })
+  _.forEach(_error, (mw, index) => {
+    if (mw.name) routes[mw.name] = { type: mw.type, index }
+  })
 
   // return a new promise
   return new Promise((resolve, reject) => {
@@ -192,7 +219,8 @@ export default function middleware (generator, resolver, req) {
       },
       resolved: false,
       index: 0,
-      resolverIndex: _before.length,
+      routes,
+      middlewares,
       errorMiddleware: _error,
       req,
       res: Object.freeze({

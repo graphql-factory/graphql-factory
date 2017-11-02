@@ -34,7 +34,9 @@ export default class Middleware {
     this.resolver = resolver
     this.name = _.isString(name) && name !== ''
       ? name
-      : _.get(resolver, 'name') || type
+      : null
+    this.functionName = this.name || _.get(resolver, 'name') || type
+
     this.timeout = _.isNumber(timeout)
       ? Math.floor(timeout)
       : DEFAULT_MIDDLEWARE_TIMEOUT
