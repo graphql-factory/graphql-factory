@@ -1,4 +1,5 @@
 import _ from '../common/lodash.custom'
+import * as graphql from 'graphql'
 import EventEmitter from 'events'
 import middleware from './middleware'
 import Library from './library'
@@ -28,7 +29,7 @@ import {
 } from '../common/const'
 
 export default class Generator extends EventEmitter {
-  constructor (graphql) {
+  constructor () {
     super()
     this.graphql = graphql
     this.error = null
@@ -223,7 +224,7 @@ export default class Generator extends EventEmitter {
    */
   makeType (field) {
     const { type } = field
-    return toObjectType(this.graphql, type, name => {
+    return toObjectType(type, name => {
       const gqlType = _.get(
         this.types,
         `["${name}"]`,

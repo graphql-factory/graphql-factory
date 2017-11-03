@@ -1,12 +1,11 @@
 import { describe, it } from 'mocha'
 import { expect } from 'chai'
-import * as graphql from 'graphql'
-const {
+import {
   GraphQLObjectType,
   GraphQLString,
   GraphQLList,
   GraphQLNonNull
-} = graphql
+} from 'graphql'
 
 import {
   constructorName,
@@ -142,17 +141,17 @@ describe('common.util tests', () => {
       return typeHash[name]
     }
 
-    expect(toObjectType(graphql, 'String', typeResolver)).to.deep.equal(t1)
-    expect(toObjectType(graphql, 'String!', typeResolver)).to.deep.equal(t2)
-    expect(toObjectType(graphql, '[String]', typeResolver)).to.deep.equal(t3)
-    expect(toObjectType(graphql, '[String!]', typeResolver)).to.deep.equal(t4)
-    expect(toObjectType(graphql, '[String]!', typeResolver)).to.deep.equal(t5)
-    expect(toObjectType(graphql, '[String!]!', typeResolver)).to.deep.equal(t6)
-    expect(toObjectType(graphql, 'Foo', typeResolver)).to.deep.equal(t7)
-    expect(toObjectType(graphql, 'Foo!', typeResolver)).to.deep.equal(t8)
-    expect(toObjectType(graphql, '[Foo]', typeResolver)).to.deep.equal(t9)
-    expect(toObjectType(graphql, '[Foo!]', typeResolver)).to.deep.equal(t10)
-    expect(toObjectType(graphql, '[Foo]!', typeResolver)).to.deep.equal(t11)
-    expect(toObjectType(graphql, '[Foo!]!', typeResolver)).to.deep.equal(t12)
+    expect(toObjectType('String', typeResolver)).to.deep.equal(t1)
+    expect(toObjectType('String!', typeResolver)).to.deep.equal(t2)
+    expect(toObjectType('[String]', typeResolver)).to.deep.equal(t3)
+    expect(toObjectType('[String!]', typeResolver)).to.deep.equal(t4)
+    expect(toObjectType('[String]!', typeResolver)).to.deep.equal(t5)
+    expect(toObjectType('[String!]!', typeResolver)).to.deep.equal(t6)
+    expect(toObjectType('Foo', typeResolver)).to.deep.equal(t7)
+    expect(toObjectType('Foo!', typeResolver)).to.deep.equal(t8)
+    expect(toObjectType('[Foo]', typeResolver)).to.deep.equal(t9)
+    expect(toObjectType('[Foo!]', typeResolver)).to.deep.equal(t10)
+    expect(toObjectType('[Foo]!', typeResolver)).to.deep.equal(t11)
+    expect(toObjectType('[Foo!]!', typeResolver)).to.deep.equal(t12)
   })
 })

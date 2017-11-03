@@ -1,4 +1,5 @@
 import _ from './lodash.custom'
+import { GraphQLNonNull, GraphQLList } from 'graphql'
 
 /**
  * Returns the name of the constructor
@@ -67,18 +68,17 @@ export function toTypeString (obj, str) {
  * @param typeResolver
  * @returns {*}
  */
-export function toObjectType (graphql, str, typeResolver) {
+export function toObjectType (str, typeResolver) {
   const nonNullRx = /!$/
   const listRx = /^\[(.+)]$/
 
-  const { GraphQLNonNull, GraphQLList } = graphql
   if (str.match(nonNullRx)) {
     return new GraphQLNonNull(
-      toObjectType(graphql, str.replace(nonNullRx, ''), typeResolver)
+      toObjectType(str.replace(nonNullRx, ''), typeResolver)
     )
   } else if (str.match(listRx)) {
     return new GraphQLList(
-      toObjectType(graphql, str.replace(listRx, '$1'), typeResolver)
+      toObjectType(str.replace(listRx, '$1'), typeResolver)
     )
   }
   return typeResolver(str)

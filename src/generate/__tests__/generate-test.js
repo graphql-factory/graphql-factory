@@ -1,11 +1,9 @@
 import _ from '../../common/lodash.custom'
 import { describe, it } from 'mocha'
 import { expect } from 'chai'
-import * as graphql from 'graphql'
 import Generator from '../generate'
 import Definition from '../../definition/definition'
-
-const {
+import {
   GraphQLEnumType,
   GraphQLObjectType,
   GraphQLInputObjectType,
@@ -16,7 +14,7 @@ const {
   GraphQLString,
   GraphQLInt,
   GraphQLList
-} = graphql
+} from 'graphql'
 
 const FooEnumDef = {
   type: 'Enum',
@@ -148,7 +146,7 @@ const FooSchemaDef = {
  */
 describe('generate.generate tests', () => {
   it('generates an Enum', () => {
-    const reg = new Generator(graphql).generate(
+    const reg = new Generator().generate(
       new Definition().use({
         types: {
           FooEnum: FooEnumDef
@@ -160,7 +158,7 @@ describe('generate.generate tests', () => {
   })
 
   it('generates an Object', () => {
-    const reg = new Generator(graphql).generate(
+    const reg = new Generator().generate(
       new Definition().use({
         types: {
           FooObject: FooObjectDef
@@ -173,7 +171,7 @@ describe('generate.generate tests', () => {
   })
 
   it('generates an Input', () => {
-    const reg = new Generator(graphql).generate(
+    const reg = new Generator().generate(
       new Definition().use({
         types: {
           FooInput: FooInputDef
@@ -186,7 +184,7 @@ describe('generate.generate tests', () => {
   })
 
   it('generates an Interface', () => {
-    const reg = new Generator(graphql).generate(
+    const reg = new Generator().generate(
       new Definition().use({
         types: {
           FooInterface1: FooInterface1Def
@@ -199,7 +197,7 @@ describe('generate.generate tests', () => {
   })
 
   it('generates a Union', () => {
-    const reg = new Generator(graphql).generate(
+    const reg = new Generator().generate(
       new Definition().use({
         types: {
           FooUnion: FooUnionDef
@@ -212,7 +210,7 @@ describe('generate.generate tests', () => {
   })
 
   it('generates a Scalar', () => {
-    const reg = new Generator(graphql).generate(
+    const reg = new Generator().generate(
       new Definition().use({
         types: {
           FooScalar: FooScalarDef
@@ -225,7 +223,7 @@ describe('generate.generate tests', () => {
   })
 
   it('generates a Schema', () => {
-    const reg = new Generator(graphql).generate(
+    const reg = new Generator().generate(
       new Definition().use({
         types: {
           FooSchemaQuery

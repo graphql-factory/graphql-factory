@@ -1,9 +1,9 @@
 import _ from '../common/lodash.custom'
+import * as graphql from 'graphql'
 
 export default class LanguageBuilder {
-  constructor (graphql) {
+  constructor () {
     this.error = null
-    this.graphql = graphql
     this.definition = {
       types: {},
       schemas: {}
@@ -18,7 +18,7 @@ export default class LanguageBuilder {
    * @returns {{types: {}, schemas: {}}|*}
    */
   build (source, schemaName, extension) {
-    const { parse } = this.graphql
+    const { parse } = graphql
     const { definitions } = parse(source)
 
     // process each definition

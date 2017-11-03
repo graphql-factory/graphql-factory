@@ -11,6 +11,7 @@ export default {
   input: 'src/index.js',
   external: [
     'events',
+    'graphql',
     'graphql-factory-plugin'
   ],
   plugins: [

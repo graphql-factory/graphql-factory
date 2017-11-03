@@ -93,7 +93,7 @@ export default class GraphQLFactoryDefinition {
     switch (structName) {
       case 'String':
         this._mergeDefinition(
-          new Language(this._factory.graphql)
+          new Language()
             .build(obj, name, extension)
         )
         break

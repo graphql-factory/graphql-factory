@@ -1,16 +1,19 @@
 import _ from './common/lodash.custom'
+import * as graphql from 'graphql'
 import EventEmitter from 'events'
 import Definition from './definition/definition'
+import Decomposer from './definition/decompose'
+import Expander from './definition/expand'
 import Generator from './generate/generate'
 import plugins from './plugins/index'
 
-class FactoryChain extends EventEmitter {
-  constructor (graphql) {
+class GraphQLFactory extends EventEmitter {
+  constructor () {
     super()
     this.graphql = graphql
     this.plugins = plugins
+    this.generator = new Generator()
     this.definition = new Definition(this)
-    this.generator = new Generator(graphql)
   }
 
   /**
@@ -87,34 +90,11 @@ class FactoryChain extends EventEmitter {
   }
 }
 
-/**
- * Entry point for a new graphql factory chain
- */
-export class GraphQLFactory {
-  constructor (graphql) {
-    this.graphql = graphql
-  }
+// add objects to the default export
+GraphQLFactory.Definition = Definition
+GraphQLFactory.Decomposer = Decomposer
+GraphQLFactory.Expander = Expander
+GraphQLFactory.plugins = plugins
 
-  /**
-   * Adds an object to the definition
-   * and returns a new factory chain
-   * @param obj
-   * @param name
-   * @returns {*}
-   */
-  use (obj, name) {
-    return new FactoryChain(this.graphql).use(obj, name)
-  }
-}
-
-/**
- * Export a new factory generator
- * Each call to factory.use() will create a new
- * chain and potential library
- * @param graphql
- * @returns {GraphQLFactory}
- * @constructor
- */
-export default function Factory (graphql) {
-  return new GraphQLFactory(graphql)
-}
+// export the graphql factory class
+export default GraphQLFactory

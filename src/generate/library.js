@@ -1,10 +1,10 @@
 import _ from '../common/lodash.custom'
+import { graphql, GraphQLSchema } from 'graphql'
 import EventEmitter from 'events'
 
 export default class GraphQLFactoryLibrary extends EventEmitter {
-  constructor (graphql, registry, generator) {
+  constructor (registry, generator) {
     super()
-    this.graphql = graphql
     this.registry = registry
     this._bindResolver = resolve => {
       generator.bindResolve(resolve, {})
@@ -31,7 +31,6 @@ export default class GraphQLFactoryLibrary extends EventEmitter {
     operation,
     resolver
   ) {
-    const { graphql, GraphQLSchema } = this.graphql
     const { schemas } = this.registry
 
     // store the arguments

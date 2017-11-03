@@ -2,6 +2,7 @@
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
+var graphql = require('graphql');
 var EventEmitter = _interopDefault(require('events'));
 var Plugin = _interopDefault(require('graphql-factory-plugin'));
 
@@ -6038,17 +6039,14 @@ function toTypeString(obj, str) {
  * @param typeResolver
  * @returns {*}
  */
-function toObjectType(graphql, str, typeResolver) {
+function toObjectType(str, typeResolver) {
   var nonNullRx = /!$/;
   var listRx = /^\[(.+)]$/;
 
-  var GraphQLNonNull = graphql.GraphQLNonNull,
-      GraphQLList = graphql.GraphQLList;
-
   if (str.match(nonNullRx)) {
-    return new GraphQLNonNull(toObjectType(graphql, str.replace(nonNullRx, ''), typeResolver));
+    return new graphql.GraphQLNonNull(toObjectType(str.replace(nonNullRx, ''), typeResolver));
   } else if (str.match(listRx)) {
-    return new GraphQLList(toObjectType(graphql, str.replace(listRx, '$1'), typeResolver));
+    return new graphql.GraphQLList(toObjectType(str.replace(listRx, '$1'), typeResolver));
   }
   return typeResolver(str);
 }
@@ -6152,7 +6150,7 @@ var GraphQLFactoryDecomposer = function () {
 
   }, {
     key: 'GraphQLSchema',
-    value: function GraphQLSchema(schema) {
+    value: function GraphQLSchema$$1(schema) {
       var _this = this;
 
       var schemaName = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'Root';
@@ -6783,11 +6781,10 @@ var Middleware = function Middleware(type, resolver, options) {
 };
 
 var LanguageBuilder = function () {
-  function LanguageBuilder(graphql) {
+  function LanguageBuilder() {
     classCallCheck(this, LanguageBuilder);
 
     this.error = null;
-    this.graphql = graphql;
     this.definition = {
       types: {},
       schemas: {}
@@ -6808,9 +6805,9 @@ var LanguageBuilder = function () {
     value: function build(source, schemaName, extension) {
       var _this = this;
 
-      var parse = this.graphql.parse;
+      var parse$$1 = graphql.parse;
 
-      var _parse = parse(source),
+      var _parse = parse$$1(source),
           definitions = _parse.definitions;
 
       // process each definition
@@ -7027,7 +7024,7 @@ var GraphQLFactoryDefinition = function () {
       var structName = constructorName(obj);
       switch (structName) {
         case 'String':
-          this._mergeDefinition(new LanguageBuilder(this._factory.graphql).build(obj, name, extension));
+          this._mergeDefinition(new LanguageBuilder().build(obj, name, extension));
           break;
 
         // definition objects
@@ -7589,12 +7586,11 @@ function middleware(generator, resolver, req) {
 var GraphQLFactoryLibrary = function (_EventEmitter) {
   inherits(GraphQLFactoryLibrary, _EventEmitter);
 
-  function GraphQLFactoryLibrary(graphql, registry, generator) {
+  function GraphQLFactoryLibrary(registry, generator) {
     classCallCheck(this, GraphQLFactoryLibrary);
 
     var _this = possibleConstructorReturn(this, (GraphQLFactoryLibrary.__proto__ || Object.getPrototypeOf(GraphQLFactoryLibrary)).call(this));
 
-    _this.graphql = graphql;
     _this.registry = registry;
     _this._bindResolver = function (resolve) {
       generator.bindResolve(resolve, {});
@@ -7618,9 +7614,6 @@ var GraphQLFactoryLibrary = function (_EventEmitter) {
   createClass(GraphQLFactoryLibrary, [{
     key: 'request',
     value: function request(schemaOrArgs, requestStr, root, context, variables, operation, resolver) {
-      var _graphql = this.graphql,
-          graphql = _graphql.graphql,
-          GraphQLSchema = _graphql.GraphQLSchema;
       var schemas = this.registry.schemas;
 
       // store the arguments
@@ -7649,7 +7642,7 @@ var GraphQLFactoryLibrary = function (_EventEmitter) {
       var schema = _.get(schemas, '["' + _schema + '"]');
 
       // check for schema
-      if (!(schema instanceof GraphQLSchema)) {
+      if (!(schema instanceof graphql.GraphQLSchema)) {
         throw new Error('GraphQLFactoryError: Schema "' + _schema + '" was not found in the registry');
       }
 
@@ -7657,7 +7650,7 @@ var GraphQLFactoryLibrary = function (_EventEmitter) {
       _resolver = _.isFunction(_resolver) ? this._bindResolver(_resolver) : _resolver;
 
       // make the request
-      return graphql(schema, _request, _root, _context, _variables, _operation, _resolver);
+      return graphql.graphql(schema, _request, _root, _context, _variables, _operation, _resolver);
     }
   }]);
   return GraphQLFactoryLibrary;
@@ -7849,7 +7842,7 @@ function ScalarType(definition) {
 function Schema(definition, name) {
   try {
     var def = _.merge({}, definition);
-    var GraphQLSchema = this.graphql.GraphQLSchema;
+    var GraphQLSchema$$1 = this.graphql.GraphQLSchema;
     var query = definition.query,
         mutation = definition.mutation,
         subscription = definition.subscription;
@@ -7866,7 +7859,7 @@ function Schema(definition, name) {
     }
 
     // create a new schema object
-    var schema = new GraphQLSchema(def);
+    var schema = new GraphQLSchema$$1(def);
 
     // attach some info to the schema object
     schema._factory = {
@@ -7922,7 +7915,7 @@ function UnionType(definition) {
 var Generator = function (_EventEmitter) {
   inherits(Generator, _EventEmitter);
 
-  function Generator(graphql) {
+  function Generator() {
     var _this$_scalars;
 
     classCallCheck(this, Generator);
@@ -8140,7 +8133,7 @@ var Generator = function (_EventEmitter) {
 
       var type = field.type;
 
-      return toObjectType(this.graphql, type, function (name) {
+      return toObjectType(type, function (name) {
         var gqlType = _.get(_this4.types, '["' + name + '"]', _.get(_this4._scalars, '["' + name + '"]'));
 
         if (!gqlType) {
@@ -8367,18 +8360,18 @@ var plugins = {
   types: GraphQLFactoryTypesPlugin
 };
 
-var FactoryChain = function (_EventEmitter) {
-  inherits(FactoryChain, _EventEmitter);
+var GraphQLFactory$1 = function (_EventEmitter) {
+  inherits(GraphQLFactory, _EventEmitter);
 
-  function FactoryChain(graphql) {
-    classCallCheck(this, FactoryChain);
+  function GraphQLFactory() {
+    classCallCheck(this, GraphQLFactory);
 
-    var _this = possibleConstructorReturn(this, (FactoryChain.__proto__ || Object.getPrototypeOf(FactoryChain)).call(this));
+    var _this = possibleConstructorReturn(this, (GraphQLFactory.__proto__ || Object.getPrototypeOf(GraphQLFactory)).call(this));
 
     _this.graphql = graphql;
     _this.plugins = plugins;
+    _this.generator = new Generator();
     _this.definition = new GraphQLFactoryDefinition(_this);
-    _this.generator = new Generator(graphql);
     return _this;
   }
 
@@ -8390,7 +8383,7 @@ var FactoryChain = function (_EventEmitter) {
    */
 
 
-  createClass(FactoryChain, [{
+  createClass(GraphQLFactory, [{
     key: 'before',
     value: function before(middleware, timeout) {
       this.definition.before(middleware, timeout);
@@ -8474,60 +8467,15 @@ var FactoryChain = function (_EventEmitter) {
       return this.regenerate(options).lib;
     }
   }]);
-  return FactoryChain;
+  return GraphQLFactory;
 }(EventEmitter);
 
-/**
- * Entry point for a new graphql factory chain
- */
-
-
-var GraphQLFactory = function () {
-  function GraphQLFactory(graphql) {
-    classCallCheck(this, GraphQLFactory);
-
-    this.graphql = graphql;
-  }
-
-  /**
-   * Adds an object to the definition
-   * and returns a new factory chain
-   * @param obj
-   * @param name
-   * @returns {*}
-   */
-
-
-  createClass(GraphQLFactory, [{
-    key: 'use',
-    value: function use(obj, name) {
-      return new FactoryChain(this.graphql).use(obj, name);
-    }
-  }]);
-  return GraphQLFactory;
-}();
-
-/**
- * Export a new factory generator
- * Each call to factory.use() will create a new
- * chain and potential library
- * @param graphql
- * @returns {GraphQLFactory}
- * @constructor
- */
-function Factory$2(graphql) {
-  return new GraphQLFactory(graphql);
-}
-
-// create a factory function that creates a new instance
-var Factory = function Factory(graphql) {
-  return new Factory$2(graphql);
-};
-
 // add objects to the default export
-Factory.Definition = GraphQLFactoryDefinition;
-Factory.Decomposer = GraphQLFactoryDecomposer;
-Factory.Expander = GraphQLFactoryDefinitionExpander;
-Factory.plugins = plugins;
 
-module.exports = Factory;
+
+GraphQLFactory$1.Definition = GraphQLFactoryDefinition;
+GraphQLFactory$1.Decomposer = GraphQLFactoryDecomposer;
+GraphQLFactory$1.Expander = GraphQLFactoryDefinitionExpander;
+GraphQLFactory$1.plugins = plugins;
+
+module.exports = GraphQLFactory$1;

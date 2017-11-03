@@ -1,6 +1,5 @@
 import { describe, it } from 'mocha'
 import { expect } from 'chai'
-import * as graphql from 'graphql'
 import Language from '../language'
 
 describe('definition.language tests', () => {
@@ -10,7 +9,7 @@ describe('definition.language tests', () => {
         id: ID!
         bar: String
       }`
-    const def = new Language(graphql).build(src)
+    const def = new Language().build(src)
 
     expect(def.types).to.deep.equal({
       Foo: {

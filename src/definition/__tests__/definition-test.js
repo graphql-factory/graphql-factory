@@ -1,6 +1,9 @@
 import { describe, it } from 'mocha'
 import { expect } from 'chai'
 import Definition from '../definition'
+import EventEmitter from 'events'
+
+const factory = new EventEmitter()
 
 import {
   FooDef
@@ -8,7 +11,7 @@ import {
 
 describe('definition.definition tests', () => {
   it('creates an empty definition', () => {
-    const def1 = new Definition()
+    const def1 = new Definition(factory)
 
     expect(def1.definition).to.deep.equal({
       functions: {},
@@ -18,7 +21,7 @@ describe('definition.definition tests', () => {
   })
 
   it('creates a type definition', () => {
-    const def1 = new Definition().use(FooDef)
+    const def1 = new Definition(factory).use(FooDef)
     expect(def1._types).to.deep.equal(FooDef.types)
   })
 })
