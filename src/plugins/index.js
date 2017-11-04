@@ -1,5 +1,5 @@
-import types from './types/index'
+import Types from './types/index'
 
 export default {
-  types
+  Types
 }

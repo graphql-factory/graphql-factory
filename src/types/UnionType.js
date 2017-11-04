@@ -1,8 +1,8 @@
 import _ from '../common/lodash.custom'
+import { GraphQLUnionType } from 'graphql'
 
 export default function UnionType (definition) {
   try {
-    const { GraphQLUnionType } = this.graphql
     const def = _.merge({}, definition)
     const { types, resolveType } = definition
 

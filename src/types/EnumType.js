@@ -1,6 +1,7 @@
+import { GraphQLEnumType } from 'graphql'
+
 export default function EnumType (definition) {
   try {
-    const { GraphQLEnumType } = this.graphql
     return new GraphQLEnumType(definition)
   } catch (err) {
     this.emit('log', {

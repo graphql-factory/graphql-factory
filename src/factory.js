@@ -1,17 +1,17 @@
 import _ from './common/lodash.custom'
-import * as graphql from 'graphql'
 import EventEmitter from 'events'
 import Definition from './definition/definition'
 import Decomposer from './definition/decompose'
 import Expander from './definition/expand'
 import Generator from './generate/generate'
 import plugins from './plugins/index'
+import tools from './tools/index'
 
 class GraphQLFactory extends EventEmitter {
   constructor () {
     super()
-    this.graphql = graphql
     this.plugins = plugins
+    this.tools = tools
     this.generator = new Generator()
     this.definition = new Definition(this)
   }
@@ -94,7 +94,9 @@ class GraphQLFactory extends EventEmitter {
 GraphQLFactory.Definition = Definition
 GraphQLFactory.Decomposer = Decomposer
 GraphQLFactory.Expander = Expander
+GraphQLFactory.Generator = Generator
 GraphQLFactory.plugins = plugins
+GraphQLFactory.tools = tools
 
 // export the graphql factory class
 export default GraphQLFactory

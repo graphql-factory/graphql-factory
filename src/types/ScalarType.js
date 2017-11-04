@@ -1,9 +1,9 @@
 import _ from '../common/lodash.custom'
+import { GraphQLScalarType } from 'graphql'
 
 export default function ScalarType (definition) {
   try {
     const def = _.merge({}, definition)
-    const { GraphQLScalarType } = this.graphql
     const { serialize, parseValue, parseLiteral } = definition
 
     def.serialize = this.bindFunction(serialize, definition)

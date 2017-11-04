@@ -2,9 +2,9 @@
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var graphql = require('graphql');
 var EventEmitter = _interopDefault(require('events'));
 var Plugin = _interopDefault(require('graphql-factory-plugin'));
+var graphql = require('graphql');
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
@@ -6181,7 +6181,7 @@ var GraphQLFactoryDecomposer = function () {
 
   }, {
     key: 'GraphQLEnumType',
-    value: function GraphQLEnumType(enumeration, enumName) {
+    value: function GraphQLEnumType$$1(enumeration, enumName) {
       this._decomposeType(enumeration, enumName);
     }
 
@@ -6194,7 +6194,7 @@ var GraphQLFactoryDecomposer = function () {
 
   }, {
     key: 'GraphQLInputObjectType',
-    value: function GraphQLInputObjectType(input, inputName) {
+    value: function GraphQLInputObjectType$$1(input, inputName) {
       this._decomposeType(input, inputName);
     }
 
@@ -6207,7 +6207,7 @@ var GraphQLFactoryDecomposer = function () {
 
   }, {
     key: 'GraphQLInterfaceType',
-    value: function GraphQLInterfaceType(iface, interfaceName) {
+    value: function GraphQLInterfaceType$$1(iface, interfaceName) {
       this._decomposeType(iface, interfaceName);
     }
 
@@ -6220,7 +6220,7 @@ var GraphQLFactoryDecomposer = function () {
 
   }, {
     key: 'GraphQLObjectType',
-    value: function GraphQLObjectType(object, objectName) {
+    value: function GraphQLObjectType$$1(object, objectName) {
       this._decomposeType(object, objectName);
     }
 
@@ -6233,7 +6233,7 @@ var GraphQLFactoryDecomposer = function () {
 
   }, {
     key: 'GraphQLScalarType',
-    value: function GraphQLScalarType(scalar, scalarName) {
+    value: function GraphQLScalarType$$1(scalar, scalarName) {
       // do not decompose built in scalar types
       if (_.includes(SCALAR_NAMES, scalar.name)) return;
       this._decomposeType(scalar, scalarName);
@@ -6248,7 +6248,7 @@ var GraphQLFactoryDecomposer = function () {
 
   }, {
     key: 'GraphQLUnionType',
-    value: function GraphQLUnionType(union, unionName) {
+    value: function GraphQLUnionType$$1(union, unionName) {
       this._decomposeType(union, unionName);
     }
 
@@ -7658,9 +7658,7 @@ var GraphQLFactoryLibrary = function (_EventEmitter) {
 
 function EnumType(definition) {
   try {
-    var GraphQLEnumType = this.graphql.GraphQLEnumType;
-
-    return new GraphQLEnumType(definition);
+    return new graphql.GraphQLEnumType(definition);
   } catch (err) {
     this.emit('log', {
       source: 'types',
@@ -7683,14 +7681,12 @@ function InputObjectFieldConfigMapThunk(fields) {
 
 function InputObjectType(definition) {
   try {
-    var GraphQLInputObjectType = this.graphql.GraphQLInputObjectType;
-
     var def = _.merge({}, definition);
     var fields = definition.fields;
 
     def.fields = InputObjectFieldConfigMapThunk.call(this, fields);
 
-    return new GraphQLInputObjectType(def);
+    return new graphql.GraphQLInputObjectType(def);
   } catch (err) {
     this.emit('log', {
       source: 'types',
@@ -7739,7 +7735,6 @@ function FieldConfigMapThunk(fields) {
 function InterfaceType(definition) {
   try {
     var def = _.merge({}, definition);
-    var GraphQLInterfaceType = this.graphql.GraphQLInterfaceType;
     var fields = definition.fields,
         resolveType = definition.resolveType;
 
@@ -7750,7 +7745,7 @@ function InterfaceType(definition) {
       def.resolveType = this.bindFunction(resolveType, definition);
     }
 
-    return new GraphQLInterfaceType(def);
+    return new graphql.GraphQLInterfaceType(def);
   } catch (err) {
     this.emit('log', {
       source: 'types',
@@ -7782,8 +7777,6 @@ function InterfacesThunk(interfaces) {
 
 function ObjectType(definition) {
   try {
-    var GraphQLObjectType = this.graphql.GraphQLObjectType;
-
     var def = _.merge({}, definition);
     var interfaces = def.interfaces,
         fields = def.fields,
@@ -7798,7 +7791,7 @@ function ObjectType(definition) {
       def.isTypeOf = this.bindFunction(isTypeOf, definition);
     }
 
-    return new GraphQLObjectType(def);
+    return new graphql.GraphQLObjectType(def);
   } catch (err) {
     this.emit('log', {
       source: 'types',
@@ -7812,7 +7805,6 @@ function ObjectType(definition) {
 function ScalarType(definition) {
   try {
     var def = _.merge({}, definition);
-    var GraphQLScalarType = this.graphql.GraphQLScalarType;
     var serialize = definition.serialize,
         parseValue = definition.parseValue,
         parseLiteral = definition.parseLiteral;
@@ -7828,7 +7820,7 @@ function ScalarType(definition) {
       def.parseLiteral = this.bindFunction(parseLiteral, definition);
     }
 
-    return new GraphQLScalarType(def);
+    return new graphql.GraphQLScalarType(def);
   } catch (err) {
     this.emit('log', {
       source: 'types',
@@ -7842,7 +7834,6 @@ function ScalarType(definition) {
 function Schema(definition, name) {
   try {
     var def = _.merge({}, definition);
-    var GraphQLSchema$$1 = this.graphql.GraphQLSchema;
     var query = definition.query,
         mutation = definition.mutation,
         subscription = definition.subscription;
@@ -7859,7 +7850,7 @@ function Schema(definition, name) {
     }
 
     // create a new schema object
-    var schema = new GraphQLSchema$$1(def);
+    var schema = new graphql.GraphQLSchema(def);
 
     // attach some info to the schema object
     schema._factory = {
@@ -7884,8 +7875,6 @@ function UnionType(definition) {
   var _this = this;
 
   try {
-    var GraphQLUnionType = this.graphql.GraphQLUnionType;
-
     var def = _.merge({}, definition);
     var types = definition.types,
         resolveType = definition.resolveType;
@@ -7901,7 +7890,7 @@ function UnionType(definition) {
       def.resolveType = this.bindFunction(resolveType, definition);
     }
 
-    return new GraphQLUnionType(def);
+    return new graphql.GraphQLUnionType(def);
   } catch (err) {
     this.emit('log', {
       source: 'types',
@@ -7912,37 +7901,37 @@ function UnionType(definition) {
   }
 }
 
-var Generator = function (_EventEmitter) {
-  inherits(Generator, _EventEmitter);
+var GraphQLBoolean$1 = graphql.GraphQLBoolean;
+var GraphQLInt$1 = graphql.GraphQLInt;
+var GraphQLString$1 = graphql.GraphQLString;
+var GraphQLFloat$1 = graphql.GraphQLFloat;
+var GraphQLID$1 = graphql.GraphQLID;
 
+var Generator = function () {
   function Generator() {
-    var _this$_scalars;
+    var _scalars;
 
     classCallCheck(this, Generator);
 
-    var _this = possibleConstructorReturn(this, (Generator.__proto__ || Object.getPrototypeOf(Generator)).call(this));
-
-    _this.graphql = graphql;
-    _this.error = null;
-    _this._id = String(_.random(RANDOM_MAX));
-    _this._def = {};
-    _this.types = {};
-    _this.schemas = {};
-    _this.functions = {};
-    _this._context = {};
-    _this._scalars = (_this$_scalars = {}, defineProperty$2(_this$_scalars, BOOLEAN, graphql.GraphQLBoolean), defineProperty$2(_this$_scalars, INT, graphql.GraphQLInt), defineProperty$2(_this$_scalars, STRING, graphql.GraphQLString), defineProperty$2(_this$_scalars, FLOAT, graphql.GraphQLFloat), defineProperty$2(_this$_scalars, ID, graphql.GraphQLID), _this$_scalars);
+    this.error = null;
+    this._id = String(_.random(RANDOM_MAX));
+    this._def = {};
+    this.types = {};
+    this.schemas = {};
+    this.functions = {};
+    this._context = {};
+    this._scalars = (_scalars = {}, defineProperty$2(_scalars, BOOLEAN, GraphQLBoolean$1), defineProperty$2(_scalars, INT, GraphQLInt$1), defineProperty$2(_scalars, STRING, GraphQLString$1), defineProperty$2(_scalars, FLOAT, GraphQLFloat$1), defineProperty$2(_scalars, ID, GraphQLID$1), _scalars);
 
     // create a read only registry
     var registry = Object.freeze({
-      types: _this.types,
-      schemas: _this.schemas,
-      definition: _this._def.definition
+      types: this.types,
+      schemas: this.schemas,
+      definition: this._def.definition
     });
 
     // create a new library and pass
     // the registry and this generator
-    _this.lib = Object.freeze(new GraphQLFactoryLibrary(graphql, registry, _this));
-    return _this;
+    this.lib = Object.freeze(new GraphQLFactoryLibrary(registry, this));
   }
 
   /**
@@ -7956,7 +7945,8 @@ var Generator = function (_EventEmitter) {
     key: '_makeContext',
     value: function _makeContext(def) {
       var definition = def.definition,
-          _context = def._context;
+          _context = def._context,
+          _factory = def._factory;
 
       var context = _.assign({}, _context);
 
@@ -7968,7 +7958,8 @@ var Generator = function (_EventEmitter) {
       // finally add the default context values
       this._context = _.assign(context, {
         lib: this.lib,
-        graphql: this.graphql
+        factory: _factory,
+        graphql: graphql
       });
 
       return this;
@@ -7982,11 +7973,11 @@ var Generator = function (_EventEmitter) {
   }, {
     key: '_makeTypes',
     value: function _makeTypes(types) {
-      var _this2 = this;
+      var _this = this;
 
       _.forEach(types, function (typeDef, typeName) {
-        if (_this2.error) return false;
-        _this2._buildType(typeName, typeDef);
+        if (_this.error) return false;
+        _this._buildType(typeName, typeDef);
       });
 
       return this;
@@ -8000,10 +7991,10 @@ var Generator = function (_EventEmitter) {
   }, {
     key: '_makeSchemas',
     value: function _makeSchemas(schemas) {
-      var _this3 = this;
+      var _this2 = this;
 
       _.forEach(schemas, function (def, name) {
-        _this3.schemas[name] = Schema.call(_this3, def, name);
+        _this2.schemas[name] = Schema.call(_this2, def, name);
       });
 
       return this;
@@ -8070,10 +8061,11 @@ var Generator = function (_EventEmitter) {
   }, {
     key: 'bindResolve',
     value: function bindResolve(fn, fieldDef) {
+      var _this3 = this;
+
       if (!fn) return;
 
       var resolve = _.isString(fn) ? _.get(this.functions, '["' + fn + '"]') : fn;
-      var ctx = _.assign({}, this._context, { fieldDef: fieldDef });
 
       if (!_.isFunction(resolve)) {
         this.error = new Error('GraphQLFactoryGenerateError: No resolve found');
@@ -8082,16 +8074,19 @@ var Generator = function (_EventEmitter) {
 
       // return the middleware resolvers
       return function (source, args, context, info) {
+        // build a new context
+        var ctx = _.assign({}, _this3._context, { fieldDef: fieldDef }, context);
+
         // create a request object
         var req = {
           source: source,
           args: args,
-          context: _.assign(ctx, context),
+          context: ctx,
           info: info,
           reroutes: 0
 
           // call the middleware
-        };return middleware(this, resolve, req);
+        };return middleware(_this3, resolve, req);
       };
     }
 
@@ -8104,10 +8099,12 @@ var Generator = function (_EventEmitter) {
   }, {
     key: 'bindFunction',
     value: function bindFunction(fn, fieldDef) {
+      var _this4 = this,
+          _arguments = arguments;
+
       if (!fn) return;
 
       var func = _.isString(fn) ? _.get(this.functions, '["' + fn + '"]') : fn;
-      var ctx = _.assign({}, this._context, { fieldDef: fieldDef });
 
       if (!_.isFunction(func)) {
         this.error = new Error('GraphQLFactoryGenerateError: No function found');
@@ -8117,7 +8114,8 @@ var Generator = function (_EventEmitter) {
       // return the wrapped function and call with apply
       // because arguments may vary
       return function () {
-        return func.apply(ctx, [].concat(Array.prototype.slice.call(arguments)));
+        var ctx = _.assign({}, _this4._context, { fieldDef: fieldDef });
+        return func.apply(ctx, [].concat(Array.prototype.slice.call(_arguments)));
       };
     }
 
@@ -8129,15 +8127,15 @@ var Generator = function (_EventEmitter) {
   }, {
     key: 'makeType',
     value: function makeType(field) {
-      var _this4 = this;
+      var _this5 = this;
 
       var type = field.type;
 
       return toObjectType(type, function (name) {
-        var gqlType = _.get(_this4.types, '["' + name + '"]', _.get(_this4._scalars, '["' + name + '"]'));
+        var gqlType = _.get(_this5.types, '["' + name + '"]', _.get(_this5._scalars, '["' + name + '"]'));
 
         if (!gqlType) {
-          _this4.error = new Error('GraphQLFactoryGenerateError: ' + 'Cannot make type "' + name + '"');
+          _this5.error = new Error('GraphQLFactoryGenerateError: ' + 'Cannot make type "' + name + '"');
         }
         return gqlType;
       });
@@ -8167,7 +8165,7 @@ var Generator = function (_EventEmitter) {
     }
   }]);
   return Generator;
-}(EventEmitter);
+}();
 
 var FactoryBase64 = {
   type: 'Scalar',
@@ -8357,8 +8355,10 @@ var GraphQLFactoryTypesPlugin = function (_Plugin) {
 }(Plugin);
 
 var plugins = {
-  types: GraphQLFactoryTypesPlugin
+  Types: GraphQLFactoryTypesPlugin
 };
+
+var tools = {};
 
 var GraphQLFactory$1 = function (_EventEmitter) {
   inherits(GraphQLFactory, _EventEmitter);
@@ -8368,8 +8368,8 @@ var GraphQLFactory$1 = function (_EventEmitter) {
 
     var _this = possibleConstructorReturn(this, (GraphQLFactory.__proto__ || Object.getPrototypeOf(GraphQLFactory)).call(this));
 
-    _this.graphql = graphql;
     _this.plugins = plugins;
+    _this.tools = tools;
     _this.generator = new Generator();
     _this.definition = new GraphQLFactoryDefinition(_this);
     return _this;
@@ -8476,6 +8476,8 @@ var GraphQLFactory$1 = function (_EventEmitter) {
 GraphQLFactory$1.Definition = GraphQLFactoryDefinition;
 GraphQLFactory$1.Decomposer = GraphQLFactoryDecomposer;
 GraphQLFactory$1.Expander = GraphQLFactoryDefinitionExpander;
+GraphQLFactory$1.Generator = Generator;
 GraphQLFactory$1.plugins = plugins;
+GraphQLFactory$1.tools = tools;
 
 module.exports = GraphQLFactory$1;

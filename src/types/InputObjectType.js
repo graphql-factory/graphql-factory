@@ -1,9 +1,9 @@
 import _ from '../common/lodash.custom'
+import { GraphQLInputObjectType } from 'graphql'
 import InputObjectFieldConfigMapThunk from './InputObjectFieldConfigMapThunk'
 
 export default function InputObjectType (definition) {
   try {
-    const { GraphQLInputObjectType } = this.graphql
     const def = _.merge({}, definition)
     const { fields } = definition
     def.fields = InputObjectFieldConfigMapThunk.call(this, fields)

@@ -1,9 +1,9 @@
 import _ from '../common/lodash.custom'
+import { GraphQLSchema } from 'graphql'
 
 export default function Schema (definition, name) {
   try {
     const def = _.merge({}, definition)
-    const { GraphQLSchema } = this.graphql
     const { query, mutation, subscription } = definition
 
     def.query = _.get(this.types, `["${query}"]`)

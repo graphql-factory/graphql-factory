@@ -1,10 +1,10 @@
 import _ from '../common/lodash.custom'
+import { GraphQLInterfaceType } from 'graphql'
 import FieldConfigMapThunk from './FieldConfigMapThunk'
 
 export default function InterfaceType (definition) {
   try {
     const def = _.merge({}, definition)
-    const { GraphQLInterfaceType } = this.graphql
     const { fields, resolveType } = definition
 
     def.fields = FieldConfigMapThunk.call(this, fields)

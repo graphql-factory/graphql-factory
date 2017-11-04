@@ -1,6 +1,5 @@
 import _ from '../common/lodash.custom'
 import * as graphql from 'graphql'
-import EventEmitter from 'events'
 import middleware from './middleware'
 import Library from './library'
 import { toObjectType } from '../common/util'
@@ -28,10 +27,16 @@ import {
   RANDOM_MAX
 } from '../common/const'
 
-export default class Generator extends EventEmitter {
+const {
+  GraphQLBoolean,
+  GraphQLInt,
+  GraphQLString,
+  GraphQLFloat,
+  GraphQLID
+} = graphql
+
+export default class Generator {
   constructor () {
-    super()
-    this.graphql = graphql
     this.error = null
     this._id = String(_.random(RANDOM_MAX))
     this._def = {}
@@ -40,11 +45,11 @@ export default class Generator extends EventEmitter {
     this.functions = {}
     this._context = {}
     this._scalars = {
-      [BOOLEAN]: graphql.GraphQLBoolean,
-      [INT]: graphql.GraphQLInt,
-      [STRING]: graphql.GraphQLString,
-      [FLOAT]: graphql.GraphQLFloat,
-      [ID]: graphql.GraphQLID
+      [BOOLEAN]: GraphQLBoolean,
+      [INT]: GraphQLInt,
+      [STRING]: GraphQLString,
+      [FLOAT]: GraphQLFloat,
+      [ID]: GraphQLID
     }
 
     // create a read only registry
@@ -57,7 +62,7 @@ export default class Generator extends EventEmitter {
     // create a new library and pass
     // the registry and this generator
     this.lib = Object.freeze(
-      new Library(graphql, registry, this)
+      new Library(registry, this)
     )
   }
 
@@ -67,7 +72,7 @@ export default class Generator extends EventEmitter {
    * @private
    */
   _makeContext (def) {
-    const { definition, _context } = def
+    const { definition, _context, _factory } = def
     const context = _.assign({}, _context)
 
     // add the plugin context
@@ -78,7 +83,8 @@ export default class Generator extends EventEmitter {
     // finally add the default context values
     this._context = _.assign(context, {
       lib: this.lib,
-      graphql: this.graphql
+      factory: _factory,
+      graphql
     })
 
     return this
@@ -170,7 +176,6 @@ export default class Generator extends EventEmitter {
     const resolve = _.isString(fn)
       ? _.get(this.functions, `["${fn}"]`)
       : fn
-    const ctx = _.assign({}, this._context, { fieldDef })
 
     if (!_.isFunction(resolve)) {
       this.error = new Error('GraphQLFactoryGenerateError: No resolve found')
@@ -178,12 +183,15 @@ export default class Generator extends EventEmitter {
     }
 
     // return the middleware resolvers
-    return function (source, args, context, info) {
+    return (source, args, context, info) => {
+      // build a new context
+      const ctx = _.assign({}, this._context, { fieldDef }, context)
+
       // create a request object
       const req = {
         source,
         args,
-        context: _.assign(ctx, context),
+        context: ctx,
         info,
         reroutes: 0
       }
@@ -204,7 +212,6 @@ export default class Generator extends EventEmitter {
     const func = _.isString(fn)
       ? _.get(this.functions, `["${fn}"]`)
       : fn
-    const ctx = _.assign({}, this._context, { fieldDef })
 
     if (!_.isFunction(func)) {
       this.error = new Error('GraphQLFactoryGenerateError: No function found')
@@ -213,7 +220,8 @@ export default class Generator extends EventEmitter {
 
     // return the wrapped function and call with apply
     // because arguments may vary
-    return function () {
+    return () => {
+      const ctx = _.assign({}, this._context, { fieldDef })
       return func.apply(ctx, [ ...arguments ])
     }
   }
