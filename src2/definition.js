@@ -1,50 +1,21 @@
 import _ from 'lodash'
-import { constructorName } from './util'
-import { parse, print, Kind } from 'graphql'
 import Translator from './translate'
+import { parse, print, Kind } from 'graphql'
+import { constructorName, definitionKey, isHash } from './util'
+import { INVALID_FN_NAMES } from './const'
 
-/**
- * List of invalid function names to register
- * Invalid because they can be the field name and prone to duplicate
- * @type {[string,string,string,string,string,string,string]}
- */
-const INVALID_FN_NAMES = [
-  '',
-  'resolve',
-  'isTypeOf',
-  'serialize',
-  'parseValue',
-  'parseLiteral',
-  'resolveType'
+export const CAN_MERGE = [
+  'context',
+  'types',
+  'schemas',
+  'functions',
+  'directives',
+  'functionMap',
+  'warnings',
+  'before',
+  'after',
+  'error'
 ]
-
-/**
- * Returns the appropriate definition key to store the
- * definition in
- * @param kind
- * @returns {*}
- */
-function definitionKey (kind) {
-  switch (kind) {
-    case Kind.SCHEMA_DEFINITION:
-      return 'schemas'
-    case Kind.DIRECTIVE_DEFINITION:
-      return 'directives'
-    case Kind.TYPE_EXTENSION_DEFINITION:
-      return 'extensions'
-    case Kind.SCALAR_TYPE_DEFINITION:
-    case Kind.OBJECT_TYPE_DEFINITION:
-    case Kind.INPUT_OBJECT_TYPE_DEFINITION:
-    case Kind.ENUM_TYPE_DEFINITION:
-    case Kind.UNION_TYPE_DEFINITION:
-    case Kind.INTERFACE_TYPE_DEFINITION:
-      return 'types'
-    case 'Function':
-      return 'functions'
-    default:
-      return null
-  }
-}
 
 export default class GraphQLFactoryDefinition {
   constructor (factory) {
@@ -53,7 +24,7 @@ export default class GraphQLFactoryDefinition {
     this.types = {}
     this.schemas = {}
     this.functions = {}
-    this.directives = []
+    this.directives = {}
     this.functionMap = {}
     this.error = null
     this.warnings = []
@@ -71,7 +42,6 @@ export default class GraphQLFactoryDefinition {
 
     switch (constructorName(args[0])) {
       case 'String':
-        console.log(args[0])
         this._processDefinition.apply(this, args)
         break
 
@@ -97,6 +67,46 @@ export default class GraphQLFactoryDefinition {
   }
 
   /**
+   * Builds a registry
+   * @param options
+   */
+  build (options) {
+    return _.reduce(this.schemas, (registry, schema, name) => {
+      registry[name] = schema.build(this)
+      return registry
+    }, {})
+  }
+
+
+  /**
+   * Merges the merge-able fields
+   * @param definition
+   * @returns {GraphQLFactoryDefinition}
+   */
+  merge (definition) {
+    _.forEach(CAN_MERGE, key => {
+      const target = this[key]
+      const source = definition[key]
+      if (_.isArray(source) && _.isArray(target)) {
+        this[key] = _.union(source, target)
+      } else if (isHash(source) && isHash(target)) {
+        _.assign(target, source)
+      }
+    })
+    return this
+  }
+
+  /**
+   * Creates a clone of the definition
+   * @returns {GraphQLFactoryDefinition}
+   */
+  clone () {
+    const definition = new GraphQLFactoryDefinition(this.factory)
+    definition.error = this.error
+    return definition.merge(this)
+  }
+
+  /**
    * Adds a kind to the definition if it has not already been added
    * @param kind
    * @param name
@@ -105,9 +115,8 @@ export default class GraphQLFactoryDefinition {
    */
   addKind (kind, name, value) {
     const key = definitionKey(kind)
+    const store = _.get(this, [key])
     if (!key) throw new Error(`Invalid Kind "${kind}"`)
-
-    const store = this[key]
 
     if (Array.isArray(store)) {
       store.push(value)
@@ -145,13 +154,13 @@ export default class GraphQLFactoryDefinition {
     this.addKind('Function', _name, fn)
   }
 
+  /**
+   * Processes a factory definition and merges its contents
+   * @param args
+   * @private
+   */
   _processFactoryDefinition (...args) {
-    const translated = new Translator(this.factory)
-      .translate(args[0])
-
-    console.log(translated)
-    console.log('================')
-    _.forEach(translated.types, def => console.log(def))
+    this.merge(new Translator(this.factory).translate(args[0]))
   }
 
   /**
@@ -177,7 +186,7 @@ export default class GraphQLFactoryDefinition {
     }
 
     // merge the function map
-    if (_.isObject(_functionMap) && !Array.isArray(_functionMap)) {
+    if (isHash(_functionMap)) {
       _.merge(this.functionMap, _functionMap)
     }
 
@@ -185,7 +194,7 @@ export default class GraphQLFactoryDefinition {
     for (const definition of definitions) {
       const kind = _.get(definition, 'kind')
 
-      if (kind == Kind.SCHEMA_DEFINITION) {
+      if (kind === Kind.SCHEMA_DEFINITION) {
         if (!_.isString(_name) || _name === '') {
           throw new Error('Schema definition requires a name argument in use()')
         }

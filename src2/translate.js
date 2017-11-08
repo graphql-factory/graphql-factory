@@ -1,11 +1,16 @@
+/**
+ * This module converts graphql factory definitions
+ * into schema language + a functionMap
+ */
 import _ from 'lodash'
 import Definition from './definition'
+import Schema from './schema'
 import { Kind } from 'graphql'
-import { toArgs, isHash } from './util'
+import { toArgs, isHash, getDirectives } from './util'
 
 export default class GraphQLFactoryTranslator {
-  constructor (factory) {
-    this.definition = new Definition(factory)
+  constructor () {
+    this.definition = new Definition()
   }
 
   /**
@@ -16,11 +21,11 @@ export default class GraphQLFactoryTranslator {
    * @private
    */
   _type (typeDef, typeName) {
-    const { name, type, description, directives } = typeDef
+    const { name, type, description } = typeDef
 
     const parts = {
       name: name || typeName,
-      directives: this._getDirectives(directives)
+      directives: getDirectives(typeDef)
     }
 
     const def = this[`_${type || 'Object'}`](typeDef, parts)
@@ -28,27 +33,6 @@ export default class GraphQLFactoryTranslator {
     return _.isString(description)
       ? `# ${description}\n${def}`
       : def
-  }
-
-  /**
-   * Gets a string of directives
-   * @param directives
-   * @param reason
-   * @returns {*}
-   * @private
-   */
-  _getDirectives (directives, reason) {
-    const _directives = _.isObject(directives) && !_.isArray(directives)
-      ? directives
-      : {}
-    if (_.isString(reason)) _directives.deprecated = { reason }
-    if (!_.keys(_directives).length) return ''
-
-    return ' ' + _.map(_directives, (value, name) => {
-      return value === undefined || value === ''
-        ? `@${name}`
-        : `@${name}(${toArgs(value, true)})`
-    }).join(' ')
   }
 
   /**
@@ -77,7 +61,7 @@ export default class GraphQLFactoryTranslator {
     this._registerFunction(typeDef, name, 'resolveType')
     const { types } = typeDef
     const _types = _.isFunction(types) ? types() : types
-    return `union ${name} ${_types.join(' | ')}${directives}\n`
+    return `union ${name} = ${_types.join(' | ')}\n`
   }
 
   /**
@@ -117,7 +101,7 @@ export default class GraphQLFactoryTranslator {
    * @private
    */
   _Input (typeDef, { name, directives }) {
-    const fields = this._subFields(typeDef)
+    const fields = this._fields(typeDef)
     return `input ${name}${directives} {\n${fields}\n}\n`
   }
 
@@ -132,7 +116,7 @@ export default class GraphQLFactoryTranslator {
   _Object (typeDef, { name, directives }) {
     this._registerFunction(typeDef, name, 'isTypeOf')
     const { interfaces } = typeDef
-    const fields = this._subFields(typeDef, name)
+    const fields = this._fields(typeDef, name)
     const _interfaces = _.isFunction(interfaces)
       ? interfaces()
       : interfaces
@@ -152,8 +136,8 @@ export default class GraphQLFactoryTranslator {
    */
   _Interface (typeDef, { name, directives }) {
     this._registerFunction(typeDef, name, 'resolveType')
-    const fields = this._subFields(typeDef, name)
-    return `interface ${name}${directives} {\n${fields}\n}`
+    const fields = this._fields(typeDef, name)
+    return `interface ${name}${directives} {\n${fields}\n}\n`
   }
 
   /**
@@ -164,26 +148,26 @@ export default class GraphQLFactoryTranslator {
    * @returns {string|*}
    * @private
    */
-  _subFields ({ type: parentType, fields }, parent) {
+  _fields ({ type: parentType, fields }, parent) {
     return _.map(fields, (def, name) => {
+      const definition = isHash(def)
+        ? parentType === 'input'
+          ? _.omit(def, ['args', 'resolve', 'deprecationReason'])
+          : _.omit(def, ['defaultValue'])
+        : { type: def }
       const {
         type,
         args,
         resolve,
         deprecationReason,
         description,
-        defaultValue,
-        directives
-      } = isHash(def)
-        ? parentType === 'input'
-          ? _.omit(def, ['args', 'resolve', 'deprecationReason'])
-          : _.omit(def, ['defaultValue'])
-        : { type: def }
+        defaultValue
+      } = definition
 
       if (_.isFunction(resolve)) {
-        _.set(this.definition, ['functionMap', parent, name], resolve)
+        _.set(this.definition, ['functionMap', parent, 'fields', name], resolve)
       }
-      const _directives = this._getDirectives(directives, deprecationReason)
+      const _directives = getDirectives(definition, deprecationReason)
       const _default = defaultValue !== undefined
         ? ` = ${toArgs(defaultValue, true)}`
         : ''
@@ -205,10 +189,11 @@ export default class GraphQLFactoryTranslator {
   _arguments (args) {
     if (!args || !_.keys(args).length) return ''
     const _args = _.map(args, (arg, name) => {
-      const { type, defaultValue, description, directives } = isHash(arg)
+      const definition = isHash(arg)
         ? arg
         : { type: arg }
-      const _directives = this._getDirectives(directives)
+      const { type, defaultValue, description } = definition
+      const _directives = getDirectives(definition)
       const _default = defaultValue === undefined
         ? ''
         : ` = ${toArgs(defaultValue)}`
@@ -228,15 +213,26 @@ export default class GraphQLFactoryTranslator {
    */
   _values (values) {
     return _.map(values, (def, name) => {
-      const { deprecationReason, description, directives } = isHash(def)
+      const definition = isHash(def)
         ? def
         : {}
-      const _directives = this._getDirectives(directives, deprecationReason)
+      const { deprecationReason, description } = definition
+      const _directives = getDirectives(definition, deprecationReason)
       const v = `  ${name}${_directives}`
       return _.isString(description)
         ? `  # ${description}\n${v}`
         : v
     }).join('\n')
+  }
+
+  /**
+   * Translate a single type and return its value
+   * @param typeDef
+   */
+  translateType (typeDef, typeName, functionMap) {
+    // re-point the function map
+    if (isHash(functionMap)) this.definition.functionMap = functionMap
+    return this._type(typeDef, typeName)
   }
 
   /**
@@ -248,9 +244,8 @@ export default class GraphQLFactoryTranslator {
       switch (storeType) {
         case 'functionMap':
         case 'functions':
-          break
         case 'context':
-          _.assign(this.definition.context, store)
+          _.assign(this.definition[storeType], store)
           break
 
         case 'before':
@@ -270,6 +265,13 @@ export default class GraphQLFactoryTranslator {
           break;
 
         case 'schemas':
+          _.forEach(store, (schemaDef, schemaName) => {
+            this.definition.addKind(
+              Kind.SCHEMA_DEFINITION,
+              schemaName,
+              new Schema(schemaDef, schemaName)
+            )
+          })
           break
 
         default:
