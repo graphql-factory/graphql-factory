@@ -1,18 +1,3 @@
-/**
- * List of invalid function names to register
- * Invalid because they can be the field name and prone to duplicate
- * @type {[string,string,string,string,string,string,string]}
- */
-export const INVALID_FN_NAMES = [
-  '',
-  'resolve',
-  'isTypeOf',
-  'serialize',
-  'parseValue',
-  'parseLiteral',
-  'resolveType'
-]
-
 // built in type name constants
 export const BOOLEAN = 'Boolean'
 export const ENUM = 'Enum'
@@ -93,10 +78,10 @@ export const OUTPUT_TYPES = [
 ]
 
 // middleware types
-export const BEFORE_MIDDLEWARE = 'before'
-export const AFTER_MIDDLEWARE = 'after'
-export const ERROR_MIDDLEWARE = 'error'
-export const RESOLVE_MIDDLEWARE = 'resolve'
+export const BEFORE_MIDDLEWARE = 'BEFORE'
+export const AFTER_MIDDLEWARE = 'AFTER'
+export const ERROR_MIDDLEWARE = 'ERROR'
+export const RESOLVE_MIDDLEWARE = 'RESOLVE'
 
 // event names
 export const EVENT_REQUEST = 'request'
@@ -110,3 +95,5 @@ export const EVENT_TRACE = 'trace'
 // option defaults and constants
 export const DEFAULT_MIDDLEWARE_TIMEOUT = 300000 // 5 minutes
 export const RANDOM_MAX = 1000000000000000
+
+

@@ -1,5 +1,5 @@
 import * as graphql from 'graphql'
-import Lang from '../src/definition/language'
+import Lang from '../src-concept/definition/language'
 
 
 const src = `

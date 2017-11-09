@@ -1,158 +1,157 @@
-import _ from './lodash.custom'
-import { GraphQLNonNull, GraphQLList } from 'graphql'
+import _ from 'lodash'
+import { Kind } from 'graphql'
+
+const LITERAL_RX = /^```([\w]+)```$/
+const DIRECTIVE_RX = /^@/
 
 /**
- * Returns the name of the constructor
+ * Determines if an object but not an array
  * @param obj
- * @returns {undefined}
+ * @returns {boolean}
+ */
+export function isHash (obj) {
+  return _.isObject(obj) && !_.isArray(obj)
+}
+
+/**
+ * Gets the constructor name
+ * @param obj
  */
 export function constructorName (obj) {
   return _.get(obj, 'constructor.name')
 }
 
 /**
- * Returns a value if the current one is nil
- * @param type
- * @param value
- * @param _default
+ * Determines the type of a value and returns a
+ * name with stringified value if able
+ * @param obj
  * @returns {*}
  */
-export function ensureValue (type, value, _default) {
+export function getType (obj) {
+  if (Array.isArray(obj)) {
+    return [ 'array', obj ]
+  } else if (obj === 'undefined') {
+    return [ 'undefined', 'undefined' ]
+  } else if (obj === null) {
+    return [ 'null', 'null' ]
+  } else if (typeof obj === 'string') {
+    // check for literal string which will be unquoted and
+    // have the literal markers removed
+    if (obj.match(LITERAL_RX)) {
+      return [ 'literal', obj.replace(LITERAL_RX, '$1') ]
+    }
+    return [ 'string', `"${obj}"` ]
+  } else if (typeof obj === 'number') {
+    return String(obj).indexOf('.') !== -1
+      ? [ 'float', String(obj) ]
+      : [ 'int', String(obj) ]
+  } else if (typeof obj === 'boolean') {
+    return [ 'boolean', String(obj) ]
+  } else if (obj instanceof Date) {
+    return [ 'date', JSON.stringify(obj) ]
+  }
+  return [ typeof obj, obj ]
+}
+
+/**
+ * Converts args to
+ * @param obj
+ * @param replaceBraces
+ * @returns {undefined}
+ */
+export function toArgs (obj, replaceBraces = false) {
+  const [ type, value ] = getType(obj)
+  let result
   switch (type) {
-    case 'object':
-      return value && _.isObject(value)
-        ? value
-        : _default
-    case 'array':
-      return _.isArray(value)
-        ? value
-        : _default
-    default:
-      return value || _default
-  }
-}
-
-/**
- * Converts a graphql object into a type string
- * @param obj
- * @param str
- * @returns {*|string}
- */
-export function toTypeString (obj, str) {
-  const interop = '{{TYPE_NAME}}'
-  let name = str || interop
-
-  switch (constructorName(obj)) {
-    case 'GraphQLNonNull':
-      name = name === interop
-        ? `${name}!`
-        : name.replace(interop, `${interop}!`)
-      return toTypeString(obj.ofType, name)
-
-    case 'GraphQLList':
-      name = name.replace(interop, `[${interop}]`)
-      return toTypeString(obj.ofType, name)
-
-    default:
-      name = name.replace(interop, obj.name)
-      break
-  }
-
-  return name
-}
-
-/**
- * Converts a type string into a new object
- * @param graphql
- * @param str
- * @param typeResolver
- * @returns {*}
- */
-export function toObjectType (str, typeResolver) {
-  const nonNullRx = /!$/
-  const listRx = /^\[(.+)]$/
-
-  if (str.match(nonNullRx)) {
-    return new GraphQLNonNull(
-      toObjectType(str.replace(nonNullRx, ''), typeResolver)
-    )
-  } else if (str.match(listRx)) {
-    return new GraphQLList(
-      toObjectType(str.replace(listRx, '$1'), typeResolver)
-    )
-  }
-  return typeResolver(str)
-}
-
-/**
- * Recursively gets the base type
- * @param obj
- * @returns {*}
- */
-export function getBaseType (obj) {
-  return obj.ofType
-    ? getBaseType(obj.ofType)
-    : obj
-}
-
-/**
- * Determines if the value is a string with a value
- * @param value
- * @returns {*}
- */
-export function valueString (value) {
-  return _.isString(value) && value !== ''
-}
-
-/**
- * Returns the return value of a thunk
- * or just the value if not a thunk
- * @param thunk
- * @returns {*}
- */
-export function resolveThunk (thunk) {
-  return _.isFunction(thunk)
-    ? thunk()
-    : thunk
-}
-
-/**
- * Performs a check on the field and returns an error if failed
- * @param fieldType
- * @param field
- */
-export function assertField (fieldType, fieldTypeName, typeName, field, fieldKey) {
-  let error = false
-  switch (fieldType) {
-    case 'object':
-      if (!field
-        || _.isArray(field)
-        || !_.isObject(field)
-        || !_.keys(field).length) {
-        error = true
-      }
+    case 'undefined':
       break
     case 'array':
-      if (!field || !_.isArray(field) || !field.length) error = true
+      result = `[${_.map(value, v => toArgs(v)).join(', ')}]`
       break
-    case 'function':
-      if (!_.isFunction(field)) error = true
+    case 'object':
+      result = `{${_.map(value, (v, k) => `${k}: ${toArgs(v)}`).join(', ')}}`
       break
     default:
+      result = value
       break
   }
 
-  return !error
-    ? null
-    : new Error('GraphQLFactoryExpandError: '
-      + 'Missing ' + fieldKey + ' for ' + fieldTypeName
-      + ' "' + typeName + '"')
+  return replaceBraces
+    ? result.replace(/^[{[]([\S\s]+)[}\]]$/, '$1')
+    : result
 }
 
 /**
- * Creates a string with all words capitalized
- * @returns {string|*}
+ * Gets a string of directives
+ * @param directives
+ * @param reason
+ * @returns {*}
  */
-export function capitalCase () {
-  return _.map([ ...arguments ], _.capitalize).join('')
+export function getDirectives (definition, reason) {
+  const directives = {}
+
+  _.forEach(definition, (value, key) => {
+    if (key.match(DIRECTIVE_RX)) {
+      directives[key] = value
+    }
+  })
+
+  if (_.isString(reason)) directives.deprecated = { reason }
+  if (!_.keys(directives).length) return ''
+
+  return ' ' + _.map(directives, (value, name) => {
+    return !isHash(value)
+      ? `${name}`
+      : `${name}(${toArgs(value, true)})`
+  }).join(' ')
+}
+
+
+/**
+ * Returns the appropriate definition key to store the
+ * definition in
+ * @param kind
+ * @returns {*}
+ */
+export function definitionKey (kind) {
+  switch (kind) {
+    case Kind.SCHEMA_DEFINITION:
+      return 'schemas'
+    case Kind.DIRECTIVE_DEFINITION:
+      return 'directives'
+    case Kind.TYPE_EXTENSION_DEFINITION:
+      return 'extensions'
+    case Kind.SCALAR_TYPE_DEFINITION:
+    case Kind.OBJECT_TYPE_DEFINITION:
+    case Kind.INPUT_OBJECT_TYPE_DEFINITION:
+    case Kind.ENUM_TYPE_DEFINITION:
+    case Kind.UNION_TYPE_DEFINITION:
+    case Kind.INTERFACE_TYPE_DEFINITION:
+      return 'types'
+    case 'Function':
+      return 'functions'
+    default:
+      return null
+  }
+}
+
+
+export function inspect (obj) {
+  console.log('<!-- INSPECTING\n\n')
+  _.forEach(obj, (v, k) => {
+    console.log(k, ':', v)
+  })
+  console.log('\n\n/INSPECTING -->\n\n')
+}
+
+export function pretty (obj) {
+  console.log(JSON.stringify(obj, null, '  '))
+}
+
+export function indent (count = 1, value = '  ') {
+  return new Array(count).fill(value).join('')
+}
+
+export function stringValue (str) {
+  return _.isString(str) && str !== ''
 }

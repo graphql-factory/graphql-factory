@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import * as graphql from 'graphql'
-import GraphQLFactory from '../../src/index'
+import GraphQLFactory from '../../src-concept/index'
 let factory = GraphQLFactory(graphql)
 
 
