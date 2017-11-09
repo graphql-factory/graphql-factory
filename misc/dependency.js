@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { SCALAR_NAMES } from '../src/common/const'
+import { SCALAR_NAMES } from '../src-concept/common/const'
 
 export default class TypeDependency {
   constructor () {

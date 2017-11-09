@@ -9,7 +9,7 @@
     "url": "git+https://github.com/graphql-factory/graphql-factory.git"
   },
   "options": {
-    "mocha": "--check-leaks --full-trace src2/**/__tests__/**/*-test.js",
+    "mocha": "--check-leaks --full-trace src/**/__tests__/**/*-test.js",
     "lodash": "assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without"
   },
   "scripts": {
@@ -17,8 +17,7 @@
     "build:lodash": "lodash modularize exports=es include=$npm_package_options_lodash -o src/common/lodash",
     "build:src": "rollup -c build/rollup.config.js && uglifyjs index.js > index.min.js",
     "build": "npm run lint && npm run build:src && npm run test",
-    "test": "babel-node ./node_modules/.bin/_mocha $npm_package_options_mocha",
-    "scratch": "babel-node src3/example.js"
+    "test": "babel-node ./node_modules/.bin/_mocha $npm_package_options_mocha"
   },
   "author": "Branden Horiuchi <bhoriuchi@gmail.com>",
   "peerDependencies": {

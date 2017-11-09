@@ -5,7 +5,7 @@
 import _ from 'lodash'
 import Definition from '../definition/definition'
 import Backing from '../types/backing'
-import Schema from '../types/schema'
+import Schema from '../schema'
 import { Kind, DirectiveLocation } from 'graphql'
 import { toArgs, isHash, getDirectives, indent, stringValue } from '../common/util'
 
