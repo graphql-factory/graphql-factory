@@ -15,33 +15,54 @@
  *       error: Function | Middleware
  *     }
  *   },
- *   '@directives': [
- *     {
- *       name: String,
+ *   '@directives': {
+ *      directiveName: {
  *       before: Function | Middleware,
  *       after: Function | Middleware,
  *       error: Function | Middleware
  *     },
  *     ...
- *   ]
+ *   }
  * }
  *
  */
 import _ from 'lodash'
 import { isHash, stringValue } from '../common/util'
 import Middleware from './middleware'
+import processMiddleware from '../middleware/middleware'
 import {
-  BEFORE_MIDDLEWARE,
-  AFTER_MIDDLEWARE,
-  ERROR_MIDDLEWARE
+  MiddlewareTypes,
+  DIRECTIVE_KEY
 } from '../common/const'
 
-const { canCast, cast } = Middleware
-const MIDDLEWARES = [
-  BEFORE_MIDDLEWARE,
-  AFTER_MIDDLEWARE,
-  ERROR_MIDDLEWARE
-]
+// middleware helper methods
+const { cast, canCast } = Middleware
+
+/**
+ * Creates a middleware function from the field resolve
+ * @param resolver
+ * @returns {Function}
+ */
+function resolverMiddleware (resolver) {
+  return function (req, res, next) {
+    try {
+      const { source, args, context, info } = req
+      const nonCircularReq = _.omit(req, [ 'context' ])
+      const ctx = _.assign({}, context, { req: nonCircularReq, res, next })
+      const value = resolver(source, args, ctx, info)
+
+      // return a resolved promise
+      return Promise.resolve(value)
+        .then(result => {
+          req.result = result
+          return next()
+        })
+        .catch(next)
+    } catch (err) {
+      return next(err)
+    }
+  }
+}
 
 /**
  * Adds a type function to the backing
@@ -61,104 +82,65 @@ function addTypeFunction (typeName, funcName, func) {
 }
 
 /**
- * Creates a hash of middleware and validates it
- * returnin an error if invalid
- * @param middleware
- * @returns {*}
- */
-function validateMiddleware (middleware) {
-  const mw = {}
-  let error = null
-
-  if (!isHash(middleware)) {
-    return new Error('Invalid "middleware" argument, must be object '
-      + 'containing middleware keys "before", "after", and/or "error"')
-  }
-
-  // loop through each possible middleware type and process it
-  _.forEach(middleware, (value, key) => {
-    if (error) return
-    if (_.includes(MIDDLEWARES, key)) {
-      if (canCast(value)) {
-        mw[key] = cast(value)
-      } else if (stringValue(value)) {
-        mw[key] = value
-      } else if (value !== undefined) {
-        error = new Error('Invalid "' + key
-          + '" middleware, must be Function or Middleware')
-      }
-    }
-  })
-
-  // if there is an error or no middleware, return an error
-  if (error) {
-    return error
-  } else if (!_.keys(mw).length) {
-    return new Error('Invalid "middleware" argument, must be object '
-      + 'containing at least one "before", "after", and/or "error" middleware')
-  }
-
-  return mw
-}
-
-/**
  * Backing for things that use middleware
  */
-export class MiddlewareBacking {
-  constructor (backing, isDirective) {
-    this.backing = isHash(backing)
-      ? backing
-      : {}
-    this._isDirective = isDirective
+export class DirectiveBacking {
+  constructor (backing) {
+    this.backing = backing
   }
 
   /**
-   * Adds a middleware config
-   * @param typeName
-   * @param fieldName
+   * Sets before middleware backing on directive
+   * @param name
    * @param middleware
-   * @returns {MiddlewareBacking}
    */
-  middleware (typeName, fieldName, middleware) {
-    const [ _mw, _fieldName ] = this._isDirective
-      ? [ fieldName, null ]
-      : [ middleware, fieldName ]
+  before (name, middleware) {
+    const mw = cast(middleware)
+    const path = [
+      DIRECTIVE_KEY,
+      name,
+      MiddlewareTypes.BEFORE
+    ]
+    _.set(this.backing, path, mw)
+  }
 
-    // validate args
-    if (!stringValue(typeName)) {
-      throw new Error('Invalid "typeName" argument, must be String')
-    } else if (!this._isDirective && !stringValue(_fieldName)) {
-      throw new Error('Invalid "fieldName" argument, must be String')
-    }
+  /**
+   * Sets after middleware backing on directive
+   * @param name
+   * @param middleware
+   */
+  after (name, middleware) {
+    const mw = cast(middleware)
+    const path = [
+      DIRECTIVE_KEY,
+      name,
+      MiddlewareTypes.AFTER
+    ]
+    _.set(this.backing, path, mw)
+  }
 
-    // validate the middleware
-    const mw = validateMiddleware(_mw)
-    if (mw instanceof Error) throw mw
-
-    // if directive add it to the list
-    // otherwise add it to the field
-    if (this._isDirective) {
-      mw.name = typeName
-      this.backing['@directives'] = _.union(this.backing['@directives'], [ mw ])
-    } else {
-      _.forEach(mw, (value, type) => {
-        _.set(
-          this.backing,
-          [ typeName, _fieldName, type ],
-          value
-        )
-      })
-    }
-    return this
+  /**
+   * Sets error middleware backing on directive
+   * @param name
+   * @param middleware
+   */
+  error (name, middleware) {
+    const mw = cast(middleware)
+    const path = [
+      DIRECTIVE_KEY,
+      name,
+      MiddlewareTypes.ERROR
+    ]
+    _.set(this.backing, path, mw)
   }
 }
 
 /**
  * Backing for things that have resolve functions
  */
-export class ResolveBacking extends MiddlewareBacking {
+export class ResolveBacking {
   constructor (backing) {
-    super(backing, false)
+    this.backing = backing
   }
 
   /**
@@ -281,15 +263,6 @@ export class UnionBacking {
 }
 
 /**
- * Builds a Directive backing
- */
-export class DirectiveBacking extends MiddlewareBacking {
-  constructor (backing) {
-    super(backing, true)
-  }
-}
-
-/**
  * Entry point for building a backing
  */
 export default class GraphQLFactoryBacking {
@@ -309,6 +282,107 @@ export default class GraphQLFactoryBacking {
       : backing
     _.assign(this.backing, _backing)
     return this
+  }
+
+  /**
+   * Hydrates the schema with the current backing which contains
+   * things that cannot be expressed in the schema language
+   * @param schema
+   * @param definition
+   * @returns {*}
+   */
+  hydrateSchema (schema, definition) {
+    let err = null
+    const backing = this
+
+    // get the type backing
+    const backingTypes = _.omit(this.backing, [ DIRECTIVE_KEY ])
+
+    // set the functions from the function map
+    _.forEach(backingTypes, (typeBacking, typeName) => {
+      if (err) return false
+
+      // get the type and validate that the type backing is a hash
+      const type = _.get(schema, [ '_typeMap', typeName ])
+      if (!type || !isHash(typeBacking) || !_.keys(typeBacking).length) {
+        return true
+      }
+
+      // hydrate the types
+      _.forEach(typeBacking, (value, key) => {
+        if (err) return false
+
+        // catch any errors. these will most likely be function lookup errors
+        try {
+          if (key.match(/^_/)) {
+            const path = [ key.replace(/^_/, '') ]
+            const infoPath = `${typeName}.${path[0]}`
+            const func = definition.lookupFunction(value, infoPath)
+
+            // wrap the function and add a context
+            // then hydrate the type
+            _.set(type, path, function (...args) {
+              const context = _.assign({}, definition.context)
+              return func.apply(context, args)
+            })
+          } else if (_.isString(value) || canCast(value)) {
+            const resolvePath = [ '_fields', key, 'resolve' ]
+            const factoryPath = [ '_fields', key, '_factory', 'resolve' ]
+            const infoPath = `${typeName}.${key}.resolve`
+            const resolver = value instanceof Middleware
+              ? value
+              : _.isString(value) || _.isFunction(value)
+                ? resolverMiddleware(definition.lookupFunction(value, infoPath))
+                : value
+
+            // cast the middleware
+            const resolveMiddleware = cast(
+              MiddlewareTypes.RESOLVE,
+              resolver
+            )
+
+            // set the resolve middleware on the factory extension
+            _.set(type, factoryPath, resolveMiddleware)
+
+            // finally hydrate the resolve with the proxy
+            _.set(type, resolvePath, function resolve (...args) {
+              return processMiddleware(schema, backing, definition, args)
+            })
+          } else {
+            throw new Error('Invalid Backing at "'
+              + typeName + '.' + key + '", should be '
+              + 'Function or Object but found ' + (typeof value))
+          }
+        } catch (backingError) {
+          err = backingError
+          return false
+        }
+      })
+    })
+
+    // hydrate/extend the directives
+    _.forEach(schema._directives, directive => {
+      const directivePath = [ DIRECTIVE_KEY, directive.name ]
+      const { _before, _after, _error } = _.get(this.backing, directivePath, {})
+      if (_before) directive._before = _before
+      if (_after) directive._after = _after
+      if (_error) directive._error = _error
+    })
+
+    // check for merge errors
+    if (err) throw err
+
+    // otherwise return the hydrated schema
+    return schema
+  }
+
+  /**
+   * Starts a new Directive backing
+   * @returns {DirectiveBacking}
+   * @constructor
+   */
+  Directive (name, directive) {
+    _.set(this.backing, [ DIRECTIVE_KEY, name ], directive)
   }
 
   /**
@@ -345,14 +419,5 @@ export default class GraphQLFactoryBacking {
    */
   get Union () {
     return new UnionBacking(this.backing)
-  }
-
-  /**
-   * Starts a new Directive backing
-   * @returns {DirectiveBacking}
-   * @constructor
-   */
-  get Directive () {
-    return new DirectiveBacking(this.backing)
   }
 }

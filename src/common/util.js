@@ -135,7 +135,7 @@ export function definitionKey (kind) {
   }
 }
 
-
+/*
 export function inspect (obj) {
   console.log('<!-- INSPECTING\n\n')
   _.forEach(obj, (v, k) => {
@@ -147,6 +147,7 @@ export function inspect (obj) {
 export function pretty (obj) {
   console.log(JSON.stringify(obj, null, '  '))
 }
+*/
 
 export function indent (count = 1, value = '  ') {
   return new Array(count).fill(value).join('')

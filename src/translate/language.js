@@ -5,7 +5,8 @@
 import _ from 'lodash'
 import Definition from '../definition/definition'
 import Backing from '../types/backing'
-import Schema from '../schema'
+import Directive from '../types/directive'
+import Schema from '../generate/schema'
 import { Kind, DirectiveLocation } from 'graphql'
 import { toArgs, isHash, getDirectives, indent, stringValue } from '../common/util'
 
@@ -56,15 +57,36 @@ export default class GraphQLFactoryDefinitionTranslator {
    * @private
    */
   _Directive (definition, directiveName) {
-    const { name, description, locations, args } = definition
+    const {
+      name,
+      description,
+      locations,
+      args,
+      before,
+      after,
+      error
+    } = definition
     const _name = name || directiveName
     const _args = this._arguments(args, 1)
     const _locations = _.filter(locations, _.isString)
     const _loc = _locations.length
       ? _locations.join(' | ')
       : _.map(DirectiveLocation).join(' | ')
+
+    // add the custom object as a directive backing
+    this.definition.backing.Directive(_name, new Directive({
+      name: _name,
+      description,
+      locations: locations || _.values(DirectiveLocation),
+      before,
+      after,
+      error
+    }))
+
+    // build the directive string
     const directive = `directive @${_name}${_args} on ${_loc}\n`
 
+    // return the schema definition
     return _.isString(description)
       ? `# ${description}\n${directive}`
       : directive
@@ -183,25 +205,13 @@ export default class GraphQLFactoryDefinitionTranslator {
         resolve,
         deprecationReason,
         description,
-        defaultValue,
-        before,
-        after,
-        error
+        defaultValue
       } = definition
 
       // add resolve backing
       if (_.isFunction(resolve) || stringValue(resolve)) {
         this.definition.backing[_parentType]
           .resolve(parent, name, resolve)
-      }
-
-      // add middleware backing
-      if (before || after || error) {
-        this.definition.backing[_parentType].middleware(
-          parent,
-          name,
-          { before, after, error }
-          )
       }
 
       const _directives = getDirectives(definition, deprecationReason)

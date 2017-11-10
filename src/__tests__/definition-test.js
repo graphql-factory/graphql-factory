@@ -150,15 +150,18 @@ const userDef = {
           type: 'String',
           defaultValue: 'yes'
         }
-      },
-      before () {
-
-      },
-      after () {
-
-      },
-      error () {
-
+      }
+    },
+    log: {
+      name: 'log',
+      description: 'simple logger on middleware',
+      locations: [
+        DirectiveLocation.FIELD
+      ],
+      before (req, res, next) {
+        const { info } = req
+        console.log('log middleware', info)
+        return next()
       }
     }
   },
@@ -182,7 +185,7 @@ const userDef = {
             }
           },
           resolve (source, args, context, info) {
-            console.log(tools.mapDirectives(info))
+            // console.log(tools.mapDirectives(info))
             return [
               { id: 'list-1', name: 'Shopping' },
               { id: 'list-2', name: 'Christmas' }
@@ -198,6 +201,7 @@ const userDef = {
   },
   schemas: {
     Users: {
+      directives: ['log'],
       query: {
         fields: {
           readUser: {
@@ -231,9 +235,11 @@ describe('definition tests', () => {
     const def = new Definition(factory)
       .use(userDef)
 
-    console.log(def.directives)
+    // console.log(def.directives)
 
     const reg = def.build()
+
+    console.log(reg.Users)
 
     return graphql(reg.Users, `
       query Query {
@@ -248,7 +254,8 @@ describe('definition tests', () => {
       }
     `)
       .then(result => {
-        console.log(JSON.stringify(result, null, '  '))
+        // console.log(JSON.stringify(result, null, '  '))
+        console.log(result)
         return result
       })
 

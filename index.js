@@ -4,6 +4,7 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 
 var EventEmitter = _interopDefault(require('events'));
 var _ = _interopDefault(require('lodash'));
+var Plugin = _interopDefault(require('graphql-factory-plugin'));
 var graphql = require('graphql');
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
@@ -378,9 +379,19 @@ function definitionKey(kind) {
   }
 }
 
+/*
+export function inspect (obj) {
+  console.log('<!-- INSPECTING\n\n')
+  _.forEach(obj, (v, k) => {
+    console.log(k, ':', v)
+  })
+  console.log('\n\n/INSPECTING -->\n\n')
+}
 
-
-
+export function pretty (obj) {
+  console.log(JSON.stringify(obj, null, '  '))
+}
+*/
 
 function indent() {
   var count = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
@@ -398,72 +409,144 @@ function stringValue(str) {
  * Invalid because they can be the field name and prone to duplicate
  * @type {[string,string,string,string,string,string,string]}
  */
-var INVALID_FN_NAMES = ['', 'resolve', 'isTypeOf', 'serialize', 'parseValue', 'parseLiteral', 'resolveType'];
 
-// built in type name constants
+var ENUM_RESERVED = ['hasKey', 'hasValue', '_keys', '_values'];
 
+/**
+ * Enum class, creates an enum with values passed in the config
+ * and errors when they dont exists or modification is attempted
+ * also provides a hasValue method for checking existence of value
+ */
+var Enum = function Enum(config) {
+  var _this = this;
 
+  classCallCheck(this, Enum);
 
+  var error = null;
+  this._keys = [];
+  this._values = [];
 
+  /**
+   * Determines if the value exists without throwing an error
+   * @param value
+   * @returns {boolean}
+   */
+  this.hasValue = function (value) {
+    return _this._values.indexOf(value) !== -1;
+  };
 
+  /**
+   * Determines if the key exists
+   * @param key
+   * @returns {boolean}
+   */
+  this.hasKey = function (key) {
+    return _this._keys.indexOf(key) !== -1;
+  };
 
+  var _config = !_.isArray(config) ? config : _.reduce(config, function (accum, item) {
+    accum[item] = item;
+    return accum;
+  });
 
+  // try to add each key/value
+  _.forEach(_config, function (value, key) {
+    if (_this.hasKey(key)) {
+      error = new Error('NewEnumError: Duplicate Enum key "' + key + '"');
+      return false;
+    } else if (_this.hasValue(value)) {
+      error = new Error('NewEnumError: Duplicate Enum value ' + value);
+      return false;
+    } else if (ENUM_RESERVED.indexOf(key) !== -1) {
+      error = new Error('NewEnumError: Enum key "' + key + '" is reserved and cannot be used');
+      return false;
+    }
 
+    _this._keys.push(key);
+    _this._values.push(value);
+    _this[key] = value;
+  });
 
+  // throw the error if encountered
+  if (error) throw error;
 
-
-
-
-
-
-// type alias values
-
-
-
-
-// decomposable types
-
-
-
+  // return a proxy to this class which allows readonly functionality
+  // and error throwing
+  return new Proxy(this, {
+    get: function get$$1(target, key) {
+      if (!_.has(target, [key])) {
+        throw new Error('Invalid Enum value ' + key);
+      }
+      return target[key];
+    },
+    set: function set$$1() {
+      throw new Error('Enum type cannot be modified');
+    },
+    has: function has(target, key) {
+      return _.has(target, key);
+    },
+    deleteProperty: function deleteProperty() {
+      throw new Error('Enum type cannot be modified');
+    },
+    defineProperty: function defineProperty$$1() {
+      throw new Error('Enum type cannot be modified');
+    }
+  });
+};
 
 // middleware types
-var BEFORE_MIDDLEWARE = 'before';
-var AFTER_MIDDLEWARE = 'after';
-var ERROR_MIDDLEWARE = 'error';
-var RESOLVE_MIDDLEWARE = 'resolve';
+var MiddlewareTypes = new Enum({
+  BEFORE: 'before',
+  AFTER: 'after',
+  ERROR: 'error',
+  RESOLVE: 'resolve'
+});
 
-// event names
+// schema operations
+var SchemaOperations = new Enum({
+  QUERY: 'query',
+  MUTATION: 'mutation',
+  SUBSCRIPTION: 'subscription'
+});
 
-
-
-
-
-
-
+// events
+var EventTypes = new Enum({
+  REQUEST: 'request',
+  FATAL: 'fatal',
+  ERROR: 'error',
+  WARN: 'warn',
+  INFO: 'info',
+  DEBUG: 'debug',
+  TRACE: 'trace'
+});
 
 // option defaults and constants
 var DEFAULT_MIDDLEWARE_TIMEOUT = 300000; // 5 minutes
 
-var MIDDLEWARE_TYPES = [BEFORE_MIDDLEWARE, AFTER_MIDDLEWARE, ERROR_MIDDLEWARE, RESOLVE_MIDDLEWARE];
+var DIRECTIVE_KEY = '@directives';
 
-var GraphQLFactoryMiddleware = function GraphQLFactoryMiddleware(type, resolver, options) {
+/**
+ * Middleware class
+ */
+
+var GraphQLFactoryMiddleware = function GraphQLFactoryMiddleware(type, resolve, options) {
   classCallCheck(this, GraphQLFactoryMiddleware);
 
   var _ref = _.isObject(options) && options !== null ? options : {},
       timeout = _ref.timeout,
       name = _ref.name;
 
-  if (!_.includes(MIDDLEWARE_TYPES, type)) {
+  if (!MiddlewareTypes.hasValue(type)) {
     throw new Error('GraphQLFactoryMiddlewareError: ' + 'Invalid middleware type "' + type + '"');
-  } else if (!_.isFunction(resolver)) {
-    throw new Error('GraphQLFactoryMiddlewareError: ' + 'Resolver must be a function');
+  } else if (!_.isFunction(resolve)) {
+    throw new Error('GraphQLFactoryMiddlewareError: ' + 'resolve must be a function');
   } else if (timeout && (!_.isNumber(timeout) || timeout < 0)) {
     throw new Error('GraphQLFactoryMiddlewareError: ' + 'Timeout must be an integer greater than or equal to 0');
   }
   this.type = type;
-  this.resolver = resolver;
+  this.resolve = resolve;
   this.name = _.isString(name) && name !== '' ? name : null;
-  this.functionName = this.name || _.get(resolver, 'name') || type;
+  this.identifier = this.name || _.get(resolve, 'name') || type;
 
   this.timeout = _.isNumber(timeout) ? Math.floor(timeout) : DEFAULT_MIDDLEWARE_TIMEOUT;
 };
@@ -476,7 +559,7 @@ var GraphQLFactoryMiddleware = function GraphQLFactoryMiddleware(type, resolver,
 
 
 GraphQLFactoryMiddleware.canCast = function (middleware) {
-  return _.isFunction(middleware) || middleware instanceof GraphQLFactoryMiddleware;
+  return _.isFunction(middleware) || middleware instanceof GraphQLFactoryMiddleware || isHash(middleware) && _.has(middleware, 'resolve');
 };
 
 /**
@@ -486,16 +569,41 @@ GraphQLFactoryMiddleware.canCast = function (middleware) {
  * @param options
  * @returns {GraphQLFactoryMiddleware}
  */
-GraphQLFactoryMiddleware.cast = function (middleware, type, options) {
+GraphQLFactoryMiddleware.cast = function (type, middleware, options) {
   if (middleware instanceof GraphQLFactoryMiddleware) {
-    if (_.includes(MIDDLEWARE_TYPES, type)) middleware.type = type;
+    if (MiddlewareTypes.hasValue(type)) middleware.type = type;
     if (isHash(options) && _.keys(options).length) middleware.options = options;
     return middleware;
   } else if (_.isFunction(middleware)) {
     return new GraphQLFactoryMiddleware(type, middleware, options);
+  } else if (isHash(middleware) && _.has(middleware, 'resolve')) {
+    var resolve = middleware.resolve,
+        name = middleware.name,
+        timeout = middleware.timeout;
+
+    return new GraphQLFactoryMiddleware(type, resolve, { name: name, timeout: timeout });
   }
+
   throw new Error('Cannot cast middleware, must be Function or Middleware');
 };
+
+/**
+ * Middleware processing function
+ * @param schema
+ * @param backing
+ * @param definition
+ * @param params
+ */
+function processMiddleware(schema, backing, definition, params) {
+  // const [ source, args, context, info ] = params
+  // const { parentType, fieldName } = info
+  // console.log(parentType._fields[fieldName])
+  // console.log(info.schema._factory)
+
+  // nonsense for temporary lint pass
+  if (schema === 1) return { backing: backing, definition: definition, params: params };
+  throw new Error('AHH!');
+}
 
 /**
  * A backing is an object that stores functions and
@@ -514,22 +622,49 @@ GraphQLFactoryMiddleware.cast = function (middleware, type, options) {
  *       error: Function | Middleware
  *     }
  *   },
- *   '@directives': [
- *     {
- *       name: String,
+ *   '@directives': {
+ *      directiveName: {
  *       before: Function | Middleware,
  *       after: Function | Middleware,
  *       error: Function | Middleware
  *     },
  *     ...
- *   ]
+ *   }
  * }
  *
  */
-var canCast = GraphQLFactoryMiddleware.canCast;
+// middleware helper methods
 var cast = GraphQLFactoryMiddleware.cast;
+var canCast = GraphQLFactoryMiddleware.canCast;
 
-var MIDDLEWARES = [BEFORE_MIDDLEWARE, AFTER_MIDDLEWARE, ERROR_MIDDLEWARE];
+/**
+ * Creates a middleware function from the field resolve
+ * @param resolver
+ * @returns {Function}
+ */
+
+function resolverMiddleware(resolver) {
+  return function (req, res, next) {
+    try {
+      var source = req.source,
+          args = req.args,
+          context = req.context,
+          info = req.info;
+
+      var nonCircularReq = _.omit(req, ['context']);
+      var ctx = _.assign({}, context, { req: nonCircularReq, res: res, next: next });
+      var value = resolver(source, args, ctx, info);
+
+      // return a resolved promise
+      return Promise.resolve(value).then(function (result) {
+        req.result = result;
+        return next();
+      }).catch(next);
+    } catch (err) {
+      return next(err);
+    }
+  };
+}
 
 /**
  * Adds a type function to the backing
@@ -549,109 +684,70 @@ function addTypeFunction(typeName, funcName, func) {
 }
 
 /**
- * Creates a hash of middleware and validates it
- * returnin an error if invalid
- * @param middleware
- * @returns {*}
- */
-function validateMiddleware(middleware) {
-  var mw = {};
-  var error = null;
-
-  if (!isHash(middleware)) {
-    return new Error('Invalid "middleware" argument, must be object ' + 'containing middleware keys "before", "after", and/or "error"');
-  }
-
-  // loop through each possible middleware type and process it
-  _.forEach(middleware, function (value, key) {
-    if (error) return;
-    if (_.includes(MIDDLEWARES, key)) {
-      if (canCast(value)) {
-        mw[key] = cast(value);
-      } else if (stringValue(value)) {
-        mw[key] = value;
-      } else if (value !== undefined) {
-        error = new Error('Invalid "' + key + '" middleware, must be Function or Middleware');
-      }
-    }
-  });
-
-  // if there is an error or no middleware, return an error
-  if (error) {
-    return error;
-  } else if (!_.keys(mw).length) {
-    return new Error('Invalid "middleware" argument, must be object ' + 'containing at least one "before", "after", and/or "error" middleware');
-  }
-
-  return mw;
-}
-
-/**
  * Backing for things that use middleware
  */
+var DirectiveBacking = function () {
+  function DirectiveBacking(backing) {
+    classCallCheck(this, DirectiveBacking);
 
-var MiddlewareBacking = function () {
-  function MiddlewareBacking(backing, isDirective) {
-    classCallCheck(this, MiddlewareBacking);
-
-    this.backing = isHash(backing) ? backing : {};
-    this._isDirective = isDirective;
+    this.backing = backing;
   }
 
   /**
-   * Adds a middleware config
-   * @param typeName
-   * @param fieldName
+   * Sets before middleware backing on directive
+   * @param name
    * @param middleware
-   * @returns {MiddlewareBacking}
    */
 
 
-  createClass(MiddlewareBacking, [{
-    key: 'middleware',
-    value: function middleware(typeName, fieldName, _middleware) {
-      var _this = this;
+  createClass(DirectiveBacking, [{
+    key: 'before',
+    value: function before(name, middleware) {
+      var mw = cast(middleware);
+      var path = [DIRECTIVE_KEY, name, MiddlewareTypes.BEFORE];
+      _.set(this.backing, path, mw);
+    }
 
-      var _ref = this._isDirective ? [fieldName, null] : [_middleware, fieldName],
-          _ref2 = slicedToArray(_ref, 2),
-          _mw = _ref2[0],
-          _fieldName = _ref2[1];
+    /**
+     * Sets after middleware backing on directive
+     * @param name
+     * @param middleware
+     */
 
-      // validate args
+  }, {
+    key: 'after',
+    value: function after(name, middleware) {
+      var mw = cast(middleware);
+      var path = [DIRECTIVE_KEY, name, MiddlewareTypes.AFTER];
+      _.set(this.backing, path, mw);
+    }
 
+    /**
+     * Sets error middleware backing on directive
+     * @param name
+     * @param middleware
+     */
 
-      if (!stringValue(typeName)) {
-        throw new Error('Invalid "typeName" argument, must be String');
-      } else if (!this._isDirective && !stringValue(_fieldName)) {
-        throw new Error('Invalid "fieldName" argument, must be String');
-      }
-
-      // validate the middleware
-      var mw = validateMiddleware(_mw);
-      if (mw instanceof Error) throw mw;
-
-      // if directive add it to the list
-      // otherwise add it to the field
-      if (this._isDirective) {
-        mw.name = typeName;
-        this.backing['@directives'] = _.union(this.backing['@directives'], [mw]);
-      } else {
-        _.forEach(mw, function (value, type) {
-          _.set(_this.backing, [typeName, _fieldName, type], value);
-        });
-      }
-      return this;
+  }, {
+    key: 'error',
+    value: function error(name, middleware) {
+      var mw = cast(middleware);
+      var path = [DIRECTIVE_KEY, name, MiddlewareTypes.ERROR];
+      _.set(this.backing, path, mw);
     }
   }]);
-  return MiddlewareBacking;
+  return DirectiveBacking;
 }();
 
-var ResolveBacking = function (_MiddlewareBacking) {
-  inherits(ResolveBacking, _MiddlewareBacking);
+/**
+ * Backing for things that have resolve functions
+ */
 
+var ResolveBacking = function () {
   function ResolveBacking(backing) {
     classCallCheck(this, ResolveBacking);
-    return possibleConstructorReturn(this, (ResolveBacking.__proto__ || Object.getPrototypeOf(ResolveBacking)).call(this, backing, false));
+
+    this.backing = backing;
   }
 
   /**
@@ -678,7 +774,7 @@ var ResolveBacking = function (_MiddlewareBacking) {
     }
   }]);
   return ResolveBacking;
-}(MiddlewareBacking);
+}();
 
 var ScalarBacking = function () {
   function ScalarBacking(backing) {
@@ -813,20 +909,6 @@ var UnionBacking = function () {
 }();
 
 /**
- * Builds a Directive backing
- */
-var DirectiveBacking = function (_MiddlewareBacking2) {
-  inherits(DirectiveBacking, _MiddlewareBacking2);
-
-  function DirectiveBacking(backing) {
-    classCallCheck(this, DirectiveBacking);
-    return possibleConstructorReturn(this, (DirectiveBacking.__proto__ || Object.getPrototypeOf(DirectiveBacking)).call(this, backing, true));
-  }
-
-  return DirectiveBacking;
-}(MiddlewareBacking);
-
-/**
  * Entry point for building a backing
  */
 
@@ -849,6 +931,120 @@ var GraphQLFactoryBacking = function () {
       var _backing = backing instanceof GraphQLFactoryBacking ? backing.backing : backing;
       _.assign(this.backing, _backing);
       return this;
+    }
+
+    /**
+     * Hydrates the schema with the current backing which contains
+     * things that cannot be expressed in the schema language
+     * @param schema
+     * @param definition
+     * @returns {*}
+     */
+
+  }, {
+    key: 'hydrateSchema',
+    value: function hydrateSchema(schema, definition) {
+      var _this3 = this;
+
+      var err = null;
+      var backing = this;
+
+      // get the type backing
+      var backingTypes = _.omit(this.backing, [DIRECTIVE_KEY]);
+
+      // set the functions from the function map
+      _.forEach(backingTypes, function (typeBacking, typeName) {
+        if (err) return false;
+
+        // get the type and validate that the type backing is a hash
+        var type = _.get(schema, ['_typeMap', typeName]);
+        if (!type || !isHash(typeBacking) || !_.keys(typeBacking).length) {
+          return true;
+        }
+
+        // hydrate the types
+        _.forEach(typeBacking, function (value, key) {
+          if (err) return false;
+
+          // catch any errors. these will most likely be function lookup errors
+          try {
+            if (key.match(/^_/)) {
+              var path = [key.replace(/^_/, '')];
+              var infoPath = typeName + '.' + path[0];
+              var func = definition.lookupFunction(value, infoPath);
+
+              // wrap the function and add a context
+              // then hydrate the type
+              _.set(type, path, function () {
+                var context = _.assign({}, definition.context);
+
+                for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+                  args[_key] = arguments[_key];
+                }
+
+                return func.apply(context, args);
+              });
+            } else if (_.isString(value) || canCast(value)) {
+              var resolvePath = ['_fields', key, 'resolve'];
+              var factoryPath = ['_fields', key, '_factory', 'resolve'];
+              var _infoPath = typeName + '.' + key + '.resolve';
+              var resolver = value instanceof GraphQLFactoryMiddleware ? value : _.isString(value) || _.isFunction(value) ? resolverMiddleware(definition.lookupFunction(value, _infoPath)) : value;
+
+              // cast the middleware
+              var resolveMiddleware = cast(MiddlewareTypes.RESOLVE, resolver);
+
+              // set the resolve middleware on the factory extension
+              _.set(type, factoryPath, resolveMiddleware);
+
+              // finally hydrate the resolve with the proxy
+              _.set(type, resolvePath, function resolve() {
+                for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+                  args[_key2] = arguments[_key2];
+                }
+
+                return processMiddleware(schema, backing, definition, args);
+              });
+            } else {
+              throw new Error('Invalid Backing at "' + typeName + '.' + key + '", should be ' + 'Function or Object but found ' + (typeof value === 'undefined' ? 'undefined' : _typeof(value)));
+            }
+          } catch (backingError) {
+            err = backingError;
+            return false;
+          }
+        });
+      });
+
+      // hydrate/extend the directives
+      _.forEach(schema._directives, function (directive) {
+        var directivePath = [DIRECTIVE_KEY, directive.name];
+
+        var _$get = _.get(_this3.backing, directivePath, {}),
+            _before = _$get._before,
+            _after = _$get._after,
+            _error = _$get._error;
+
+        if (_before) directive._before = _before;
+        if (_after) directive._after = _after;
+        if (_error) directive._error = _error;
+      });
+
+      // check for merge errors
+      if (err) throw err;
+
+      // otherwise return the hydrated schema
+      return schema;
+    }
+
+    /**
+     * Starts a new Directive backing
+     * @returns {DirectiveBacking}
+     * @constructor
+     */
+
+  }, {
+    key: 'Directive',
+    value: function Directive(name, directive) {
+      _.set(this.backing, [DIRECTIVE_KEY, name], directive);
     }
 
     /**
@@ -898,45 +1094,84 @@ var GraphQLFactoryBacking = function () {
     get: function get$$1() {
       return new UnionBacking(this.backing);
     }
-
-    /**
-     * Starts a new Directive backing
-     * @returns {DirectiveBacking}
-     * @constructor
-     */
-
-  }, {
-    key: 'Directive',
-    get: function get$$1() {
-      return new DirectiveBacking(this.backing);
-    }
   }]);
   return GraphQLFactoryBacking;
 }();
 
-var OPERATIONS = ['query', 'mutation', 'subscription'];
+/**
+ * Creates a new GraphQLDirective and adds
+ * middleware properties to it before returning
+ */
+var cast$1 = GraphQLFactoryMiddleware.cast;
+
+var TYPES = MiddlewareTypes._values.filter(function (value) {
+  return value !== MiddlewareTypes.RESOLVE;
+});
+
+var GraphQLFactoryDirective = function GraphQLFactoryDirective(config) {
+  classCallCheck(this, GraphQLFactoryDirective);
+
+  // create a directive
+  var directive = new graphql.GraphQLDirective(config);
+
+  // loop through the types and try to add the directive
+  // if it is defined
+  var _iteratorNormalCompletion = true;
+  var _didIteratorError = false;
+  var _iteratorError = undefined;
+
+  try {
+    for (var _iterator = TYPES[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+      var type = _step.value;
+
+      var mw = config[type];
+      if (mw) {
+        directive['_' + type] = cast$1(type, mw);
+      }
+    }
+
+    // return the modified directive
+  } catch (err) {
+    _didIteratorError = true;
+    _iteratorError = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion && _iterator.return) {
+        _iterator.return();
+      }
+    } finally {
+      if (_didIteratorError) {
+        throw _iteratorError;
+      }
+    }
+  }
+
+  return directive;
+};
+
+var buildSchema$1 = graphql.buildSchema;
 
 var GraphQLFactorySchema = function () {
-  function GraphQLFactorySchema(definition, nameDefault) {
+  function GraphQLFactorySchema(schemaDefinition, nameDefault) {
     classCallCheck(this, GraphQLFactorySchema);
-    var name = definition.name,
-        query = definition.query,
-        mutation = definition.mutation,
-        subscription = definition.subscription,
-        description = definition.description,
-        directives = definition.directives;
+    var name = schemaDefinition.name,
+        query = schemaDefinition.query,
+        mutation = schemaDefinition.mutation,
+        subscription = schemaDefinition.subscription,
+        description = schemaDefinition.description,
+        directives = schemaDefinition.directives;
 
 
-    this._definition = definition;
+    this._definition = schemaDefinition;
     this._description = description;
     this._rootTypes = {};
     this._backing = new GraphQLFactoryBacking(); // local backing
-    this._directives = directives;
+    this._directives = _.isArray(directives) ? directives : [];
     this._types = {};
     this.name = name || nameDefault;
-    this.query = this._addRootType('query', query);
-    this.mutation = this._addRootType('mutation', mutation);
-    this.subscription = this._addRootType('subscription', subscription);
+    this.query = this._addRootType(SchemaOperations.QUERY, query);
+    this.mutation = this._addRootType(SchemaOperations.MUTATION, mutation);
+    this.subscription = this._addRootType(SchemaOperations.SUBSCRIPTION, subscription);
   }
 
   /**
@@ -965,118 +1200,6 @@ var GraphQLFactorySchema = function () {
     }
 
     /**
-     * Merges the backing into the schema
-     * @param definition
-     * @param schema
-     * @private
-     */
-
-  }, {
-    key: '_mergeBacking',
-    value: function _mergeBacking(definition, schema) {
-      var _this = this;
-
-      var backing = new GraphQLFactoryBacking().merge(definition.backing).merge(this._backing);
-
-      // get the non directive backing
-      var backingTypes = _.omit(backing.backing, ['@directives']);
-
-      // set the functions from the function map
-      _.forEach(backingTypes, function (map, typeName) {
-        var type = _.get(schema, ['_typeMap', typeName]);
-        if (!isHash(map) || !type) return true;
-
-        // apply the functions
-        _.forEach(map, function (value, key) {
-          var path = [];
-          var func = null;
-          var wrapMethod = '_bindFunction';
-          var infoPath = '';
-
-          // get the function/ref and path
-          if (key.match(/^_/)) {
-            func = value;
-            path = [key.replace(/^_/, '')];
-            infoPath = typeName + '.' + path[0];
-          } else {
-            func = _.get(value, 'resolve');
-            path = ['_fields', key, 'resolve'];
-            wrapMethod = '_wrapResolve';
-            infoPath = typeName + '.' + key + '.resolve';
-          }
-
-          // set the method
-          _.set(type, path, _this[wrapMethod](func, definition, infoPath));
-        });
-      });
-    }
-
-    /**
-     * Wraps a resolver function in middleware
-     * @param fn
-     * @param definition
-     * @param infoPath
-     * @returns {Function}
-     * @private
-     */
-
-  }, {
-    key: '_wrapResolve',
-    value: function _wrapResolve(fn, definition, infoPath) {
-      return function (source, args, context, info) {
-        // get the function
-        var func = _.isString(fn) ? _.get(definition.functions, [fn]) : fn;
-
-        // if not a function move on
-        if (!_.isFunction(func)) {
-          throw new Error('Invalid or missing ' + 'resolve for "' + infoPath + '"');
-        }
-        return func(source, args, context, info);
-      };
-    }
-
-    /**
-     * Wraps a regular function
-     * @param fn
-     * @param definition
-     * @param infoPath
-     * @returns {Function}
-     * @private
-     */
-
-  }, {
-    key: '_bindFunction',
-    value: function _bindFunction(fn, definition, infoPath) {
-      return function () {
-        // get the function
-        var func = _.isString(fn) ? _.get(definition.functions, [fn]) : fn;
-
-        // if not a function move on
-        if (!_.isFunction(func)) {
-          throw new Error('Invalid or missing ' + 'function for "' + infoPath + '"');
-        }
-
-        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-          args[_key] = arguments[_key];
-        }
-
-        return func.apply({}, [args]);
-      };
-    }
-
-    /**
-     * Add types to the schema
-     * @param types
-     */
-
-  }, {
-    key: 'addTypes',
-    value: function addTypes(types) {
-      if (isHash(types)) _.assign(this._types, types);
-      return this;
-    }
-
-    /**
      * Creates a complete schema definition
      * @param types
      * @returns {string|*}
@@ -1084,9 +1207,34 @@ var GraphQLFactorySchema = function () {
 
   }, {
     key: 'export',
-    value: function _export(types) {
-      this.addTypes(types);
-      return this.document;
+    value: function _export(definition) {
+      if (!isHash(definition)) throw new Error('ExportError: Invalid definition');
+
+      // deconstruct the definition
+      var _types = definition.types,
+          _directives = definition.directives,
+          _backing = definition.backing;
+
+      // create a new backing and merge the existing
+
+      var backing = new GraphQLFactoryBacking().merge(_backing).merge(this._backing);
+
+      // merge the types
+      var types = _.assign({}, _types, this._rootTypes);
+
+      // reduce the directives to the required ones
+      var directives = _.reduce(_.uniq(this._directives), function (directiveList, directive) {
+        if (_.has(_directives, [directive])) {
+          directiveList.push(_directives[directive]);
+        }
+        return directiveList;
+      }, []);
+
+      // create the document
+      var document = _.values(types).concat(directives).concat(this.definition).join('\n');
+
+      // "export" the document and backing
+      return { document: document, backing: backing };
     }
 
     /**
@@ -1097,27 +1245,19 @@ var GraphQLFactorySchema = function () {
   }, {
     key: 'build',
     value: function build(definition) {
-      // TODO: determine a way to merge in the directives in a schema
-      var types = _.get(definition, 'types', {});
-      var document = this.export(types);
-      var schema = graphql.buildSchema(document);
-      this._mergeBacking(definition, schema);
-      return schema;
-    }
+      // export the document
+      var _export2 = this.export(definition),
+          document = _export2.document,
+          backing = _export2.backing;
 
-    /**
-     * Create a complete .graphql document
-     * @returns {string|*}
-     */
+      // create a schema object from the document
 
-  }, {
-    key: 'document',
-    get: function get$$1() {
-      // join the type map with the schema definition
-      var _types = _.assign({}, this._types, this._rootTypes);
-      return _.map(_types, function (value) {
-        return value;
-      }).concat(this.definition).join('\n');
+
+      var schema = buildSchema$1(document);
+
+      // merge the definition backing with the local
+      // and hydrate the schema with it
+      return backing.hydrateSchema(schema, definition);
     }
 
     /**
@@ -1128,12 +1268,12 @@ var GraphQLFactorySchema = function () {
   }, {
     key: 'definition',
     get: function get$$1() {
-      var _this2 = this;
+      var _this = this;
 
       var _directives = getDirectives(this._definition);
-      var ops = _.reduce(OPERATIONS, function (accum, operation) {
-        if (_this2[operation]) {
-          accum.push('  ' + operation + ': ' + _this2[operation]);
+      var ops = _.reduce(SchemaOperations._values, function (accum, operation) {
+        if (_this[operation]) {
+          accum.push('  ' + operation + ': ' + _this[operation]);
         }
         return accum;
       }, []);
@@ -1212,14 +1352,30 @@ var GraphQLFactoryDefinitionTranslator = function () {
       var name = definition.name,
           description = definition.description,
           locations = definition.locations,
-          args = definition.args;
+          args = definition.args,
+          before = definition.before,
+          after = definition.after,
+          error = definition.error;
 
       var _name = name || directiveName;
       var _args = this._arguments(args, 1);
       var _locations = _.filter(locations, _.isString);
       var _loc = _locations.length ? _locations.join(' | ') : _.map(graphql.DirectiveLocation).join(' | ');
+
+      // add the custom object as a directive backing
+      this.definition.backing.Directive(_name, new GraphQLFactoryDirective({
+        name: _name,
+        description: description,
+        locations: locations || _.values(graphql.DirectiveLocation),
+        before: before,
+        after: after,
+        error: error
+      }));
+
+      // build the directive string
       var directive = 'directive @' + _name + _args + ' on ' + _loc + '\n';
 
+      // return the schema definition
       return _.isString(description) ? '# ' + description + '\n' + directive : directive;
     }
 
@@ -1375,20 +1531,12 @@ var GraphQLFactoryDefinitionTranslator = function () {
             resolve = definition.resolve,
             deprecationReason = definition.deprecationReason,
             description = definition.description,
-            defaultValue = definition.defaultValue,
-            before = definition.before,
-            after = definition.after,
-            error = definition.error;
+            defaultValue = definition.defaultValue;
 
         // add resolve backing
 
         if (_.isFunction(resolve) || stringValue(resolve)) {
           _this.definition.backing[_parentType].resolve(parent, name, resolve);
-        }
-
-        // add middleware backing
-        if (before || after || error) {
-          _this.definition.backing[_parentType].middleware(parent, name, { before: before, after: after, error: error });
         }
 
         var _directives = getDirectives(definition, deprecationReason);
@@ -1519,7 +1667,7 @@ var GraphQLFactoryDefinitionTranslator = function () {
   return GraphQLFactoryDefinitionTranslator;
 }();
 
-var CAN_MERGE = ['context', 'types', 'schemas', 'functions', 'directives', 'warnings', 'before', 'after', 'error'];
+var CAN_MERGE = ['context', 'types', 'schemas', 'functions', 'plugins', 'directives', 'warnings'];
 
 var GraphQLFactoryDefinition = function () {
   function GraphQLFactoryDefinition(factory) {
@@ -1531,12 +1679,10 @@ var GraphQLFactoryDefinition = function () {
     this.types = {};
     this.schemas = {};
     this.functions = {};
-    this.directives = [];
+    this.plugins = {};
+    this.directives = {};
     this.error = null;
     this.warnings = [];
-    this.before = [];
-    this.after = [];
-    this.error = [];
   }
 
   /**
@@ -1548,27 +1694,29 @@ var GraphQLFactoryDefinition = function () {
   createClass(GraphQLFactoryDefinition, [{
     key: 'use',
     value: function use() {
-      for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-        args[_key] = arguments[_key];
-      }
-
-      if (!args.length) throw new Error('use requires at least 1 argument');
-
-      switch (constructorName(args[0])) {
+      if (!arguments.length) throw new Error('use requires at least 1 argument');
+      var arg0 = arguments.length <= 0 ? undefined : arguments[0];
+      switch (constructorName(arg0)) {
         case 'String':
-          this._processDefinition.apply(this, args);
+          this._processDefinition.apply(this, arguments);
           break;
 
         case 'Function':
-          this._processFunction.apply(this, args);
+          this._processFunction.apply(this, arguments);
           break;
 
         case 'Object':
         case 'GraphQLFactoryDefinition':
-          this._processFactoryDefinition.apply(this, args);
+          this._processFactoryDefinition.apply(this, arguments);
           break;
 
         default:
+          // check for plugin
+          if (arg0 instanceof Plugin || _.isFunction(_.get(arg0, 'install'))) {
+            this._processPlugin.apply(this, arguments);
+          } else {
+            throw new Error('Unable to process use value');
+          }
           break;
       }
 
@@ -1637,6 +1785,24 @@ var GraphQLFactoryDefinition = function () {
     }
 
     /**
+     * Looks up a function and throws an error if not found or the
+     * value passed was not a function
+     * @param fn
+     * @returns {*}
+     */
+
+  }, {
+    key: 'lookupFunction',
+    value: function lookupFunction(fn, infoPath) {
+      var func = _.isString(fn) ? _.get(this, ['functions', fn]) : fn;
+      if (!_.isFunction(func)) {
+        var infoMsg = infoPath ? ' at ' + infoPath : '';
+        throw new Error('Failed to lookup function "' + fn + '"' + infoMsg);
+      }
+      return func;
+    }
+
+    /**
      * Adds a kind to the definition if it has not already been added
      * @param kind
      * @param name
@@ -1661,6 +1827,26 @@ var GraphQLFactoryDefinition = function () {
     }
 
     /**
+     * Adds a plugin to the
+     * @param plugin
+     * @private
+     */
+
+  }, {
+    key: '_processPlugin',
+    value: function _processPlugin(plugin) {
+      var name = plugin.name,
+          install = plugin.install;
+
+      if (name && !_.has(this.plugins, [name])) {
+        this.plugins[name] = plugin;
+        this.merge(plugin);
+        this._processFactoryDefinition(plugin);
+        if (_.isFunction(install)) install(this.factory);
+      }
+    }
+
+    /**
      * Adds a function to the function registry
      * @param args
      * @private
@@ -1669,8 +1855,8 @@ var GraphQLFactoryDefinition = function () {
   }, {
     key: '_processFunction',
     value: function _processFunction() {
-      for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-        args[_key2] = arguments[_key2];
+      for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
       }
 
       var fn = args[0],
@@ -1685,11 +1871,6 @@ var GraphQLFactoryDefinition = function () {
       // allow custom name
       var _name = _.isString(name) ? name : fn.name;
 
-      // ensure the name is valid
-      if (_.includes(INVALID_FN_NAMES, _name)) {
-        throw new Error('function name is not allowed or missing');
-      }
-
       // add the function
       this.addKind('Function', _name, fn);
     }
@@ -1702,8 +1883,8 @@ var GraphQLFactoryDefinition = function () {
 
   }, {
     key: '_processFactoryDefinition',
-    value: function _processFactoryDefinition() {
-      this.merge(new GraphQLFactoryDefinitionTranslator(this.factory).translate(arguments.length <= 0 ? undefined : arguments[0]));
+    value: function _processFactoryDefinition(definition) {
+      this.merge(new GraphQLFactoryDefinitionTranslator(this.factory).translate(definition));
     }
 
     /**
@@ -1715,8 +1896,8 @@ var GraphQLFactoryDefinition = function () {
   }, {
     key: '_processDefinition',
     value: function _processDefinition() {
-      for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-        args[_key3] = arguments[_key3];
+      for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+        args[_key2] = arguments[_key2];
       }
 
       var source = args[0],

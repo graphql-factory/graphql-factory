@@ -2,15 +2,8 @@ import _ from 'lodash'
 import Plugin from 'graphql-factory-plugin'
 import Translator from '../translate/language'
 import Backing from '../types/backing'
-import Middleware from '../types/middleware'
 import { parse, print, Kind } from 'graphql'
 import { constructorName, definitionKey, isHash } from '../common/util'
-import {
-  INVALID_FN_NAMES,
-  ERROR_MIDDLEWARE,
-  AFTER_MIDDLEWARE,
-  BEFORE_MIDDLEWARE
-} from '../common/const'
 
 export const CAN_MERGE = [
   'context',
@@ -19,10 +12,7 @@ export const CAN_MERGE = [
   'functions',
   'plugins',
   'directives',
-  'warnings',
-  'before',
-  'after',
-  'error'
+  'warnings'
 ]
 
 export default class GraphQLFactoryDefinition {
@@ -34,12 +24,9 @@ export default class GraphQLFactoryDefinition {
     this.schemas = {}
     this.functions = {}
     this.plugins = {}
-    this.directives = []
+    this.directives = {}
     this.error = null
     this.warnings = []
-    this.before = []
-    this.after = []
-    this.error = []
   }
 
   /**
@@ -78,48 +65,6 @@ export default class GraphQLFactoryDefinition {
       throw this.error
     }
 
-    return this
-  }
-
-  /**
-   * Adds before middleware
-   * @param middleware
-   * @param options
-   * @returns {GraphQLFactoryDefinition}
-   */
-  before (middleware, options) {
-    const mw = middleware instanceof Middleware
-      ? middleware
-      : new Middleware(BEFORE_MIDDLEWARE, middleware, options)
-    this.before.push(mw)
-    return this
-  }
-
-  /**
-   * Adds after middleware
-   * @param middleware
-   * @param options
-   * @returns {GraphQLFactoryDefinition}
-   */
-  after (middleware, options) {
-    const mw = middleware instanceof Middleware
-      ? middleware
-      : new Middleware(AFTER_MIDDLEWARE, middleware, options)
-    this.after.push(mw)
-    return this
-  }
-
-  /**
-   * Adds error middleware
-   * @param middleware
-   * @param options
-   * @returns {GraphQLFactoryDefinition}
-   */
-  error (middleware, options) {
-    const mw = middleware instanceof Middleware
-      ? middleware
-      : new Middleware(ERROR_MIDDLEWARE, middleware, options)
-    this.error.push(mw)
     return this
   }
 
@@ -168,6 +113,26 @@ export default class GraphQLFactoryDefinition {
   }
 
   /**
+   * Looks up a function and throws an error if not found or the
+   * value passed was not a function
+   * @param fn
+   * @returns {*}
+   */
+  lookupFunction (fn, infoPath) {
+    const func = _.isString(fn)
+      ? _.get(this, [ 'functions', fn ])
+      : fn
+    if (!_.isFunction(func)) {
+      const infoMsg = infoPath
+        ? ' at ' + infoPath
+        : ''
+      throw new Error('Failed to lookup function "'
+        + fn + '"' + infoMsg)
+    }
+    return func
+  }
+
+  /**
    * Adds a kind to the definition if it has not already been added
    * @param kind
    * @param name
@@ -196,7 +161,7 @@ export default class GraphQLFactoryDefinition {
    */
   _processPlugin (plugin) {
     const { name, install } = plugin
-    if (name && !_.has(this.plugins, [name])) {
+    if (name && !_.has(this.plugins, [ name ])) {
       this.plugins[name] = plugin
       this.merge(plugin)
       this._processFactoryDefinition(plugin)
@@ -221,11 +186,6 @@ export default class GraphQLFactoryDefinition {
     const _name = _.isString(name)
       ? name
       : fn.name
-
-    // ensure the name is valid
-    if (_.includes(INVALID_FN_NAMES, _name)) {
-      throw new Error('function name is not allowed or missing')
-    }
 
     // add the function
     this.addKind('Function', _name, fn)
