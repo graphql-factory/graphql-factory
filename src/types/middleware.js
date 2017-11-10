@@ -1,5 +1,5 @@
-import _ from 'lodash'
-import {isHash} from '../common/util'
+import _ from '../common/lodash.custom'
+import { isHash, stringValue } from '../common/util'
 import {
   DEFAULT_MIDDLEWARE_TIMEOUT,
   MiddlewareTypes
@@ -10,7 +10,7 @@ import {
  */
 class GraphQLFactoryMiddleware {
   constructor (type, resolve, options) {
-    const { timeout, name } = _.isObject(options) && options !== null
+    const { timeout, name } = isHash(options)
       ? options
       : {}
 
@@ -26,7 +26,7 @@ class GraphQLFactoryMiddleware {
     }
     this.type = type
     this.resolve = resolve
-    this.name = _.isString(name) && name !== ''
+    this.name = stringValue(name)
       ? name
       : null
     this.identifier = this.name || _.get(resolve, 'name') || type

@@ -1,7 +1,7 @@
-import _ from 'lodash'
+import _ from '../common/lodash.custom'
 import Plugin from 'graphql-factory-plugin'
 import Translator from '../translate/language'
-import Backing from '../types/backing'
+import Backing from '../generate/backing'
 import { parse, print, Kind } from 'graphql'
 import { constructorName, definitionKey, isHash } from '../common/util'
 

@@ -5,6 +5,7 @@ import Definition from '../definition/definition'
 import EventEmitter from 'events'
 import { graphql, DirectiveLocation } from 'graphql'
 import * as tools from '../common/tools'
+import _ from 'lodash'
 
 const factory = new EventEmitter()
 
@@ -143,21 +144,22 @@ const userDef = {
       name: 'model',
       description: 'a model directive',
       locations: [
-        DirectiveLocation.FIELD
+        DirectiveLocation.FIELD,
+        DirectiveLocation.SCHEMA
       ],
       args: {
-        ok: {
-          type: 'String',
-          defaultValue: 'yes'
+        collection: {
+          type: 'String'
         }
       }
     },
     log: {
       name: 'log',
       description: 'simple logger on middleware',
-      locations: [
-        DirectiveLocation.FIELD
-      ],
+      locations: _.values(DirectiveLocation),
+      args: {
+        at: 'String'
+      },
       before (req, res, next) {
         const { info } = req
         console.log('log middleware', info)
@@ -167,21 +169,23 @@ const userDef = {
   },
   types: {
     List: {
+      '@log': { at: 'List object def' },
       fields: {
         id: 'ID!',
         name: 'String!'
       }
     },
     User: {
+      '@log': { at: 'User object def' },
       fields: {
         id: 'ID!',
         name: 'String!',
         lists: {
+          '@log': { at: 'user lists field' },
           type: '[List]',
           args: {
             a: {
-              type: 'String',
-              '@argDirective': ''
+              type: 'String'
             }
           },
           resolve (source, args, context, info) {
@@ -190,39 +194,35 @@ const userDef = {
               { id: 'list-1', name: 'Shopping' },
               { id: 'list-2', name: 'Christmas' }
             ]
-          },
-          '@listsDirective': {
-            value: true
           }
         }
-      },
-      '@userDirective': ''
+      }
     }
   },
   schemas: {
     Users: {
-      directives: ['log'],
+      '@log': { at: 'Users Schema' },
+      directives: ['log', 'model'],
       query: {
+        '@model': true,
+        '@log': { at: 'rootQuery'},
         fields: {
           readUser: {
+            '@log': { at: 'readUserField' },
             type: 'User',
+            args: {
+              userFilter: {
+                type: 'String',
+                '@log': { at: 'userFilter' }
+              }
+            },
             resolve (source, args, context, info) {
               // console.log({ parentType: info.parentType })
               return {
                 id: '1',
                 name: 'John'
               }
-            },
-            '@readUserDirective': ''
-          }
-        }
-      },
-      '@schemaDirective': {
-        stuff: 'is cool',
-        not: {
-          arr: [ 1, true ],
-          to: {
-            lower: 1
+            }
           }
         }
       }
@@ -235,11 +235,11 @@ describe('definition tests', () => {
     const def = new Definition(factory)
       .use(userDef)
 
-    // console.log(def.directives)
+    // console.log(def.schemas.Users.export(def).document)
 
     const reg = def.build()
 
-    console.log(reg.Users)
+    // console.log(reg.Users)
 
     return graphql(reg.Users, `
       query Query {
@@ -255,7 +255,7 @@ describe('definition tests', () => {
     `)
       .then(result => {
         // console.log(JSON.stringify(result, null, '  '))
-        console.log(result)
+        // console.log(result)
         return result
       })
 

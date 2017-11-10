@@ -10,7 +10,7 @@
   },
   "options": {
     "mocha": "--check-leaks --full-trace src/**/__tests__/**/*-test.js",
-    "lodash": "assign,capitalize,castArray,first,forEach,get,has,identity,includes,isArray,isEqual,isFunction,isNumber,isObject,isString,keys,map,mapValues,merge,noop,omit,pick,random,reduce,set,union,unset,without"
+    "lodash": "assign,capitalize,castArray,filter,find,forEach,get,has,identity,includes,isArray,isFunction,isNumber,isObject,isString,keys,map,noop,omit,reduce,set,union,uniq,values,without"
   },
   "scripts": {
     "lint": "eslint src",

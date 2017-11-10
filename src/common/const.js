@@ -1,4 +1,5 @@
-import _ from 'lodash'
+import _ from './lodash.custom'
+import { DirectiveLocation, Kind } from 'graphql'
 /**
  * List of invalid function names to register
  * Invalid because they can be the field name and prone to duplicate
@@ -13,7 +14,7 @@ const ENUM_RESERVED = [ 'hasKey', 'hasValue', '_keys', '_values' ]
  * also provides a hasValue method for checking existence of value
  */
 export class Enum {
-  constructor (config) {
+  constructor (config, options) {
     let error = null
     this._keys = []
     this._values = []
@@ -48,7 +49,7 @@ export class Enum {
       if (this.hasKey(key)) {
         error = new Error(`NewEnumError: Duplicate Enum key "${key}"`)
         return false
-      } else if (this.hasValue(value)) {
+      } else if (this.hasValue(value) && !_.get(options, 'allowDuplicates')) {
         error = new Error(`NewEnumError: Duplicate Enum value ${value}`)
         return false
       } else if (ENUM_RESERVED.indexOf(key) !== -1) {
@@ -115,8 +116,55 @@ export const EventTypes = new Enum({
   TRACE: 'trace'
 })
 
+// Directive locations map to Kinds
+export const LocationKind = new Enum({
+  // Operations
+  [DirectiveLocation.QUERY]: Kind.OPERATION_DEFINITION,
+  [DirectiveLocation.MUTATION]: Kind.OPERATION_DEFINITION,
+  [DirectiveLocation.SUBSCRIPTION]: Kind.OPERATION_DEFINITION,
+  [DirectiveLocation.FIELD]: Kind.FIELD,
+  [DirectiveLocation.FRAGMENT_DEFINITION]: Kind.FRAGMENT_DEFINITION,
+  [DirectiveLocation.FRAGMENT_SPREAD]: Kind.FRAGMENT_SPREAD,
+  [DirectiveLocation.INLINE_FRAGMENT]: Kind.INLINE_FRAGMENT,
+
+  // Schema Definitions
+  [DirectiveLocation.SCHEMA]: Kind.SCHEMA_DEFINITION,
+  [DirectiveLocation.SCALAR]: Kind.SCALAR_TYPE_DEFINITION,
+  [DirectiveLocation.OBJECT]: Kind.OBJECT_TYPE_DEFINITION,
+  [DirectiveLocation.FIELD_DEFINITION]: Kind.FIELD_DEFINITION,
+  [DirectiveLocation.ARGUMENT_DEFINITION]: Kind.ARGUMENT, // TODO:
+  [DirectiveLocation.INTERFACE]: Kind.INTERFACE_TYPE_DEFINITION,
+  [DirectiveLocation.UNION]: Kind.UNION_TYPE_DEFINITION,
+  [DirectiveLocation.ENUM]: Kind.ENUM_TYPE_DEFINITION,
+  [DirectiveLocation.ENUM_VALUE]: Kind.ENUM_VALUE_DEFINITION,
+  [DirectiveLocation.INPUT_OBJECT]: Kind.INPUT_OBJECT_TYPE_DEFINITION,
+  [DirectiveLocation.INPUT_FIELD_DEFINITION]: Kind.INPUT_VALUE_DEFINITION,
+}, { allowDuplicates: true })
+
+
+export const KindLocation = new Enum({
+  // Operations
+  [Kind.OPERATION_DEFINITION]: DirectiveLocation.QUERY,
+  [Kind.OPERATION_DEFINITION]: DirectiveLocation.MUTATION,
+  [Kind.OPERATION_DEFINITION]: DirectiveLocation.SUBSCRIPTION,
+  [Kind.FIELD]: DirectiveLocation.FIELD,
+  [Kind.FRAGMENT_DEFINITION]: DirectiveLocation.FRAGMENT_DEFINITION,
+  [Kind.FRAGMENT_SPREAD]: DirectiveLocation.FRAGMENT_SPREAD,
+  [Kind.INLINE_FRAGMENT]: DirectiveLocation.INLINE_FRAGMENT,
+
+  // Schema Definitions
+  [Kind.SCHEMA_DEFINITION]: DirectiveLocation.SCHEMA,
+  [Kind.SCALAR_TYPE_DEFINITION]: DirectiveLocation.SCALAR,
+  [Kind.OBJECT_TYPE_DEFINITION]: DirectiveLocation.OBJECT,
+  [Kind.FIELD_DEFINITION]: DirectiveLocation.FIELD_DEFINITION,
+  [Kind.ARGUMENT]: DirectiveLocation.ARGUMENT_DEFINITION,
+  [Kind.INTERFACE_TYPE_DEFINITION]: DirectiveLocation.INTERFACE,
+  [Kind.UNION_TYPE_DEFINITION]: DirectiveLocation.UNION,
+  [Kind.ENUM_TYPE_DEFINITION]: DirectiveLocation.ENUM,
+  [Kind.ENUM_VALUE_DEFINITION]: DirectiveLocation.ENUM_VALUE,
+  [Kind.INPUT_OBJECT_TYPE_DEFINITION]: DirectiveLocation.INPUT_OBJECT,
+  [Kind.INPUT_VALUE_DEFINITION]: DirectiveLocation.INPUT_FIELD_DEFINITION,
+}, { allowDuplicates: true })
 
 // option defaults and constants
 export const DEFAULT_MIDDLEWARE_TIMEOUT = 300000 // 5 minutes
-export const RANDOM_MAX = 1000000000000000
-export const DIRECTIVE_KEY = '@directives'

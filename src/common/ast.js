@@ -51,11 +51,11 @@ export function parseAST (nodes) {
  * @param kind
  * @param type
  */
-export function typeName ({ kind, type, name }) {
+export function baseName ({ kind, type, name }) {
   switch (kind) {
     case Kind.LIST_TYPE:
     case Kind.NON_NULL_TYPE:
-      return typeName(type)
+      return baseName(type)
     default:
       return name.value
   }

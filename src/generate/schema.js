@@ -1,6 +1,6 @@
-import _ from 'lodash'
+import _ from '../common/lodash.custom'
 import Translator from '../translate/language'
-import Backing from '../types/backing'
+import Backing from './backing'
 import { getDirectives, isHash } from '../common/util'
 import { SchemaOperations } from '../common/const'
 import * as graphql from 'graphql'

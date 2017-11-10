@@ -8,32 +8,22 @@
  * const backing = {
  *   Foo: {
  *     _isTypeOf: Function,
- *     bar: {
- *       resolve: Function | Middleware,
- *       before: Function | Middleware,
- *       after: Function | Middleware,
- *       error: Function | Middleware
- *     }
+ *     bar: Function | Middleware
  *   },
- *   '@directives': {
- *      directiveName: {
- *       before: Function | Middleware,
- *       after: Function | Middleware,
- *       error: Function | Middleware
- *     },
- *     ...
- *   }
+ *   '@directiveName': {
+ *      before: Function | Middleware,
+ *      after: Function | Middleware,
+ *      error: Function | Middleware
+ *   },
+ *   ...
  * }
  *
  */
-import _ from 'lodash'
+import _ from '../common/lodash.custom'
 import { isHash, stringValue } from '../common/util'
-import Middleware from './middleware'
-import processMiddleware from '../middleware/middleware'
-import {
-  MiddlewareTypes,
-  DIRECTIVE_KEY
-} from '../common/const'
+import Middleware from '../types/middleware'
+import processMiddleware from './middleware'
+import { MiddlewareTypes } from '../common/const'
 
 // middleware helper methods
 const { cast, canCast } = Middleware
@@ -79,60 +69,6 @@ function addTypeFunction (typeName, funcName, func) {
   }
   _.set(this.backing, [ typeName, `_${funcName}` ], func)
   return this
-}
-
-/**
- * Backing for things that use middleware
- */
-export class DirectiveBacking {
-  constructor (backing) {
-    this.backing = backing
-  }
-
-  /**
-   * Sets before middleware backing on directive
-   * @param name
-   * @param middleware
-   */
-  before (name, middleware) {
-    const mw = cast(middleware)
-    const path = [
-      DIRECTIVE_KEY,
-      name,
-      MiddlewareTypes.BEFORE
-    ]
-    _.set(this.backing, path, mw)
-  }
-
-  /**
-   * Sets after middleware backing on directive
-   * @param name
-   * @param middleware
-   */
-  after (name, middleware) {
-    const mw = cast(middleware)
-    const path = [
-      DIRECTIVE_KEY,
-      name,
-      MiddlewareTypes.AFTER
-    ]
-    _.set(this.backing, path, mw)
-  }
-
-  /**
-   * Sets error middleware backing on directive
-   * @param name
-   * @param middleware
-   */
-  error (name, middleware) {
-    const mw = cast(middleware)
-    const path = [
-      DIRECTIVE_KEY,
-      name,
-      MiddlewareTypes.ERROR
-    ]
-    _.set(this.backing, path, mw)
-  }
 }
 
 /**
@@ -295,12 +231,12 @@ export default class GraphQLFactoryBacking {
     let err = null
     const backing = this
 
-    // get the type backing
-    const backingTypes = _.omit(this.backing, [ DIRECTIVE_KEY ])
-
     // set the functions from the function map
-    _.forEach(backingTypes, (typeBacking, typeName) => {
+    _.forEach(this.backing, (typeBacking, typeName) => {
       if (err) return false
+
+      // skip directives for now
+      if (typeName.match(/^@/)) return true
 
       // get the type and validate that the type backing is a hash
       const type = _.get(schema, [ '_typeMap', typeName ])
@@ -362,11 +298,11 @@ export default class GraphQLFactoryBacking {
 
     // hydrate/extend the directives
     _.forEach(schema._directives, directive => {
-      const directivePath = [ DIRECTIVE_KEY, directive.name ]
-      const { _before, _after, _error } = _.get(this.backing, directivePath, {})
-      if (_before) directive._before = _before
-      if (_after) directive._after = _after
-      if (_error) directive._error = _error
+      const { name } = directive
+      const { before, after, error } = _.get(this.backing, `@${name}`, {})
+      if (before) directive._before = before
+      if (after) directive._after = after
+      if (error) directive._error = error
     })
 
     // check for merge errors
@@ -382,7 +318,14 @@ export default class GraphQLFactoryBacking {
    * @constructor
    */
   Directive (name, directive) {
-    _.set(this.backing, [ DIRECTIVE_KEY, name ], directive)
+    const directiveBacking = {}
+    const { _before, _after, _error } = directive
+    if (_before) directiveBacking.before = _before
+    if (_after) directiveBacking.after = _after
+    if (_error) directiveBacking.error = _error
+    if (_.keys(directiveBacking).length) {
+      _.set(this.backing, `@${name}`, directiveBacking)
+    }
   }
 
   /**

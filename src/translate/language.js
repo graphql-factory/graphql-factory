@@ -2,13 +2,19 @@
  * This module converts graphql factory definitions
  * into schema language + a backing
  */
-import _ from 'lodash'
+import _ from '../common/lodash.custom'
 import Definition from '../definition/definition'
-import Backing from '../types/backing'
+import Backing from '../generate/backing'
 import Directive from '../types/directive'
 import Schema from '../generate/schema'
 import { Kind, DirectiveLocation } from 'graphql'
-import { toArgs, isHash, getDirectives, indent, stringValue } from '../common/util'
+import {
+  toArgs,
+  isHash,
+  getDirectives,
+  indent,
+  stringValue
+} from '../common/util'
 
 export default class GraphQLFactoryDefinitionTranslator {
   constructor () {
@@ -71,7 +77,7 @@ export default class GraphQLFactoryDefinitionTranslator {
     const _locations = _.filter(locations, _.isString)
     const _loc = _locations.length
       ? _locations.join(' | ')
-      : _.map(DirectiveLocation).join(' | ')
+      : _.values(DirectiveLocation).join(' | ')
 
     // add the custom object as a directive backing
     this.definition.backing.Directive(_name, new Directive({
@@ -249,7 +255,7 @@ export default class GraphQLFactoryDefinitionTranslator {
         ? `${indent(tabs)}# ${description}\n${a}`
         : a
     }).join(',\n')
-    return `(\n${_args}\n  )`
+    return `(\n${_args}\n${indent(tabs - 1)})`
   }
 
   /**
@@ -299,14 +305,9 @@ export default class GraphQLFactoryDefinitionTranslator {
           _.assign(this.definition[storeType], store)
           break
 
-        case 'before':
-        case 'after':
-        case 'error':
-          this.definition[storeType] = store.slice()
-          break
-
         case 'types':
           _.forEach(store, (typeDef, typeName) => {
+            if (typeName.match(/^@/)) return true
             this.definition.addKind(
               Kind.OBJECT_TYPE_DEFINITION,
               _.get(typeDef, 'name', typeName),
@@ -317,6 +318,7 @@ export default class GraphQLFactoryDefinitionTranslator {
 
         case 'schemas':
           _.forEach(store, (schemaDef, schemaName) => {
+            if (schemaName.match(/^@/)) return true
             this.definition.addKind(
               Kind.SCHEMA_DEFINITION,
               _.get(schemaDef, 'name', schemaName),
