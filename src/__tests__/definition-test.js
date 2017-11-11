@@ -3,7 +3,7 @@ import { describe, it } from 'mocha'
 import { expect } from 'chai'
 import Definition from '../definition/definition'
 import EventEmitter from 'events'
-import { graphql, DirectiveLocation } from 'graphql'
+import { graphql, DirectiveLocation, GraphQLString } from 'graphql'
 import * as tools from '../common/tools'
 import _ from 'lodash'
 
@@ -149,7 +149,7 @@ const userDef = {
       ],
       args: {
         collection: {
-          type: 'String'
+          type: GraphQLString
         }
       }
     },
@@ -160,7 +160,7 @@ const userDef = {
       args: {
         at: 'String'
       },
-      before (req, res, next) {
+      beforeResolve (req, res, next) {
         const { info } = req
         console.log('log middleware', info)
         return next()
@@ -242,7 +242,7 @@ describe('definition tests', () => {
     // console.log(reg.Users)
 
     return graphql(reg.Users, `
-      query Query {
+      query Query @log(at: "query") {
         readUser {
           id
           name
@@ -254,10 +254,10 @@ describe('definition tests', () => {
       }
     `)
       .then(result => {
-        // console.log(JSON.stringify(result, null, '  '))
+        console.log(JSON.stringify(result, null, '  '))
         // console.log(result)
         return result
-      })
+      }, console.error)
 
       // expect(true).to.equal(true)
   })

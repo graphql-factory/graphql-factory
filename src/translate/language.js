@@ -67,10 +67,7 @@ export default class GraphQLFactoryDefinitionTranslator {
       name,
       description,
       locations,
-      args,
-      before,
-      after,
-      error
+      args
     } = definition
     const _name = name || directiveName
     const _args = this._arguments(args, 1)
@@ -79,15 +76,18 @@ export default class GraphQLFactoryDefinitionTranslator {
       ? _locations.join(' | ')
       : _.values(DirectiveLocation).join(' | ')
 
+    // build an updated configuration for the custom directive
+    const config = _.assign(
+      {},
+      _.omit(definition, [ 'args' ]),
+      {
+        name: _name,
+        locations: locations || _.values(DirectiveLocation)
+      }
+    )
+
     // add the custom object as a directive backing
-    this.definition.backing.Directive(_name, new Directive({
-      name: _name,
-      description,
-      locations: locations || _.values(DirectiveLocation),
-      before,
-      after,
-      error
-    }))
+    this.definition.backing.Directive(_name, new Directive(config))
 
     // build the directive string
     const directive = `directive @${_name}${_args} on ${_loc}\n`

@@ -1,6 +1,7 @@
 import _ from './lodash.custom'
-import { parseAST, baseName } from './ast'
+import { baseName } from './ast'
 import { KindLocation } from './const'
+import { getDirectiveValues } from 'graphql'
 
 /**
  * Builds the execution path
@@ -25,19 +26,18 @@ export function executionPath (info) {
  * @param info
  */
 export function executionInfo (info) {
-  const { operation, schema } = info
-  const execInfo = [ schema ]
-  const path = executionPath(info)
-  const operationType = operation.operation
-  let currentType = schema[`_${operationType}Type`]
-  execInfo.push(currentType)
+  const { schema, path: { prev, key }, parentType } = info
+  const execInfo = []
+  const field = _.get(parentType, [ '_fields', key ])
 
-  for (const fieldName of path) {
-    const field = _.get(currentType, [ '_fields', fieldName ])
-    execInfo.push(field)
-    currentType = _.get(field, 'type')
-  }
+  // if at root resolver, add the schema
+  if (!prev) execInfo.push(schema)
 
+  // all other fields add the type and field
+  if (parentType) execInfo.push(parentType)
+  if (field) execInfo.push(field)
+
+  // return the exec info
   return execInfo
 }
 
@@ -50,7 +50,7 @@ export function executionInfo (info) {
  */
 export function filterDirectives (info, source) {
   if (!source) return []
-  const { schema: { _directives, _typeMap } } = info
+  const { schema: { _directives, _typeMap }, variableValues } = info
   const { directives, kind, arguments: args, type } = source
   const loc = KindLocation[kind]
 
@@ -66,7 +66,7 @@ export function filterDirectives (info, source) {
   }
 
   // reduce the directives to the allowed ones
-  _.reduce(directives, (result, { name, arguments: _args }) => {
+  _.reduce(directives, (result, { name }) => {
     // find the current directive
     const directive = _.find(_directives, d => {
       return d.name === name.value
@@ -75,8 +75,9 @@ export function filterDirectives (info, source) {
     // if the directive was found, check the location
     if (directive && _.includes(directive.locations, loc)) {
       result.push({
-        directive: name.value,
-        args: parseAST(_args),
+        name: name.value,
+        directive,
+        args: getDirectiveValues(directive, source, variableValues),
         location: loc
       })
     }
@@ -86,12 +87,19 @@ export function filterDirectives (info, source) {
   return results
 }
 
+export function mapOperationDirectives (info) {
+  const { operation } = info
+  _.noop(operation)
+  // console.log(operation)
+  return []
+}
+
 /**
  * Gets a hash of directives
  * @param info
  */
 export function reduceDirectives (info) {
-  return _.reduce(executionInfo(info).reverse(), (result, nfo) => {
+  return _.reduce(executionInfo(info), (result, nfo) => {
     return result.concat(filterDirectives(info, nfo.astNode))
-  }, [])
+  }, mapOperationDirectives(info))
 }

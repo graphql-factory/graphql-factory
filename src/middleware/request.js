@@ -15,6 +15,9 @@ export default function processMiddleware (schema, backing, definition, params) 
 
   // console.log('MIDDLEWARE')
   // console.log(directives)
+  directives.forEach(d => {
+    console.log(d.name, ':', d.directive._factory)
+  })
   _.noop(directives, source, args, context, parentType, fieldName)
 
   return {

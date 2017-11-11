@@ -9,5 +9,20 @@ export default class GraphQLFactory extends EventEmitter {
 
   use (...args) {
     this.definition.use(...args)
+    return this
+  }
+
+  beforeBuild (...args) {
+    this.definition.beforeBuild(...args)
+    return this
+  }
+
+  afterBuild (...args) {
+    this.definition.afterBuild(...args)
+    return this
+  }
+
+  build (...args) {
+    return this.definition.build(...args)
   }
 }

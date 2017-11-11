@@ -2,7 +2,7 @@ import _ from '../common/lodash.custom'
 import { isHash, stringValue } from '../common/util'
 import {
   DEFAULT_MIDDLEWARE_TIMEOUT,
-  MiddlewareTypes
+  Lifecycle
 } from '../common/const'
 
 /**
@@ -10,11 +10,11 @@ import {
  */
 class GraphQLFactoryMiddleware {
   constructor (type, resolve, options) {
-    const { timeout, name } = isHash(options)
+    const { timeout, name, identifier } = isHash(options)
       ? options
       : {}
 
-    if (!MiddlewareTypes.hasValue(type)) {
+    if (!Lifecycle.hasValue(type)) {
       throw new Error('GraphQLFactoryMiddlewareError: '
         + 'Invalid middleware type "' + type + '"')
     } else if (!_.isFunction(resolve)) {
@@ -29,7 +29,10 @@ class GraphQLFactoryMiddleware {
     this.name = stringValue(name)
       ? name
       : null
-    this.identifier = this.name || _.get(resolve, 'name') || type
+    this.identifier = identifier
+      || this.name
+      || _.get(resolve, 'name')
+      || type
 
     this.timeout = _.isNumber(timeout)
       ? Math.floor(timeout)
@@ -57,14 +60,18 @@ GraphQLFactoryMiddleware.canCast = middleware => {
  */
 GraphQLFactoryMiddleware.cast = (type, middleware, options) => {
   if (middleware instanceof GraphQLFactoryMiddleware) {
-    if (MiddlewareTypes.hasValue(type)) middleware.type = type
+    if (Lifecycle.hasValue(type)) middleware.type = type
     if (isHash(options) && _.keys(options).length) middleware.options = options
     return middleware
   } else if (_.isFunction(middleware)) {
     return new GraphQLFactoryMiddleware(type, middleware, options)
   } else if (isHash(middleware) && _.has(middleware, 'resolve')) {
     const { resolve, name, timeout } = middleware
-    return new GraphQLFactoryMiddleware(type, resolve, { name, timeout })
+    return new GraphQLFactoryMiddleware(
+      type,
+      resolve,
+      _.assign({ name, timeout }, options)
+    )
   }
 
   throw new Error('Cannot cast middleware, must be Function or Middleware')

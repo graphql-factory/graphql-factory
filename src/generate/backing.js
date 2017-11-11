@@ -22,7 +22,7 @@
 import _ from '../common/lodash.custom'
 import { isHash, stringValue } from '../common/util'
 import Middleware from '../types/middleware'
-import processMiddleware from './middleware'
+import processMiddleware from '../middleware/request'
 import { MiddlewareTypes } from '../common/const'
 
 // middleware helper methods
@@ -299,10 +299,8 @@ export default class GraphQLFactoryBacking {
     // hydrate/extend the directives
     _.forEach(schema._directives, directive => {
       const { name } = directive
-      const { before, after, error } = _.get(this.backing, `@${name}`, {})
-      if (before) directive._before = before
-      if (after) directive._after = after
-      if (error) directive._error = error
+      const directiveBacking = _.get(this.backing, `@${name}`, {})
+      directive._factory = directiveBacking
     })
 
     // check for merge errors
@@ -318,14 +316,7 @@ export default class GraphQLFactoryBacking {
    * @constructor
    */
   Directive (name, directive) {
-    const directiveBacking = {}
-    const { _before, _after, _error } = directive
-    if (_before) directiveBacking.before = _before
-    if (_after) directiveBacking.after = _after
-    if (_error) directiveBacking.error = _error
-    if (_.keys(directiveBacking).length) {
-      _.set(this.backing, `@${name}`, directiveBacking)
-    }
+    _.set(this.backing, `@${name}`, directive._factory)
   }
 
   /**

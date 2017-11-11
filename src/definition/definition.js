@@ -2,6 +2,7 @@ import _ from '../common/lodash.custom'
 import Plugin from 'graphql-factory-plugin'
 import Translator from '../translate/language'
 import Backing from '../generate/backing'
+import buildMiddleware from '../middleware/build'
 import { parse, print, Kind } from 'graphql'
 import { constructorName, definitionKey, isHash } from '../common/util'
 
@@ -12,7 +13,10 @@ export const CAN_MERGE = [
   'functions',
   'plugins',
   'directives',
-  'warnings'
+  'warnings',
+  '_beforeBuild',
+  '_afterBuild',
+  '_buildError'
 ]
 
 export default class GraphQLFactoryDefinition {
@@ -25,8 +29,28 @@ export default class GraphQLFactoryDefinition {
     this.functions = {}
     this.plugins = {}
     this.directives = {}
+    this._beforeBuild = []
+    this._afterBuild = []
     this.error = null
     this.warnings = []
+  }
+
+  /**
+   * Adds before build middleware
+   * @param handler
+   */
+  beforeBuild (handler) {
+    if (!_.isFunction(handler)) throw new Error('beforeBuild middleware must be function')
+    this._beforeBuild = _.union(this._beforeBuild, [ handler ])
+  }
+
+  /**
+   * Adds after build middleware
+   * @param handler
+   */
+  afterBuild (handler) {
+    if (!_.isFunction(handler)) throw new Error('afterBuild middleware must be function')
+    this._beforeBuild = _.union(this._beforeBuild, [ handler ])
   }
 
   /**
@@ -73,10 +97,19 @@ export default class GraphQLFactoryDefinition {
    * @param options
    */
   build () {
-    return _.reduce(this.schemas, (registry, schema, name) => {
-      registry[name] = schema.build(this)
-      return registry
+    let error = null
+    const reg = _.reduce(this.schemas, (registry, schema, name) => {
+      if (error) return
+      try {
+        registry[name] = buildMiddleware(this, schema)
+        return registry
+      } catch (err) {
+        error = err
+      }
     }, {})
+
+    if (error) throw error
+    return reg
   }
 
 

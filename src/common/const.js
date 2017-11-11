@@ -166,5 +166,34 @@ export const KindLocation = new Enum({
   [Kind.INPUT_VALUE_DEFINITION]: DirectiveLocation.INPUT_FIELD_DEFINITION,
 }, { allowDuplicates: true })
 
+// lifecycle middleware
+export const Lifecycle = new Enum({
+  BEFORE_BUILD: 'beforeBuild',
+  AFTER_BUILD: 'afterBuild',
+  BEFORE_REQUEST: 'beforeRequest',
+  AFTER_REQUEST: 'afterRequest',
+  REQUEST_ERROR: 'requestError',
+  BEFORE_RESOLVE: 'beforeResolve',
+  RESOLVE: 'resolve',
+  AFTER_RESOLVE: 'afterResolve',
+  BEFORE_QUERY: 'beforeQuery',
+  AFTER_QUERY: 'afterQuery',
+  BEFORE_MUTATION: 'beforeMutation',
+  AFTER_MUTATION: 'afterMutation',
+  BEFORE_SUBSCRIPTION: 'beforeSubscription',
+  SUBSCRIPTION_START: 'subscriptionStart',
+  SUBSCRIPTION_DATA: 'subscriptionData',
+  SUBSCRIPTION_END: 'subscriptionEnd'
+})
+
+// directive conflicts
+export const DirectiveConflict = new Enum({
+  DEFINITION: 'definition', // on conflict, use the definition args
+  OPERATION: 'operation', // on conflict, use the operation args
+  ERROR: 'error', // on conflict, throw an error
+  WARN: 'warn', // on conflict, log a warning
+  MERGE: 'merge' // on conflict, attempt to merge the args
+})
+
 // option defaults and constants
 export const DEFAULT_MIDDLEWARE_TIMEOUT = 300000 // 5 minutes

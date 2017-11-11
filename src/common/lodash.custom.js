@@ -8,6 +8,7 @@ import get from './lodash/get'
 import has from './lodash/has'
 import identity from './lodash/identity'
 import includes from './lodash/includes'
+import intersection from './lodash/intersection'
 import isArray from './lodash/isArray'
 import isFunction from './lodash/isFunction'
 import isNumber from './lodash/isNumber'
@@ -35,6 +36,7 @@ export default {
   has,
   identity,
   includes,
+  intersection,
   isArray,
   isFunction,
   isNumber,
