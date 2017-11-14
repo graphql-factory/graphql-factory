@@ -2,7 +2,8 @@
   "parser": "babel-eslint",
 
   "plugins": [
-    "babel"
+    "babel",
+    "flowtype"
   ],
 
   "env": {
@@ -38,6 +39,15 @@
   },
 
   "rules": {
+    "flowtype/space-after-type-colon": [2, "always"],
+    "flowtype/space-before-type-colon": [2, "never"],
+    "flowtype/space-before-generic-bracket": [2, "never"],
+    "flowtype/union-intersection-spacing": [2, "always"],
+    "flowtype/no-weak-types": [2, {"any": false}],
+    "flowtype/define-flow-type": 2,
+    "flowtype/use-flow-type": 2,
+    "flowtype/semi": 2,
+
     "array-bracket-spacing": [2, "always"],
     "arrow-parens": [2, "as-needed"],
     "arrow-spacing": 2,
@@ -52,7 +62,7 @@
     "computed-property-spacing": [2, "never"],
     "consistent-return": 0,
     "consistent-this": 0,
-    "curly": [2, "multi-line"],
+    "curly": [2, "all"],
     "default-case": 0,
     "dot-location": [2, "property"],
     "dot-notation": 0,
@@ -72,7 +82,7 @@
     "linebreak-style": 2,
     "lines-around-comment": 0,
     "max-depth": 0,
-    "max-len": [1, 100, 4, {"ignoreRegExpLiterals": true }],
+    "max-len": [2, 80, 4],
     "max-nested-callbacks": 0,
     "max-params": 0,
     "max-statements": 0,
@@ -184,7 +194,7 @@
     "object-shorthand": [2, "always"],
     "one-var": [2, "never"],
     "operator-assignment": [2, "always"],
-    "operator-linebreak": [2, "before"],
+    "operator-linebreak": [2, "after"],
     "padded-blocks": 0,
     "prefer-const": 2,
     "prefer-reflect": 0,
@@ -193,11 +203,11 @@
     "quotes": [2, "single"],
     "radix": 2,
     "require-yield": 0,
-    "semi": ["error", "never"],
+    "semi": [2, "always"],
     "semi-spacing": [2, {"before": false, "after": true}],
     "sort-vars": 0,
     "space-before-blocks": [2, "always"],
-    "space-before-function-paren": [2, {"anonymous": "always", "named": "always"}],
+    "space-before-function-paren": [2, {"anonymous": "always", "named": "never"}],
     "space-in-parens": 0,
     "space-infix-ops": [2, {"int32Hint": false}],
     "space-unary-ops": [2, {"words": true, "nonwords": false}],
@@ -209,6 +219,8 @@
     "vars-on-top": 0,
     "wrap-iife": 2,
     "wrap-regex": 0,
-    "yoda": [2, "never", {"exceptRange": true}]
+    "yoda": [2, "never", {"exceptRange": true}],
+
+    "no-async": 2
   }
 }
