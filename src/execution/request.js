@@ -63,8 +63,8 @@ import {
   getArgumentValues,
   getDirectiveValues,
 } from 'graphql/execution/values';
+import { GraphQLSkipInstruction } from '../types'
 import {
-  GraphQLSkipInstruction,
   GraphQLObjectType,
   GraphQLList,
   GraphQLNonNull,
