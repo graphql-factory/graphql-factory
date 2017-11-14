@@ -1,4 +1,7 @@
 export { GraphQLSkipInstruction } from './instruction'
 export {
-  GraphQLSchemaBacking
+  SchemaBacking
 } from './backing'
+export {
+  SchemaDefinition
+} from './definition'

@@ -26,7 +26,7 @@ schema {
 }
 `
 
-var backing = new factory.GraphQLSchemaBacking()
+var backing = new factory.SchemaBacking()
   .Object('Query')
     .resolve('readFoo', () => {
       return Promise.resolve({

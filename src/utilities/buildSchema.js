@@ -1,6 +1,6 @@
 // @flow
 import { buildSchema } from 'graphql';
-import { GraphQLSchemaBacking } from '../types/backing';
+import { SchemaBacking } from '../types/backing';
 
 function hydrateDirective (schema, directiveName, backing) {
   var name = directiveName.replace(/^@/, '');
@@ -45,7 +45,7 @@ export default function buildFactorySchema (
   return backing ?
     hydrateSchema(
       schema,
-      new GraphQLSchemaBacking(backing).backing
+      new SchemaBacking(backing).backing
     ) :
     schema;
 }

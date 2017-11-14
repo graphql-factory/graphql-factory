@@ -2,7 +2,8 @@ import buildSchema from './utilities/buildSchema'
 
 export {
   GraphQLSkipInstruction,
-  GraphQLSchemaBacking
+  SchemaBacking,
+  SchemaDefinition
 } from './types'
 export {
   buildSchema

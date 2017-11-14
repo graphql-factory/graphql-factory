@@ -194,16 +194,16 @@ function validateBacking (backing: { [string]: mixed }) {
   return true;
 }
 
-export class GraphQLSchemaBacking {
+class SchemaBacking {
   constructor (backing) {
-    let _backing = backing
-    if (backing instanceof GraphQLSchemaBacking) {
-      _backing = backing._backing
+    let _backing = backing;
+    if (backing instanceof SchemaBacking) {
+      _backing = backing._backing;
     }
     if (_backing && !validateBacking(_backing)) {
-      throw new Error('Invalid GraphQLSchemaBacking')
+      throw new Error('Invalid SchemaBacking');
     }
-    this._backing = _backing;
+    this._backing = _backing || {};
   }
 
   Scalar (name: string) {
@@ -226,10 +226,37 @@ export class GraphQLSchemaBacking {
     return new DirectiveBacking(this, name);
   }
 
+  merge (...backings) {
+    if (!backings.length) return this
+
+    for (const backing of backings) {
+      const _backing = backing instanceof SchemaBacking ?
+        backing._backing :
+        backing;
+      if (!validateBacking(_backing)) {
+        throw new Error('Cannot merge invalid SchemaBacking');
+      }
+      for (const name of Object.keys(_backing)) {
+        const value = _backing[value];
+        if (!this._backing[name]) {
+          this._backing[name] = Object.assign({}, value);
+        } else {
+          Object.assign(this._backing[name], _backing[name]);
+        }
+      }
+    }
+    return this;
+  }
+
   get backing () {
     if (!validateBacking(this._backing)) {
-      throw new Error('Invalid GraphQLSchemaBacking')
+      throw new Error('Invalid SchemaBacking')
     }
     return this._backing
   }
 }
+
+// attach the validation function to the backing class
+SchemaBacking.validate = validateBacking;
+
+export { SchemaBacking }
