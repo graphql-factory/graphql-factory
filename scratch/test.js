@@ -26,6 +26,10 @@ schema {
 }
 `
 
+var definition = new factory.SchemaDefinition({ context: 1 });
+
+console.log(definition)
+
 var backing = new factory.SchemaBacking()
   .Object('Query')
     .resolve('readFoo', () => {

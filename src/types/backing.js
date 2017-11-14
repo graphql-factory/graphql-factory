@@ -1,10 +1,53 @@
-// @flow
+/**
+ * The SchemaBacking class enforces the structure of a SchemaBackingConfig.
+ * It also provides chain-able methods that allow programmatic configuration
+ * of a SchemaBackingConfig with validation. The SchemaBackingConfig itself
+ * can be a plain javascript object that follows the SchemaBackingConfig
+ * specification.
+ *
+ * SchemaBackings are used to hydrate resolvers/functions on schemas
+ * created with buildSchema via the Schema Language. This is necessary
+ * because resolvers/functions cannot be expressed in schema language.
+ *
+ * Specification:
+ *
+ * type SchemaBackingConfig {
+ *   [typeOrDirectiveName: string]: SchemaBackingFieldConfig |
+ *     DirectiveResolverConfig
+ * }
+ *
+ * type SchemaBackingFieldConfig {
+ *   [fieldOrFunctionName: string]: GraphQLFieldResolver |
+ *     GraphQLTypeResolver | GraphQLIsTypeOfFn | () => mixed
+ * }
+ *
+ * type DirectiveResolverConfig {
+ *   resolveRequest: ?GraphQLFieldResolver,
+ *   resolveResult: ?GraphQLFieldResolver
+ * }
+ *
+ * Conventions:
+ *   * Directive Names - Directive names should be prefixed with an @
+ *     in order to differentiate them from Type Names (i.e. "@skip")
+ *   * Non-Resolver field names - Functions like isTypeOf, resolveType,
+ *     serialize, etc. are all functions that are applied at the top
+ *     level of the object config. In order to keep the backing object
+ *     as flat as possible these top level functions should be prefixed
+ *     with an _ in order to differentiate them from resolver field names
+ *     (i.e. "_serialize" for serialize and "readFoo" for readFoo field resolver)
+ *
+ * @flow
+ */
+
 import set from '../jsutils/set'
+import {ObjMap} from 'graphql/jsutils/ObjMap';
 import type {
   GraphQLFieldResolver,
   GraphQLIsTypeOfFn,
   GraphQLTypeResolver
 } from 'graphql/type/definition'
+
+
 
 class BackingChain {
   constructor (backing) {
@@ -194,8 +237,19 @@ function validateBacking (backing: { [string]: mixed }) {
   return true;
 }
 
+export type SchemaBackingConfig = ObjMap<SchemaBackingFieldConfig |
+  DirectiveResolverConfig>;
+
+export type SchemaBackingFieldConfig = ObjMap<GraphQLFieldResolver |
+  GraphQLTypeResolver | GraphQLIsTypeOfFn | () => mixed>;
+
+export type DirectiveResolverConfig = {
+  resolveRequest: ?GraphQLFieldResolver;
+  resolveResult: ?GraphQLFieldResolver;
+};
+
 class SchemaBacking {
-  constructor (backing) {
+  constructor (backing?: SchemaBackingConfig | SchemaBacking) {
     let _backing = backing;
     if (backing instanceof SchemaBacking) {
       _backing = backing._backing;
@@ -226,7 +280,7 @@ class SchemaBacking {
     return new DirectiveBacking(this, name);
   }
 
-  merge (...backings) {
+  merge (...backings: Array<SchemaBackingConfig | SchemaBacking>) {
     if (!backings.length) return this
 
     for (const backing of backings) {

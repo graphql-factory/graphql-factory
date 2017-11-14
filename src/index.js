@@ -1,9 +1,11 @@
+// @flow
 import buildSchema from './utilities/buildSchema'
 
 export {
   GraphQLSkipInstruction,
   SchemaBacking,
-  SchemaDefinition
+  SchemaDefinition,
+  FactoryType
 } from './types'
 export {
   buildSchema
