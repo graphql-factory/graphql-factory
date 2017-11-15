@@ -1,9 +1,9 @@
 // @flow
-export { GraphQLSkipInstruction } from './instruction'
+export { GraphQLSkipInstruction } from './instruction';
 export {
   SchemaBacking
-} from './backing'
+} from './backing';
 export {
   SchemaDefinition,
   FactoryType
-} from './definition'
+} from './definition';

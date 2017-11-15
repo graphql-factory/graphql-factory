@@ -1,20 +1,19 @@
-// @flow
-import _hasProperty from './_hasProperty'
+import _hasProperty from './_hasProperty';
 
-export default function get (object, path, defaultValue) {
-  const fields = toPath(path)
-  let obj = object
+export default function get(object, path, defaultValue) {
+  const fields = path.slice();
+  let obj = object;
 
   while (fields.length) {
-    const prop = fields.shift()
+    const prop = fields.shift();
 
     if (!_hasProperty(obj, prop)) {
-      return defaultValue
+      return defaultValue;
     } else if (!fields.length) {
-      return obj[prop]
+      return obj[prop];
     }
-    obj = obj[prop]
+    obj = obj[prop];
   }
 
-  return defaultValue
+  return defaultValue;
 }

@@ -57,7 +57,7 @@ import { forEach, isCollection } from 'iterall';
 import { GraphQLError, locatedError } from 'graphql/error';
 import invariant from 'graphql/jsutils/invariant';
 import isNullish from 'graphql/jsutils/isNullish';
-import getFieldTypeLocation from '../jsutils/getFieldTypeLocation'
+import getFieldTypeLocation from '../jsutils/getFieldTypeLocation';
 import type {ObjMap} from 'graphql/jsutils/ObjMap';
 
 import { typeFromAST } from 'graphql/utilities/typeFromAST';
@@ -68,7 +68,7 @@ import {
   getDirectiveValues,
 } from 'graphql/execution/values';
 // MODIFICATION
-import { GraphQLSkipInstruction } from '../types'
+import { GraphQLSkipInstruction } from '../types';
 import {
   GraphQLObjectType,
   GraphQLList,
@@ -104,7 +104,7 @@ import type {
   FieldNode,
   FragmentSpreadNode,
   InlineFragmentNode,
-  FragmentDefinitionNode,
+  FragmentDefinitionNode
 } from 'graphql/language/ast';
 
 /**
@@ -416,8 +416,8 @@ function executeOperation(
     exeContext.schema,
     [
       {
-        astNode: exeContext.schema.astNode,
-        location: DirectiveLocation.SCHEMA
+        location: DirectiveLocation.SCHEMA,
+        astNode: exeContext.schema.astNode
       }
     ],
     exeContext.variableValues
@@ -451,7 +451,7 @@ function executeOperation(
         exeContext,
         operationDirectives,
         exeContext.schema
-      )
+      );
     })
     .then(() => {
       return operation.operation === 'mutation' ?
@@ -463,14 +463,14 @@ function executeOperation(
         exeContext,
         operationDirectives,
         result
-      )
+      );
     })
     .then(result => {
       return reduceResultDirectives(
         exeContext,
         schemaDirectives,
         result
-      )
+      );
     });
 }
 
@@ -564,11 +564,15 @@ function executeFields(
 
   const finalResults = Object.keys(fields).reduce(
     (results, responseName) => {
+      const _results = results || {};
       const fieldNodes = fields[responseName];
       const fieldPath = addPath(path, responseName);
       const fieldNode = fieldNodes[0];
       const fieldName = fieldNode.name.value;
       const fieldDef = getFieldDef(exeContext.schema, parentType, fieldName);
+      if (!fieldDef) {
+        return;
+      }
 
       // get the type directives
       const type = getNamedType(fieldDef.type);
@@ -597,11 +601,11 @@ function executeFields(
           }
         ],
         exeContext.variableValues
-      )
+      );
 
       // add the response, if it is undefined or a skip, the
       // promiseForObject function will filter it out of the result
-      results[responseName] = reduceRequestDirectives(
+      _results[responseName] = reduceRequestDirectives(
         exeContext,
         typeDirectives,
         fieldDef
@@ -611,11 +615,12 @@ function executeFields(
             exeContext,
             fieldDirectives,
             fieldDef
-          )
+          );
         })
         .then(skip => {
-          if (skip instanceof GraphQLSkipInstruction) return skip
-
+          if (skip instanceof GraphQLSkipInstruction) {
+            return skip;
+          }
           // start
           const result = resolveField(
             exeContext,
@@ -637,7 +642,7 @@ function executeFields(
               exeContext,
               fieldDirectives,
               result
-            )
+            );
         })
         .then(result => {
           return result instanceof GraphQLSkipInstruction ?
@@ -646,11 +651,11 @@ function executeFields(
               exeContext,
               fieldDirectives,
               result
-            )
-        })
+            );
+        });
 
       // return the updated results
-      return results;
+      return _results;
     },
     Object.create(null)
   );
@@ -662,11 +667,11 @@ if (!containsPromise) {
 }
 */
 
-// Otherwise, results is a map from field name to the result
-// of resolving that field, which is possibly a promise. Return
-// a promise that will return this same map, but with any
-// promises replaced with the values they resolved to.
-return promiseForObject(finalResults);
+  // Otherwise, results is a map from field name to the result
+  // of resolving that field, which is possibly a promise. Return
+  // a promise that will return this same map, but with any
+  // promises replaced with the values they resolved to.
+  return promiseForObject(finalResults || {});
 }
 
 /**
@@ -797,7 +802,9 @@ function promiseForObject<T>(object: ObjMap<Promise<T>>): Promise<ObjMap<T>> {
 const valuesAndPromises = keys.map(name => object[name]);
 return Promise.all(valuesAndPromises).then(
   values => values.reduce((resolvedObject, value, i) => {
-    if (value instanceof GraphQLSkipInstruction) return resolvedObject
+    if (value instanceof GraphQLSkipInstruction) {
+      return resolvedObject;
+    }
     resolvedObject[keys[i]] = value;
     return resolvedObject;
   }, Object.create(null))

@@ -1,15 +1,15 @@
 // @flow
-import buildSchema from './utilities/buildSchema'
+import buildSchema from './utilities/buildSchema';
 
 export {
   GraphQLSkipInstruction,
   SchemaBacking,
   SchemaDefinition,
   FactoryType
-} from './types'
+} from './types';
 export {
   buildSchema
-}
+};
 export {
   request
 } from './request';

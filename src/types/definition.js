@@ -18,38 +18,84 @@
  * @returns {boolean}
  * @flow
  */
+import { assertObject } from '../jsutils/assertions';
 import { SchemaBacking } from './backing';
 import type { DirectiveLocationEnum } from 'graphql/type/directives';
-import type { ObjMap } from 'graphql/jsutils/ObjMap'
+import type { ObjMap } from 'graphql/jsutils/ObjMap';
 import type { ValueNode } from 'graphql/language/ast';
 import type {
   GraphQLFieldResolver,
   GraphQLIsTypeOfFn,
   GraphQLTypeResolver
 } from 'graphql/type/definition';
-import isHashLike from '../jsutils/isHashLike'
-
 
 export class SchemaDefinition {
-  _config: SchemaDefinitionConfig;
+  _config: ?SchemaDefinitionConfig;
 
-  constructor (config?: SchemaDefinitionConfig | SchemaDefinition) : void {
-    let _config = config;
-    if (config instanceof SchemaDefinition) {
-      _config = definition._config;
-    }
-    _config = isHashLike(_config) ? _config : {}
-    this._config = config
+  constructor(config: ?SchemaDefinitionConfig | ?SchemaDefinition): void {
+    this._config = config instanceof SchemaDefinition ?
+      config._config :
+      config;
+    this.assert();
   }
 
-  use (...args) {
+  use(...args: Array<mixed>) {
+      return args;
+  }
 
+  /**
+   * asserts that the definition is structured correctly
+   * and fills in any missing values
+   */
+  assert() {
+    const c = this._config || {};
+    this._config = c;
+    c.backing = new SchemaBacking(c.backing);
+
+    if (c.context) {
+      assertObject(
+        c.context,
+        'SchemaDefinition context must be an object'
+      );
+    } else {
+      c.context = {};
+    }
+
+    if (c.functions) {
+      assertObject(
+        c.functions,
+        'SchemaDefinition functions must be an object'
+      );
+    } else {
+      c.functions = {};
+    }
+
+    if (c.directives) {
+      assertObject(
+        c.functions,
+        'SchemaDefinition directives must be an object'
+      );
+    } else {
+      c.directives = {};
+    }
+
+    if (c.types) {
+      assertObject(
+        c.types,
+        'SchemaDefinition types must be an object'
+      );
+    } else {
+      c.types = {};
+    }
+
+    if (!c.schema) {
+      c.schema = null;
+    }
   }
 }
 
 /**
  * Types
- * @type {{SCALAR: string, ENUM: string, OBJECT: string, INTERFACE: string, UNION: string, INPUT: string}}
  */
 export const FactoryType = {
   SCALAR: 'Scalar',
@@ -68,9 +114,12 @@ export type FactoryInterfaceType = 'Interface';
 export type FactoryUnionType = 'Union';
 export type FactoryInputObjectType = 'Input';
 
-export type FactoryTypeConfig = FactoryScalarTypeConfig |
-  FactoryEnumTypeConfig | FactoryObjectTypeConfig |
-  FactoryInterfaceTypeConfig | GraphQLUnionTypeConfig |
+export type FactoryTypeConfig =
+  FactoryScalarTypeConfig |
+  FactoryEnumTypeConfig |
+  FactoryObjectTypeConfig |
+  FactoryInterfaceTypeConfig |
+  GraphQLUnionTypeConfig |
   FactoryInputObjectTypeConfig;
 
 /**
@@ -78,8 +127,8 @@ export type FactoryTypeConfig = FactoryScalarTypeConfig |
  */
 export type SchemaDefinitionConfig = {
   backing?: ?SchemaBacking;
-  context: ObjMap<mixed>;
-  functions?: ?ObjMap<() => mixed>;
+  context?: ?ObjMap<mixed>;
+  functions: ObjMap<() => mixed>;
   directives?: ?ObjMap<FactoryDirectiveDefinitionConfig>;
   types?: ?ObjMap<FactoryTypeConfig>;
   schema?: ?SchemaTypeConfig;
@@ -100,18 +149,18 @@ export type FactoryFieldConfigArgumentMap = ObjMap<FactoryArgumentConfig>;
 /**
  * FieldConfig Type
  */
-export type FactoryFieldConfig<TSource, TContext> = {
+export type FactoryFieldConfig = {
   type: string;
   args?: FactoryFieldConfigArgumentMap;
-  resolve?: ?string | GraphQLFieldResolver<TSource, TContext>;
+  resolve?: ?string | GraphQLFieldResolver<*, *>;
   // subscribe?: GraphQLFieldResolver<TSource, TContext>;
   deprecationReason?: ?string;
   description?: ?string;
   '@directives'?: ?FactoryDirectiveMap;
 };
 
-export type FactoryFieldConfigMap<TSource, TContext> =
-  ObjMap<FactoryFieldConfig<TSource, TContext>>;
+export type FactoryFieldConfigMap =
+  ObjMap<FactoryFieldConfig>;
 
 /**
  * Schema Type
@@ -122,7 +171,7 @@ export type SchemaTypeConfig = {
   mutation?: ?string;
   subscription?: ?string;
   '@directives'?: ?FactoryDirectiveMap;
-}
+};
 
 /**
  * Directive Type
@@ -132,9 +181,10 @@ export type FactoryDirectiveDefinitionConfig = {
   description?: ?string;
   locations: Array<DirectiveLocationEnum>;
   args?: ?FactoryFieldConfigArgumentMap;
-  resolveRequest?: ?GraphQLFieldResolver;
-  resolveResult?: ?GraphQLFieldResolver;
-  // TODO: determine if directives should have a directives field which acts like a dependency
+  resolveRequest?: ?GraphQLFieldResolver<*, *>;
+  resolveResult?: ?GraphQLFieldResolver<*, *>;
+  // TODO: determine if directives should have a directives 
+  // field which acts like a dependency
 };
 
 export type FactoryDirectiveMap = ObjMap<mixed>;
@@ -162,23 +212,23 @@ export type FactoryEnumValueConfig = {
 /**
  * Scalar Type
  */
-export type FactoryScalarTypeConfig<TInternal, TExternal> = {
+export type FactoryScalarTypeConfig = {
   type: FactoryScalarType;
   description?: ?string;
-  serialize: ?string | (value: mixed) => ?TExternal;
-  parseValue?: ?string | (value: mixed) => ?TInternal;
-  parseLiteral?: ?string | (valueNode: ValueNode) => ?TInternal;
+  serialize: ?string | (value: mixed) => ?mixed;
+  parseValue?: ?string | (value: mixed) => ?mixed;
+  parseLiteral?: ?string | (valueNode: ValueNode) => ?mixed;
   '@directives'?: ?FactoryDirectiveMap;
 };
 
 /**
  * Object Type
  */
-export type FactoryObjectTypeConfig<TSource, TContext> = {
+export type FactoryObjectTypeConfig = {
   type?: ?FactoryObjectType;
   interfaces?: ?Array<string>;
-  fields: FactoryFieldConfigMap<TSource, TContext>;
-  isTypeOf?: ?GraphQLIsTypeOfFn<TSource, TContext>;
+  fields: FactoryFieldConfigMap;
+  isTypeOf?: ?GraphQLIsTypeOfFn<*, *>;
   description?: ?string;
   '@directives'?: ?FactoryDirectiveMap;
 };
@@ -186,10 +236,10 @@ export type FactoryObjectTypeConfig<TSource, TContext> = {
 /**
  * Interface Type
  */
-export type FactoryInterfaceTypeConfig<TSource, TContext> = {
+export type FactoryInterfaceTypeConfig = {
   type: FactoryInterfaceType;
-  fields: FactoryFieldConfigMap<TSource, TContext>;
-  resolveType?: ?GraphQLTypeResolver<TSource, TContext>;
+  fields: FactoryFieldConfigMap;
+  resolveType?: ?GraphQLTypeResolver<*, *>;
   description?: ?string;
   '@directives'?: ?FactoryDirectiveMap;
 };
@@ -197,10 +247,10 @@ export type FactoryInterfaceTypeConfig<TSource, TContext> = {
 /**
  * Union Type
  */
-export type GraphQLUnionTypeConfig<TSource, TContext> = {
+export type GraphQLUnionTypeConfig = {
   type: FactoryUnionType,
   types: Array<string>,
-  resolveType?: ?GraphQLTypeResolver<TSource, TContext>;
+  resolveType?: ?GraphQLTypeResolver<*, *>;
   description?: ?string;
   '@directives'?: ?FactoryDirectiveMap;
 };

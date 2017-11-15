@@ -1,18 +1,87 @@
-// @flow
-import promiseReduce from '../jsutils/promiseReduce'
-import { getDirectiveValues } from 'graphql'
-import { buildResolveInfo } from './request'
+/**
+ * 
+ * @flow
+ */
+import promiseReduce from '../jsutils/promiseReduce';
+import { getDirectiveValues, GraphQLSchema, GraphQLDirective } from 'graphql';
+import type { DirectiveLocationEnum } from 'graphql/type/directives';
+import type { ExecutionContext } from 'graphql/execution/execute';
+// import { buildResolveInfo } from './request';
+import type {
+  DirectiveNode,
+  OperationDefinitionNode,
+  FieldNode,
+  FragmentSpreadNode,
+  InlineFragmentNode,
+  FragmentDefinitionNode,
+  SchemaDefinitionNode,
+  ScalarTypeDefinitionNode,
+  ObjectTypeDefinitionNode,
+  FieldDefinitionNode,
+  InputValueDefinitionNode,
+  InterfaceTypeDefinitionNode,
+  UnionTypeDefinitionNode,
+  EnumTypeDefinitionNode,
+  EnumValueDefinitionNode,
+  InputObjectTypeDefinitionNode
+} from 'graphql/language/ast';
+import type { ObjMap } from 'graphql/jsutils/ObjMap';
+
+export function getDirectives(
+  astNode: { directives?: Array<DirectiveNode>}
+): ?Array<DirectiveNode> {
+  if (typeof astNode === 'object' &&
+    astNode !== null &&
+    astNode.hasOwnProperty('directives') &&
+    Array.isArray(astNode.directives)) {
+      return astNode.directives;
+    }
+}
+
+export type NodeWithDirectives =
+  OperationDefinitionNode |
+  FieldNode |
+  FragmentSpreadNode |
+  InlineFragmentNode |
+  FragmentDefinitionNode |
+  SchemaDefinitionNode |
+  ScalarTypeDefinitionNode |
+  ObjectTypeDefinitionNode |
+  FieldDefinitionNode |
+  InputValueDefinitionNode |
+  InterfaceTypeDefinitionNode |
+  UnionTypeDefinitionNode |
+  EnumTypeDefinitionNode |
+  EnumValueDefinitionNode |
+  InputObjectTypeDefinitionNode;
+// { directives?: ?Array<DirectiveNode> };
+
+export type DirectiveConstraint = {
+  location: ?DirectiveLocationEnum;
+  astNode: any;
+};
+export type DirectiveConstraints = Array<DirectiveConstraint>;
+
 
 // reduces the source directives to a list that can be applied
 // along with argument values
-export function getDirectiveExec (schema, constraints, variableValues) {
+export function getDirectiveExec(
+  schema: GraphQLSchema,
+  constraints: DirectiveConstraints,
+  variableValues: ObjMap<mixed>
+) {
   // reduce the constraints to a mapping of directive info
   const infoMap = constraints.reduce((info, { astNode, location }) => {
-    if (!astNode) return info;
+    const directives = astNode &&
+    Array.isArray(astNode.directives) ? astNode.directives : [];
+
+    if (!directives.length || !location) {
+      return info;
+    }
 
     // analyze each directive and add it if it is allowed
     // on the specified constraint location
-    astNode.directives.forEach(({ name: { value: directiveName } }) => {
+    directives.forEach(({ name: { value: directiveName } }) => {
       // get the directive by name
       const directive = schema
         ._directives
@@ -48,35 +117,41 @@ export function getDirectiveExec (schema, constraints, variableValues) {
           }
         };
       }
-    })
+    });
 
-    return info
-  }, {})
+    return info;
+  }, {});
 
   // return an array of directive info
   return Object.keys(infoMap).map(directiveName => {
-    return infoMap[directiveName]
-  })
+    return infoMap[directiveName];
+  });
 }
 
-// reduce the directives at request or result
-function reduceDirectives (
-  exeContext,
-  directiveExec,
-  resolveType,
-  scopedSource
-) {
-  const info = buildResolveInfo(
-    exeContext,
-    { type: undefined },
-    [ { name: { value: undefined } } ],
-    undefined,
-    { prev: undefined, key: undefined }
-  )
+type DirectiveExec = {
+  name: string;
+  directive: GraphQLDirective;
+  locations: { [location: DirectiveLocationEnum]: any };
+};
 
+// reduce the directives at request or result
+function reduceDirectives(
+  exeContext: ExecutionContext,
+  directiveExec: Array<DirectiveExec>,
+  resolveType: string,
+  scopedSource: any
+): Promise<*> {
   return promiseReduce(
     directiveExec,
     (source, { directive, locations }) => {
+      const info = {
+        schema: exeContext.schema,
+        fragments: exeContext.fragments,
+        rootValue: exeContext.rootValue,
+        operation: exeContext.operation,
+        variableValues: exeContext.variableValues
+      };
+
       return typeof directive[resolveType] === 'function' ?
         Promise.resolve(
           directive[resolveType](
@@ -89,25 +164,33 @@ function reduceDirectives (
         source;
     },
     scopedSource
-  )
+  );
 }
 
 // reduces the request directives
-export function reduceRequestDirectives (exeContext, directiveExec, source) {
+export function reduceRequestDirectives(
+  exeContext: ExecutionContext,
+  directiveExec: Array<DirectiveExec>,
+  source: any
+): Promise<*> {
   return reduceDirectives(
     exeContext,
     directiveExec,
     'resolveRequest',
     source
-  )
+  );
 }
 
 // reduce the result directives
-export function reduceResultDirectives (exeContext, directiveExec, source) {
+export function reduceResultDirectives(
+  exeContext: ExecutionContext,
+  directiveExec: Array<DirectiveExec>,
+  source: any
+): Promise<*> {
   return reduceDirectives(
     exeContext,
     directiveExec,
     'resolveResult',
     source
-  )
+  );
 }
