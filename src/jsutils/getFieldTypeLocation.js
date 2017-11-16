@@ -1,4 +1,6 @@
 /**
+ * Maps a graphql type to a field type. Strips list and non-nulls first
+ * 
  * @flow
  */
 import {

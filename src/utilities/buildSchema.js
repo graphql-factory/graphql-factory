@@ -1,25 +1,57 @@
 // @flow
-import { buildSchema } from 'graphql';
-import type { SchemaBackingConfig } from '../types/backing';
-import { SchemaBacking } from '../types/backing';
+import type { GraphQLSchema } from 'graphql/type/schema';
+import { buildSchema } from 'graphql/utilities/buildASTSchema';
+import set from '../jsutils/set';
 import {
-  // GraphQLScalarType,
+  GraphQLScalarType,
   GraphQLObjectType,
   GraphQLUnionType,
   GraphQLInterfaceType
 } from 'graphql';
 
-function hydrateDirective(schema, directiveName, backing) {
+import type {
+  SchemaBackingConfig,
+  SchemaBackingFieldConfig
+} from '../types/backing';
+import { SchemaBacking } from '../types/backing';
+
+/**
+ * Adds directive resolvers to a standard GraphQLDirective object
+ * if resolvers are present in the backing
+ * @param {*} schema 
+ * @param {*} directiveName 
+ * @param {*} backing 
+ */
+export function hydrateDirective(
+  schema: GraphQLSchema,
+  directiveName: string,
+  backing: SchemaBackingFieldConfig
+) {
   const name = directiveName.replace(/^@/, '');
 
   schema._directives.forEach(directive => {
     if (directive.name === name) {
-      Object.assign(directive, backing);
+      if (typeof backing.resolveRequest === 'function') {
+        set(directive, 'resolveRequest', backing.resolveRequest);
+      }
+      if (typeof backing.resolveResult === 'function') {
+        set(directive, 'resolveResult', backing.resolveResult);
+      }
     }
   });
 }
 
-function hydrateSchema(schema, backing) {
+/**
+ * Applies backing functions and other potential extenssion data
+ * to graphql types and fields that cannot be represented by 
+ * Schema Definition Language using a SchemaBackingConfig
+ * @param {*} schema 
+ * @param {*} backing 
+ */
+export function hydrateSchema(
+  schema: GraphQLSchema,
+  backing: SchemaBackingConfig
+) {
   Object.keys(backing).forEach(key => {
     const keyBacking = backing[key];
 
@@ -34,43 +66,43 @@ function hydrateSchema(schema, backing) {
       const type = schema._typeMap[key];
 
       Object.keys(keyBacking).forEach(fieldName => {
-        const resolve = keyBacking[fieldName];
-        if (typeof resolve !== 'function') {
-          return;
-        }
         switch (fieldName) {
-          /*
           case '_serialize':
-            if (type instanceof GraphQLScalarType) {
-              type.serialize = resolve;
+            if (type instanceof GraphQLScalarType &&
+              typeof keyBacking._serialize === 'function') {
+              set(type, 'serialize', keyBacking._serialize);
             }
             break;
           case '_parseValue':
-            if (type instanceof GraphQLScalarType) {
-              type.parseValue = resolve;
+            if (type instanceof GraphQLScalarType &&
+              typeof keyBacking._parseValue === 'function') {
+              set(type, 'parseValue', keyBacking._parseValue);
             }
             break;
           case '_parseLiteral':
-            if (type instanceof GraphQLScalarType) {
-              type.parseLiteral = resolve;
+            if (type instanceof GraphQLScalarType &&
+              typeof keyBacking._parseLiteral === 'function') {
+              set(type, 'parseLiteral', keyBacking._parseLiteral);
             }
             break;
-          */
           case '_isTypeOf':
-            if (type instanceof GraphQLObjectType) {
-              type.isTypeOf = resolve;
+            if (type instanceof GraphQLObjectType &&
+              typeof keyBacking._isTypeOf === 'function') {
+              set(type, 'isTypeOf', keyBacking._isTypeOf);
             }
             break;
           case '_resolveType':
-            if (type instanceof GraphQLInterfaceType ||
-              type instanceof GraphQLUnionType) {
-              type.resolveType = resolve;
+            if ((type instanceof GraphQLInterfaceType ||
+              type instanceof GraphQLUnionType) &&
+              typeof keyBacking._resolveType === 'function') {
+              set(type, 'resolveType', keyBacking._resolveType);
             }
             break;
           default:
-            if (type instanceof GraphQLObjectType ||
-              type instanceof GraphQLInterfaceType) {
-              type._fields[fieldName].resolve = resolve;
+            if ((type instanceof GraphQLObjectType ||
+              type instanceof GraphQLInterfaceType) &&
+              typeof keyBacking[fieldName] === 'function') {
+              type._fields[fieldName].resolve = keyBacking[fieldName];
             }
         }
       });
@@ -85,10 +117,13 @@ export default function buildFactorySchema(
 ) {
   const schema = buildSchema(source);
 
-  return backing ?
+  // hydrate the schema if a backing is passed
+  // also attempt to create a new SchemaBacking
+  // which will run a validation on the backing
+  return !backing ?
+    schema :
     hydrateSchema(
       schema,
       new SchemaBacking(backing).backing()
-    ) :
-    schema;
+    );
 }

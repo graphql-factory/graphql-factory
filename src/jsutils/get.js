@@ -1,7 +1,9 @@
 import _hasProperty from './_hasProperty';
 
 export default function get(object, path, defaultValue) {
-  const fields = path.slice();
+  const fields = typeof path === 'string' ?
+    [ path ] :
+    path.slice();
   let obj = object;
 
   while (fields.length) {

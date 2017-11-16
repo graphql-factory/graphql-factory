@@ -9,6 +9,10 @@ import {
 } from 'graphql';
 import { backing } from './backing';
 
+function randomBoolean () {
+  return Math.random() >= 0.5;
+}
+
 const def = `
 type Foo @test(value: "FooObject") {
   id: String!
@@ -16,10 +20,13 @@ type Foo @test(value: "FooObject") {
 }
 
 type Query @acl(permission: "read") {
-  readFoo: Foo
+  readFoo (
+    foo: String,
+    bar: String
+  ): Foo
 }
 
-directive @test(value: String) on SCHEMA | OBJECT
+directive @test(value: String) on SCHEMA | OBJECT | QUERY
 directive @acl(permission: String) on SCHEMA | OBJECT
 directive @remove(if: Boolean!) on FIELD
 directive @modify(value: String) on FIELD | FIELD_DEFINITION
@@ -35,18 +42,21 @@ const schema = buildSchema(def, backing)
 // console.log(schema);
 
 const source = `
-query Query {
+query Query ($skip: Boolean!, $remove: Boolean!) @test(value: "queryOp") {
   readFoo {
-    id
-    name
+    id @remove(if: $remove)
+    name @skip(if: $skip)
   }
 }
 `
 
-request({
-  schema,
-  source,
-  rootValue: { user: 'admin' }
-})
-  .then(console.log)
-  .catch(console.error)
+const variableValues = {
+  remove: false, // randomBoolean(),
+  skip: false // randomBoolean()
+};
+
+const rootValue = { user: 'admin' }
+
+request({ schema, source, rootValue, variableValues })
+.then(console.log)
+.catch(console.error)

@@ -1,20 +1,22 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the MIT license found at
+ * https://github.com/graphql/graphql-js/blob/master/README.md
  *
+ * Modified for graphql-factory to run custom execution
+ * 
  * @flow
  */
 
 import { parse } from 'graphql/language/parser';
 import { validate } from 'graphql/validation/validate';
-import { requestExecution } from './execution/request';
 import type { ObjMap } from 'graphql/jsutils/ObjMap';
 import type { Source } from 'graphql/language/source';
 import type { GraphQLFieldResolver } from 'graphql/type/definition';
 import type { GraphQLSchema } from 'graphql/type/schema';
 import type { ExecutionResult } from 'graphql/execution/execute';
+import { execute } from './execution/execute'; // custom execution
 
 /**
  * This is the primary entry point function for fulfilling GraphQL operations
@@ -122,7 +124,7 @@ function graphqlImpl(
 
     // Execute
     resolve(
-      requestExecution(
+      execute(
         schema,
         document,
         rootValue,

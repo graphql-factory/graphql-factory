@@ -4,6 +4,8 @@
  * @param reducer
  * @param initialValue
  * @returns {*}
+ * 
+ * Do not use flow here
  */
 export default function promiseReduce(iterable, reducer, initialValue) {
   return iterable.reduce((previousPromise, currentPromise, count) => {

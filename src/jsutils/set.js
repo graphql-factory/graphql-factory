@@ -1,12 +1,30 @@
+/**
+ * @flow
+ */
 import _isSettable from './_isSettable';
 import _hasProperty from './_hasProperty';
 
-export default function set(object, path, value) {
+/**
+ * Sets a value at a path on an object, if the path
+ * doesnt exist, it attempts to create it
+ * 
+ * @param {*} object 
+ * @param {*} path 
+ * @param {*} value 
+ */
+export default function set(
+  object: { [key: string]: any },
+  path: string | Array<string>,
+  value: any
+) {
   if (!_isSettable(object)) {
     return object;
   }
   let obj = object;
-  const fields = path.slice();
+  const fields = typeof path === 'string' ?
+    [ path ] :
+    path.slice();
+
   while (fields.length) {
     const prop = fields.shift();
     if (!fields.length) {

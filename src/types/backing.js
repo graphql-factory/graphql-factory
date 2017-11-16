@@ -22,17 +22,11 @@
  *
  * @flow
  */
-
-import set from '../jsutils/set';
 import type { ObjMap } from 'graphql/jsutils/ObjMap';
-import type {
-  GraphQLFieldResolver,
-  GraphQLIsTypeOfFn,
-  GraphQLTypeResolver
-} from 'graphql/type/definition';
 import type { ValueNode } from 'graphql/language/ast';
+import set from '../jsutils/set';
 
-
+// Creates returns a chainable backing
 class BackingChain {
   _backing: SchemaBacking;
 
@@ -61,7 +55,7 @@ class BackingChain {
   }
 
   backing() {
-    return this._backing._backing;
+    return this._backing.backing();
   }
 }
 
@@ -239,18 +233,16 @@ function validateBacking(backing?: ?SchemaBackingConfig) {
   return true;
 }
 
-export type SchemaBackingConfig = ObjMap<mixed>;
+// export type SchemaBackingConfig = ObjMap<SchemaBackingFieldConfig>;
+export type SchemaBackingConfig = {
+  [typeOrDirective: string]: SchemaBackingFieldConfig
+};
 
-export type SchemaBackingFieldConfig =
-  ObjMap<GraphQLFieldResolver<*, *> |
-    GraphQLTypeResolver<*, *> |
-    GraphQLIsTypeOfFn<*, *>> |
-    (value: mixed) => ?mixed |
-    (value: ValueNode) => ?mixed;
-
+export type SchemaBackingFieldConfig = ObjMap<SchemaBackingFunction>;
+export type SchemaBackingFunction = (value: any) => any;
 export type DirectiveResolverConfig = {
-  resolveRequest?: () => ?mixed;
-  resolveResult?: () => ?mixed;
+  resolveRequest?: () => mixed;
+  resolveResult?: () => mixed;
 };
 
 export class SchemaBacking {
@@ -303,10 +295,10 @@ export class SchemaBacking {
         if (!this._backing[name]) {
           if (name.match(/^@/)) {
             this._backing[name] =
-              Object.assign(({}: DirectiveResolverConfig), value);
+              Object.assign({}, value);
           } else {
             this._backing[name] =
-              Object.assign(({}: SchemaBackingFieldConfig), value);
+              Object.assign({}, value);
           }
         } else {
           Object.assign(this._backing[name], _backing[name]);
