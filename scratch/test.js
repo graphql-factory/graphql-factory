@@ -42,16 +42,16 @@ const schema = buildSchema(def, backing)
 // console.log(schema);
 
 const source = `
-query Query ($skip: Boolean!, $remove: Boolean!) @test(value: "queryOp") {
+query Query ($skip: Boolean!) @test(value: "queryOp") {
   readFoo(foo: "i am a foo") @test(value: "readFoo") {
-    id @remove(if: $remove) @test(value: "idField")
+    id @test(value: "idField") @remove(if: true) 
     name @skip(if: $skip)
   }
 }
 `
 
 const variableValues = {
-  remove: false, // randomBoolean(),
+  remove: true, // randomBoolean(),
   skip: false // randomBoolean()
 };
 

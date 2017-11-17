@@ -45,7 +45,6 @@ export {
   getOperationRootType,
   collectFields,
   getFieldDef,
-  resolveFieldValueOrError,
   responsePathAsArray,
 } from 'graphql/execution/execute';
 export {
@@ -95,12 +94,13 @@ export type {
 } from 'graphql/language/ast';
 
 export type {
+  GraphQLField,
   GraphQLFieldResolver,
+  GraphQLResolveInfo,
   ResponsePath,
   GraphQLType,
   GraphQLLeafType,
-  GraphQLAbstractType,
-  GraphQLResolveInfo,
+  GraphQLAbstractType
 } from 'graphql/type/definition';
 export {
   DirectiveLocationEnum

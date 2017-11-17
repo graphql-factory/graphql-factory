@@ -69,12 +69,13 @@ import {
   addPath,
   getFieldDef,
   buildResolveInfo,
-  resolveFieldValueOrError,
   getArgumentValues
 } from '../types/graphql';
 import type {
   ObjMap,
+  GraphQLField,
   GraphQLFieldResolver,
+  GraphQLResolveInfo,
   ResponsePath,
   DocumentNode,
   OperationDefinitionNode,
@@ -88,10 +89,12 @@ import {
   getDirectiveExec,
   reduceRequestDirectives,
   reduceResultDirectives,
-  reduceLocationTree
+  reduceLocationTree,
+  wrapWithDirectives
 } from './directives';
 import type {
-  DirectiveTree
+  DirectiveTree,
+  DirectiveExec
 } from './directives';
 import {
   promiseForObject,
@@ -229,13 +232,6 @@ function executeOperation(
 
   const path = undefined;
 
-  // #graphql-factory - Get the operation location
-  const operationLocation = operation.operation === 'query' ?
-    DirectiveLocation.QUERY :
-    operation.operation === 'mutation' ?
-      DirectiveLocation.MUTATION :
-      DirectiveLocation.SUBSCRIPTION;
-
   // #graphql-factory - get the directives that can be applied
   // on the schema definition
   const schemaDirectives = getDirectiveExec(
@@ -249,8 +245,6 @@ function executeOperation(
     exeContext.variableValues
   );
 
-  const schemaLocTree = reduceLocationTree(schemaDirectives);
-
   // #graphql-factory - get the directives that can be applied
   // on the operation
   const operationDirectives = getDirectiveExec(
@@ -262,84 +256,60 @@ function executeOperation(
       },
       {
         astNode: operation,
-        location: operationLocation
+        location: operation.operation === 'query' ?
+          DirectiveLocation.QUERY :
+          operation.operation === 'mutation' ?
+            DirectiveLocation.MUTATION :
+            DirectiveLocation.SUBSCRIPTION
       }
     ],
     exeContext.variableValues
   );
 
-  const operationLocTree = reduceLocationTree(operationDirectives);
-  const schemaDirectiveInfo = {
+  const schemaDirectiveTree = Object.freeze({
     parent: null,
-    locations: schemaLocTree
-  }
-  const operationDirectiveInfo = {
-    parent: schemaDirectiveInfo,
-    locations: operationLocTree
-  }
+    directives: reduceLocationTree(schemaDirectives)
+  })
+  const operationDirectiveTree = Object.freeze({
+    parent: schemaDirectiveTree,
+    directives: reduceLocationTree(operationDirectives)
+  })
 
-  // #graphql-factory - start reducing the directives
-  return reduceRequestDirectives(
+  // #graphql-factory - wrap the directives and reduce
+  return wrapWithDirectives(
     exeContext,
-    schemaDirectives,
-    undefined,
-    schemaDirectiveInfo
-  )
-  .then(() => {
-    return reduceRequestDirectives(
-      exeContext,
-      operationDirectives,
-      undefined,
-      operationDirectiveInfo
-    );
-  })
-  .then(() => {
-    return operation.operation === 'mutation' ?
-      executeFieldsSerially(exeContext, type, rootValue, path, fields) :
-      executeFields(
-        exeContext,
-        type,
-        rootValue,
-        path,
-        fields,
-        operationDirectiveInfo
-      );
-  })
-  .then(result => {
-    return reduceResultDirectives(
-      exeContext,
-      schemaDirectives,
-      result,
-      schemaDirectiveInfo
-    )
-    .then(directiveResult => {
-      // check the directiveResult, if nothing was returned
-      // then return the orignal result
-      return directiveResult === undefined ?
-        result :
-        directiveResult;
-    });
-  })
-  .then(result => {
-    return reduceResultDirectives(
-      exeContext,
-      operationDirectives,
-      result,
-      operationDirectiveInfo
-    )
-    .then(directiveResult => {
-      // check the directiveResult, if nothing was returned
-      // then return the orignal result
-      return directiveResult === undefined ?
-        result :
-        directiveResult;
-    });
-  });
+    {
+      directiveExecs: schemaDirectives,
+      directiveTree: schemaDirectiveTree,
+      source: undefined,
+      args: () => undefined
+    },
+    {
+      directiveExecs: operationDirectives,
+      directiveTree: operationDirectiveTree,
+      source: undefined,
+      args: () => undefined
+    },
+    () => {
+      return operation.operation === 'mutation' ?
+        executeFieldsSerially(exeContext, type, rootValue, path, fields) :
+        executeFields(
+          exeContext,
+          type,
+          rootValue,
+          path,
+          fields,
+          operationDirectiveTree
+        );
+    },
+    false
+  );
 }
 
   /**
  * Implements the "Evaluating selection sets" section of the spec
  * for "write" mode.
+ * TODO: This needs directive reduce implmeneted
  */
 function executeFieldsSerially(
   exeContext: ExecutionContext,
@@ -403,12 +373,6 @@ export function executeFields(
         return _results;
       }
 
-      const args = getArgumentValues(
-        fieldDef,
-        fieldNode,
-        exeContext.variableValues
-      )
-
       // get the type directives
       const type = getNamedType(fieldDef.type);
       const typeDirectives = getDirectiveExec(
@@ -438,39 +402,39 @@ export function executeFields(
         exeContext.variableValues
       );
 
-      const locationTree = reduceLocationTree(
-        typeDirectives.concat(fieldDirectives)
-      );
-
       const directiveTree = {
         parent: parentLocationTree,
-        locations: locationTree
+        directives: reduceLocationTree(
+          typeDirectives.concat(fieldDirectives)
+        )
       };
 
-      // add the response, if it is undefined or a skip, the
+      const getArgs = () => {
+        return getArgumentValues(
+          fieldDef,
+          fieldNodes[0],
+          exeContext.variableValues
+        )
+      }
+
+      // #graphql-factory - add the response, if it is undefined or a skip, the
       // promiseForObject function will filter it out of the result
-      _results[responseName] = reduceRequestDirectives(
+      _results[responseName] = wrapWithDirectives(
         exeContext,
-        typeDirectives,
-        fieldDef,
-        directiveTree,
-        args
-      )
-        .then(() => {
-          return reduceRequestDirectives(
-            exeContext,
-            fieldDirectives,
-            fieldDef,
-            directiveTree,
-            args
-          );
-        })
-        .then(skip => {
-          if (skip instanceof GraphQLSkipInstruction) {
-            return skip;
-          }
-          // start
-          const result = resolveField(
+        {
+          directiveExecs: typeDirectives,
+          directiveTree: directiveTree,
+          source: undefined,
+          args: getArgs
+        },
+        {
+          directiveExecs: fieldDirectives,
+          directiveTree: directiveTree,
+          source: undefined,
+          args: getArgs
+        },
+        () => {
+          return resolveField(
             exeContext,
             parentType,
             sourceValue,
@@ -478,48 +442,9 @@ export function executeFields(
             fieldPath,
             directiveTree
           );
-
-          // return the result
-          return result === undefined ?
-            new GraphQLSkipInstruction() :
-            result;
-        })
-        .then(result => {
-          return result instanceof GraphQLSkipInstruction ?
-            result :
-            reduceResultDirectives(
-              exeContext,
-              typeDirectives,
-              result,
-              directiveTree,
-              args
-            )
-            .then(directiveResult => {
-              // check the directiveResult, if nothing was returned
-              // then return the orignal result
-              return directiveResult === undefined ?
-                result :
-                directiveResult;
-            });
-        })
-        .then(result => {
-          return result instanceof GraphQLSkipInstruction ?
-            result :
-            reduceResultDirectives(
-              exeContext,
-              fieldDirectives,
-              result,
-              directiveTree,
-              args
-            )
-            .then(directiveResult => {
-              // check the directiveResult, if nothing was returned
-              // then return the orignal result
-              return directiveResult === undefined ?
-                result :
-                directiveResult;
-            });
-        });
+        },
+        true
+      );
 
       // return the updated results
       return _results;
@@ -586,4 +511,37 @@ function resolveField(
     result,
     parentDirectiveTree
   );
+}
+
+// Isolates the "ReturnOrAbrupt" behavior to not de-opt the `resolveField`
+// function. Returns the result of resolveFn or the abrupt-return Error object.
+export function resolveFieldValueOrError<TSource>(
+  exeContext: ExecutionContext,
+  fieldDef: GraphQLField<TSource, *>,
+  fieldNodes: Array<FieldNode>,
+  resolveFn: GraphQLFieldResolver<TSource, *>,
+  source: TSource,
+  info: GraphQLResolveInfo
+): Error | mixed {
+  try {
+    // Build a JS object of arguments from the field.arguments AST, using the
+    // variables scope to fulfill any variable references.
+    // TODO: find a way to memoize, in case this field is within a List type.
+    const args = getArgumentValues(
+      fieldDef,
+      fieldNodes[0],
+      exeContext.variableValues
+    );
+
+    // The resolve function's optional third argument is a context value that
+    // is provided to every resolve function within an execution. It is commonly
+    // used to represent an authenticated user, or request-specific caches.
+    const context = exeContext.contextValue;
+
+    return resolveFn(source, args, context, info);
+  } catch (error) {
+    // Sometimes a non-error is thrown, wrap it as an Error for a
+    // consistent interface.
+    return error instanceof Error ? error : new Error(error);
+  }
 }

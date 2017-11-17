@@ -34,6 +34,10 @@ import {
   set
 } from '../jsutils';
 
+import {
+  GraphQLSkipInstruction
+} from '../types'
+
 export function getDirectives(
   astNode: { directives?: Array<DirectiveNode>}
 ): ?Array<DirectiveNode> {
@@ -108,18 +112,13 @@ export function getDirectiveExec(
 
       // add the location and args if the directive exists in the map
       if (info[directiveName]) {
-        info[directiveName].locations[location] = {
-          args,
-          fieldNodes: [ astNode ]
-        };
+        info[directiveName].locations[location] = args;
       } else {
         info[directiveName] = {
           name: directiveName,
           directive,
           locations: {
-            [location]: {
-              args
-            }
+            [location]: args
           }
         };
       }
@@ -150,17 +149,17 @@ export function reduceLocationTree (
   directiveExec: Array<DirectiveExec>,
   directiveTree?: { [ location: ?string ]: ?mixed }
 ) {
-  return directiveExec.reduce(
+  return Object.freeze(directiveExec.reduce(
     (locs, { directive, locations }) => {
       const name = directive.name;
       Object.keys(locations).forEach(location => {
         const { args } = locations[location];
-        set(locs, [ location, name ], args)
+        set(locs, [ name, location ], args)
       })
       return locs;
     },
     directiveTree || {}
-  );
+  ));
 }
 
 // reduce the directives at request or result
@@ -175,17 +174,9 @@ function reduceDirectives(
   return promiseReduce(
     directiveExec,
     (source, { directive, locations }) => {
-      const info = {
-        schema: exeContext.schema,
-        fragments: exeContext.fragments,
-        rootValue: exeContext.rootValue,
-        operation: exeContext.operation,
-        variableValues: exeContext.variableValues,
-        directives: {
-          parent: parent.parent,
-          locations
-        }
-      };
+      if (source instanceof GraphQLSkipInstruction) {
+        return source;
+      }
 
       return typeof directive[resolveType] === 'function' ?
         Promise.resolve(
@@ -193,7 +184,17 @@ function reduceDirectives(
             source,
             args || {},
             exeContext.contextValue,
-            info
+            {
+              schema: exeContext.schema,
+              fragments: exeContext.fragments,
+              rootValue: exeContext.rootValue,
+              operation: exeContext.operation,
+              variableValues: exeContext.variableValues,
+              directives: {
+                parent: parent.parent,
+                locations
+              }
+            }
           )
         ) :
         source;
@@ -236,4 +237,85 @@ export function reduceResultDirectives(
     parent,
     args
   );
+}
+
+
+export type DirectiveContext = {
+  directiveExecs: Array<DirectiveExec>;
+  directiveTree: DirectiveTree;
+  source: any;
+  args: () => ?mixed;
+}
+
+export function wrapWithDirectives (
+  exeContext: ExecutionContext,
+  definitionContext: DirectiveContext,
+  operationContext: DirectiveContext,
+  resolve: () => ?mixed,
+  skipOnUndefined: boolean
+): any {
+
+  return reduceRequestDirectives(
+    exeContext,
+    definitionContext.directiveExecs,
+    definitionContext.source,
+    definitionContext.directiveTree,
+    definitionContext.args()
+  )
+  .then(source => {
+    return source instanceof GraphQLSkipInstruction ?
+      source :
+      reduceRequestDirectives(
+        exeContext,
+        operationContext.directiveExecs,
+        source,
+        operationContext.directiveTree,
+        operationContext.args()
+      );
+  })
+  .then(source => {
+    return source instanceof GraphQLSkipInstruction ?
+      source :
+      resolve();
+  })
+  .then(result => {
+    if (result instanceof GraphQLSkipInstruction ||
+      (skipOnUndefined && result === undefined)) {
+      return new GraphQLSkipInstruction();
+    }
+    return reduceResultDirectives(
+      exeContext,
+      definitionContext.directiveExecs,
+      result,
+      definitionContext.directiveTree,
+      definitionContext.args()
+    )
+    .then(directiveResult => {
+      // check the directiveResult, if nothing was returned
+      // then return the orignal result
+      return directiveResult === undefined ?
+        result :
+        directiveResult;
+    });
+  })
+  .then(result => {
+    if (result instanceof GraphQLSkipInstruction) {
+      return result;
+    }
+
+    return reduceResultDirectives(
+      exeContext,
+      operationContext.directiveExecs,
+      result,
+      operationContext.directiveTree,
+      operationContext.args()
+    )
+    .then(directiveResult => {
+      // check the directiveResult, if nothing was returned
+      // then return the orignal result
+      return directiveResult === undefined ?
+        result :
+        directiveResult;
+    });
+  });
 }

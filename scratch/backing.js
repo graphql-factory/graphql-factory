@@ -17,41 +17,44 @@ export const backing = new SchemaBacking()
       })
     })
   .Directive('remove')
-    .resolveRequest((source, locations) => {
-      if (locations.FIELD && locations.FIELD.args.if) {
-        return new GraphQLSkipInstruction()
+    .resolveRequest((source, args, context, info) => {
+      const { directives: { locations } } = info
+      if (locations.FIELD && locations.FIELD.if) {
+        return new GraphQLSkipInstruction();
       }
     })
     .resolveResult(source => {
+      console.logo('i shouldnt be here')
       return source
     })
   .Directive('modify')
-    .resolveResult((source, locations) => {
-      if (locations.FIELD && locations.FIELD.args.value) {
-        return locations.FIELD.args.value
-      } else if (locations.FIELD_DEFINITION && locations.FIELD_DEFINITION.args.value) {
-        return locations.FIELD_DEFINITION.args.value
+    .resolveResult((source, args, context, info) => {
+      const { directives: { locations } } = info;
+      if (locations.FIELD && locations.FIELD.value) {
+        return locations.FIELD.value
+      } else if (locations.FIELD_DEFINITION && locations.FIELD_DEFINITION.value) {
+        return locations.FIELD_DEFINITION.value
       }
     })
   .Directive('test')
-    .resolveRequest((source, locations, context, info) => {
-      console.log('REQUEST', locations)
-      console.log(JSON.stringify(info.directives, null, '  '))
+    .resolveRequest((source, args, context, info) => {
+      //console.log('REQUEST', args)
+      //console.log(JSON.stringify(info.directives, null, '  '))
     })
-    .resolveResult((source, locations) => {
-      console.log('RESULT', locations)
-      return source;
+    .resolveResult((source, args, context, info) => {
+      //console.log('RESULT', args)
     })
   .Directive('acl')
-    .resolveRequest((source, locations, context, info) => {
-      var user = info.rootValue ? info.rootValue.user : ''
+    .resolveRequest((source, args, context, info) => {
+      const { directives: { locations }, rootValue } = info;
+      var user = rootValue ? rootValue.user : ''
       var auth = function (args) {
         return acl[user] && acl[user].indexOf(args.permission) !== -1
       }
 
-      if (locations.SCHEMA && !auth(locations.SCHEMA.args)) {
+      if (locations.SCHEMA && !auth(locations.SCHEMA)) {
         throw new Error('Unauthorized at schema')
-      } else if (locations.OBJECT && !auth(locations.OBJECT.args)) {
+      } else if (locations.OBJECT && !auth(locations.OBJECT)) {
         throw new Error('Unauthorized at object')
       }
     })
