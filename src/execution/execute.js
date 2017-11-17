@@ -58,46 +58,10 @@
  */
 
 import {
-    getDirectiveExec,
-    reduceRequestDirectives,
-    reduceResultDirectives
-} from './directives';
-import {
-    promiseForObject,
-    getPromise
-} from '../jsutils/promise';
-import { completeValueCatchingError } from './complete';
-import getFieldTypeLocation from '../jsutils/getFieldTypeLocation';
-import type {ObjMap} from 'graphql/jsutils/ObjMap';
-
-// #graphql-factory - add skip instruction
-import { GraphQLSkipInstruction } from '../types';
-import {
   GraphQLObjectType,
-  getNamedType
-} from 'graphql/type/definition';
-import type {
-  GraphQLFieldResolver,
-  ResponsePath,
-} from 'graphql/type/definition';
-import { GraphQLSchema } from 'graphql/type/schema';
-
-import {
-  DirectiveLocation
-} from 'graphql/type/directives';
-import type {
-  DocumentNode,
-  OperationDefinitionNode,
-  FieldNode
-} from 'graphql/language/ast';
-
-import type {
-  ExecutionArgs,
-  ExecutionResult,
-  ExecutionContext
-} from 'graphql/execution/execute';
-
-import {
+  getNamedType,
+  GraphQLSchema,
+  DirectiveLocation,
   assertValidExecutionArguments,
   buildExecutionContext,
   getOperationRootType,
@@ -106,7 +70,36 @@ import {
   getFieldDef,
   buildResolveInfo,
   resolveFieldValueOrError
-} from 'graphql/execution/execute';
+} from '../types/graphql';
+import type {
+  ObjMap,
+  GraphQLFieldResolver,
+  ResponsePath,
+  DocumentNode,
+  OperationDefinitionNode,
+  FieldNode,
+  ExecutionArgs,
+  ExecutionResult,
+  ExecutionContext,
+} from '../types/graphql';
+
+import {
+  getDirectiveExec,
+  reduceRequestDirectives,
+  reduceResultDirectives
+} from './directives';
+import {
+  promiseForObject,
+  getPromise,
+  getFieldTypeLocation
+} from '../jsutils';
+import {
+  completeValueCatchingError
+} from './complete';
+import {
+  GraphQLSkipInstruction
+} from '../types';
+
   /**
  * Implements the "Evaluating requests" section of the GraphQL specification.
  *

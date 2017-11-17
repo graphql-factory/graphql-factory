@@ -2,12 +2,13 @@
  * 
  * @flow
  */
-import promiseReduce from '../jsutils/promiseReduce';
-import { getDirectiveValues, GraphQLSchema, GraphQLDirective } from 'graphql';
-import type { DirectiveLocationEnum } from 'graphql/type/directives';
-import type { ExecutionContext } from 'graphql/execution/execute';
-// import { buildResolveInfo } from './request';
+import {
+  getDirectiveValues,
+  GraphQLSchema,
+  GraphQLDirective
+} from '../types/graphql';
 import type {
+  ObjMap,
   DirectiveNode,
   OperationDefinitionNode,
   FieldNode,
@@ -23,9 +24,14 @@ import type {
   UnionTypeDefinitionNode,
   EnumTypeDefinitionNode,
   EnumValueDefinitionNode,
-  InputObjectTypeDefinitionNode
-} from 'graphql/language/ast';
-import type { ObjMap } from 'graphql/jsutils/ObjMap';
+  InputObjectTypeDefinitionNode,
+  DirectiveLocationEnum,
+  ExecutionContext
+} from '../types/graphql';
+
+import {
+  promiseReduce
+} from '../jsutils';
 
 export function getDirectives(
   astNode: { directives?: Array<DirectiveNode>}

@@ -9,35 +9,41 @@
  * 
  * @flow
  */
-import type {
-  ExecutionContext
-} from 'graphql/execution/execute';
+
 import {
   responsePathAsArray,
   addPath,
-  collectFields
-} from 'graphql/execution/execute';
+  collectFields,
+  GraphQLObjectType,
+  GraphQLNonNull,
+  GraphQLList,
+  isAbstractType,
+  isLeafType,
+  GraphQLError,
+  locatedError,
+  isNullish,
+  invariant
+} from '../types/graphql';
 import type {
+  ExecutionContext,
   GraphQLType,
   GraphQLLeafType,
   GraphQLAbstractType,
   GraphQLResolveInfo,
   ResponsePath,
-} from 'graphql/type/definition';
+  FieldNode
+} from '../types/graphql';
+
 import {
-  GraphQLObjectType,
-  GraphQLNonNull,
-  GraphQLList,
-  isAbstractType,
-  isLeafType
-} from 'graphql/type/definition';
-import type { FieldNode } from 'graphql/language/ast';
-import { GraphQLError, locatedError } from 'graphql/error';
-import isNullish from 'graphql/jsutils/isNullish';
-import invariant from 'graphql/jsutils/invariant';
-import { forEach, isCollection } from 'iterall';
-import { getPromise } from '../jsutils/promise';
-import { executeFields } from './execute';
+  forEach,
+  isCollection
+} from 'iterall';
+import {
+  getPromise
+} from '../jsutils';
+import {
+  executeFields
+} from './execute';
 
 
 // This is a small wrapper around completeValue which detects and logs errors

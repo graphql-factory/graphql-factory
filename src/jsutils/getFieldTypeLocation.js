@@ -10,12 +10,14 @@ import {
   GraphQLUnionType,
   GraphQLEnumType,
   GraphQLInputObjectType,
-  getNamedType
-} from 'graphql/type/definition';
+  getNamedType,
+  DirectiveLocation
+} from '../types/graphql';
 
-import { DirectiveLocation } from 'graphql/type/directives';
-import type { DirectiveLocationEnum } from 'graphql/type/directives';
-import type { GraphQLType } from 'graphql/type/definition';
+import type {
+  DirectiveLocationEnum,
+  GraphQLType
+} from '../types/graphql.js';
 
 // gets the location based on the field type
 export default function getFieldTypeLocation(

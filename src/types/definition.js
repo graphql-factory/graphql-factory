@@ -18,16 +18,23 @@
  * @returns {boolean}
  * @flow
  */
-import { assertObject } from '../jsutils/assertions';
-import { SchemaBacking } from './backing';
-import type { DirectiveLocationEnum } from 'graphql/type/directives';
-import type { ObjMap } from 'graphql/jsutils/ObjMap';
-import type { ValueNode } from 'graphql/language/ast';
+import type {
+  DirectiveLocationEnum,
+  ObjMap,
+  ValueNode
+} from '../types/graphql';
 import type {
   GraphQLFieldResolver,
   GraphQLIsTypeOfFn,
   GraphQLTypeResolver
-} from 'graphql/type/definition';
+} from '../types/graphql.js';
+
+import {
+  assertObject
+} from '../jsutils';
+import {
+  SchemaBacking
+} from './backing';
 
 export class SchemaDefinition {
   _config: ?SchemaDefinitionConfig;

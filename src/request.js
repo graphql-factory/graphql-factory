@@ -9,14 +9,20 @@
  * @flow
  */
 
-import { parse } from 'graphql/language/parser';
-import { validate } from 'graphql/validation/validate';
-import type { ObjMap } from 'graphql/jsutils/ObjMap';
-import type { Source } from 'graphql/language/source';
-import type { GraphQLFieldResolver } from 'graphql/type/definition';
-import type { GraphQLSchema } from 'graphql/type/schema';
-import type { ExecutionResult } from 'graphql/execution/execute';
-import { execute } from './execution/execute'; // custom execution
+import {
+  parse,
+  validate
+} from './types/graphql';
+import type {
+  ObjMap,
+  Source,
+  GraphQLFieldResolver,
+  GraphQLSchema,
+  ExecutionResult
+} from './types/graphql';
+import {
+  execute
+} from './execution/execute'; // custom execution
 
 /**
  * This is the primary entry point function for fulfilling GraphQL operations

@@ -1,19 +1,25 @@
 // @flow
-import type { GraphQLSchema } from 'graphql/type/schema';
-import { buildSchema } from 'graphql/utilities/buildASTSchema';
-import set from '../jsutils/set';
+import type {
+  GraphQLSchema
+} from '../types/graphql.js';
 import {
+  buildSchema,
   GraphQLScalarType,
   GraphQLObjectType,
   GraphQLUnionType,
   GraphQLInterfaceType
-} from 'graphql';
+} from '../types/graphql';
+import {
+  set
+} from '../jsutils';
 
 import type {
   SchemaBackingConfig,
   SchemaBackingFieldConfig
 } from '../types/backing';
-import { SchemaBacking } from '../types/backing';
+import {
+  SchemaBacking
+} from '../types/backing';
 
 /**
  * Adds directive resolvers to a standard GraphQLDirective object

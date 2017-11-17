@@ -22,9 +22,13 @@
  *
  * @flow
  */
-import type { ObjMap } from 'graphql/jsutils/ObjMap';
-import type { ValueNode } from 'graphql/language/ast';
-import set from '../jsutils/set';
+import type {
+  ObjMap,
+  ValueNode
+} from '../types/graphql';
+import {
+  set
+} from '../jsutils';
 
 // Creates returns a chainable backing
 class BackingChain {
