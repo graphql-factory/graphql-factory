@@ -11,7 +11,7 @@ import invariant from 'graphql/jsutils/invariant';
 export {
   isNullish,
   invariant
-}
+};
 
 export {
   getNamedType,
@@ -32,8 +32,8 @@ export {
 } from 'graphql/type/directives';
 export {
   GraphQLError,
-  locatedError 
-}  from 'graphql/error';
+  locatedError
+} from 'graphql/error';
 export {
   GraphQLSchema
 } from 'graphql/type/schema';
@@ -49,7 +49,8 @@ export {
   responsePathAsArray,
 } from 'graphql/execution/execute';
 export {
-  getDirectiveValues
+  getDirectiveValues,
+  getArgumentValues
 } from 'graphql/execution/values';
 export {
   buildSchema

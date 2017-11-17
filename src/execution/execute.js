@@ -69,7 +69,8 @@ import {
   addPath,
   getFieldDef,
   buildResolveInfo,
-  resolveFieldValueOrError
+  resolveFieldValueOrError,
+  getArgumentValues
 } from '../types/graphql';
 import type {
   ObjMap,
@@ -86,7 +87,11 @@ import type {
 import {
   getDirectiveExec,
   reduceRequestDirectives,
-  reduceResultDirectives
+  reduceResultDirectives,
+  reduceLocationTree
+} from './directives';
+import type {
+  DirectiveTree
 } from './directives';
 import {
   promiseForObject,
@@ -244,6 +249,8 @@ function executeOperation(
     exeContext.variableValues
   );
 
+  const schemaLocTree = reduceLocationTree(schemaDirectives);
+
   // #graphql-factory - get the directives that can be applied
   // on the operation
   const operationDirectives = getDirectiveExec(
@@ -261,29 +268,49 @@ function executeOperation(
     exeContext.variableValues
   );
 
+  const operationLocTree = reduceLocationTree(operationDirectives);
+  const schemaDirectiveInfo = {
+    parent: null,
+    locations: schemaLocTree
+  }
+  const operationDirectiveInfo = {
+    parent: schemaDirectiveInfo,
+    locations: operationLocTree
+  }
+
   // #graphql-factory - start reducing the directives
   return reduceRequestDirectives(
     exeContext,
     schemaDirectives,
-    exeContext.schema
+    undefined,
+    schemaDirectiveInfo
   )
   .then(() => {
     return reduceRequestDirectives(
       exeContext,
       operationDirectives,
-      exeContext.schema
+      undefined,
+      operationDirectiveInfo
     );
   })
   .then(() => {
     return operation.operation === 'mutation' ?
       executeFieldsSerially(exeContext, type, rootValue, path, fields) :
-      executeFields(exeContext, type, rootValue, path, fields);
+      executeFields(
+        exeContext,
+        type,
+        rootValue,
+        path,
+        fields,
+        operationDirectiveInfo
+      );
   })
   .then(result => {
     return reduceResultDirectives(
       exeContext,
       schemaDirectives,
-      result
+      result,
+      schemaDirectiveInfo
     )
     .then(directiveResult => {
       // check the directiveResult, if nothing was returned
@@ -297,7 +324,8 @@ function executeOperation(
     return reduceResultDirectives(
       exeContext,
       operationDirectives,
-      result
+      result,
+      operationDirectiveInfo
     )
     .then(directiveResult => {
       // check the directiveResult, if nothing was returned
@@ -329,7 +357,8 @@ function executeFieldsSerially(
         parentType,
         sourceValue,
         fieldNodes,
-        fieldPath
+        fieldPath,
+        {}
       );
       if (result === undefined) {
         return results;
@@ -358,6 +387,7 @@ export function executeFields(
   sourceValue: mixed,
   path: ResponsePath,
   fields: ObjMap<Array<FieldNode>>,
+  parentLocationTree: DirectiveTree
 ): Promise<ObjMap<mixed>> | ObjMap<mixed> {
   const finalResults = Object.keys(fields).reduce(
     (results, responseName) => {
@@ -372,6 +402,12 @@ export function executeFields(
       if (!fieldDef) {
         return _results;
       }
+
+      const args = getArgumentValues(
+        fieldDef,
+        fieldNode,
+        exeContext.variableValues
+      )
 
       // get the type directives
       const type = getNamedType(fieldDef.type);
@@ -402,18 +438,31 @@ export function executeFields(
         exeContext.variableValues
       );
 
+      const locationTree = reduceLocationTree(
+        typeDirectives.concat(fieldDirectives)
+      );
+
+      const directiveTree = {
+        parent: parentLocationTree,
+        locations: locationTree
+      };
+
       // add the response, if it is undefined or a skip, the
       // promiseForObject function will filter it out of the result
       _results[responseName] = reduceRequestDirectives(
         exeContext,
         typeDirectives,
-        fieldDef
+        fieldDef,
+        directiveTree,
+        args
       )
         .then(() => {
           return reduceRequestDirectives(
             exeContext,
             fieldDirectives,
-            fieldDef
+            fieldDef,
+            directiveTree,
+            args
           );
         })
         .then(skip => {
@@ -426,7 +475,8 @@ export function executeFields(
             parentType,
             sourceValue,
             fieldNodes,
-            fieldPath
+            fieldPath,
+            directiveTree
           );
 
           // return the result
@@ -440,7 +490,9 @@ export function executeFields(
             reduceResultDirectives(
               exeContext,
               typeDirectives,
-              result
+              result,
+              directiveTree,
+              args
             )
             .then(directiveResult => {
               // check the directiveResult, if nothing was returned
@@ -456,7 +508,9 @@ export function executeFields(
             reduceResultDirectives(
               exeContext,
               fieldDirectives,
-              result
+              result,
+              directiveTree,
+              args
             )
             .then(directiveResult => {
               // check the directiveResult, if nothing was returned
@@ -491,7 +545,8 @@ function resolveField(
   parentType: GraphQLObjectType,
   source: mixed,
   fieldNodes: Array<FieldNode>,
-  path: ResponsePath
+  path: ResponsePath,
+  parentDirectiveTree: DirectiveTree
 ): mixed {
   const fieldNode = fieldNodes[0];
   const fieldName = fieldNode.name.value;
@@ -528,6 +583,7 @@ function resolveField(
     fieldNodes,
     info,
     path,
-    result
+    result,
+    parentDirectiveTree
   );
 }

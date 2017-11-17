@@ -30,7 +30,8 @@ import type {
 } from '../types/graphql';
 
 import {
-  promiseReduce
+  promiseReduce,
+  set
 } from '../jsutils';
 
 export function getDirectives(
@@ -117,8 +118,7 @@ export function getDirectiveExec(
           directive,
           locations: {
             [location]: {
-              args,
-              fieldNodes: [ astNode ]
+              args
             }
           }
         };
@@ -134,18 +134,43 @@ export function getDirectiveExec(
   });
 }
 
-type DirectiveExec = {
+export type DirectiveExec = {
   name: string;
   directive: GraphQLDirective;
   locations: { [location: DirectiveLocationEnum]: any };
 };
+
+
+export type DirectiveTree = {
+  parent?: ?DirectiveTree;
+  locations?: { [ location: ?string ]: ?mixed };
+};
+
+export function reduceLocationTree (
+  directiveExec: Array<DirectiveExec>,
+  directiveTree?: { [ location: ?string ]: ?mixed }
+) {
+  return directiveExec.reduce(
+    (locs, { directive, locations }) => {
+      const name = directive.name;
+      Object.keys(locations).forEach(location => {
+        const { args } = locations[location];
+        set(locs, [ location, name ], args)
+      })
+      return locs;
+    },
+    directiveTree || {}
+  );
+}
 
 // reduce the directives at request or result
 function reduceDirectives(
   exeContext: ExecutionContext,
   directiveExec: Array<DirectiveExec>,
   resolveType: string,
-  scopedSource: any
+  scopedSource: any,
+  parent: DirectiveTree,
+  args?: ?mixed
 ): Promise<*> {
   return promiseReduce(
     directiveExec,
@@ -155,14 +180,18 @@ function reduceDirectives(
         fragments: exeContext.fragments,
         rootValue: exeContext.rootValue,
         operation: exeContext.operation,
-        variableValues: exeContext.variableValues
+        variableValues: exeContext.variableValues,
+        directives: {
+          parent: parent.parent,
+          locations
+        }
       };
 
       return typeof directive[resolveType] === 'function' ?
         Promise.resolve(
           directive[resolveType](
             source,
-            locations,
+            args || {},
             exeContext.contextValue,
             info
           )
@@ -177,13 +206,17 @@ function reduceDirectives(
 export function reduceRequestDirectives(
   exeContext: ExecutionContext,
   directiveExec: Array<DirectiveExec>,
-  source: any
+  source: any,
+  parent: DirectiveTree,
+  args?: ?mixed
 ): Promise<*> {
   return reduceDirectives(
     exeContext,
     directiveExec,
     'resolveRequest',
-    source
+    source,
+    parent,
+    args
   );
 }
 
@@ -191,12 +224,16 @@ export function reduceRequestDirectives(
 export function reduceResultDirectives(
   exeContext: ExecutionContext,
   directiveExec: Array<DirectiveExec>,
-  source: any
+  source: any,
+  parent: DirectiveTree,
+  args?: ?mixed
 ): Promise<*> {
   return reduceDirectives(
     exeContext,
     directiveExec,
     'resolveResult',
-    source
+    source,
+    parent,
+    args
   );
 }

@@ -26,7 +26,7 @@ type Query @acl(permission: "read") {
   ): Foo
 }
 
-directive @test(value: String) on SCHEMA | OBJECT | QUERY
+directive @test(value: String) on SCHEMA | OBJECT | QUERY | FIELD
 directive @acl(permission: String) on SCHEMA | OBJECT
 directive @remove(if: Boolean!) on FIELD
 directive @modify(value: String) on FIELD | FIELD_DEFINITION
@@ -43,8 +43,8 @@ const schema = buildSchema(def, backing)
 
 const source = `
 query Query ($skip: Boolean!, $remove: Boolean!) @test(value: "queryOp") {
-  readFoo {
-    id @remove(if: $remove)
+  readFoo(foo: "i am a foo") @test(value: "readFoo") {
+    id @remove(if: $remove) @test(value: "idField")
     name @skip(if: $skip)
   }
 }

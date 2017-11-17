@@ -34,8 +34,9 @@ export const backing = new SchemaBacking()
       }
     })
   .Directive('test')
-    .resolveRequest((source, locations) => {
+    .resolveRequest((source, locations, context, info) => {
       console.log('REQUEST', locations)
+      console.log(JSON.stringify(info.directives, null, '  '))
     })
     .resolveResult((source, locations) => {
       console.log('RESULT', locations)

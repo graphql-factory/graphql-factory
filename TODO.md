@@ -39,25 +39,25 @@ Where are these applied and what do they do?
 **Completed**
   * SCHEMA
     * run during executeOperation
-    * request source is schema
+    * request source is undefined
     * result source is result
   * QUERY
     * run during executeOperation
-    * request source is schema
+    * request source is undefined
     * result source is result
   * MUTATION
     * run during executeOperation
-    * request source is schema
+    * request source is undefined
     * result source is result
   * SUBSCRIPTION
     * run during executeOperation
-    * request source is schema
+    * request source is undefined
     * result source is result
   * FIELD
     * run on each field during executeFields
-    * request source is fieldDefinition
+    * request source is undefined
     * result source is field result
   * FIELD_DEFINITION
     * when run on each field during executeFields
-      * request source is fieldDefinition
+      * request source is undefined
       * result source is field result

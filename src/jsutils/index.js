@@ -10,20 +10,20 @@ export {
 } from './assertions';
 export {
   get
-}
+};
 export {
   getFieldTypeLocation
-}
+};
 export {
   isHashLike
-}
+};
 export {
   getPromise,
   promiseForObject
 } from './promise';
 export {
   promiseReduce
-}
+};
 export {
   set
-}
+};

@@ -42,6 +42,6 @@ export function promiseForObject<T>(
         resolvedObject[keys[i]] = value;
       }
       return resolvedObject;
-    }, Object.create(null))
+    }, Object.create(null));
   });
 }

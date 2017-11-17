@@ -44,6 +44,9 @@ import {
 import {
   executeFields
 } from './execute';
+import type {
+  DirectiveTree
+} from './directives'
 
 
 // This is a small wrapper around completeValue which detects and logs errors
@@ -54,7 +57,8 @@ export function completeValueCatchingError(
   fieldNodes: Array<FieldNode>,
   info: GraphQLResolveInfo,
   path: ResponsePath,
-  result: mixed
+  result: mixed,
+  parentDirectiveTree: DirectiveTree
 ): mixed {
   // If the field type is non-nullable, then it is resolved without any
   // protection from errors, however it still properly locates the error.
@@ -65,7 +69,8 @@ export function completeValueCatchingError(
       fieldNodes,
       info,
       path,
-      result
+      result,
+      parentDirectiveTree
     );
   }
 
@@ -78,7 +83,8 @@ export function completeValueCatchingError(
       fieldNodes,
       info,
       path,
-      result
+      result,
+      parentDirectiveTree
     );
     const promise = getPromise(completed);
     if (promise) {
@@ -108,7 +114,8 @@ function completeValueWithLocatedError(
   fieldNodes: Array<FieldNode>,
   info: GraphQLResolveInfo,
   path: ResponsePath,
-  result: mixed
+  result: mixed,
+  parentDirectiveTree: DirectiveTree
 ): mixed {
   try {
     const completed = completeValue(
@@ -117,7 +124,8 @@ function completeValueWithLocatedError(
       fieldNodes,
       info,
       path,
-      result
+      result,
+      parentDirectiveTree
     );
     const promise = getPromise(completed);
     if (promise) {
@@ -161,7 +169,8 @@ function completeValue(
   fieldNodes: Array<FieldNode>,
   info: GraphQLResolveInfo,
   path: ResponsePath,
-  result: mixed
+  result: mixed,
+  parentDirectiveTree: DirectiveTree
 ): mixed {
   // If result is a Promise, apply-lift over completeValue.
   const promise = getPromise(result);
@@ -173,7 +182,8 @@ function completeValue(
         fieldNodes,
         info,
         path,
-        resolved
+        resolved,
+        parentDirectiveTree
       )
     );
   }
@@ -192,7 +202,8 @@ function completeValue(
       fieldNodes,
       info,
       path,
-      result
+      result,
+      parentDirectiveTree
     );
     if (completed === null) {
       throw new Error(
@@ -216,7 +227,8 @@ function completeValue(
       fieldNodes,
       info,
       path,
-      result
+      result,
+      parentDirectiveTree
     );
   }
 
@@ -235,7 +247,8 @@ function completeValue(
       fieldNodes,
       info,
       path,
-      result
+      result,
+      parentDirectiveTree
     );
   }
 
@@ -247,7 +260,8 @@ function completeValue(
       fieldNodes,
       info,
       path,
-      result
+      result,
+      parentDirectiveTree
     );
   }
 
@@ -267,7 +281,8 @@ function completeListValue(
   fieldNodes: Array<FieldNode>,
   info: GraphQLResolveInfo,
   path: ResponsePath,
-  result: mixed
+  result: mixed,
+  parentDirectiveTree: DirectiveTree
 ): mixed {
   invariant(
     isCollection(result),
@@ -290,7 +305,8 @@ function completeListValue(
       fieldNodes,
       info,
       fieldPath,
-      item
+      item,
+      parentDirectiveTree
     );
 
     if (!containsPromise && getPromise(completedItem)) {
@@ -331,7 +347,8 @@ function completeAbstractValue(
   fieldNodes: Array<FieldNode>,
   info: GraphQLResolveInfo,
   path: ResponsePath,
-  result: mixed
+  result: mixed,
+  parentDirectiveTree: DirectiveTree
 ): mixed {
   const runtimeType = returnType.resolveType ?
     returnType.resolveType(result, exeContext.contextValue, info) :
@@ -353,7 +370,8 @@ function completeAbstractValue(
         fieldNodes,
         info,
         path,
-        result
+        result,
+        parentDirectiveTree
       )
     );
   }
@@ -371,7 +389,8 @@ function completeAbstractValue(
     fieldNodes,
     info,
     path,
-    result
+    result,
+    parentDirectiveTree
   );
 }
 
@@ -416,7 +435,8 @@ function completeObjectValue(
   fieldNodes: Array<FieldNode>,
   info: GraphQLResolveInfo,
   path: ResponsePath,
-  result: mixed
+  result: mixed,
+  parentDirectiveTree: DirectiveTree
 ): mixed {
   // If there is an isTypeOf predicate function, call it with the
   // current result. If isTypeOf returns false, then raise an error rather
@@ -436,7 +456,8 @@ function completeObjectValue(
           fieldNodes,
           info,
           path,
-          result
+          result,
+          parentDirectiveTree
         );
       });
     }
@@ -452,7 +473,8 @@ function completeObjectValue(
     fieldNodes,
     info,
     path,
-    result
+    result,
+    parentDirectiveTree
   );
 }
 
@@ -473,7 +495,8 @@ function collectAndExecuteSubfields(
   fieldNodes: Array<FieldNode>,
   info: GraphQLResolveInfo,
   path: ResponsePath,
-  result: mixed
+  result: mixed,
+  parentDirectiveTree: DirectiveTree
 ): mixed {
   // Collect sub-fields to execute to complete this value.
   let subFieldNodes = Object.create(null);
@@ -491,7 +514,13 @@ function collectAndExecuteSubfields(
     }
   }
 
-  return executeFields(exeContext, returnType, result, path, subFieldNodes);
+  return executeFields(
+    exeContext,
+    returnType,
+    result, path,
+    subFieldNodes,
+    parentDirectiveTree
+  );
 }
 
 /**
