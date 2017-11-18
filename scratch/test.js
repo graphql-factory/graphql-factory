@@ -26,7 +26,8 @@ type Query @acl(permission: "read") {
   ): Foo
 }
 
-directive @test(value: String) on SCHEMA | OBJECT | QUERY | FIELD | INPUT_FIELD_DEFINITION
+directive @test(value: String) on SCHEMA | OBJECT | QUERY | FIELD |
+  INPUT_FIELD_DEFINITION
 directive @acl(permission: String) on SCHEMA | OBJECT
 directive @remove(if: Boolean!) on FIELD | INPUT_FIELD_DEFINITION
 directive @modify(value: String) on FIELD | FIELD_DEFINITION

@@ -310,7 +310,14 @@ function executeOperation(
     },
     () => {
       return operation.operation === 'mutation' ?
-        executeFieldsSerially(exeContext, type, rootValue, path, fields) :
+        executeFieldsSerially(
+          exeContext,
+          type,
+          rootValue,
+          path,
+          fields,
+          operationDirectiveTree
+        ) :
         executeFields(
           exeContext,
           type,
@@ -335,6 +342,7 @@ function executeFieldsSerially(
   sourceValue: mixed,
   path: ResponsePath,
   fields: ObjMap<Array<FieldNode>>,
+  parentDirectiveTree: DirectiveTree
 ): Promise<ObjMap<mixed>> {
   return Object.keys(fields).reduce(
     (prevPromise, responseName) => prevPromise.then(results => {
@@ -346,7 +354,7 @@ function executeFieldsSerially(
         sourceValue,
         fieldNodes,
         fieldPath,
-        {}
+        parentDirectiveTree
       );
       if (result === undefined) {
         return results;
@@ -375,112 +383,44 @@ export function executeFields(
   sourceValue: mixed,
   path: ResponsePath,
   fields: ObjMap<Array<FieldNode>>,
-  parentLocationTree: DirectiveTree
+  parentDirectiveTree: DirectiveTree
 ): Promise<ObjMap<mixed>> | ObjMap<mixed> {
-  const finalResults = Object.keys(fields).reduce(
-    (results, responseName) => {
-      const _results = results || {};
-      const fieldNodes = fields[responseName];
-      const fieldPath = addPath(path, responseName);
+  let containsPromise = false;
 
-      // #graphql-factory - get additional information
-      const fieldNode = fieldNodes[0];
-      const fieldName = fieldNode.name.value;
-      const fieldDef = getFieldDef(exeContext.schema, parentType, fieldName);
-      if (!fieldDef) {
-        return _results;
-      }
+    const finalResults = Object.keys(fields).reduce(
+      (results, responseName) => {
+        const fieldNodes = fields[responseName];
+        const fieldPath = addPath(path, responseName);
+        const result = resolveField(
+          exeContext,
+          parentType,
+          sourceValue,
+          fieldNodes,
+          fieldPath,
+          parentDirectiveTree
+        );
+        if (result === undefined) {
+          return results;
+        }
+        results[responseName] = result;
+        if (getPromise(result)) {
+          containsPromise = true;
+        }
+        return results;
+      },
+      Object.create(null)
+    );
 
-      // get the type directives
-      const type = getNamedType(fieldDef.type);
-      const typeDirectives = getDirectiveExec(
-        exeContext.schema,
-        [
-          {
-            location: getFieldTypeLocation(fieldDef.type),
-            astNode: type.astNode
-          }
-        ],
-        exeContext.variableValues
-      );
+    // If there are no promises, we can just return the object
+    if (!containsPromise) {
+      return finalResults;
+    }
 
-      // get the field directives
-      const fieldDirectives = getDirectiveExec(
-        exeContext.schema,
-        [
-          {
-            location: DirectiveLocation.FIELD_DEFINITION,
-            astNode: fieldDef.astNode
-          },
-          {
-            location: DirectiveLocation.FIELD,
-            astNode: fieldNodes[0]
-          }
-        ],
-        exeContext.variableValues
-      );
-
-      const directiveTree = {
-        parent: parentLocationTree,
-        directives: reduceLocationTree(
-          typeDirectives.concat(fieldDirectives)
-        )
-      };
-
-
-      const resolveArgs = getArgumentValues(
-        exeContext,
-        fieldDef,
-        fieldNodes[0],
-        exeContext.variableValues,
-        directiveTree,
-        false
-      );
-
-      // #graphql-factory - add the response, if it is undefined or a skip, 
-      // the promiseForObject function will filter it out of the result
-      _results[responseName] = resolveArgs
-        .then(args => {
-          return wrapWithDirectives(
-            exeContext,
-            {
-              directiveExecs: typeDirectives,
-              directiveTree,
-              source: undefined,
-              args: cloneDeep(args)
-            },
-            {
-              directiveExecs: fieldDirectives,
-              directiveTree,
-              source: undefined,
-              args: cloneDeep(args)
-            },
-            () => {
-              return resolveField(
-                exeContext,
-                parentType,
-                sourceValue,
-                fieldNodes,
-                fieldPath,
-                directiveTree,
-                cloneDeep(args)
-              );
-            },
-            true
-          );
-        });
-
-      // return the updated results
-      return _results;
-    },
-    Object.create(null)
-  );
-
-  // Otherwise, results is a map from field name to the result
-  // of resolving that field, which is possibly a promise. Return
-  // a promise that will return this same map, but with any
-  // promises replaced with the values they resolved to.
-  return promiseForObject(finalResults);
+    // Otherwise, results is a map from field name to the result
+    // of resolving that field, which is possibly a promise. Return
+    // a promise that will return this same map, but with any
+    // promises replaced with the values they resolved to.
+    return promiseForObject(finalResults);
 }
 
 /**
@@ -495,8 +435,7 @@ function resolveField(
   source: mixed,
   fieldNodes: Array<FieldNode>,
   path: ResponsePath,
-  parentDirectiveTree: DirectiveTree,
-  args: mixed
+  parentDirectiveTree: DirectiveTree
 ): mixed {
   const fieldNode = fieldNodes[0];
   const fieldName = fieldNode.name.value;
@@ -516,27 +455,91 @@ function resolveField(
     path
   );
 
-  // Get the resolve function, regardless of if its result is normal
-  // or abrupt (error).
-  const result = resolveFieldValueOrError(
-    exeContext,
-    fieldDef,
-    fieldNodes,
-    resolveFn,
-    source,
-    info,
-    args
+  // get the type directives
+  const type = getNamedType(fieldDef.type);
+  const typeDirectives = getDirectiveExec(
+    exeContext.schema,
+    [
+      {
+        location: getFieldTypeLocation(fieldDef.type),
+        astNode: type.astNode
+      }
+    ],
+    exeContext.variableValues
   );
 
-  return completeValueCatchingError(
-    exeContext,
-    fieldDef.type,
-    fieldNodes,
-    info,
-    path,
-    result,
-    parentDirectiveTree
+  // get the field directives
+  const fieldDirectives = getDirectiveExec(
+    exeContext.schema,
+    [
+      {
+        location: DirectiveLocation.FIELD_DEFINITION,
+        astNode: fieldDef.astNode
+      },
+      {
+        location: DirectiveLocation.FIELD,
+        astNode: fieldNodes[0]
+      }
+    ],
+    exeContext.variableValues
   );
+
+  const directiveTree = {
+    parent: parentDirectiveTree,
+    directives: reduceLocationTree(
+      typeDirectives.concat(fieldDirectives)
+    )
+  };
+
+  return getArgumentValues(
+    exeContext,
+    fieldDef,
+    fieldNodes[0],
+    exeContext.variableValues,
+    directiveTree,
+    false
+  )
+  .then(args => {
+    return wrapWithDirectives(
+      exeContext,
+      {
+        directiveExecs: typeDirectives,
+        directiveTree,
+        source: undefined,
+        args: cloneDeep(args)
+      },
+      {
+        directiveExecs: fieldDirectives,
+        directiveTree,
+        source: undefined,
+        args: cloneDeep(args)
+      },
+      () => {
+        // Get the resolve function, regardless of if its result is normal
+        // or abrupt (error).
+        const result = resolveFieldValueOrError(
+          exeContext,
+          fieldDef,
+          fieldNodes,
+          resolveFn,
+          source,
+          info,
+          args
+        );
+
+        return completeValueCatchingError(
+          exeContext,
+          fieldDef.type,
+          fieldNodes,
+          info,
+          path,
+          result,
+          parentDirectiveTree
+        );
+      },
+      true
+    );
+  });
 }
 
 // Isolates the "ReturnOrAbrupt" behavior to not de-opt the `resolveField`
