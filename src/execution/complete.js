@@ -46,7 +46,7 @@ import {
 } from './execute';
 import type {
   DirectiveTree
-} from './directives'
+} from './directives';
 
 
 // This is a small wrapper around completeValue which detects and logs errors

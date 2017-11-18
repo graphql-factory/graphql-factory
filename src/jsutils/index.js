@@ -3,27 +3,21 @@ import getFieldTypeLocation from './getFieldTypeLocation';
 import isHashLike from './isHashLike';
 import promiseReduce from './promiseReduce';
 import set from './set';
+import cloneDeep from './cloneDeep';
 
 export {
-  isObject,
-  assertObject
-} from './assertions';
-export {
-  get
-};
-export {
-  getFieldTypeLocation
-};
-export {
-  isHashLike
+  get,
+  set,
+  getFieldTypeLocation,
+  isHashLike,
+  promiseReduce,
+  cloneDeep
 };
 export {
   getPromise,
   promiseForObject
 } from './promise';
 export {
-  promiseReduce
-};
-export {
-  set
-};
+  isObject,
+  assertObject
+} from './assertions';

@@ -10,7 +10,8 @@ const acl = {
   
 export const backing = new SchemaBacking()
   .Object('Query')
-    .resolve('readFoo', () => {
+    .resolve('readFoo', (source, args) => {
+      console.log({ args })
       return Promise.resolve({
         id: '1',
         name: 'Foo'
@@ -20,6 +21,8 @@ export const backing = new SchemaBacking()
     .resolveRequest((source, args, context, info) => {
       const { directives: { locations } } = info
       if (locations.FIELD && locations.FIELD.if) {
+        return new GraphQLSkipInstruction();
+      } else if (locations.INPUT_FIELD_DEFINITION && locations.INPUT_FIELD_DEFINITION.if) {
         return new GraphQLSkipInstruction();
       }
     })
@@ -38,6 +41,7 @@ export const backing = new SchemaBacking()
     })
   .Directive('test')
     .resolveRequest((source, args, context, info) => {
+      // console.log({ args })
       //console.log('REQUEST', args)
       //console.log(JSON.stringify(info.directives, null, '  '))
     })

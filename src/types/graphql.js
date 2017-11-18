@@ -7,12 +7,30 @@
  // OBJECTS
 import isNullish from 'graphql/jsutils/isNullish';
 import invariant from 'graphql/jsutils/invariant';
+import keyMap from 'graphql/jsutils/keyMap';
+import * as Kind from 'graphql/language/kinds';
+import isInvalid from 'graphql/jsutils/isInvalid';
 
 export {
   isNullish,
-  invariant
+  invariant,
+  isInvalid,
+  keyMap,
+  Kind
 };
 
+export {
+  valueFromAST
+} from 'graphql/utilities/valueFromAST';
+export {
+  isValidLiteralValue
+} from 'graphql/utilities/isValidLiteralValue';
+export {
+  print
+} from 'graphql/language/printer';
+export {
+  isValidJSValue
+} from 'graphql/utilities/isValidJSValue';
 export {
   getNamedType,
   GraphQLObjectType,

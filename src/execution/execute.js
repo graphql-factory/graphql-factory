@@ -19,40 +19,60 @@
  *   provide the ability to run a middleware function depending on
  *   the location they are placed in.
  *
- *   * Directive placement - Since a directive can be placed
- *     on a definition and operation in more or less the same location
- *     the directive resolvers pass a locations argument that identifies
- *     what locations the directives were found in and what the arguments
- *     if any were at that location. This allows the developer to execute
- *     different code based on the directive location.
- *   * Directive request/result source - the source of a directive is based on
- *     its location. For example, a directive placed on an argument is scoped
- *     to that argument. The directive is able to return a new value for that
- *     argument only. Of course the resolver still has access to the operation
- *     via resolveInfo so access is not completely restricted.
- *
- *     Source by location:
- *       * SCHEMA
- *         - request: schema definition
- *         - result: Final result
- *       * OBJECT (rootType), QUERY, MUTATION, SUBSCRIPTION
- *         - request: rootType definition
- *         - result: Final result
- *       * OBJECT (non-rootType), SCALAR, INTERFACE, UNION,
- *         ENUM, INPUT_OBJECT
- *         - request: object definition
- *         - result: field object result
- *       * FIELD_DEFINITION, FIELD
- *         - request: fieldDefinition
- *         - result: field object result
- *
- *     Undetermined scopes:
- *       * FRAGEMENT_DEFINITION
- *       * FRAGMENT_SPREAD
- *       * INLINE_FRAGMENT
- *       * ARGUMENT_DEFINITION
- *       * ENUM_VALUE
- *       * INPUT_FIELD_DEFINITION
+ *   * Directive placement - At a high level directive locations can 
+ *     be grouped into definitions and operations. GraphQL Factory 
+ *     allows definition locations to overlap when executing resolver 
+ *     functions and resolver functions are executed/reduced at specific 
+ *     positions in the execution lifecycle as described in the next section.
+ * 
+ *     It should also be noted that directives with resolvers
+ *     at the same location will be reduced in order of declaration where the 
+ *     result of the previous is fed into the source of the current.
+ * 
+ *     GraphQLSkipInstruction
+ *     instances will immediately skip the remaining resolvers in the current 
+ *     reduction
+ *     
+ *   * resolveRequest and resolveResult
+ *     Directives can have either of the following resolvers applied to
+ *     them in order to execute code at specific points in the execution
+ *     lifecycle. In general all resolvers have access to the same args,
+ *     context, and a subset of the resolveInfo. Sources will vary based
+ *     on what the resolve type is and where in the lifecycle it is called.
+ * 
+ *     * resolveRequest - run before a field/fields are resolved. source 
+ *       is typically undefined or an instruction
+ *     * resolveResult - run after a field/fields are resolved. source is
+ *       the complete result or a field resolve result depending on location
+ *     * resolveInfo - an additional value "directives" is added to each
+ *       resolve info with a tree of directives, their locations and arguments
+ *       up until the current fields location. This serves to give the
+ *       resolve function enough information to run location specific code
+ * 
+ *   * Execution Lifecycle
+ *     This section will identify directive locations and when they are 
+ *     executed in the execution lifecycle
+ * 
+ *     * SCHEMA
+ *       - resolveRequest: executed first before any other directive resolvers 
+ *         or field resolvers. source is undefined. A GraphQLSkipInstruction 
+ *         returned here will return an undefined result
+ *       - resolveResult: executed just before returning the final results. 
+ *         source is the result and can be modified and returned
+ *     * RootType (OBJECT) & Operation (QUERY, MUTATION, SUBSCRIPTION)
+ *       - resolveRequest: executed after the SCHEMA directive resolveRequest 
+ *         reduction. source is undefined
+ *       - resolveResult: run just after all fields have been resolved and a 
+ *         result is completed. This is also just before the SCHEMA 
+ *         resolveResult reduction runs. source is the complete result
+ *     * FIELD, FIELD_DEFINITION, SCALAR, OBJECT, INTERFACE, UNION, ENUM
+ *       - resolveRequest: executed on each field/subfield. Types are reduced
+ *         before the FIELD_DEFINITION which is before the FIELD. source is
+ *         undefined. Returning a GraphQLSkipInstruction here will remove the 
+ *         field from the result
+ *       - resolveResult: executed after the field has been resolved. source
+ *         is the value of the field. Returning a GraphQLSkipInstruction
+ *         here will remove the field from the result
  * 
  * @flow
  */
@@ -68,8 +88,7 @@ import {
   collectFields,
   addPath,
   getFieldDef,
-  buildResolveInfo,
-  getArgumentValues
+  buildResolveInfo
 } from '../types/graphql';
 import type {
   ObjMap,
@@ -87,34 +106,33 @@ import type {
 
 import {
   getDirectiveExec,
-  reduceRequestDirectives,
-  reduceResultDirectives,
   reduceLocationTree,
   wrapWithDirectives
 } from './directives';
 import type {
-  DirectiveTree,
-  DirectiveExec
+  DirectiveTree
 } from './directives';
 import {
   promiseForObject,
   getPromise,
-  getFieldTypeLocation
+  getFieldTypeLocation,
+  cloneDeep
 } from '../jsutils';
 import {
   completeValueCatchingError
 } from './complete';
 import {
-  GraphQLSkipInstruction
-} from '../types';
+  getArgumentValues
+} from './values';
 
-  /**
+/**
  * Implements the "Evaluating requests" section of the GraphQL specification.
  *
  * Returns a Promise that will eventually be resolved and never rejected.
  *
- * If the arguments to this function do not result in a legal execution context,
- * a GraphQLError will be thrown immediately explaining the invalid input.
+ * If the arguments to this function do not result in a legal execution 
+ * context, a GraphQLError will be thrown immediately explaining the 
+ * invalid input.
  *
  * Accepts either an object with named arguments, or individual arguments.
  */
@@ -269,11 +287,11 @@ function executeOperation(
   const schemaDirectiveTree = Object.freeze({
     parent: null,
     directives: reduceLocationTree(schemaDirectives)
-  })
+  });
   const operationDirectiveTree = Object.freeze({
     parent: schemaDirectiveTree,
     directives: reduceLocationTree(operationDirectives)
-  })
+  });
 
   // #graphql-factory - wrap the directives and reduce
   return wrapWithDirectives(
@@ -282,13 +300,13 @@ function executeOperation(
       directiveExecs: schemaDirectives,
       directiveTree: schemaDirectiveTree,
       source: undefined,
-      args: () => undefined
+      args: undefined
     },
     {
       directiveExecs: operationDirectives,
       directiveTree: operationDirectiveTree,
       source: undefined,
-      args: () => undefined
+      args: undefined
     },
     () => {
       return operation.operation === 'mutation' ?
@@ -409,42 +427,48 @@ export function executeFields(
         )
       };
 
-      const getArgs = () => {
-        return getArgumentValues(
-          fieldDef,
-          fieldNodes[0],
-          exeContext.variableValues
-        )
-      }
 
-      // #graphql-factory - add the response, if it is undefined or a skip, the
-      // promiseForObject function will filter it out of the result
-      _results[responseName] = wrapWithDirectives(
+      const resolveArgs = getArgumentValues(
         exeContext,
-        {
-          directiveExecs: typeDirectives,
-          directiveTree: directiveTree,
-          source: undefined,
-          args: getArgs
-        },
-        {
-          directiveExecs: fieldDirectives,
-          directiveTree: directiveTree,
-          source: undefined,
-          args: getArgs
-        },
-        () => {
-          return resolveField(
-            exeContext,
-            parentType,
-            sourceValue,
-            fieldNodes,
-            fieldPath,
-            directiveTree
-          );
-        },
-        true
+        fieldDef,
+        fieldNodes[0],
+        exeContext.variableValues,
+        directiveTree,
+        false
       );
+
+      // #graphql-factory - add the response, if it is undefined or a skip, 
+      // the promiseForObject function will filter it out of the result
+      _results[responseName] = resolveArgs
+        .then(args => {
+          return wrapWithDirectives(
+            exeContext,
+            {
+              directiveExecs: typeDirectives,
+              directiveTree,
+              source: undefined,
+              args: cloneDeep(args)
+            },
+            {
+              directiveExecs: fieldDirectives,
+              directiveTree,
+              source: undefined,
+              args: cloneDeep(args)
+            },
+            () => {
+              return resolveField(
+                exeContext,
+                parentType,
+                sourceValue,
+                fieldNodes,
+                fieldPath,
+                directiveTree,
+                cloneDeep(args)
+              );
+            },
+            true
+          );
+        });
 
       // return the updated results
       return _results;
@@ -461,9 +485,9 @@ export function executeFields(
 
 /**
  * Resolves the field on the given source object. In particular, this
- * figures out the value that the field returns by calling its resolve function,
- * then calls completeValue to complete promises, serialize scalars, or execute
- * the sub-selection-set for objects.
+ * figures out the value that the field returns by calling its resolve 
+ * function, then calls completeValue to complete promises, serialize 
+ * scalars, or execute the sub-selection-set for objects.
  */
 function resolveField(
   exeContext: ExecutionContext,
@@ -471,7 +495,8 @@ function resolveField(
   source: mixed,
   fieldNodes: Array<FieldNode>,
   path: ResponsePath,
-  parentDirectiveTree: DirectiveTree
+  parentDirectiveTree: DirectiveTree,
+  args: mixed
 ): mixed {
   const fieldNode = fieldNodes[0];
   const fieldName = fieldNode.name.value;
@@ -499,7 +524,8 @@ function resolveField(
     fieldNodes,
     resolveFn,
     source,
-    info
+    info,
+    args
   );
 
   return completeValueCatchingError(
@@ -521,21 +547,14 @@ export function resolveFieldValueOrError<TSource>(
   fieldNodes: Array<FieldNode>,
   resolveFn: GraphQLFieldResolver<TSource, *>,
   source: TSource,
-  info: GraphQLResolveInfo
+  info: GraphQLResolveInfo,
+  args: mixed
 ): Error | mixed {
   try {
-    // Build a JS object of arguments from the field.arguments AST, using the
-    // variables scope to fulfill any variable references.
-    // TODO: find a way to memoize, in case this field is within a List type.
-    const args = getArgumentValues(
-      fieldDef,
-      fieldNodes[0],
-      exeContext.variableValues
-    );
-
     // The resolve function's optional third argument is a context value that
-    // is provided to every resolve function within an execution. It is commonly
-    // used to represent an authenticated user, or request-specific caches.
+    // is provided to every resolve function within an execution. It is 
+    // commonly used to represent an authenticated user, or request-specific 
+    // caches.
     const context = exeContext.contextValue;
 
     return resolveFn(source, args, context, info);

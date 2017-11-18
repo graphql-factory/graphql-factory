@@ -36,7 +36,7 @@ import {
 
 import {
   GraphQLSkipInstruction
-} from '../types'
+} from '../types';
 
 export function getDirectives(
   astNode: { directives?: Array<DirectiveNode>}
@@ -145,7 +145,7 @@ export type DirectiveTree = {
   locations?: { [ location: ?string ]: ?mixed };
 };
 
-export function reduceLocationTree (
+export function reduceLocationTree(
   directiveExec: Array<DirectiveExec>,
   directiveTree?: { [ location: ?string ]: ?mixed }
 ) {
@@ -154,8 +154,8 @@ export function reduceLocationTree (
       const name = directive.name;
       Object.keys(locations).forEach(location => {
         const { args } = locations[location];
-        set(locs, [ name, location ], args)
-      })
+        set(locs, [ name, location ], args);
+      });
       return locs;
     },
     directiveTree || {}
@@ -243,24 +243,23 @@ export function reduceResultDirectives(
 export type DirectiveContext = {
   directiveExecs: Array<DirectiveExec>;
   directiveTree: DirectiveTree;
-  source: any;
-  args: () => ?mixed;
-}
+  source: ?mixed;
+  args: ?mixed;
+};
 
-export function wrapWithDirectives (
+export function wrapWithDirectives(
   exeContext: ExecutionContext,
   definitionContext: DirectiveContext,
   operationContext: DirectiveContext,
   resolve: () => ?mixed,
   skipOnUndefined: boolean
-): any {
-
+): ?mixed {
   return reduceRequestDirectives(
     exeContext,
     definitionContext.directiveExecs,
     definitionContext.source,
     definitionContext.directiveTree,
-    definitionContext.args()
+    definitionContext.args
   )
   .then(source => {
     return source instanceof GraphQLSkipInstruction ?
@@ -270,7 +269,7 @@ export function wrapWithDirectives (
         operationContext.directiveExecs,
         source,
         operationContext.directiveTree,
-        operationContext.args()
+        operationContext.args
       );
   })
   .then(source => {
@@ -288,7 +287,7 @@ export function wrapWithDirectives (
       definitionContext.directiveExecs,
       result,
       definitionContext.directiveTree,
-      definitionContext.args()
+      definitionContext.args
     )
     .then(directiveResult => {
       // check the directiveResult, if nothing was returned
@@ -308,7 +307,7 @@ export function wrapWithDirectives (
       operationContext.directiveExecs,
       result,
       operationContext.directiveTree,
-      operationContext.args()
+      operationContext.args
     )
     .then(directiveResult => {
       // check the directiveResult, if nothing was returned
