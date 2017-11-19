@@ -61,6 +61,7 @@ export function getArgumentValues(
   node: FieldNode | DirectiveNode,
   variableValues?: ?ObjMap<mixed>,
   directiveTree: DirectiveTree,
+  details: Array<?mixed>,
   isResult: boolean
 ): Promise<?mixed> {
   const reducer = isResult ?
@@ -144,6 +145,7 @@ export function getArgumentValues(
       return reducer(
         exeContext,
         directiveExec,
+        details,
         undefined,
         directiveTree
       )

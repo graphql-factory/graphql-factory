@@ -7,3 +7,6 @@ export {
   SchemaDefinition,
   FactoryType
 } from './definition';
+export type {
+  ExecutionLogger
+} from './logger.js';

@@ -11,11 +11,17 @@ const acl = {
 export const backing = new SchemaBacking()
   .Object('Query')
     .resolve('readFoo', (source, args) => {
-      console.log({ args })
       return Promise.resolve({
         id: '1',
         name: 'Foo'
       })
+    })
+  .Object('Foo')
+    .resolve('bars', (source, args) => {
+      return[
+        { id: 'bar1', name: 'barone'},
+        { id: 'bar2', name: 'bartwo'}
+      ]
     })
   .Directive('remove')
     .resolveRequest((source, args, context, info) => {
@@ -27,7 +33,7 @@ export const backing = new SchemaBacking()
       }
     })
     .resolveResult(source => {
-      console.logo('i shouldnt be here')
+      console.log('i shouldnt be here')
       return source
     })
   .Directive('modify')

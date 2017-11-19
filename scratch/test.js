@@ -14,9 +14,14 @@ function randomBoolean () {
 }
 
 const def = `
+type Bar {
+  id: String!  @modify(value: "****")
+  name: String
+}
 type Foo @test(value: "FooObject") {
   id: String!
   name: String @modify(value: "****")
+  bars: [Bar]
 }
 
 type Query @acl(permission: "read") {
@@ -50,9 +55,17 @@ query Query ($skip: Boolean!) @test(value: "queryOp") {
   ) @test(value: "readFoo") {
     id @test(value: "idField") @remove(if: true) 
     name @skip(if: $skip)
+    bars {
+      id
+      name
+    }
   }
 }
 `
+
+function logger (type, data) {
+  console.log(JSON.stringify(data, null, '  '))
+}
 
 const variableValues = {
   remove: true, // randomBoolean(),
@@ -61,6 +74,8 @@ const variableValues = {
 
 const rootValue = { user: 'admin' }
 
-request({ schema, source, rootValue, variableValues })
-.then(console.log)
+request({ schema, source, rootValue, variableValues, logger })
+.then(result => {
+  console.log(JSON.stringify(result, null, '  '))
+})
 .catch(console.error)

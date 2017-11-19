@@ -107,7 +107,8 @@ export function hydrateSchema(
           default:
             if ((type instanceof GraphQLObjectType ||
               type instanceof GraphQLInterfaceType) &&
-              typeof keyBacking[fieldName] === 'function') {
+              typeof keyBacking[fieldName] === 'function' &&
+              typeof type._fields[fieldName] === 'object') {
               type._fields[fieldName].resolve = keyBacking[fieldName];
             }
         }

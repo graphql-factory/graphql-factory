@@ -23,6 +23,9 @@ import type {
 import {
   execute
 } from './execution/execute'; // custom execution
+import type {
+  ExecutionLogger
+} from './types';
 
 /**
  * This is the primary entry point function for fulfilling GraphQL operations
@@ -61,7 +64,8 @@ declare function request({|
   contextValue?: mixed,
   variableValues?: ?ObjMap<mixed>,
   operationName?: ?string,
-  fieldResolver?: ?GraphQLFieldResolver<any, any>
+  fieldResolver?: ?GraphQLFieldResolver<any, any>,
+  logger?: ?ExecutionLogger
 |}, ..._: []): Promise<ExecutionResult>;
 /* eslint-disable no-redeclare */
 declare function request(
@@ -71,7 +75,8 @@ declare function request(
   contextValue?: mixed,
   variableValues?: ?ObjMap<mixed>,
   operationName?: ?string,
-  fieldResolver?: ?GraphQLFieldResolver<any, any>
+  fieldResolver?: ?GraphQLFieldResolver<any, any>,
+  logger?: ?ExecutionLogger
 ): Promise<ExecutionResult>;
 export function request(
   argsOrSchema,
@@ -80,7 +85,8 @@ export function request(
   contextValue,
   variableValues,
   operationName,
-  fieldResolver
+  fieldResolver,
+  logger
 ) {
   // Extract arguments from object args if provided.
   return arguments.length === 1 ?
@@ -91,7 +97,8 @@ export function request(
       argsOrSchema.contextValue,
       argsOrSchema.variableValues,
       argsOrSchema.operationName,
-      argsOrSchema.fieldResolver
+      argsOrSchema.fieldResolver,
+      argsOrSchema.logger
     ) :
     graphqlImpl(
       argsOrSchema,
@@ -100,7 +107,8 @@ export function request(
       contextValue,
       variableValues,
       operationName,
-      fieldResolver
+      fieldResolver,
+      logger
     );
 }
 
@@ -111,7 +119,8 @@ function graphqlImpl(
   contextValue,
   variableValues,
   operationName,
-  fieldResolver
+  fieldResolver,
+  logger
 ) {
   return new Promise(resolve => {
     // Parse
@@ -137,7 +146,8 @@ function graphqlImpl(
         contextValue,
         variableValues,
         operationName,
-        fieldResolver
+        fieldResolver,
+        logger
       )
     );
   });

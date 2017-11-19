@@ -37,6 +37,12 @@ import {
 import {
   GraphQLSkipInstruction
 } from '../types';
+import {
+  LoggerDetailType
+} from '../types/logger';
+import type {
+  LoggerDetailTypeEnum
+} from '../types/logger';
 
 export function getDirectives(
   astNode: { directives?: Array<DirectiveNode>}
@@ -166,6 +172,7 @@ export function reduceLocationTree(
 function reduceDirectives(
   exeContext: ExecutionContext,
   directiveExec: Array<DirectiveExec>,
+  details: Array<?mixed>,
   resolveType: string,
   scopedSource: any,
   parent: DirectiveTree,
@@ -174,12 +181,31 @@ function reduceDirectives(
   return promiseReduce(
     directiveExec,
     (source, { directive, locations }) => {
+      const directiveDetails = {
+        type: LoggerDetailType.DIRECTIVE,
+        name: directive.name,
+        resolver: '',
+        start: Date.now(),
+        end: -1,
+        duration: -1,
+        args: args || {},
+        locations,
+        error: null
+      };
+
       if (source instanceof GraphQLSkipInstruction) {
+        directiveDetails.end = Date.now();
+        directiveDetails.resolver = 'GraphQLSkipInstruction';
+        directiveDetails.duration =
+          directiveDetails.end - directiveDetails.start;
         return source;
       }
 
-      return typeof directive[resolveType] === 'function' ?
-        Promise.resolve(
+      if (typeof directive[resolveType] === 'function') {
+        details.push(directiveDetails);
+        directiveDetails.resolver = resolveType;
+
+        return Promise.resolve(
           directive[resolveType](
             source,
             args || {},
@@ -196,8 +222,21 @@ function reduceDirectives(
               }
             }
           )
-        ) :
-        source;
+        )
+        .then(result => {
+          directiveDetails.end = Date.now();
+          directiveDetails.duration =
+            directiveDetails.end - directiveDetails.start;
+          return result;
+        }, err => {
+          directiveDetails.end = Date.now();
+          directiveDetails.duration =
+            directiveDetails.end - directiveDetails.start;
+          directiveDetails.error = err;
+          return Promise.reject(err)
+        });
+      }
+      return source;
     },
     scopedSource
   );
@@ -207,6 +246,7 @@ function reduceDirectives(
 export function reduceRequestDirectives(
   exeContext: ExecutionContext,
   directiveExec: Array<DirectiveExec>,
+  details: Array<?mixed>,
   source: any,
   parent: DirectiveTree,
   args?: ?mixed
@@ -214,6 +254,7 @@ export function reduceRequestDirectives(
   return reduceDirectives(
     exeContext,
     directiveExec,
+    details,
     'resolveRequest',
     source,
     parent,
@@ -225,6 +266,7 @@ export function reduceRequestDirectives(
 export function reduceResultDirectives(
   exeContext: ExecutionContext,
   directiveExec: Array<DirectiveExec>,
+  details: Array<?mixed>,
   source: any,
   parent: DirectiveTree,
   args?: ?mixed
@@ -232,6 +274,7 @@ export function reduceResultDirectives(
   return reduceDirectives(
     exeContext,
     directiveExec,
+    details,
     'resolveResult',
     source,
     parent,
@@ -243,6 +286,7 @@ export function reduceResultDirectives(
 export type DirectiveContext = {
   directiveExecs: Array<DirectiveExec>;
   directiveTree: DirectiveTree;
+  details: Array<?mixed>;
   source: ?mixed;
   args: ?mixed;
 };
@@ -257,6 +301,7 @@ export function wrapWithDirectives(
   return reduceRequestDirectives(
     exeContext,
     definitionContext.directiveExecs,
+    definitionContext.details,
     definitionContext.source,
     definitionContext.directiveTree,
     definitionContext.args
@@ -267,6 +312,7 @@ export function wrapWithDirectives(
       reduceRequestDirectives(
         exeContext,
         operationContext.directiveExecs,
+        operationContext.details,
         source,
         operationContext.directiveTree,
         operationContext.args
@@ -285,6 +331,7 @@ export function wrapWithDirectives(
     return reduceResultDirectives(
       exeContext,
       definitionContext.directiveExecs,
+      definitionContext.details,
       result,
       definitionContext.directiveTree,
       definitionContext.args
@@ -305,6 +352,7 @@ export function wrapWithDirectives(
     return reduceResultDirectives(
       exeContext,
       operationContext.directiveExecs,
+      operationContext.details,
       result,
       operationContext.directiveTree,
       operationContext.args

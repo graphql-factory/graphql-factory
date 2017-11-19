@@ -124,6 +124,12 @@ import {
 import {
   getArgumentValues
 } from './values';
+import {
+  ExecutionLogger
+} from '../types';
+import {
+  LoggerDetailType
+} from '../types/logger';
 
 /**
  * Implements the "Evaluating requests" section of the GraphQL specification.
@@ -148,7 +154,8 @@ declare function execute(
   contextValue?: mixed,
   variableValues?: ?{[variable: string]: mixed},
   operationName?: ?string,
-  fieldResolver?: ?GraphQLFieldResolver<any, any>
+  fieldResolver?: ?GraphQLFieldResolver<any, any>,
+  logger?: ?ExecutionLogger
 ): Promise<ExecutionResult>;
 
 export function execute(
@@ -158,7 +165,8 @@ export function execute(
   contextValue,
   variableValues,
   operationName,
-  fieldResolver
+  fieldResolver,
+  logger
 ) {
   // Extract arguments from object args if provided.
   return arguments.length === 1 ?
@@ -169,7 +177,8 @@ export function execute(
       argsOrSchema.contextValue,
       argsOrSchema.variableValues,
       argsOrSchema.operationName,
-      argsOrSchema.fieldResolver
+      argsOrSchema.fieldResolver,
+      argsOrSchema.logger
     ) :
     executeImpl(
       argsOrSchema,
@@ -178,7 +187,8 @@ export function execute(
       contextValue,
       variableValues,
       operationName,
-      fieldResolver
+      fieldResolver,
+      logger
     );
 }
 
@@ -189,7 +199,8 @@ function executeImpl(
   contextValue,
   variableValues,
   operationName,
-  fieldResolver
+  fieldResolver,
+  logger
 ) {
   // If arguments are missing or incorrect, throw an error.
   assertValidExecutionArguments(
@@ -197,6 +208,11 @@ function executeImpl(
     document,
     variableValues
   );
+
+  // ensure logger is a function if not specified
+  const _logger = typeof logger === 'function' ?
+  logger :
+  function (logType, logData) {}
 
   // If a valid context cannot be created due to incorrect arguments,
   // a "Response" with only errors is returned.
@@ -215,6 +231,14 @@ function executeImpl(
     return Promise.resolve({ errors: [ error ] });
   }
 
+  const details = {
+    start: Date.now(),
+    end: -1,
+    duration: -1,
+    operationDefinition: context.operation,
+    execution: []
+  };
+
   // Return a Promise that will eventually resolve to the data described by
   // The "Response" section of the GraphQL specification.
   //
@@ -223,12 +247,22 @@ function executeImpl(
   // be executed. An execution which encounters errors will still result in a
   // resolved Promise.
   return Promise.resolve(
-    executeOperation(context, context.operation, rootValue)
+    executeOperation(
+      context,
+      context.operation,
+      rootValue,
+      details
+    )
   )
-  .then(data => context.errors.length === 0 ?
-    { data } :
-    { errors: context.errors, data }
-  );
+  .then(data => {
+    details.end = Date.now();
+    details.duration = details.end - details.start;
+    
+    _logger('execution', details);
+    return context.errors.length === 0 ?
+      { data } :
+      { errors: context.errors, data }
+  });
 }
 
 /**
@@ -237,7 +271,8 @@ function executeImpl(
 function executeOperation(
   exeContext: ExecutionContext,
   operation: OperationDefinitionNode,
-  rootValue: mixed
+  rootValue: mixed,
+  details: ObjMap<mixed>
 ): ?(Promise<?ObjMap<mixed>> | ObjMap<mixed>) {
   const type = getOperationRootType(exeContext.schema, operation);
   const fields = collectFields(
@@ -299,12 +334,14 @@ function executeOperation(
     {
       directiveExecs: schemaDirectives,
       directiveTree: schemaDirectiveTree,
+      details: details.execution,
       source: undefined,
       args: undefined
     },
     {
       directiveExecs: operationDirectives,
       directiveTree: operationDirectiveTree,
+      details: details.execution,
       source: undefined,
       args: undefined
     },
@@ -316,7 +353,8 @@ function executeOperation(
           rootValue,
           path,
           fields,
-          operationDirectiveTree
+          operationDirectiveTree,
+          details.execution
         ) :
         executeFields(
           exeContext,
@@ -324,7 +362,8 @@ function executeOperation(
           rootValue,
           path,
           fields,
-          operationDirectiveTree
+          operationDirectiveTree,
+          details.execution
         );
     },
     false
@@ -342,7 +381,8 @@ function executeFieldsSerially(
   sourceValue: mixed,
   path: ResponsePath,
   fields: ObjMap<Array<FieldNode>>,
-  parentDirectiveTree: DirectiveTree
+  parentDirectiveTree: DirectiveTree,
+  details: Array<?mixed>,
 ): Promise<ObjMap<mixed>> {
   return Object.keys(fields).reduce(
     (prevPromise, responseName) => prevPromise.then(results => {
@@ -354,7 +394,9 @@ function executeFieldsSerially(
         sourceValue,
         fieldNodes,
         fieldPath,
-        parentDirectiveTree
+        parentDirectiveTree,
+        details,
+        responseName
       );
       if (result === undefined) {
         return results;
@@ -383,7 +425,8 @@ export function executeFields(
   sourceValue: mixed,
   path: ResponsePath,
   fields: ObjMap<Array<FieldNode>>,
-  parentDirectiveTree: DirectiveTree
+  parentDirectiveTree: DirectiveTree,
+  details: Array<?mixed>,
 ): Promise<ObjMap<mixed>> | ObjMap<mixed> {
   let containsPromise = false;
 
@@ -397,7 +440,9 @@ export function executeFields(
           sourceValue,
           fieldNodes,
           fieldPath,
-          parentDirectiveTree
+          parentDirectiveTree,
+          details,
+          responseName
         );
         if (result === undefined) {
           return results;
@@ -435,7 +480,9 @@ function resolveField(
   source: mixed,
   fieldNodes: Array<FieldNode>,
   path: ResponsePath,
-  parentDirectiveTree: DirectiveTree
+  parentDirectiveTree: DirectiveTree,
+  details: Array<?mixed>,
+  responseName: string
 ): mixed {
   const fieldNode = fieldNodes[0];
   const fieldName = fieldNode.name.value;
@@ -491,26 +538,46 @@ function resolveField(
     )
   };
 
+  // #graphql 
   return getArgumentValues(
     exeContext,
     fieldDef,
     fieldNodes[0],
     exeContext.variableValues,
     directiveTree,
+    details,
     false
   )
   .then(args => {
+    const execDetails = {
+      type: LoggerDetailType.FIELD,
+      name: responseName,
+      resolver: resolveFn.name || responseName,
+      start: Date.now(),
+      end: 0,
+      duration: 0,
+      args: args || {},
+      error: null,
+      resolves: []
+    };
+
+    if (fieldDef.resolve) {
+      details.push(execDetails);
+    }
+
     return wrapWithDirectives(
       exeContext,
       {
         directiveExecs: typeDirectives,
         directiveTree,
+        details,
         source: undefined,
         args: cloneDeep(args)
       },
       {
         directiveExecs: fieldDirectives,
         directiveTree,
+        details,
         source: undefined,
         args: cloneDeep(args)
       },
@@ -534,7 +601,8 @@ function resolveField(
           info,
           path,
           result,
-          parentDirectiveTree
+          parentDirectiveTree,
+          execDetails
         );
       },
       true

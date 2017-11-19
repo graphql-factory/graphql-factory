@@ -25,6 +25,7 @@ import {
   invariant
 } from '../types/graphql';
 import type {
+  ObjMap,
   ExecutionContext,
   GraphQLType,
   GraphQLLeafType,
@@ -44,7 +45,10 @@ import {
 import {
   executeFields
 } from './execute';
-import type {
+import {
+  LoggerDetailType
+} from '../types/logger';
+ import type {
   DirectiveTree
 } from './directives';
 
@@ -58,7 +62,8 @@ export function completeValueCatchingError(
   info: GraphQLResolveInfo,
   path: ResponsePath,
   result: mixed,
-  parentDirectiveTree: DirectiveTree
+  parentDirectiveTree: DirectiveTree,
+  execDetails: ObjMap<mixed>
 ): mixed {
   // If the field type is non-nullable, then it is resolved without any
   // protection from errors, however it still properly locates the error.
@@ -70,7 +75,8 @@ export function completeValueCatchingError(
       info,
       path,
       result,
-      parentDirectiveTree
+      parentDirectiveTree,
+      execDetails
     );
   }
 
@@ -84,7 +90,8 @@ export function completeValueCatchingError(
       info,
       path,
       result,
-      parentDirectiveTree
+      parentDirectiveTree,
+      execDetails
     );
     const promise = getPromise(completed);
     if (promise) {
@@ -92,13 +99,32 @@ export function completeValueCatchingError(
       // the rejection error and resolve to null.
       // Note: we don't rely on a `catch` method, but we do expect "thenable"
       // to take a second callback for the error case.
-      return promise.then(undefined, error => {
+      return promise.then(result => {
+        execDetails.end = Date.now();
+        execDetails.duration =
+          execDetails.end - execDetails.start;
+        return result
+      }, error => {
+        execDetails.end = Date.now();
+        execDetails.duration =
+          execDetails.end - execDetails.start;
+        execDetails.error = error;
         exeContext.errors.push(error);
         return Promise.resolve(null);
       });
     }
+
+    execDetails.end = Date.now();
+    execDetails.duration =
+      execDetails.end - execDetails.start;
+
     return completed;
   } catch (error) {
+    execDetails.end = Date.now();
+    execDetails.duration =
+      execDetails.end - execDetails.start;
+    execDetails.error = error;
+
     // If `completeValueWithLocatedError` returned abruptly (threw an error),
     // log the error and return null.
     exeContext.errors.push(error);
@@ -115,7 +141,8 @@ function completeValueWithLocatedError(
   info: GraphQLResolveInfo,
   path: ResponsePath,
   result: mixed,
-  parentDirectiveTree: DirectiveTree
+  parentDirectiveTree: DirectiveTree,
+  execDetails: ObjMap<mixed>
 ): mixed {
   try {
     const completed = completeValue(
@@ -125,7 +152,8 @@ function completeValueWithLocatedError(
       info,
       path,
       result,
-      parentDirectiveTree
+      parentDirectiveTree,
+      execDetails
     );
     const promise = getPromise(completed);
     if (promise) {
@@ -170,7 +198,8 @@ function completeValue(
   info: GraphQLResolveInfo,
   path: ResponsePath,
   result: mixed,
-  parentDirectiveTree: DirectiveTree
+  parentDirectiveTree: DirectiveTree,
+  execDetails: ObjMap<mixed>
 ): mixed {
   // If result is a Promise, apply-lift over completeValue.
   const promise = getPromise(result);
@@ -183,7 +212,8 @@ function completeValue(
         info,
         path,
         resolved,
-        parentDirectiveTree
+        parentDirectiveTree,
+        execDetails
       )
     );
   }
@@ -203,7 +233,8 @@ function completeValue(
       info,
       path,
       result,
-      parentDirectiveTree
+      parentDirectiveTree,
+      execDetails
     );
     if (completed === null) {
       throw new Error(
@@ -228,7 +259,8 @@ function completeValue(
       info,
       path,
       result,
-      parentDirectiveTree
+      parentDirectiveTree,
+      execDetails
     );
   }
 
@@ -248,7 +280,8 @@ function completeValue(
       info,
       path,
       result,
-      parentDirectiveTree
+      parentDirectiveTree,
+      execDetails
     );
   }
 
@@ -261,7 +294,8 @@ function completeValue(
       info,
       path,
       result,
-      parentDirectiveTree
+      parentDirectiveTree,
+      execDetails
     );
   }
 
@@ -282,7 +316,8 @@ function completeListValue(
   info: GraphQLResolveInfo,
   path: ResponsePath,
   result: mixed,
-  parentDirectiveTree: DirectiveTree
+  parentDirectiveTree: DirectiveTree,
+  execDetails: ObjMap<mixed>
 ): mixed {
   invariant(
     isCollection(result),
@@ -295,7 +330,21 @@ function completeListValue(
   const itemType = returnType.ofType;
   let containsPromise = false;
   const completedResults = [];
+  execDetails.type = LoggerDetailType.LIST_FIELD;
+
   forEach((result: any), (item, index) => {
+    const itemDetails = {
+      type: LoggerDetailType.LIST_ITEM,
+      name: String(index),
+      resolver: '',
+      start: Date.now(),
+      end: -1,
+      duration: -1,
+      error: null,
+      args: {},
+      resolves: []
+    }
+    execDetails.resolves.push(itemDetails);
     // No need to modify the info object containing the path,
     // since from here on it is not ever accessed by resolver functions.
     const fieldPath = addPath(path, index);
@@ -306,7 +355,8 @@ function completeListValue(
       info,
       fieldPath,
       item,
-      parentDirectiveTree
+      parentDirectiveTree,
+      itemDetails
     );
 
     if (!containsPromise && getPromise(completedItem)) {
@@ -348,7 +398,8 @@ function completeAbstractValue(
   info: GraphQLResolveInfo,
   path: ResponsePath,
   result: mixed,
-  parentDirectiveTree: DirectiveTree
+  parentDirectiveTree: DirectiveTree,
+  execDetails: ObjMap<mixed>
 ): mixed {
   const runtimeType = returnType.resolveType ?
     returnType.resolveType(result, exeContext.contextValue, info) :
@@ -371,7 +422,8 @@ function completeAbstractValue(
         info,
         path,
         result,
-        parentDirectiveTree
+        parentDirectiveTree,
+        execDetails
       )
     );
   }
@@ -390,7 +442,8 @@ function completeAbstractValue(
     info,
     path,
     result,
-    parentDirectiveTree
+    parentDirectiveTree,
+    execDetails
   );
 }
 
@@ -436,7 +489,8 @@ function completeObjectValue(
   info: GraphQLResolveInfo,
   path: ResponsePath,
   result: mixed,
-  parentDirectiveTree: DirectiveTree
+  parentDirectiveTree: DirectiveTree,
+  execDetails: ObjMap<mixed>
 ): mixed {
   // If there is an isTypeOf predicate function, call it with the
   // current result. If isTypeOf returns false, then raise an error rather
@@ -457,7 +511,8 @@ function completeObjectValue(
           info,
           path,
           result,
-          parentDirectiveTree
+          parentDirectiveTree,
+          execDetails
         );
       });
     }
@@ -474,7 +529,8 @@ function completeObjectValue(
     info,
     path,
     result,
-    parentDirectiveTree
+    parentDirectiveTree,
+    execDetails
   );
 }
 
@@ -496,7 +552,8 @@ function collectAndExecuteSubfields(
   info: GraphQLResolveInfo,
   path: ResponsePath,
   result: mixed,
-  parentDirectiveTree: DirectiveTree
+  parentDirectiveTree: DirectiveTree,
+  execDetails: ObjMap<mixed>
 ): mixed {
   // Collect sub-fields to execute to complete this value.
   let subFieldNodes = Object.create(null);
@@ -519,7 +576,8 @@ function collectAndExecuteSubfields(
     returnType,
     result, path,
     subFieldNodes,
-    parentDirectiveTree
+    parentDirectiveTree,
+    execDetails.resolves
   );
 }
 
