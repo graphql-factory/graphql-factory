@@ -3,6 +3,7 @@ import buildSchema from './utilities/buildSchema';
 
 export {
   GraphQLSkipInstruction,
+  GraphQLFactoryDirective,
   SchemaBacking,
   SchemaDefinition,
   FactoryType
@@ -10,6 +11,10 @@ export {
 export {
   buildSchema
 };
+export {
+  deconstructSchema,
+  deconstructDirective
+} from './utilities/deconstruct.js';
 export {
   request
 } from './request';

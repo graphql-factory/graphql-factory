@@ -6,6 +6,12 @@ import set from './set';
 import cloneDeep from './cloneDeep';
 
 export {
+  forEach
+} from './forEach';
+export {
+  reduce
+} from './reduce';
+export {
   get,
   set,
   getFieldTypeLocation,

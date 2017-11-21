@@ -212,7 +212,9 @@ function executeImpl(
   // ensure logger is a function if not specified
   const _logger = typeof logger === 'function' ?
   logger :
-  function (logType, logData) {}
+  function (...args) {
+    return [ ...args ];
+  };
 
   // If a valid context cannot be created due to incorrect arguments,
   // a "Response" with only errors is returned.
@@ -257,11 +259,11 @@ function executeImpl(
   .then(data => {
     details.end = Date.now();
     details.duration = details.end - details.start;
-    
+
     _logger('execution', details);
     return context.errors.length === 0 ?
       { data } :
-      { errors: context.errors, data }
+      { errors: context.errors, data };
   });
 }
 

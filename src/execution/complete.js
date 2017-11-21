@@ -99,11 +99,11 @@ export function completeValueCatchingError(
       // the rejection error and resolve to null.
       // Note: we don't rely on a `catch` method, but we do expect "thenable"
       // to take a second callback for the error case.
-      return promise.then(result => {
+      return promise.then(res => {
         execDetails.end = Date.now();
         execDetails.duration =
           execDetails.end - execDetails.start;
-        return result
+        return res;
       }, error => {
         execDetails.end = Date.now();
         execDetails.duration =
@@ -343,7 +343,7 @@ function completeListValue(
       error: null,
       args: {},
       resolves: []
-    }
+    };
     execDetails.resolves.push(itemDetails);
     // No need to modify the info object containing the path,
     // since from here on it is not ever accessed by resolver functions.

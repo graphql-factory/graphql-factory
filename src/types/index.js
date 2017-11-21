@@ -10,3 +10,6 @@ export {
 export type {
   ExecutionLogger
 } from './logger.js';
+export type {
+  GraphQLFactoryDirective
+} from './directive.js';

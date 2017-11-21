@@ -40,9 +40,6 @@ import {
 import {
   LoggerDetailType
 } from '../types/logger';
-import type {
-  LoggerDetailTypeEnum
-} from '../types/logger';
 
 export function getDirectives(
   astNode: { directives?: Array<DirectiveNode>}
@@ -233,7 +230,7 @@ function reduceDirectives(
           directiveDetails.duration =
             directiveDetails.end - directiveDetails.start;
           directiveDetails.error = err;
-          return Promise.reject(err)
+          return Promise.reject(err);
         });
       }
       return source;

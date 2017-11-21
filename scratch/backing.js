@@ -2,13 +2,41 @@ import {
   GraphQLSkipInstruction,
   SchemaBacking
 } from '../src/index';
+import { Kind } from 'graphql';
   
 const acl = {
   admin: ['create', 'read', 'update', 'delete'],
   user: ['read']
 }
-  
+
 export const backing = new SchemaBacking()
+  .Scalar('JSON')
+    .serialize(value => value)
+    .parseValue(value => value)
+    .parseLiteral(astNode => {
+      const parseLiteral = ast => {
+        switch (ast.kind) {
+          case Kind.STRING:
+          case Kind.BOOLEAN:
+            return ast.value
+          case Kind.INT:
+          case Kind.FLOAT:
+            return parseFloat(ast.value)
+          case Kind.OBJECT: {
+            const value = Object.create(null)
+            ast.fields.forEach(field => {
+              value[field.name.value] = parseLiteral(field.value)
+            })
+            return value
+          }
+          case Kind.LIST:
+            return ast.values.map(parseLiteral)
+          default:
+            return null
+        }
+      }
+      return parseLiteral(astNode);
+    })
   .Object('Query')
     .resolve('readFoo', (source, args) => {
       return Promise.resolve({

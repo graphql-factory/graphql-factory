@@ -33,12 +33,12 @@ export {
 } from 'graphql/utilities/isValidJSValue';
 export {
   getNamedType,
-  GraphQLObjectType,
   GraphQLNonNull,
   GraphQLList,
   isAbstractType,
   isLeafType,
   GraphQLScalarType,
+  GraphQLObjectType,
   GraphQLInterfaceType,
   GraphQLUnionType,
   GraphQLEnumType,
@@ -92,6 +92,8 @@ export type {
 } from 'graphql/jsutils/ObjMap';
 
 export type {
+  ASTNode,
+  ArgumentNode,
   DocumentNode,
   FieldNode,
   OperationDefinitionNode,
@@ -108,17 +110,20 @@ export type {
   UnionTypeDefinitionNode,
   EnumTypeDefinitionNode,
   EnumValueDefinitionNode,
-  InputObjectTypeDefinitionNode
+  InputObjectTypeDefinitionNode,
+  DirectiveDefinitionNode
 } from 'graphql/language/ast';
 
 export type {
+  GraphQLArgument,
   GraphQLField,
   GraphQLFieldResolver,
   GraphQLResolveInfo,
   ResponsePath,
   GraphQLType,
   GraphQLLeafType,
-  GraphQLAbstractType
+  GraphQLAbstractType,
+  GraphQLFieldConfigArgumentMap
 } from 'graphql/type/definition';
 export {
   DirectiveLocationEnum

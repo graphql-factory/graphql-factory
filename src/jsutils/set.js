@@ -11,13 +11,17 @@ import _hasProperty from './_hasProperty';
  * @param {*} object 
  * @param {*} path 
  * @param {*} value 
+ * @param {*} condition
  */
 export default function set(
   object: { [key: string]: any },
   path: string | Array<string>,
-  value: any
+  value: any,
+  condition?: ?boolean
 ) {
-  if (!_isSettable(object)) {
+  const canSet = condition !== false;
+
+  if (!_isSettable(object) || !canSet) {
     return object;
   }
   let obj = object;

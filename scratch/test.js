@@ -2,7 +2,8 @@ import {
   SchemaDefinition,
   GraphQLSkipInstruction,
   request,
-  buildSchema
+  buildSchema,
+  deconstructSchema
 } from '../src/index';
 import {
   parse
@@ -14,6 +15,8 @@ function randomBoolean () {
 }
 
 const def = `
+scalar JSON
+
 type Bar {
   id: String!  @modify(value: "****")
   name: String
@@ -22,6 +25,10 @@ type Foo @test(value: "FooObject") {
   id: String!
   name: String @modify(value: "****")
   bars: [Bar]
+}
+
+input FooInput {
+  bar: String
 }
 
 type Query @acl(permission: "read") {
@@ -36,8 +43,9 @@ directive @test(value: String) on SCHEMA | OBJECT | QUERY | FIELD |
 directive @acl(permission: String) on SCHEMA | OBJECT
 directive @remove(if: Boolean!) on FIELD | INPUT_FIELD_DEFINITION
 directive @modify(value: String) on FIELD | FIELD_DEFINITION
+directive @meta(data: JSON, foo: FooInput) on SCHEMA
 
-schema {
+schema @meta(data: { level1: 1 }, foo: { bar: "baz"} ) {
   query: Query
 }
 `
@@ -45,8 +53,12 @@ schema {
 const definition = new SchemaDefinition({ context: {} });
 const schema = buildSchema(def, backing)
 
+console.log(deconstructSchema(schema).types.Query.fields.readFoo)
+
+
 // console.log(schema);
 
+/*
 const source = `
 query Query ($skip: Boolean!) @test(value: "queryOp") {
   readFoo(
@@ -64,7 +76,9 @@ query Query ($skip: Boolean!) @test(value: "queryOp") {
 `
 
 function logger (type, data) {
-  console.log(JSON.stringify(data, null, '  '))
+  const { start, end, duration } = data;
+  console.log({ start, end, duration })
+  // console.log(JSON.stringify(data, null, '  '))
 }
 
 const variableValues = {
@@ -79,3 +93,4 @@ request({ schema, source, rootValue, variableValues, logger })
   console.log(JSON.stringify(result, null, '  '))
 })
 .catch(console.error)
+*/
