@@ -21,7 +21,7 @@ export function reduce(collection, reducer, initialValue, throwError) {
     }
   }, initialValue);
 
-  if (!!throwError && !!error) {
+  if (throwError && error) {
     throw error;
   }
   return result;

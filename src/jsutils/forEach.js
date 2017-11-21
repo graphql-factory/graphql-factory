@@ -5,11 +5,9 @@
  * @param {*} iteratee 
  * @param {*} throwErrors 
  */
-import { isObject } from './assertions';
 
 export function forEach(collection, iteratee, throwErrors) {
   let error = null;
-  let skip = false;
   const isArray = Array.isArray(collection);
 
   Object.keys(collection).some(key => {
@@ -22,7 +20,7 @@ export function forEach(collection, iteratee, throwErrors) {
       return true;
     }
   });
-  if (!!throwErrors && !!error) {
+  if (throwErrors && error) {
     throw error;
   }
 }

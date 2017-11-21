@@ -6,7 +6,9 @@ import {
   deconstructSchema
 } from '../src/index';
 import {
-  parse
+  parse,
+  GraphQLDirective,
+  astFromValue
 } from 'graphql';
 import { backing } from './backing';
 
@@ -16,6 +18,11 @@ function randomBoolean () {
 
 const def = `
 scalar JSON
+
+enum STATE {
+  ACTIVE
+  INACTIVE
+}
 
 type Bar {
   id: String!  @modify(value: "****")
@@ -27,6 +34,8 @@ type Foo @test(value: "FooObject") {
   bars: [Bar]
 }
 
+union BarUnion = Bar
+
 input FooInput {
   bar: String
 }
@@ -36,6 +45,10 @@ type Query @acl(permission: "read") {
     foo: String @test(value: "fooArg") @remove(if: true),
     bar: String
   ): Foo
+}
+
+interface IFace {
+  stuff: String
 }
 
 directive @test(value: String) on SCHEMA | OBJECT | QUERY | FIELD |
@@ -53,8 +66,7 @@ schema @meta(data: { level1: 1 }, foo: { bar: "baz"} ) {
 const definition = new SchemaDefinition({ context: {} });
 const schema = buildSchema(def, backing)
 
-console.log(deconstructSchema(schema).types.Query.fields.readFoo)
-
+console.log(deconstructSchema(schema).types)
 
 // console.log(schema);
 

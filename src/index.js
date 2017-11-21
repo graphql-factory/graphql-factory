@@ -13,7 +13,8 @@ export {
 };
 export {
   deconstructSchema,
-  deconstructDirective
+  deconstructDirective,
+  deconstructType
 } from './utilities/deconstruct.js';
 export {
   request

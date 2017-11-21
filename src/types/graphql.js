@@ -117,13 +117,15 @@ export type {
 export type {
   GraphQLArgument,
   GraphQLField,
+  GraphQLInputField,
   GraphQLFieldResolver,
   GraphQLResolveInfo,
   ResponsePath,
   GraphQLType,
   GraphQLLeafType,
   GraphQLAbstractType,
-  GraphQLFieldConfigArgumentMap
+  GraphQLFieldConfigArgumentMap,
+  GraphQLEnumValueConfig
 } from 'graphql/type/definition';
 export {
   DirectiveLocationEnum
