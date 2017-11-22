@@ -3,7 +3,8 @@ import {
   GraphQLSkipInstruction,
   request,
   buildSchema,
-  deconstructSchema
+  deconstructSchema,
+  exportDefinition
 } from '../src/index';
 import {
   parse,
@@ -65,9 +66,10 @@ schema @meta(data: { level1: 1 }, foo: { bar: "baz"} ) {
 
 const definition = new SchemaDefinition({ context: {} });
 const schema = buildSchema(def, backing)
-
-console.log(deconstructSchema(schema).types)
-
+const factoryDef = deconstructSchema(schema)
+const exported = exportDefinition(factoryDef)
+console.log(exported.definition)
+console.log(exported.backing)
 // console.log(schema);
 
 /*

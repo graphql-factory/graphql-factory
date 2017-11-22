@@ -59,7 +59,7 @@ export function parseASTNode(astNode: ASTNode) {
       return parseFloat(value);
     case Kind.OBJECT: {
       return reduce(fields, (val, field) => {
-        value[field.name.value] = parseASTNode(field.value);
+        val[field.name.value] = parseASTNode(field.value);
         return val;
       }, Object.create(null));
     }
@@ -572,6 +572,12 @@ export function deconstructDirective(directive: GraphQLDirective) {
               args[argDef.name] = argDef.arg;
               return args;
             }, Object.create(null));
+            break;
+          case 'resolveRequest':
+            set(def, key, value, (typeof value === 'function'));
+            break;
+          case 'resolveResult':
+            set(def, key, value, (typeof value === 'function'));
             break;
           case 'astNode':
             const directives = extractDirectives(value);

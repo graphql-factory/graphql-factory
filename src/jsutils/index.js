@@ -12,6 +12,12 @@ export {
   reduce
 } from './reduce';
 export {
+  map
+} from './map';
+export {
+  indent
+} from './indent';
+export {
   get,
   set,
   getFieldTypeLocation,

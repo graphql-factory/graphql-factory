@@ -17,5 +17,8 @@ export {
   deconstructType
 } from './utilities/deconstruct.js';
 export {
+  exportDefinition
+} from './utilities/export';
+export {
   request
 } from './request';
