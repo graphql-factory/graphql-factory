@@ -1,12 +1,11 @@
 // @flow
 import buildSchema from './utilities/buildSchema';
 
+export { SchemaDefinition } from './definition/definition';
+export { SchemaBacking } from './backing/backing';
 export {
   GraphQLSkipInstruction,
-  GraphQLFactoryDirective,
-  SchemaBacking,
-  SchemaDefinition,
-  FactoryType
+  GraphQLFactoryDirective
 } from './types';
 export {
   buildSchema

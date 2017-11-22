@@ -1,16 +1,12 @@
-import {
-  SchemaBacking,
-  SchemaDefinition,
-} from '../types';
+import { SchemaBacking } from '../backing/backing';
+import { SchemaDefinition } from '../definition/definition';
+import type { SchemaDefinitionConfig } from '../definition/definition';
 import {
   map,
   reduce,
   indent,
   isObject
 } from '../jsutils';
-import type {
-  SchemaDefinitionConfig
-} from '../types/definition';
 
 const LITERAL_RX = /^```([\w]+)```$/;
 
@@ -105,7 +101,12 @@ export function printArguments(args, tabs = 2, paren = true) {
   }
   const _args = map(args, (arg, name) => {
     const definition = isObject(arg) ? arg : { type: arg };
-    const { type, defaultValue, description, directives } = definition;
+    const {
+      type,
+      defaultValue,
+      description,
+      '@directives': directives
+    } = definition;
     const dirStr = directives ? printTypeDirectives(directives) : '';
     const dValue = defaultValue === undefined ?
     '' :
@@ -136,7 +137,7 @@ export function printFields(fields, parent, backing, tabs = 1) {
       args,
       resolve,
       deprecationReason,
-      directives
+      '@directives': directives
     } = field;
 
     const dirStr = directives ?
@@ -172,7 +173,7 @@ export function printObject(definition, name, backing) {
     interfaces,
     fields,
     isTypeOf,
-    directives
+    '@directives': directives
   } = definition;
 
   const fieldStr = printFields(fields, name, backing);
@@ -207,7 +208,7 @@ export function printScalar(definition, name, backing) {
     serialize,
     parseValue,
     parseLiteral,
-    directives
+    '@directives': directives
   } = definition;
 
   const dirStr = directives ? printTypeDirectives(directives) : '';
@@ -311,7 +312,7 @@ export function printInterface(definition, name, backing) {
     description,
     fields,
     resolveType,
-    directives
+    '@directives': directives
   } = definition;
 
   const fieldStr = printFields(fields, name, backing);
@@ -390,7 +391,12 @@ export function printDirective(definition, name, backing) {
  * @param {*} definition 
  */
 export function printSchema(definition) {
-  const { directives, query, mutation, subscription } = definition;
+  const {
+    query,
+    mutation,
+    subscription,
+    '@directives': directives
+  } = definition;
   const operations = { query, mutation, subscription };
   const dirStr = directives ?
     printTypeDirectives(directives) :
@@ -413,7 +419,10 @@ export function printSchema(definition) {
 export function exportDefinition(
   definition: SchemaDefinition | SchemaDefinitionConfig
 ) {
-  const { schema, types, directives } = definition;
+  const config = definition instanceof SchemaDefinition ?
+    definition._config :
+    definition;
+  const { schema, types, directives } = config;
   const backing = new SchemaBacking();
 
   // map each of the definitions

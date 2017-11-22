@@ -5,18 +5,14 @@ import promiseReduce from './promiseReduce';
 import set from './set';
 import cloneDeep from './cloneDeep';
 
-export {
-  forEach
-} from './forEach';
-export {
-  reduce
-} from './reduce';
-export {
-  map
-} from './map';
-export {
-  indent
-} from './indent';
+export { forEach } from './forEach';
+export { reduce } from './reduce';
+export { map } from './map';
+export { intersection } from './intersection.js';
+export { indent } from './indent';
+export { union } from './union';
+export { merge } from './merge';
+
 export {
   get,
   set,

@@ -22,15 +22,22 @@
  *
  * @flow
  */
-import type {
-  ObjMap,
-  ValueNode
-} from '../types/graphql';
-import {
-  set
-} from '../jsutils';
+import type { ObjMap, ValueNode } from '../types/graphql';
+import { set } from '../jsutils';
 
-// Creates returns a chainable backing
+// type definitions
+export type SchemaBackingFieldConfig = ObjMap<SchemaBackingFunction>;
+export type SchemaBackingFunction = (value: any) => any;
+export type DirectiveResolverConfig = {
+  resolveRequest?: () => mixed;
+  resolveResult?: () => mixed;
+};
+export type SchemaBackingConfig = {
+  [typeOrDirective: string]: SchemaBackingFieldConfig
+};
+
+// Creates returns a chainable backing by calling
+// the root backing method for each backing type
 class BackingChain {
   _backing: SchemaBacking;
 
@@ -236,18 +243,6 @@ function validateBacking(backing?: ?SchemaBackingConfig) {
   }
   return true;
 }
-
-// export type SchemaBackingConfig = ObjMap<SchemaBackingFieldConfig>;
-export type SchemaBackingConfig = {
-  [typeOrDirective: string]: SchemaBackingFieldConfig
-};
-
-export type SchemaBackingFieldConfig = ObjMap<SchemaBackingFunction>;
-export type SchemaBackingFunction = (value: any) => any;
-export type DirectiveResolverConfig = {
-  resolveRequest?: () => mixed;
-  resolveResult?: () => mixed;
-};
 
 export class SchemaBacking {
   _backing: SchemaBackingConfig;

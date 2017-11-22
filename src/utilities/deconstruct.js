@@ -119,7 +119,7 @@ export function processArg(definition: GraphQLArgument | GraphQLInputField) {
           break;
         case 'astNode':
           const directives = extractDirectives(value);
-          set(def, 'directives', directives, Boolean(directives));
+          set(def, '@directives', directives, Boolean(directives));
           break;
         default:
           break;
@@ -150,7 +150,7 @@ export function processEnumValue(
           break;
         case 'astNode':
           const directives = extractDirectives(value);
-          set(def, 'directives', directives, Boolean(directives));
+          set(def, '@directives', directives, Boolean(directives));
           break;
         default:
           break;
@@ -189,7 +189,7 @@ export function processField(definition: GraphQLField) {
           break;
         case 'astNode':
           const directives = extractDirectives(value);
-          set(def, 'directives', directives, Boolean(directives));
+          set(def, '@directives', directives, Boolean(directives));
           break;
         default:
           break;
@@ -227,7 +227,7 @@ function processObjectType(object: GraphQLObjectType) {
           break;
         case 'astNode':
           const directives = extractDirectives(object.astNode);
-          set(def, 'directives', directives, Boolean(directives));
+          set(def, '@directives', directives, Boolean(directives));
           break;
         default:
           break;
@@ -258,7 +258,7 @@ function processInputObjectType(object: GraphQLInputObjectType) {
           break;
         case 'astNode':
           const directives = extractDirectives(object.astNode);
-          set(def, 'directives', directives, Boolean(directives));
+          set(def, '@directives', directives, Boolean(directives));
           break;
         default:
           break;
@@ -292,7 +292,7 @@ export function processScalarType(scalar: GraphQLScalarType) {
           break;
         case 'astNode':
           const directives = extractDirectives(scalar.astNode);
-          set(def, 'directives', directives, Boolean(directives));
+          set(def, '@directives', directives, Boolean(directives));
           break;
         default:
           break;
@@ -331,7 +331,7 @@ export function processUnionType(union: GraphQLUnionType) {
           break;
         case 'astNode':
           const directives = extractDirectives(union.astNode);
-          set(def, 'directives', directives, Boolean(directives));
+          set(def, '@directives', directives, Boolean(directives));
           break;
         default:
           break;
@@ -373,7 +373,7 @@ export function processInterfaceType(iface: GraphQLInterfaceType) {
           break;
         case 'astNode':
           const directives = extractDirectives(iface.astNode);
-          set(def, 'directives', directives, Boolean(directives));
+          set(def, '@directives', directives, Boolean(directives));
           break;
         default:
             break;
@@ -404,7 +404,7 @@ export function processEnumType(enu: GraphQLEnumType) {
           break;
         case 'astNode':
           const directives = extractDirectives(value);
-          set(def, 'directives', directives, Boolean(directives));
+          set(def, '@directives', directives, Boolean(directives));
           break;
         default:
           break;
@@ -450,7 +450,8 @@ export class SchemaDeconstructor {
   /**
    * Converts user defined types to definitions
    */
-  processTypes() {
+  processTypes(prefix?: ?string) {
+    const _prefix = typeof prefix === 'string' ? prefix : '';
     forEach(this.schema.getTypeMap(), (type, name) => {
       // determine if the type can be processed
       // it should not be prefixed with __ or be a known
@@ -459,7 +460,7 @@ export class SchemaDeconstructor {
         const definition = deconstructType(type);
         set(
           this.definition.types,
-          [ name ],
+          [ `${_prefix}${name}` ],
           definition,
           Boolean(definition)
         );
@@ -488,27 +489,43 @@ export class SchemaDeconstructor {
   /**
    * Creates a factory schema config from the root types
    */
-  processSchema() {
+  processSchema(prefix?: ?string) {
+    const _prefix = typeof prefix === 'string' ? prefix : '';
     const queryType = this.schema.getQueryType() || {};
     const mutationType = this.schema.getMutationType() || {};
     const subscriptionType = this.schema.getSubscriptionType() || {};
     const directives = extractDirectives(this.schema.astNode);
-    this.definition.schema.query = queryType.name;
+    const customDirectives = this.schema.getDirectives()
+      .filter(({ name }) => {
+        return [ 'skip', 'include', 'deprecated' ].indexOf(name) === -1;
+      });
+    set(
+      this.definition.schema,
+      'directives',
+      customDirectives.map(dir => dir.name),
+      customDirectives.length
+    );
+    set(
+      this.definition.schema,
+      'query',
+      `${_prefix}${queryType.name}`,
+      Boolean(queryType.name)
+    );
     set(
       this.definition.schema,
       'mutation',
-      mutationType.name,
+      `${_prefix}${mutationType.name}`,
       Boolean(mutationType.name)
     );
     set(
       this.definition.schema,
       'subscription',
-      subscriptionType.name,
+      `${_prefix}${subscriptionType.name}`,
       Boolean(subscriptionType.name)
     );
     set(
       this.definition.schema,
-      'directives',
+      '@directives',
       directives,
       Boolean(directives)
     );
@@ -518,11 +535,11 @@ export class SchemaDeconstructor {
   /**
    * Deconstructs a schema into a factory definition
    */
-  deconstruct() {
+  deconstruct(prefix?: ?string) {
     return this
-      .processSchema()
+      .processSchema(prefix)
       .processDirectives()
-      .processTypes()
+      .processTypes(prefix)
       .definition;
   }
 }
@@ -581,7 +598,7 @@ export function deconstructDirective(directive: GraphQLDirective) {
             break;
           case 'astNode':
             const directives = extractDirectives(value);
-            set(def, 'directives', directives, Boolean(directives));
+            set(def, '@directives', directives, Boolean(directives));
             break;
           default:
             break;
@@ -596,6 +613,10 @@ export function deconstructDirective(directive: GraphQLDirective) {
  * Deconstructs a schema into types, directives, and schema
  * @param {*} schema 
  */
-export function deconstructSchema(schema: GraphQLSchema) {
-  return new SchemaDeconstructor(schema).deconstruct();
+export function deconstructSchema(
+  schema: GraphQLSchema,
+  prefix?: ?string
+) {
+  return new SchemaDeconstructor(schema)
+    .deconstruct(prefix);
 }

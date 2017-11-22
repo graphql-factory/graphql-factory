@@ -64,12 +64,34 @@ schema @meta(data: { level1: 1 }, foo: { bar: "baz"} ) {
 }
 `
 
-const definition = new SchemaDefinition({ context: {} });
+const def2 = `
+type Bee {
+  id: ID
+}
+
+type Query {
+  readBee: Bee
+}
+
+schema {
+  query: Query
+}
+`
+
+const definition = new SchemaDefinition({ conflict: 'WARN' });
 const schema = buildSchema(def, backing)
+
+definition.use(schema).use(def2);
+const s = definition.buildSchema();
+console.log(definition)
+
+/*
 const factoryDef = deconstructSchema(schema)
+console.log('factory', factoryDef)
 const exported = exportDefinition(factoryDef)
 console.log(exported.definition)
 console.log(exported.backing)
+*/
 // console.log(schema);
 
 /*

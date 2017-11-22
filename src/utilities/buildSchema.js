@@ -16,10 +16,10 @@ import {
 import type {
   SchemaBackingConfig,
   SchemaBackingFieldConfig
-} from '../types/backing';
+} from '../backing/backing';
 import {
   SchemaBacking
-} from '../types/backing';
+} from '../backing/backing';
 
 /**
  * Adds directive resolvers to a standard GraphQLDirective object

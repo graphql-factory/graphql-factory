@@ -1,109 +1,25 @@
 /**
- * The SchemaDefinition class enforces the structure of a
- * SchemaDefinitionConfig. It also provides chain-able methods that
- * allow programmatic configuration of a SchemaDefinitionConfig with
- * validation. The SchemaDefinitionConfig itself can be a plain
- * javascript object that follows the SchemaDefinitionConfig
- * specification.
- *
- * SchemaDefinitions are used to build a single Schema Definition
- * from various sources including Schema Language, GraphQL Factory
- * Definition (GFD) object, GraphQLSchema objects, GraphQLFactoryPlugin
- * objects, etc. All objects are deconstructed into a GFD and merged
- * into a single GFD. The combined GFD can be exported into a
- * Schema Definition Source and SchemaBacking object which can then
- * be used to generate a fully hydrated GraphQLSchema using the
- * custom buildSchema method included with GraphQL Factory
- *
- * @returns {boolean}
  * @flow
  */
+import { GraphQLSchema } from 'graphql';
+import { SchemaDefinition } from './definition';
 import type {
-  DirectiveLocationEnum,
   ObjMap,
-  ValueNode
-} from '../types/graphql';
-import type {
   GraphQLFieldResolver,
   GraphQLIsTypeOfFn,
-  GraphQLTypeResolver
-} from '../types/graphql.js';
+  GraphQLTypeResolver,
+  DirectiveLocationEnum,
+  ValueNode
+} from '../types/graphql';
 
-import {
-  assertObject
-} from '../jsutils';
-import {
-  SchemaBacking
-} from './backing';
-
-export class SchemaDefinition {
-  _config: ?SchemaDefinitionConfig;
-
-  constructor(config: ?SchemaDefinitionConfig | ?SchemaDefinition): void {
-    this._config = config instanceof SchemaDefinition ?
-      config._config :
-      config;
-    this.assert();
-  }
-
-  use(...args: Array<mixed>) {
-      return args;
-  }
-
-  /**
-   * asserts that the definition is structured correctly
-   * and fills in any missing values
-   */
-  assert() {
-    const c = this._config || {};
-    this._config = c;
-    c.backing = new SchemaBacking(c.backing);
-
-    if (c.context) {
-      assertObject(
-        c.context,
-        'SchemaDefinition context must be an object'
-      );
-    } else {
-      c.context = {};
-    }
-
-    if (c.functions) {
-      assertObject(
-        c.functions,
-        'SchemaDefinition functions must be an object'
-      );
-    } else {
-      c.functions = {};
-    }
-
-    if (c.directives) {
-      assertObject(
-        c.functions,
-        'SchemaDefinition directives must be an object'
-      );
-    } else {
-      c.directives = {};
-    }
-
-    if (c.types) {
-      assertObject(
-        c.types,
-        'SchemaDefinition types must be an object'
-      );
-    } else {
-      c.types = {};
-    }
-
-    if (!c.schema) {
-      c.schema = null;
-    }
-  }
-}
+export type UseArgument = string |
+  SchemaDefinitionConfig |
+  SchemaDefinition |
+  GraphQLSchema;
 
 /**
- * Types
- */
+* Types
+*/
 export const FactoryType = {
   SCALAR: 'Scalar',
   ENUM: 'Enum',
@@ -130,20 +46,19 @@ export type FactoryTypeConfig =
   FactoryInputObjectTypeConfig;
 
 /**
- * Main SchemaDefinitionConfig
- */
+* Main SchemaDefinitionConfig
+*/
 export type SchemaDefinitionConfig = {
-  backing?: ?SchemaBacking;
   context?: ?ObjMap<mixed>;
-  functions: ObjMap<() => mixed>;
+  functions?: ?ObjMap<() => mixed>;
   directives?: ?ObjMap<FactoryDirectiveDefinitionConfig>;
   types?: ?ObjMap<FactoryTypeConfig>;
   schema?: ?SchemaTypeConfig;
 };
 
 /**
- * Argument Type
- */
+* Argument Type
+*/
 export type FactoryArgumentConfig = {
   type: string;
   defaultValue?: mixed;
@@ -154,8 +69,8 @@ export type FactoryArgumentConfig = {
 export type FactoryFieldConfigArgumentMap = ObjMap<FactoryArgumentConfig>;
 
 /**
- * FieldConfig Type
- */
+* FieldConfig Type
+*/
 export type FactoryFieldConfig = {
   type: string;
   args?: FactoryFieldConfigArgumentMap;
@@ -166,12 +81,11 @@ export type FactoryFieldConfig = {
   '@directives'?: ?FactoryDirectiveMap;
 };
 
-export type FactoryFieldConfigMap =
-  ObjMap<FactoryFieldConfig>;
+export type FactoryFieldConfigMap = ObjMap<FactoryFieldConfig>;
 
 /**
- * Schema Type
- */
+* Schema Type
+*/
 export type SchemaTypeConfig = {
   directives?: ?Array<string>;
   query: string;
@@ -181,8 +95,8 @@ export type SchemaTypeConfig = {
 };
 
 /**
- * Directive Type
- */
+* Directive Type
+*/
 export type FactoryDirectiveDefinitionConfig = {
   name: string;
   description?: ?string;
@@ -197,8 +111,8 @@ export type FactoryDirectiveDefinitionConfig = {
 export type FactoryDirectiveMap = ObjMap<mixed>;
 
 /**
- * Enum Type
- */
+* Enum Type
+*/
 export type FactoryEnumTypeConfig/* <T> */ = {
   type: FactoryEnumType;
   values: FactoryEnumValueConfigMap/* <T> */;
@@ -217,8 +131,8 @@ export type FactoryEnumValueConfig = {
 };
 
 /**
- * Scalar Type
- */
+* Scalar Type
+*/
 export type FactoryScalarTypeConfig = {
   type: FactoryScalarType;
   description?: ?string;
@@ -229,8 +143,8 @@ export type FactoryScalarTypeConfig = {
 };
 
 /**
- * Object Type
- */
+* Object Type
+*/
 export type FactoryObjectTypeConfig = {
   type?: ?FactoryObjectType;
   interfaces?: ?Array<string>;
@@ -241,8 +155,8 @@ export type FactoryObjectTypeConfig = {
 };
 
 /**
- * Interface Type
- */
+* Interface Type
+*/
 export type FactoryInterfaceTypeConfig = {
   type: FactoryInterfaceType;
   fields: FactoryFieldConfigMap;
@@ -252,8 +166,8 @@ export type FactoryInterfaceTypeConfig = {
 };
 
 /**
- * Union Type
- */
+* Union Type
+*/
 export type GraphQLUnionTypeConfig = {
   type: FactoryUnionType,
   types: Array<string>,
@@ -263,8 +177,8 @@ export type GraphQLUnionTypeConfig = {
 };
 
 /**
- * Input type
- */
+* Input type
+*/
 export type FactoryInputObjectTypeConfig = {
   type: FactoryInputObjectType;
   fields: FactoryInputFieldConfigMap;
@@ -279,5 +193,4 @@ export type FactoryInputFieldConfig = {
   '@directives'?: ?FactoryDirectiveMap;
 };
 
-export type FactoryInputFieldConfigMap =
-  ObjMap<FactoryInputFieldConfig>;
+export type FactoryInputFieldConfigMap = ObjMap<FactoryInputFieldConfig>;
