@@ -65,8 +65,12 @@ class BackingChain {
     return this._backing.Directive(name);
   }
 
+  config() {
+    return this._backing.config();
+  }
+
   backing() {
-    return this._backing.backing();
+    return this._backing;
   }
 }
 
@@ -307,10 +311,14 @@ export class SchemaBacking {
     return this;
   }
 
+  config() {
+    return this.backing()._backing;
+  }
+
   backing(): SchemaBackingConfig {
     if (!validateBacking(this._backing)) {
       throw new Error('Invalid SchemaBacking');
     }
-    return this._backing;
+    return this;
   }
 }

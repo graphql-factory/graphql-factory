@@ -34,6 +34,7 @@ import type {
   UseArgument
 } from './types';
 import { mergeSchema, mergeWithConflicts } from './merge';
+import { wrapMiddleware } from './middleware';
 
 const DEFINITION_FIELDS = [
   'context',
@@ -236,7 +237,8 @@ export class SchemaDefinition {
    */
   buildSchema() {
     const { definition, backing } = this.export();
-    return buildSchema(definition, backing);
+    const schema = buildSchema(definition, backing);
+    return wrapMiddleware(schema);
   }
 
   /**

@@ -131,6 +131,6 @@ export default function buildFactorySchema(
     schema :
     hydrateSchema(
       schema,
-      new SchemaBacking(backing).backing()
+      new SchemaBacking(backing).config()
     );
 }

@@ -9,7 +9,8 @@ import {
 import {
   parse,
   GraphQLDirective,
-  astFromValue
+  astFromValue,
+  graphql
 } from 'graphql';
 import { backing } from './backing';
 
@@ -79,11 +80,12 @@ schema {
 `
 
 const definition = new SchemaDefinition({ conflict: 'WARN' });
-const schema = buildSchema(def, backing)
+// const schema = buildSchema(def, backing)
 
-definition.use(schema).use(def2);
-const s = definition.buildSchema();
-console.log(definition)
+definition.use(def, backing);
+const schema = definition.buildSchema();
+
+//console.log(schema);
 
 /*
 const factoryDef = deconstructSchema(schema)
@@ -94,15 +96,15 @@ console.log(exported.backing)
 */
 // console.log(schema);
 
-/*
+
 const source = `
-query Query ($skip: Boolean!) @test(value: "queryOp") {
+query Query @test(value: "queryOp") {
   readFoo(
     foo: "i am a foo",
     bar: "i am a bar"
   ) @test(value: "readFoo") {
     id @test(value: "idField") @remove(if: true) 
-    name @skip(if: $skip)
+    name
     bars {
       id
       name
@@ -110,17 +112,25 @@ query Query ($skip: Boolean!) @test(value: "queryOp") {
   }
 }
 `
-
+/*
 function logger (type, data) {
   const { start, end, duration } = data;
   console.log({ start, end, duration })
   // console.log(JSON.stringify(data, null, '  '))
 }
+*/
 
-const variableValues = {
-  remove: true, // randomBoolean(),
-  skip: false // randomBoolean()
-};
+graphql({
+  schema,
+  source
+})
+.then(result => {
+  console.log(JSON.stringify(result, null, '  '))
+})
+.catch(console.error)
+
+/*
+
 
 const rootValue = { user: 'admin' }
 

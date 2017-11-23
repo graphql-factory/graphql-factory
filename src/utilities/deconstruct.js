@@ -182,7 +182,17 @@ export function processField(definition: GraphQLField) {
           }, Object.create(null));
           break;
         case 'resolve':
-          set(def, 'resolve', value, (typeof value === 'function'));
+          if (typeof value === 'function') {
+            set(
+              def,
+              'resolve',
+              // check for a __resolver field which is set by factory
+              // to preserve the original field resolver
+              typeof value.__resolver === 'function' ?
+                value.__resolver :
+                value
+            );
+          }
           break;
         case 'deprecationReason':
           def[key] = value;
