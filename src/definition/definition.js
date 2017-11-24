@@ -102,6 +102,10 @@ function useLanguage(
  * Creates a schema definition that has useful methods for
  * adding additional definition elements as well as validating
  * and building an executable schema
+ * 
+ * Options:
+ * 
+ * * conflict - how to resolve a type name conflict
  */
 export class SchemaDefinition {
   _config: SchemaDefinitionConfig;
@@ -234,11 +238,24 @@ export class SchemaDefinition {
 
   /**
    * Builds an executable schema from the current definition
+   * 
+   * Options
+   *   * [useMiddleware=true]: wrap each resolver in middleware
+   *   * [factoryExecution=true]: uses custom graphql-factory execution
+   *                              which takes over the resolvers
    */
-  buildSchema() {
+  buildSchema(options?: ?ObjMap<?mixed>) {
+    const opts = typeof options === 'object' && options !== null ?
+      options :
+      Object.create(null);
+
+    // option to bypass middleware wraping
+    const wrap = opts.useMiddleware !== false;
+
+    // create the schema
     const { definition, backing } = this.export();
     const schema = buildSchema(definition, backing);
-    return wrapMiddleware(schema);
+    return wrap ? wrapMiddleware(schema, opts) : schema;
   }
 
   /**

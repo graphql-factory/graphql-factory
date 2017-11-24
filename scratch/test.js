@@ -105,10 +105,14 @@ query Query @test(value: "queryOp") {
   ) @test(value: "readFoo") {
     id @test(value: "idField") @remove(if: true) 
     name
-    bars {
+    car: bars {
       id
       name
     }
+  }
+  blah: readFoo {
+    id,
+    name
   }
 }
 `

@@ -41,11 +41,13 @@ export const backing = new SchemaBacking()
     .resolve('readFoo', (source, args) => {
       return Promise.resolve({
         id: '1',
-        name: 'Foo'
+        name: 'Foo',
+        bars: []
       })
     })
   .Object('Foo')
     .resolve('bars', (source, args) => {
+      console.log({source})
       return[
         { id: 'bar1', name: 'barone'},
         { id: 'bar2', name: 'bartwo'}
