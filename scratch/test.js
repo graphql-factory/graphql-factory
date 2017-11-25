@@ -47,6 +47,7 @@ type Query @acl(permission: "read") {
     foo: String @test(value: "fooArg") @remove(if: true),
     bar: String
   ): Foo
+  listFoo: [Foo]
 }
 
 interface IFace {
@@ -99,20 +100,13 @@ console.log(exported.backing)
 
 const source = `
 query Query @test(value: "queryOp") {
-  readFoo(
-    foo: "i am a foo",
-    bar: "i am a bar"
-  ) @test(value: "readFoo") {
+  listFoo @test(value: "readFoo") {
     id @test(value: "idField") @remove(if: true) 
     name
-    car: bars {
+    bars {
       id
       name
     }
-  }
-  blah: readFoo {
-    id,
-    name
   }
 }
 `

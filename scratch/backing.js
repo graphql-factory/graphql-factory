@@ -45,6 +45,12 @@ export const backing = new SchemaBacking()
         bars: []
       })
     })
+    .resolve('listFoo', (source, args) => {
+      return Promise.resolve([
+        { id: '1', name: 'Foo1', bars: [] },
+        { id: '2', name: 'Foo2', bars: [] }
+      ])
+    })
   .Object('Foo')
     .resolve('bars', (source, args) => {
       console.log({source})
