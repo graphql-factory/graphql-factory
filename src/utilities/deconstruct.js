@@ -87,7 +87,9 @@ export function processType(type: GraphQLType) {
  * @param {*} node 
  */
 export function extractDirectives(astNode: ASTNode) {
-  if (Array.isArray(astNode.directives) && astNode.directives.length) {
+  if (!astNode) {
+    return Object.create(null);
+  } else if (Array.isArray(astNode.directives) && astNode.directives.length) {
     return reduce(astNode.directives, (config, ast) => {
       const { name: { value: name }, arguments: args } = ast;
       config[name] = reduce(args, (argDef, node) => {

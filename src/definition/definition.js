@@ -34,7 +34,7 @@ import type {
   UseArgument
 } from './types';
 import { mergeSchema, mergeWithConflicts } from './merge';
-import { wrapMiddleware } from './middleware';
+import { wrapMiddleware } from '../middleware/middleware';
 
 const DEFINITION_FIELDS = [
   'context',

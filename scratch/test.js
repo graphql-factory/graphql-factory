@@ -12,7 +12,7 @@ import {
   astFromValue,
   graphql
 } from 'graphql';
-import { backing } from './backing';
+import { backing, shoppingBacking } from './backing';
 
 function randomBoolean () {
   return Math.random() >= 0.5;
@@ -80,11 +80,56 @@ schema {
 }
 `
 
+const shoppingDef = `
+type Category {
+  id: String!
+  name: String!
+}
+
+type Item {
+  id: String!
+  name: String!
+  category: Category!
+}
+
+input CategoryInput {
+  name: String!
+}
+
+input ItemInput {
+  name: String!
+  category: CategoryInput!
+}
+
+type List {
+  id: String!
+  name: String!
+  items: [Item]!
+}
+
+type Query {
+  listLists: [List]
+  readList (id: String!): List
+}
+
+type Mutation {
+  createList (
+    name: String!
+    items: [ItemInput]!
+  ): List
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+}
+`
+
 const definition = new SchemaDefinition({ conflict: 'WARN' });
 // const schema = buildSchema(def, backing)
 
-definition.use(def, backing);
-const schema = definition.buildSchema();
+definition.use(shoppingDef, shoppingBacking);
+const schema = definition.buildSchema({ useMiddleware: true });
 
 //console.log(schema);
 
@@ -98,18 +143,49 @@ console.log(exported.backing)
 // console.log(schema);
 
 
-const source = `
-query Query @test(value: "queryOp") {
-  listFoo @test(value: "readFoo") {
-    id @test(value: "idField") @remove(if: true) 
+const querySource = `
+query Query {
+  x:listLists {
+    id
     name
-    bars {
+    items {
       id
       name
+      category {
+        id
+        name
+      }
     }
   }
 }
 `
+const mutationSource = `
+mutation TeenageNinjaTurtle {
+  createList (
+    name: "TestList"
+    items: [
+      {
+        name: "Foo",
+        category: {
+          name: "Misc"
+        }
+      }
+    ]
+  ) {
+    id
+    name
+    items {
+      id
+      name
+      category {
+        id
+        name
+      }
+    }
+  }
+}
+`
+
 /*
 function logger (type, data) {
   const { start, end, duration } = data;
@@ -118,9 +194,10 @@ function logger (type, data) {
 }
 */
 
+
 graphql({
   schema,
-  source
+  source: querySource
 })
 .then(result => {
   console.log(JSON.stringify(result, null, '  '))

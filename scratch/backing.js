@@ -9,6 +9,109 @@ const acl = {
   user: ['read']
 }
 
+const db = {
+  categories: [
+    { id: '1', name: 'Food' },
+    { id: '2', name: 'Health' },
+    { id: '3', name: 'Entertainment' }
+  ],
+  list: [
+    { id: '1', name: 'Shopping', items: ['1', '2', '3'] },
+    { id: '2', name: 'Christmas', items: ['7', '8'] }
+  ],
+  item: [
+    { id: '1', name: 'Bananas', category: '1' },
+    { id: '2', name: 'Apples', category: '1' },
+    { id: '3', name: 'Milk', category: '1' },
+    { id: '4', name: 'Toothpaste', category: '2' },
+    { id: '5', name: 'Shampoo', category: '2' },
+    { id: '6', name: 'Movie Tickets', category: '3' },
+    { id: '7', name: 'Legos', category: '2' },
+    { id: '8', name: 'Jump Rope', category: '2' }
+  ]
+}
+
+function nextId(table) {
+  return String(db[table].length + 1);
+}
+
+function find(table, key, value) {
+  const results = db[table].filter(record => {
+    return record[key] === value
+  })
+  return results.length ? results[0] : null
+}
+
+export const shoppingBacking = new SchemaBacking()
+.Object('Mutation')
+.resolve('createList', (source, args, context, info) => {
+  const id = nextId('list')
+  const list = {
+    id,
+    name: args.name,
+    items: args.items.reduce((items, item) => {
+      const { name, category } = item
+      const _item = find('item', 'name', name)
+      let _cate = find('categories', 'name', category.name)
+
+      if (!_cate) {
+        const cateId = nextId('categories')
+        _cate = {
+          id: cateId,
+          name: category.name
+        }
+        db.categories.push(_cate)
+      }
+
+      if (!_item) {
+        const itemId = nextId('item')
+        const newItem = {
+          id: itemId,
+          name,
+          category: _cate.id
+        }
+        db.item.push(newItem)
+        items.push(itemId)
+      } else {
+        items.push(_item.id)
+      }
+      return items
+    }, [])
+  }
+
+  db.list.push(list)
+  return list
+})
+.Object('Query')
+.resolve('listLists', (source, args, context, info) => {
+  return db.list
+})
+.Object('List')
+.resolve('items', (source, args, context, info) => {
+  //console.log(info.parentType)
+  if (source) {
+    return db.item.filter(item => {
+      return source.items.indexOf(item.id) !== -1
+    })
+  }
+  return db.item
+})
+.Object('Item')
+.resolve('category', (source, args, context, info) => {
+  // console.log('========')
+  // console.log(info)
+  //console.log(info.parentType)
+  if (source) {
+    source.name = source.name
+    const res = db.categories.filter(c => {
+      return c.id === source.category
+    })
+    return res.length ? res[0] : null;
+  }
+  return db.categories
+})
+.backing()
+
 export const backing = new SchemaBacking()
   .Scalar('JSON')
     .serialize(value => value)
@@ -38,21 +141,21 @@ export const backing = new SchemaBacking()
       return parseLiteral(astNode);
     })
   .Object('Query')
-    .resolve('readFoo', (source, args) => {
+    .resolve('readFoo', (source, args, context, info) => {
       return Promise.resolve({
         id: '1',
         name: 'Foo',
         bars: []
       })
     })
-    .resolve('listFoo', (source, args) => {
+    .resolve('listFoo', (source, args, context, info) => {
       return Promise.resolve([
         { id: '1', name: 'Foo1', bars: [] },
         { id: '2', name: 'Foo2', bars: [] }
       ])
     })
   .Object('Foo')
-    .resolve('bars', (source, args) => {
+    .resolve('bars', (source, args, context, info) => {
       console.log({source})
       return[
         { id: 'bar1', name: 'barone'},
