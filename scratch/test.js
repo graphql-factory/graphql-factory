@@ -142,7 +142,17 @@ console.log(exported.backing)
 */
 // console.log(schema);
 
-
+const multiQuery = `
+query Query {
+  list1:listLists {
+    id
+    name
+  }
+  list2:listLists {
+    name
+  }
+}
+`
 const querySource = `
 query Query {
   x:listLists {

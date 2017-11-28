@@ -98,6 +98,7 @@ export const shoppingBacking = new SchemaBacking()
 })
 .Object('Item')
 .resolve('category', (source, args, context, info) => {
+  throw new Error('test')
   // console.log('========')
   // console.log(info)
   //console.log(info.parentType)

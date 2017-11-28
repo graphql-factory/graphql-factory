@@ -12,6 +12,7 @@ export { intersection } from './intersection.js';
 export { indent } from './indent';
 export { union } from './union';
 export { merge } from './merge';
+export { promiseMap } from './promiseMap';
 
 export {
   get,

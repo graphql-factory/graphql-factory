@@ -4,6 +4,7 @@ import {
   forEach,
   reduce,
   promiseReduce,
+  promiseMap,
   isObject
 } from '../jsutils';
 import {
@@ -14,7 +15,8 @@ import {
 import {
   getNamedType,
   getNullableType,
-  GraphQLList
+  GraphQLList,
+  GraphQLError
 } from 'graphql';
 import {
   fieldPath,
@@ -52,7 +54,8 @@ export function buildFieldResolveArgs(
 
 export function resolveSubFields(subFields, result, parentType, req) {
   const [ source, args, context, info ] = req;
-  return Promise.all(subFields.map(subField => {
+
+  return promiseMap(subFields, subField => {
     const path = {
       prev: cloneDeep(info.path),
       key: subField.name
@@ -76,8 +79,13 @@ export function resolveSubFields(subFields, result, parentType, req) {
     )
       .then(subResult => {
         result[subField.name] = subResult;
+        return result;
+      })
+      .catch(err => {
+        result[subField.name] = err;
+        return Promise.resolve(result);
       });
-  }))
+  });
 }
 
 export function resolveField(
@@ -110,7 +118,16 @@ export function resolveField(
     selection
   )
 
-  return Promise.resolve(resolver(...rargs))
+  const _result = new Promise((resolve, reject) => {
+    try {
+      return Promise.resolve(resolver(...rargs))
+        .then(resolve, reject);
+    } catch (err) {
+      return reject(err);
+    }
+  })
+
+  return _result
     .then(result => {
       const subFields = collectFields(
         fieldType,
@@ -126,7 +143,7 @@ export function resolveField(
           return;
         }
 
-        const resolveMap = result.map((res, idx) => {
+        return promiseMap(result, (res, idx) => {
           const listPath = { prev: cloneDeep(path), key: idx };
           return resolveSubFields(
             subFields,
@@ -140,11 +157,9 @@ export function resolveField(
               field,
               selection
             )
-          )
+          );
         })
-        return Promise.all(resolveMap).then(() => {
-          return result;
-        });
+        .then(() => result);
       }
 
       return resolveSubFields(
@@ -160,8 +175,8 @@ export function resolveField(
           selection
         )
       )
-        .then(() => result);
-    })
+      .then(() => result);
+    });
 }
 
 export function collectFields(parent, selectionSet, info) {
@@ -191,25 +206,62 @@ export function factoryExecutionMiddleware(req) {
   const isRoot = !info.path.prev;
   const selection = getSelection(info);
   const key = selection.name.value;
+  const firstSel = info.operation.selectionSet.selections[0];
+  const isFirst = firstSel.name.value === info.path.key ||
+    (firstSel.alias && firstSel.alias.value === info.path.key);
+
   
   // if the field is the root, take control of the execution
   if (isRoot) {
-    return resolveField(
-      source,
-      Object.assign(Object.create(null), info.path),
-      info.parentType,
-      selection,
-      req
-    );
+
+    // if the field is the first, resolve the schema and
+    // operation middleware and create a promise that
+    // can be resolved by all root fields before they
+    // execute their code
+    if (isFirst) {
+      info.operation._factory = {
+        execution: {
+          start: Date.now(),
+          end: -1,
+          duration: -1,
+          resolves: []
+        },
+        rootDirectives: Promise.resolve('OK')
+      }
+    }
+
+    // return a new promise that waits for the nextTick before
+    // trying to resolve a custom property on the operation
+    // set by factory.
+    return new Promise((resolve, reject) => {
+      process.nextTick(() => {
+        return info
+        .operation
+        ._factory
+        .rootDirectives
+        .then(() => {
+          return resolveField(
+            source,
+            Object.assign(Object.create(null), info.path),
+            info.parentType,
+            selection,
+            req
+          );
+        })
+        .then(resolve, reject);
+      })
+    })
   }
 
   // if not the root, check for errors as key values
   // this indicates that an error should be thrown so
   // that graphql can report it normally in the result
-  const resultOrError = source[key];
+  const resultOrError = get(source, [ key ]);
+
   if (resultOrError instanceof Error) {
     throw resultOrError;
   }
+
   return resultOrError;
 }
 
