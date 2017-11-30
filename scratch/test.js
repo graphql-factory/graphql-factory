@@ -235,7 +235,12 @@ function logger (type, data) {
 
 graphql({
   schema,
-  source: multiQuery // querySource
+  source: multiQuery, // querySource
+  rootValue: {
+    logger (event, data) {
+      console.log(event, JSON.stringify(data, null, '  '))
+    }
+  }
 })
 .then(result => {
   console.log(JSON.stringify(result, null, '  '))

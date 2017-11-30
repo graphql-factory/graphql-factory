@@ -2,7 +2,8 @@ import {
   get,
   cloneDeep,
   promiseReduce,
-  promiseMap
+  promiseMap,
+  noop
 } from '../jsutils';
 import {
   getArgumentValues,
@@ -309,6 +310,7 @@ export function factoryExecutionMiddleware(req) {
     // can be resolved by all root fields before they
     // execute their code
     if (isFirst) {
+      const logger = get(info, [ 'rootValue', 'logger' ], noop)
       const resolveRequest = [];
       const resolveResult = [];
       const directiveLocations = Object.create(null);
@@ -343,6 +345,7 @@ export function factoryExecutionMiddleware(req) {
       const final = Object.create(null);
 
       info.operation._factory = {
+        logger,
         execution: {
           start: Date.now(),
           end: -1,
@@ -350,15 +353,7 @@ export function factoryExecutionMiddleware(req) {
           resolves: []
         },
         final,
-        request: resolveSubFields(
-          rootFields,
-          final,
-          info.parentType,
-          req,
-          operationDirectiveLocs,
-          info.operation.operation === 'mutation'
-        ),
-        req: promiseReduce(
+        request: promiseReduce(
           resolveRequest.map(r => {
             return Promise.resolve(
               r.resolve(
@@ -371,30 +366,36 @@ export function factoryExecutionMiddleware(req) {
           }),
           prev => prev
         )
-          .then(() => {
-            return resolveSubFields(
-              rootFields,
-              final,
-              info.parentType,
-              req,
-              info.operation.operation === 'mutation'
-            );
-          })
-          .then(() => {
-            return promiseReduce(
-              resolveResult.map(r => {
-                return Promise.resolve(
-                  r.resolve(
-                    final,
-                    r.args,
-                    context,
-                    buildDirectiveInfo(info, r)
-                  )
-                );
-              }),
-              prev => prev
-            );
-          })
+        .then(() => {
+          return resolveSubFields(
+            rootFields,
+            final,
+            info.parentType,
+            req,
+            info.operation.operation === 'mutation'
+          );
+        })
+        .then(() => {
+          return promiseReduce(
+            resolveResult.map(r => {
+              return Promise.resolve(
+                r.resolve(
+                  final,
+                  r.args,
+                  context,
+                  buildDirectiveInfo(info, r)
+                )
+              );
+            }),
+            prev => prev
+          );
+        })
+        .then(() => {
+          const exec = info.operation._factory.execution;
+          exec.end = Date.now();
+          exec.duration = exec.end - exec.start;
+          info.operation._factory.logger('execution', exec);
+        })
       };
     }
 
