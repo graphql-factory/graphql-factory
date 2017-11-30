@@ -1,10 +1,7 @@
-import { extractDirectives } from './deconstruct';
-
-
 export function fieldPath(info) {
   let current = info.path;
   const path = [ current.key ];
-  while(current.prev) {
+  while (current.prev) {
     current = current.prev;
     if (typeof current.key !== 'number') {
       path.push(current.key);
@@ -13,26 +10,12 @@ export function fieldPath(info) {
   return path.reverse();
 }
 
-export function directiveMap(info) {
-  return reduce(info.schema.getDirectives(), (m, directive) => {
-    m[directive.name] = directive;
-    return m;
-  }, Object.create(null));
-}
-
 export function isRootResolver(info) {
   return !info.path.prev;
 }
 
 export function operationType(info) {
   return info.operation.operation;
-}
-
-export function directiveTree(info) {
-  const tree = Object.create(null);
-  const schema = info.schema;
-  const schemaDirectives = extractDirectives(schema.astNode);
-  return schemaDirectives;
 }
 
 export function getSelection(info) {

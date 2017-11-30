@@ -108,7 +108,7 @@ type List {
 }
 
 type Query {
-  listLists: [List]
+  listLists (search: String): [List]
   readList (id: String!): List
 }
 
@@ -119,7 +119,10 @@ type Mutation {
   ): List
 }
 
-schema {
+directive @test(value: String) on SCHEMA | OBJECT | QUERY | FIELD |
+INPUT_FIELD_DEFINITION
+
+schema @test(value: "schemaDef") {
   query: Query
   mutation: Mutation
 }
@@ -143,12 +146,15 @@ console.log(exported.backing)
 // console.log(schema);
 
 const multiQuery = `
-query Query {
-  list1:listLists {
+query Query @test(value: "queryOp") {
+  list1:listLists (search: "shop") {
     id
     name
   }
   list2:listLists {
+    fName:name
+  }
+  readList (id: "1") {
     name
   }
 }
@@ -171,13 +177,35 @@ query Query {
 `
 const mutationSource = `
 mutation TeenageNinjaTurtle {
-  createList (
-    name: "TestList"
+  list1:createList (
+    name: "TestList1"
     items: [
       {
         name: "Foo",
         category: {
           name: "Misc"
+        }
+      }
+    ]
+  ) {
+    id
+    name
+    items {
+      id
+      name
+      category {
+        id
+        name
+      }
+    }
+  }
+  list2:createList (
+    name: "TestList2"
+    items: [
+      {
+        name: "Foo1",
+        category: {
+          name: "Misc1"
         }
       }
     ]
@@ -207,7 +235,7 @@ function logger (type, data) {
 
 graphql({
   schema,
-  source: querySource
+  source: multiQuery // querySource
 })
 .then(result => {
   console.log(JSON.stringify(result, null, '  '))

@@ -18,6 +18,3 @@ export {
 export {
   exportDefinition
 } from './utilities/export';
-export {
-  request
-} from './request';

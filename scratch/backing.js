@@ -43,48 +43,74 @@ function find(table, key, value) {
 }
 
 export const shoppingBacking = new SchemaBacking()
+.Directive('test')
+.resolveRequest((source, args, context, info) => {
+  console.log('REQUEST', info)
+  //console.log(JSON.stringify(info.directives, null, '  '))
+})
+.resolveResult((source, args, context, info) => {
+  // console.log('RESULT', args)
+})
 .Object('Mutation')
 .resolve('createList', (source, args, context, info) => {
-  const id = nextId('list')
-  const list = {
-    id,
-    name: args.name,
-    items: args.items.reduce((items, item) => {
-      const { name, category } = item
-      const _item = find('item', 'name', name)
-      let _cate = find('categories', 'name', category.name)
-
-      if (!_cate) {
-        const cateId = nextId('categories')
-        _cate = {
-          id: cateId,
-          name: category.name
-        }
-        db.categories.push(_cate)
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      console.log('Creating list')
+      const id = nextId('list')
+      const list = {
+        id,
+        name: args.name,
+        items: args.items.reduce((items, item) => {
+          const { name, category } = item
+          const _item = find('item', 'name', name)
+          let _cate = find('categories', 'name', category.name)
+    
+          if (!_cate) {
+            const cateId = nextId('categories')
+            _cate = {
+              id: cateId,
+              name: category.name
+            }
+            db.categories.push(_cate)
+          }
+    
+          if (!_item) {
+            const itemId = nextId('item')
+            const newItem = {
+              id: itemId,
+              name,
+              category: _cate.id
+            }
+            db.item.push(newItem)
+            items.push(itemId)
+          } else {
+            items.push(_item.id)
+          }
+          return items
+        }, [])
       }
-
-      if (!_item) {
-        const itemId = nextId('item')
-        const newItem = {
-          id: itemId,
-          name,
-          category: _cate.id
-        }
-        db.item.push(newItem)
-        items.push(itemId)
-      } else {
-        items.push(_item.id)
-      }
-      return items
-    }, [])
-  }
-
-  db.list.push(list)
-  return list
+    
+      db.list.push(list)
+      return resolve(list)
+    }, 2000)
+  })
 })
 .Object('Query')
 .resolve('listLists', (source, args, context, info) => {
+  if (args.search) {
+    return db.list.filter(list => {
+      return list.name.match(new RegExp(args.search, 'i'));
+    })
+  }
+
   return db.list
+})
+.resolve('readList', (source, args, context, info) => {
+  // throw new Error('ahhh')
+  const results = db.list.filter(list => {
+    return list.id === args.id
+  })
+  return results.length ? results[0] : null
 })
 .Object('List')
 .resolve('items', (source, args, context, info) => {
@@ -98,7 +124,7 @@ export const shoppingBacking = new SchemaBacking()
 })
 .Object('Item')
 .resolve('category', (source, args, context, info) => {
-  throw new Error('test')
+  // throw new Error('test')
   // console.log('========')
   // console.log(info)
   //console.log(info.parentType)

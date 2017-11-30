@@ -3,7 +3,7 @@ export default function get(object, path, defaultValue) {
     if (typeof object !== 'object' || object === null) {
       return defaultValue;
     }
-    
+
     const fields = typeof path === 'string' || typeof path === 'number' ?
     [ path ] :
     path.slice();

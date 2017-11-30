@@ -22,7 +22,8 @@ function middleware(resolver, options) {
     return customExecution ?
       factoryExecutionMiddleware(req) :
       graphqlExecutionMiddleware(req);
-  }
+  };
+
   // add the resolver as a property on the resolve middleware
   // function so that when deconstructing the schema the original
   // resolver is preserved. Also add a flag that identifies this 
@@ -48,14 +49,14 @@ export function wrapMiddleware(schema, options) {
       type instanceof GraphQLObjectType ||
       type instanceof GraphQLInterfaceType
     ) {
-      forEach(type.getFields(), (field, name) => {
+      forEach(type.getFields(), field => {
         if (
           typeof field.resolve === 'function' &&
           field.resolve.__factoryMiddleware !== true
         ) {
           field.resolve = middleware(field.resolve, opts);
         }
-      }, true);  
+      }, true);
     }
   }, true);
   return schema;
