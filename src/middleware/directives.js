@@ -1,6 +1,36 @@
 import { set, cloneDeep } from '../jsutils';
-import { GraphQLDirective } from 'graphql';
 import { getDirectiveValues } from 'graphql/execution/values';
+import { DirectiveLocation } from 'graphql/type/directives';
+import {
+  GraphQLDirective,
+  GraphQLObjectType,
+  GraphQLScalarType,
+  GraphQLInterfaceType,
+  GraphQLUnionType,
+  GraphQLEnumType,
+  GraphQLInputObjectType
+} from 'graphql';
+
+/**
+ * Get the object type location
+ * @param {*} object 
+ */
+export function objectTypeLocation(object) {
+  if (object instanceof GraphQLObjectType) {
+    return DirectiveLocation.OBJECT;
+  } else if (object instanceof GraphQLScalarType) {
+    return DirectiveLocation.SCALAR;
+  } else if (object instanceof GraphQLInterfaceType) {
+    return DirectiveLocation.INTERFACE;
+  } else if (object instanceof GraphQLUnionType) {
+    return DirectiveLocation.UNION;
+  } else if (object instanceof GraphQLEnumType) {
+    return DirectiveLocation.ENUM;
+  } else if (object instanceof GraphQLInputObjectType) {
+    return DirectiveLocation.INPUT_OBJECT;
+  }
+  throw new Error('No object type location could be found');
+}
 
 /**
  * Builds an info object for the directive resolver

@@ -108,8 +108,8 @@ type List {
   items: [Item]!
 }
 
-type Query {
-  listLists (search: String): [List]
+type Query @test(value: "query type") {
+  listLists (search: String): [List] @test(value: "listListsDef")
   readList (id: String!): List
 }
 
@@ -121,7 +121,7 @@ type Mutation {
 }
 
 directive @test(value: String) on SCHEMA | OBJECT | QUERY | FIELD |
-INPUT_FIELD_DEFINITION
+FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 directive @log(value: String) on SCHEMA | OBJECT | QUERY | FIELD |
 INPUT_FIELD_DEFINITION
 
@@ -139,11 +139,9 @@ const schema = definition.buildSchema({ useMiddleware: true });
 
 //console.log(schema);
 
-
+/*
 const factoryDef = deconstructSchema(schema)
 console.log(JSON.stringify(factoryDef, null, '  '))
-process.exit(0)
-/*
 const exported = exportDefinition(factoryDef)
 console.log(exported.definition)
 console.log(exported.backing)
@@ -152,7 +150,7 @@ console.log(exported.backing)
 
 const multiQuery = `
 query MyQuery @log(value: "logQuery") @test(value: "queryOp") {
-  list1:listLists (search: "shop") {
+  list1:listLists (search: "shop") @test(value: "id field") {
     id
     name,
     items {

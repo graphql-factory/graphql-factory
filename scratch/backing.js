@@ -49,7 +49,7 @@ export const shoppingBacking = new SchemaBacking()
   //console.log(JSON.stringify(info.directives, null, '  '))
 })
 .resolveResult((source, args, context, info) => {
-  // console.log('RESULT', args)
+  console.log('RESULT', args)
 })
 .Directive('log')
 .resolve(function resolveLogDirective (source, args, context, info) {

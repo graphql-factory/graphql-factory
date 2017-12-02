@@ -1,3 +1,28 @@
+/**
+ * Custom graphql execution
+ * 
+ * The following execution "hijacks" the graphql execution
+ * by using the first field resolver in the root type to complete
+ * the entire execution and supply its data to the subsequent field
+ * resolvers. It does this by wraping every field resolve in a
+ * function that determines if it should execute code or wait till
+ * data is supplied to it. This allows custom directive middleware,
+ * logging, and other non-standard functionality while still using
+ * the graphql execution to perform the request making the schema
+ * usable in any environment.
+ * 
+ * TODO:
+ * 
+ * Handle directive middleware for
+ * - FRAGMENT_DEFINITION
+ * - FRAGMENT_SPREAD
+ * - INLINE_FRAGMENT
+ * - ARGUMENT_DEFINITION
+ * - ENUM_VALUE
+ * - INPUT_OBJECT
+ * - INPUT_FIELD_DEFINITION
+ * 
+ */
 import {
   get,
   cloneDeep,
@@ -11,6 +36,9 @@ import {
   DirectiveLocation
 } from '../types/graphql';
 import {
+  defaultFieldResolver
+} from 'graphql/execution/execute';
+import {
   getNamedType,
   getNullableType,
   GraphQLList
@@ -21,7 +49,8 @@ import {
 } from '../utilities/info';
 import {
   getDirectiveExec,
-  buildDirectiveInfo
+  buildDirectiveInfo,
+  objectTypeLocation
 } from './directives';
 
 export const ExecutionType = {
@@ -30,6 +59,13 @@ export const ExecutionType = {
 };
 
 export const TRACING_VERSION = '1.0.0';
+
+// create a wrapped default field resolver and add
+// a property to identify that it is default
+function defaultResolver (...args) {
+  return defaultFieldResolver(...args);
+}
+defaultResolver.__defaultResolver = true;
 
 /**
  * Builds a new field resolve args object by
@@ -76,7 +112,7 @@ export function buildFieldResolveArgs(
  * @param {*} execution 
  * @param {*} result 
  */
-export function calculateRun(stack, execution, result) {
+export function calculateRun(stack, execution, result, isDefault) {
   execution.end = Date.now();
   execution.duration = execution.end - execution.start;
 
@@ -84,7 +120,10 @@ export function calculateRun(stack, execution, result) {
     execution.error = result;
   }
 
-  stack.push(execution);
+  // do not trace default resolvers
+  if (!isDefault) {
+    stack.push(execution);
+  }
 }
 
 /**
@@ -117,18 +156,20 @@ export function instrumentResolver(
   };
 
   try {
+    const isDefault = resolver.__defaultResolver;
+    
     return Promise.resolve(resolver(...args))
       .then(result => {
-        calculateRun(stack, execution, result);
+        calculateRun(stack, execution, result, isDefault);
         return result
       }, err => {
-        calculateRun(stack, execution, err);
+        calculateRun(stack, execution, err, isDefault);
         return resolveErrors
           ? Promise.resolve(err)
           : Promise.reject(err);
       })
   } catch (err) {
-    calculateRun(stack, execution, err);
+    calculateRun(stack, execution, err, isDefault);
     return resolveErrors
       ? Promise.resolve(err)
       : Promise.reject(err)
@@ -245,12 +286,17 @@ export function resolveField(
   directiveLocations
 ) {
   const [ , , context, info ] = req;
+  const execution = info.operation._factory.execution;
   const type = getNamedType(parentType);
   const key = selection.name.value;
   const field = typeof type.getFields === 'function' ?
     get(type.getFields(), [ key ]) :
     null;
-  const resolver = get(field, [ 'resolve', '__resolver' ]);
+  const resolver = get(
+    field,
+    [ 'resolve', '__resolver' ],
+    defaultResolver
+  );
 
   // if there is no resolver, return the source
   if (!field || typeof resolver !== 'function') {
@@ -260,6 +306,38 @@ export function resolveField(
   const pathStr = Array.isArray(pathArr) ? pathArr.join('.') : key;
   const isList = getNullableType(field.type) instanceof GraphQLList;
   const fieldType = getNamedType(field.type);
+  const resolveRequest = [];
+  const resolveResult = [];
+
+  // get current directives
+  const objDirectiveLocs = getDirectiveExec(
+    type.astNode,
+    objectTypeLocation(type),
+    info,
+    resolveRequest,
+    resolveResult,
+    directiveLocations
+  );
+
+  const fieldDefDirectiveLocs = getDirectiveExec(
+    field.astNode,
+    DirectiveLocation.FIELD_DEFINITION,
+    info,
+    resolveRequest,
+    resolveResult,
+    objDirectiveLocs
+  );
+
+  const fieldDirectiveLocs = getDirectiveExec(
+    selection,
+    DirectiveLocation.FIELD,
+    info,
+    resolveRequest,
+    resolveResult,
+    fieldDefDirectiveLocs
+  );
+
+  // build the resolver args
   const rargs = buildFieldResolveArgs(
     source,
     context,
@@ -269,66 +347,95 @@ export function resolveField(
     selection
   );
 
-  return instrumentResolver(
-    ExecutionType.RESOLVE,
-    pathStr,
-    resolver.name || 'resolve',
-    info.operation._factory.execution.resolvers,
-    info,
-    resolver,
-    rargs,
-    true
-  )
-    .then(result => {
-      const subFields = collectFields(
-        fieldType,
-        selection.selectionSet
-      );
-
-      // if there are no subfields to resolve, return the results
-      if (!subFields.length) {
-        return result;
-      } else if (isList) {
-        if (!Array.isArray(result)) {
-          return;
+  return promiseReduce(resolveRequest, (prev, r) => {
+    const directiveInfo = buildDirectiveInfo(info, r);
+    return instrumentResolver(
+      ExecutionType.DIRECTIVE,
+      r.directive.name,
+      r.resolve.name || 'resolve',
+      execution.resolvers,
+      directiveInfo,
+      r.resolve,
+      [ undefined, r.args, context, directiveInfo ]
+    );
+  })
+  .then(() => {
+    return instrumentResolver(
+      ExecutionType.RESOLVE,
+      pathStr,
+      resolver.name || 'resolve',
+      info.operation._factory.execution.resolvers,
+      info,
+      resolver,
+      rargs,
+      true
+    )
+      .then(result => {
+        const subFields = collectFields(
+          fieldType,
+          selection.selectionSet
+        );
+  
+        // if there are no subfields to resolve, return the results
+        if (!subFields.length) {
+          return result;
+        } else if (isList) {
+          if (!Array.isArray(result)) {
+            return;
+          }
+  
+          return promiseMap(result, (res, idx) => {
+            const listPath = { prev: cloneDeep(path), key: idx };
+            return resolveSubFields(
+              subFields,
+              result[idx],
+              fieldType,
+              buildFieldResolveArgs(
+                source,
+                context,
+                info,
+                listPath,
+                field,
+                selection
+              ),
+              directiveLocations
+            );
+          })
+          .then(() => result);
         }
-
-        return promiseMap(result, (res, idx) => {
-          const listPath = { prev: cloneDeep(path), key: idx };
-          return resolveSubFields(
-            subFields,
-            result[idx],
-            fieldType,
-            buildFieldResolveArgs(
-              source,
-              context,
-              info,
-              listPath,
-              field,
-              selection
-            ),
-            directiveLocations
-          );
-        })
+  
+        return resolveSubFields(
+          subFields,
+          result,
+          fieldType,
+          buildFieldResolveArgs(
+            source,
+            context,
+            info,
+            path,
+            field,
+            selection
+          ),
+          directiveLocations
+        )
         .then(() => result);
-      }
-
-      return resolveSubFields(
-        subFields,
-        result,
-        fieldType,
-        buildFieldResolveArgs(
-          source,
-          context,
-          info,
-          path,
-          field,
-          selection
-        ),
-        directiveLocations
-      )
-      .then(() => result);
-    });
+      });
+  })
+  .then(result => {
+    return promiseReduce(resolveResult, (prev, r) => {
+      const directiveInfo = buildDirectiveInfo(info, r);
+      return instrumentResolver(
+        ExecutionType.DIRECTIVE,
+        r.directive.name,
+        r.resolve.name || 'resolveResult',
+        execution.resolvers,
+        directiveInfo,
+        r.resolve,
+        [ result, r.args, context, directiveInfo ]
+      );
+    })
+    .then(() => result);
+  });
 }
 
 /**
@@ -345,15 +452,10 @@ export function collectFields(parent, selectionSet) {
 
   return selectionSet.selections.reduce((resolves, selection) => {
     const name = selection.name.value;
-    const field = fields[name];
-    const resolver = get(field, [ 'resolve', '__resolver' ]);
-
-    if (typeof resolver === 'function') {
-      resolves.push({
-        name: get(selection, [ 'alias', 'value' ], name),
-        selection
-      });
-    }
+    resolves.push({
+      name: get(selection, [ 'alias', 'value' ], name),
+      selection
+    });
     return resolves;
   }, []);
 }
