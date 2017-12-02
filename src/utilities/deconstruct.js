@@ -602,7 +602,7 @@ export function deconstructDirective(directive: GraphQLDirective) {
               return args;
             }, Object.create(null));
             break;
-          case 'resolveRequest':
+          case 'resolve':
             set(def, key, value, (typeof value === 'function'));
             break;
           case 'resolveResult':

@@ -366,7 +366,7 @@ export function printDirective(definition, name, backing) {
     description,
     locations,
     args,
-    resolveRequest,
+    resolve,
     resolveResult
   } = definition;
   const argStr = printArguments(args, 1);
@@ -374,8 +374,8 @@ export function printDirective(definition, name, backing) {
   const directive = `directive @${name}${argStr} on ${locStr}\n`;
 
   // handle the backing
-  if (typeof resolveRequest === 'function') {
-    backing.Directive(name).resolveRequest(resolveRequest);
+  if (typeof resolve === 'function') {
+    backing.Directive(name).resolve(resolve);
   }
   if (typeof resolveResult === 'function') {
     backing.Directive(name).resolveResult(resolveResult);

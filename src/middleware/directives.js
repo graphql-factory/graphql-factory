@@ -88,17 +88,17 @@ export function getDirectiveExec(
     const dirInfo = getDirective(info, directiveAST.name.value, astNode);
     if (dirInfo) {
       const { name, args, directive } = dirInfo;
-      const { locations, resolveRequest, resolveResult } = directive;
+      const { locations, resolve, resolveResult } = directive;
       if (locations.indexOf(location) !== -1) {
         set(locs, [ location, name ], args);
         set(peerDirectives, [ location, name ], args);
-        if (typeof resolveRequest === 'function') {
+        if (typeof resolve === 'function') {
           resolveReq.push({
             args,
             location,
             locationNodes: astNode.directives,
             directive,
-            resolve: resolveRequest
+            resolve
           });
         }
         if (typeof resolveResult === 'function') {

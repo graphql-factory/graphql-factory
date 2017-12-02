@@ -14,6 +14,8 @@ export { union } from './union';
 export { merge } from './merge';
 export { promiseMap } from './promiseMap';
 export { noop } from './noop';
+export { omit } from './omit';
+export { pick } from './pick';
 
 export {
   get,

@@ -190,10 +190,10 @@ class DirectiveBacking extends BackingChain {
     this._name = `@${name.replace(/^@/, '')}`;
   }
 
-  resolveRequest(func: () => ?mixed) {
+  resolve(func: () => ?mixed) {
     set(
       this._backing,
-      [ '_backing', this._name, 'resolveRequest' ],
+      [ '_backing', this._name, 'resolve' ],
       func
     );
     return this;
@@ -227,11 +227,11 @@ function validateBacking(backing?: ?SchemaBackingConfig) {
     }
     // validate directives
     if (key.match(/^@/)) {
-      const { resolveRequest, resolveResult } = value;
-      if (typeof resolveRequest !== 'function' &&
+      const { resolve, resolveResult } = value;
+      if (typeof resolve !== 'function' &&
         typeof resolveResult !== 'function') {
         return false;
-      } else if (resolveRequest && typeof resolveRequest !== 'function') {
+      } else if (resolve && typeof resolve !== 'function') {
         return false;
       } else if (resolveResult && typeof resolveResult !== 'function') {
         return false;

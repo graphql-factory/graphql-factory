@@ -17,6 +17,7 @@ import { backing, shoppingBacking } from './backing';
 function randomBoolean () {
   return Math.random() >= 0.5;
 }
+import _ from 'lodash'
 
 const def = `
 scalar JSON
@@ -121,6 +122,8 @@ type Mutation {
 
 directive @test(value: String) on SCHEMA | OBJECT | QUERY | FIELD |
 INPUT_FIELD_DEFINITION
+directive @log(value: String) on SCHEMA | OBJECT | QUERY | FIELD |
+INPUT_FIELD_DEFINITION
 
 schema @test(value: "schemaDef") {
   query: Query
@@ -146,10 +149,17 @@ console.log(exported.backing)
 // console.log(schema);
 
 const multiQuery = `
-query Query @test(value: "queryOp") {
+query MyQuery @log(value: "logQuery") @test(value: "queryOp") {
   list1:listLists (search: "shop") {
     id
-    name
+    name,
+    items {
+      id
+      name,
+      category {
+        name
+      }
+    }
   }
   list2:listLists {
     fName:name
@@ -238,7 +248,8 @@ graphql({
   source: multiQuery, // querySource
   rootValue: {
     logger (event, data) {
-      console.log(event, JSON.stringify(data, null, '  '))
+      // console.log(event, JSON.stringify(_.omit(data, ['operation']), null, '  '))
+      console.log(event, data)
     }
   }
 })

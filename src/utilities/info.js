@@ -1,9 +1,9 @@
-export function fieldPath(info) {
+export function fieldPath(info, includeIndexes) {
   let current = info.path;
   const path = [ current.key ];
   while (current.prev) {
     current = current.prev;
-    if (typeof current.key !== 'number') {
+    if (typeof current.key !== 'number' || includeIndexes) {
       path.push(current.key);
     }
   }

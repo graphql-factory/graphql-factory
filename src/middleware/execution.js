@@ -3,7 +3,8 @@ import {
   cloneDeep,
   promiseReduce,
   promiseMap,
-  noop
+  noop,
+  pick
 } from '../jsutils';
 import {
   getArgumentValues,
@@ -15,12 +16,20 @@ import {
   GraphQLList
 } from 'graphql';
 import {
-  getSelection
+  getSelection,
+  fieldPath
 } from '../utilities/info';
 import {
   getDirectiveExec,
   buildDirectiveInfo
 } from './directives';
+
+export const ExecutionType = {
+  RESOLVE: 'RESOLVE',
+  DIRECTIVE: 'DIRECTIVE'
+};
+
+export const TRACING_VERSION = '1.0.0';
 
 /**
  * Builds a new field resolve args object by
@@ -55,10 +64,75 @@ export function buildFieldResolveArgs(
         fieldName: selection.name.value,
         fieldNodes: [ selection ],
         returnType: field.type,
-        path
+        path: cloneDeep(path)
       }
     )
   ];
+}
+
+/**
+ * Completes an execution detail and adds it to the run stack
+ * @param {*} stack 
+ * @param {*} execution 
+ * @param {*} result 
+ */
+export function calculateRun(stack, execution, result) {
+  execution.end = Date.now();
+  execution.duration = execution.end - execution.start;
+
+  if (result instanceof Error) {
+    execution.error = result;
+  }
+
+  stack.push(execution);
+}
+
+/**
+ * Creates and updates an object that contains run time details for
+ * a specific resolver
+ * @param {*} type 
+ * @param {*} name 
+ * @param {*} stack 
+ * @param {*} resolve 
+ */
+export function instrumentResolver(
+  type,
+  name,
+  resolverName,
+  stack,
+  info,
+  resolver,
+  args,
+  resolveErrors
+) {
+  const execution = {
+    type,
+    name,
+    resolverName,
+    start: Date.now(),
+    end: -1,
+    duration: -1,
+    info: pick(info, 'location', 'path'),
+    error: null
+  };
+
+  try {
+    return Promise.resolve(resolver(...args))
+      .then(result => {
+        calculateRun(stack, execution, result);
+        return result
+      }, err => {
+        calculateRun(stack, execution, err);
+        return resolveErrors
+          ? Promise.resolve(err)
+          : Promise.reject(err);
+      })
+  } catch (err) {
+    calculateRun(stack, execution, err);
+    return resolveErrors
+      ? Promise.resolve(err)
+      : Promise.reject(err)
+  }
 }
 
 /**
@@ -75,13 +149,13 @@ export function resolveSubField(
   result,
   parentType,
   req,
-  directiveLocations
+  directiveLocations,
+  isRoot
 ) {
   const [ source, args, context, info ] = req;
-  const path = {
-    prev: cloneDeep(info.path),
-    key: subField.name
-  };
+  const path = isRoot
+    ? { prev: undefined, key: subField.name }
+    : { prev: cloneDeep(info.path), key: subField.name }
 
   const execContext = [
     cloneDeep(source),
@@ -137,7 +211,8 @@ export function resolveSubFields(
         result,
         parentType,
         req,
-        directiveLocations
+        directiveLocations,
+        typeof serial === 'boolean' // only root fields should be boolean
       );
     }) :
     promiseMap(subFields, subField => {
@@ -146,7 +221,8 @@ export function resolveSubFields(
         result,
         parentType,
         req,
-        directiveLocations
+        directiveLocations,
+        typeof serial === 'boolean' // only root fields should be boolean
       );
     });
 }
@@ -180,6 +256,8 @@ export function resolveField(
   if (!field || typeof resolver !== 'function') {
     return Promise.resolve(cloneDeep(source));
   }
+  const pathArr = fieldPath(info, true);
+  const pathStr = Array.isArray(pathArr) ? pathArr.join('.') : key;
   const isList = getNullableType(field.type) instanceof GraphQLList;
   const fieldType = getNamedType(field.type);
   const rargs = buildFieldResolveArgs(
@@ -191,16 +269,16 @@ export function resolveField(
     selection
   );
 
-  const _result = new Promise((resolve, reject) => {
-    try {
-      return Promise.resolve(resolver(...rargs))
-        .then(resolve, reject);
-    } catch (err) {
-      return reject(err);
-    }
-  });
-
-  return _result
+  return instrumentResolver(
+    ExecutionType.RESOLVE,
+    pathStr,
+    resolver.name || 'resolve',
+    info.operation._factory.execution.resolvers,
+    info,
+    resolver,
+    rargs,
+    true
+  )
     .then(result => {
       const subFields = collectFields(
         fieldType,
@@ -344,57 +422,68 @@ export function factoryExecutionMiddleware(req) {
       // store the final result
       const final = Object.create(null);
 
+      // store the execution details
+      const execution = {
+        version: TRACING_VERSION,
+        start: Date.now(),
+        end: -1,
+        duration: -1,
+        resolvers: [],
+        operation: Object.assign(
+          Object.create(null),
+          info.operation
+        )
+      }
+
       info.operation._factory = {
         logger,
-        execution: {
-          start: Date.now(),
-          end: -1,
-          duration: -1,
-          resolves: []
-        },
+        execution,
         final,
-        request: promiseReduce(
-          resolveRequest.map(r => {
-            return Promise.resolve(
-              r.resolve(
-                undefined,
-                r.args,
-                context,
-                buildDirectiveInfo(info, r)
-              )
-            );
-          }),
-          prev => prev
-        )
+        request: promiseReduce(resolveRequest, (prev, r) => {
+          const directiveInfo = buildDirectiveInfo(info, r);
+          return instrumentResolver(
+            ExecutionType.DIRECTIVE,
+            r.directive.name,
+            r.resolve.name || 'resolve',
+            execution.resolvers,
+            directiveInfo,
+            r.resolve,
+            [ undefined, r.args, context, directiveInfo ]
+          );
+        })
         .then(() => {
           return resolveSubFields(
             rootFields,
             final,
             info.parentType,
             req,
+            operationDirectiveLocs,
             info.operation.operation === 'mutation'
           );
         })
         .then(() => {
-          return promiseReduce(
-            resolveResult.map(r => {
-              return Promise.resolve(
-                r.resolve(
-                  final,
-                  r.args,
-                  context,
-                  buildDirectiveInfo(info, r)
-                )
-              );
-            }),
-            prev => prev
-          );
+          return promiseReduce(resolveResult, (prev, r) => {
+            const directiveInfo = buildDirectiveInfo(info, r);
+            return instrumentResolver(
+              ExecutionType.DIRECTIVE,
+              r.directive.name,
+              r.resolve.name || 'resolveResult',
+              execution.resolvers,
+              directiveInfo,
+              r.resolve,
+              [ final, r.args, context, directiveInfo ]
+            );
+          })
         })
         .then(() => {
-          const exec = info.operation._factory.execution;
-          exec.end = Date.now();
-          exec.duration = exec.end - exec.start;
-          info.operation._factory.logger('execution', exec);
+          execution.end = Date.now();
+          execution.duration = execution.end - execution.start;
+          info.operation._factory.logger('execution', execution);
+        }, err => {
+          execution.end = Date.now();
+          execution.duration = execution.end - execution.start;
+          info.operation._factory.logger('execution', execution);
+          return Promise.reject(err)
         })
       };
     }
@@ -419,7 +508,8 @@ export function factoryExecutionMiddleware(req) {
           }
           return result;
         })
-        .then(resolve, reject);
+        .then(resolve, reject)
+        .catch(reject);
       });
     });
   }

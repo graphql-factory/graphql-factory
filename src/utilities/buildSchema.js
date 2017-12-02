@@ -37,8 +37,8 @@ export function hydrateDirective(
 
   schema._directives.forEach(directive => {
     if (directive.name === name) {
-      if (typeof backing.resolveRequest === 'function') {
-        set(directive, 'resolveRequest', backing.resolveRequest);
+      if (typeof backing.resolve === 'function') {
+        set(directive, 'resolve', backing.resolve);
       }
       if (typeof backing.resolveResult === 'function') {
         set(directive, 'resolveResult', backing.resolveResult);

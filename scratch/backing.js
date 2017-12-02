@@ -44,12 +44,16 @@ function find(table, key, value) {
 
 export const shoppingBacking = new SchemaBacking()
 .Directive('test')
-.resolveRequest((source, args, context, info) => {
-  console.log('REQUEST', info)
+.resolve(function resolveTestDirective (source, args, context, info) {
+  console.log('REQUEST', args)
   //console.log(JSON.stringify(info.directives, null, '  '))
 })
 .resolveResult((source, args, context, info) => {
   // console.log('RESULT', args)
+})
+.Directive('log')
+.resolve(function resolveLogDirective (source, args, context, info) {
+  console.log('LOG', args);
 })
 .Object('Mutation')
 .resolve('createList', (source, args, context, info) => {
@@ -96,7 +100,7 @@ export const shoppingBacking = new SchemaBacking()
   })
 })
 .Object('Query')
-.resolve('listLists', (source, args, context, info) => {
+.resolve('listLists', function listListsResolver (source, args, context, info) {
   if (args.search) {
     return db.list.filter(list => {
       return list.name.match(new RegExp(args.search, 'i'));
@@ -105,7 +109,7 @@ export const shoppingBacking = new SchemaBacking()
 
   return db.list
 })
-.resolve('readList', (source, args, context, info) => {
+.resolve('readList', function readListResolver (source, args, context, info) {
   // throw new Error('ahhh')
   const results = db.list.filter(list => {
     return list.id === args.id
@@ -113,7 +117,7 @@ export const shoppingBacking = new SchemaBacking()
   return results.length ? results[0] : null
 })
 .Object('List')
-.resolve('items', (source, args, context, info) => {
+.resolve('items', function listItemsResolver (source, args, context, info) {
   //console.log(info.parentType)
   if (source) {
     return db.item.filter(item => {
@@ -123,7 +127,7 @@ export const shoppingBacking = new SchemaBacking()
   return db.item
 })
 .Object('Item')
-.resolve('category', (source, args, context, info) => {
+.resolve('category', function categoryResolver (source, args, context, info) {
   // throw new Error('test')
   // console.log('========')
   // console.log(info)
@@ -190,7 +194,7 @@ export const backing = new SchemaBacking()
       ]
     })
   .Directive('remove')
-    .resolveRequest((source, args, context, info) => {
+    .resolve((source, args, context, info) => {
       const { directives: { locations } } = info
       if (locations.FIELD && locations.FIELD.if) {
         return new GraphQLSkipInstruction();
@@ -212,7 +216,7 @@ export const backing = new SchemaBacking()
       }
     })
   .Directive('test')
-    .resolveRequest((source, args, context, info) => {
+    .resolve(function resolveTestDirective (source, args, context, info) {
       // console.log({ args })
       //console.log('REQUEST', args)
       //console.log(JSON.stringify(info.directives, null, '  '))
@@ -221,7 +225,7 @@ export const backing = new SchemaBacking()
       //console.log('RESULT', args)
     })
   .Directive('acl')
-    .resolveRequest((source, args, context, info) => {
+    .resolve((source, args, context, info) => {
       const { directives: { locations }, rootValue } = info;
       var user = rootValue ? rootValue.user : ''
       var auth = function (args) {
