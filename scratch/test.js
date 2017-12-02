@@ -139,9 +139,11 @@ const schema = definition.buildSchema({ useMiddleware: true });
 
 //console.log(schema);
 
-/*
+
 const factoryDef = deconstructSchema(schema)
-console.log('factory', factoryDef)
+console.log(JSON.stringify(factoryDef, null, '  '))
+process.exit(0)
+/*
 const exported = exportDefinition(factoryDef)
 console.log(exported.definition)
 console.log(exported.backing)

@@ -17,7 +17,9 @@ This will include
 * better code testing
 * and more...
 
-### Example
+### Schema Language Example
+
+Create a schema from schema language and a `SchemaBacking`
 
 ```js
 import { graphql } from 'graphql'
@@ -69,6 +71,107 @@ new SchemaBacking()
 // build a schema from the definition and backing
 const schema = new SchemaDefinition()
   .use(definition, backing)
+  .buildSchema()
+
+// make a request with graphql's execution
+// graphql-factory will hijack it and use
+// its own execution code
+graphql({
+  schema,
+  source: `
+    query MyQuery {
+      listLists {
+        name
+        items {
+          name
+        }
+      }
+    }
+  `,
+  rootValue: {
+    // create a logger that will output things like tracing data
+    logger (event, data) {
+      console.log(event, data)
+    }
+  }
+})
+.then(result => {
+  // do something with the result
+})
+```
+
+### Factory Definition Example
+
+Create the same schema using GraphQL Factory Definition Format
+
+```js
+import { graphql } from 'graphql'
+import { SchemaDefinition } from 'graphql-factory'
+
+// graphql factory definition which includes
+// definitions and resolvers
+const definition = {
+  directives: {
+    test: {
+      locations: [ 'SCHEMA', 'OBJECT', 'QUERY', 'FIELD' ],
+      args: {
+        value: { type: 'String' }
+      },
+      resolve (source, args, context, info) {
+        console.log('Testing', args)
+      }
+    }
+  },
+  types: {
+    Item: {
+      type: 'Object',
+      fields: {
+        id: { type: 'String!' },
+        name: { type: 'String!' }
+      }
+    },
+    List: {
+      type: 'Object',
+      fields: {
+        id: { type: 'String!' },
+        name: { type: 'String!' },
+        items: {
+          type: '[Item]!',
+          resolve(source, args, context, info) {
+            // resolve code
+          }
+        }
+      }
+    },
+    Query: {
+      type: 'Object',
+      fields: {
+        listLists: {
+          type: '[List]',
+          args: {
+            search: { type: 'String' }
+          },
+          resolve(source, args, context, info) {
+            // resolve code
+          }
+        }
+      }
+    }
+  },
+  schema: {
+    directives: [ 'test' ],
+    query: 'Query',
+    '@directives': {
+      test: {
+        value: 'I am a schema directive'
+      }
+    }
+  }
+}
+
+// build a schema from the definition
+const schema = new SchemaDefinition()
+  .use(definition)
   .buildSchema()
 
 // make a request with graphql's execution
