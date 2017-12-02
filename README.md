@@ -1,77 +1,99 @@
 # graphql-factory
 
-Extensible tools for building graphql APIs
+Tools for building `graphql`
 
-## About
+## Announcement
 
-GraphQL Factory is a toolkit for building graphql. It includes useful features like middleware,
-plugin extensibility, schema decomposition/merging, and many more. It is designed to make building
-graphql schemas quick with a familiar API. Please note that the current `v3` API is completely
-different from the `v1/v2` API.
+This project is currently undergoing a major re-write for `v3.0.0`. 
+This will include
 
-[Project Documentation](http://graphql-factory.github.io/graphql-factory)
+* a more graphql-like api
+* updated GraphQL Factory Definition Format 
+* custom execution which will allow
+  * custom directive middleware support
+  * tracing data for all resolves/middleware
+* Schema building tools
+* Schema language support
+* better code testing
+* and more...
 
 ### Example
 
 ```js
-import * as graphql from 'graphql'
-import GraphQLFactory from 'graphql-factory'
+import { graphql } from 'graphql'
+import {
+  SchemaDefinition,
+  SchemaBacking
+} from 'graphql-factory'
 
-const factory = GraphQLFactory(graphql)
+// create a schema language definition
+const definition = `
+  type Item {
+    id: String!
+    name: String!
+  }
 
-const definition = {
-  types: {
-    Foo: {
-      fields: {
-        id: 'ID!',
-        name: 'String!',
-        bars: '[String!]!'
-      }
-    },
-    FooQuery: {
-      fields: {
-        readFoo: {
-          type: 'Foo',
-          args: {
-            id: { type: 'ID!' }
-          },
-          resolve (source, args, context, info) {
-            // resolve code
-          }
+  type List {
+    id: String!
+    name: String!
+    items: [Item]!
+  }
+
+  type Query {
+    listLists (search: String): [List]
+  }
+
+  directive @test(value: String) on SCHEMA | OBJECT | QUERY | FIELD
+
+  schema @test(value: "I am a schema directive") {
+    query: Query
+  }`
+
+// create a schema backing that contains resolvers
+const backing = new SchemaBacking()
+new SchemaBacking()
+  .Directive('test')
+    .resolve((source, args, context, info) => {
+      console.log('Testing', args)
+    })
+  .Object('Query')
+    .resolve('listLists', (source, args, context, info) => {
+      // resolve code
+    })
+  .Object('List')
+    .resolve('items', (source, args, context, info) => {
+      // resolve code
+    })
+  .backing()
+
+// build a schema from the definition and backing
+const schema = new SchemaDefinition()
+  .use(definition, backing)
+  .buildSchema()
+
+// make a request with graphql's execution
+// graphql-factory will hijack it and use
+// its own execution code
+graphql({
+  schema,
+  source: `
+    query MyQuery {
+      listLists {
+        name
+        items {
+          name
         }
       }
     }
-  },
-  schemas: {
-    FooSchema: {
-      query: 'FooQuery'
-    }
-  }
-}
-
-const f = factory.use(definition)
-const lib = f.library()
-
-// log requests
-f.on('request', console.log)
-
-lib.request({
-  schema: 'FooSchema',
-  requestString: `
-    query Query($id: ID!) {
-      readFoo(id: $id) {
-        id
-        name
-        bars
-      }
-    }
   `,
-  variableValues: {
-    id: '1'
+  rootValue: {
+    // create a logger that will output things like tracing data
+    logger (event, data) {
+      console.log(event, data)
+    }
   }
 })
 .then(result => {
-  // use results
+  // do something with the result
 })
-
 ```
