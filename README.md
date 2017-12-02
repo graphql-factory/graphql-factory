@@ -17,6 +17,9 @@ This will include
 * better code testing
 * and more...
 
+`v2.1.0` code is available in the `v2.1.0` branch. The master branch will
+be used for `v3.0.0` development
+
 ### Schema Language Example
 
 Create a schema from schema language and a `SchemaBacking`
@@ -53,7 +56,6 @@ const definition = `
 
 // create a schema backing that contains resolvers
 const backing = new SchemaBacking()
-new SchemaBacking()
   .Directive('test')
     .resolve((source, args, context, info) => {
       console.log('Testing', args)
