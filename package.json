@@ -1,41 +1,54 @@
 {
   "name": "graphql-factory",
-  "version": "2.1.0",
-  "description": "Compose GraphQL objects with JSON definitions",
+  "version": "3.0.0-alpha.0",
+  "description": "Compose GraphQL types & schemas + middleware",
   "license": "MIT",
   "main": "index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/graphql-factory/graphql-factory.git"
   },
+  "options": {
+    "mocha": "--check-leaks --full-trace src/**/__tests__/**/*-test.js",
+    "lodash": "assign,capitalize,castArray,filter,find,forEach,get,has,identity,includes,intersection,isArray,isFunction,isNumber,isObject,isString,keys,map,noop,omit,reduce,set,union,uniq,values,without"
+  },
   "scripts": {
-    "lint": "eslint src",
-    "build": "rollup -c build/rollup.config.js",
-    "test": "npm run build && mocha test/index.js"
+    "lint": "eslint --rulesdir ./resources/lint src || (printf '\\033[33mTry: \\033[7m npm run lint -- --fix \\033[0m\\n' && exit 1)",
+    "build:lodash": "lodash modularize exports=es include=$npm_package_options_lodash -o src/common/lodash",
+    "build": "babel src --optional runtime --ignore __tests__ --out-dir dist/ && cp package.json dist/ && npm run build-dot-flow",
+    "build-dot-flow": "find ./src -name '*.js' -not -path '*/__tests__*' | while read filepath; do cp $filepath `echo $filepath | sed 's/\\/src\\//\\/dist\\//g'`.flow; done",
+    "scratch": "babel-node ./scratch/test.js"
   },
   "author": "Branden Horiuchi <bhoriuchi@gmail.com>",
-  "dependencies": {},
+  "peerDependencies": {
+    "graphql": ">=0.9.0"
+  },
+  "dependencies": {
+    "graphql-factory-plugin": "^0.2.0",
+    "iterall": "1.1.3"
+  },
   "devDependencies": {
-    "babel-core": "^6.26.0",
-    "babel-eslint": "^8.0.1",
-    "babel-plugin-external-helpers": "^6.22.0",
-    "babel-plugin-transform-runtime": "^6.23.0",
-    "babel-preset-env": "^1.6.0",
-    "babel-register": "^6.26.0",
-    "babel-runtime": "^6.26.0",
-    "babelrc-rollup": "^3.0.0",
-    "chai": "^4.1.2",
-    "chalk": "^2.0.1",
-    "eslint": "^4.8.0",
-    "eslint-plugin-babel": "^4.1.2",
-    "graphql": "^0.11.6",
-    "lodash": "^4.17.4",
-    "mocha": "^3.2.0",
-    "node-getopt": "^0.2.3",
-    "rethinkdbdash": "^2.3.31",
-    "rewire": "^2.5.2",
-    "rollup": "^0.50.0",
-    "rollup-plugin-babel": "^3.0.2"
+    "babel-cli": "6.24.1",
+    "babel-eslint": "7.2.3",
+    "babel-plugin-syntax-async-functions": "6.13.0",
+    "babel-plugin-syntax-async-generators": "6.13.0",
+    "babel-plugin-transform-class-properties": "6.24.1",
+    "babel-plugin-transform-flow-strip-types": "6.22.0",
+    "babel-plugin-transform-object-rest-spread": "6.23.0",
+    "babel-preset-env": "^1.5.2",
+    "chai": "4.1.1",
+    "chai-json-equal": "0.0.1",
+    "chai-spies-next": "^0.8.0",
+    "chai-subset": "1.5.0",
+    "coveralls": "2.13.1",
+    "eslint": "4.4.1",
+    "eslint-plugin-babel": "4.1.2",
+    "eslint-plugin-flowtype": "2.35.0",
+    "flow-bin": "^0.58.0",
+    "graphql": "^0.11.7",
+    "isparta": "4.0.0",
+    "mocha": "3.5.0",
+    "sane": "2.0.0"
   },
   "bugs": {
     "url": "https://github.com/graphql-factory/graphql-factory/issues"
