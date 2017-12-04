@@ -22,7 +22,8 @@
  *
  * @flow
  */
-import type { ObjMap, ValueNode } from '../types/graphql';
+import type { ObjMap } from 'graphql/jsutils/ObjMap';
+import type { ValueNode } from 'graphql';
 import { set } from '../jsutils';
 
 // type definitions
@@ -190,6 +191,7 @@ class DirectiveBacking extends BackingChain {
     this._name = `@${name.replace(/^@/, '')}`;
   }
 
+  // resolved before field resolvers
   resolve(func: () => ?mixed) {
     set(
       this._backing,
@@ -199,6 +201,8 @@ class DirectiveBacking extends BackingChain {
     return this;
   }
 
+  // resolved after a result is produced from a field
+  // only applied on certain locations
   resolveResult(func: () => ?mixed) {
     set(
       this._backing,
@@ -206,6 +210,18 @@ class DirectiveBacking extends BackingChain {
       func
     );
     return this;
+  }
+
+  // applied just before the definition is built
+  // takes the definition itself as an argument
+  // TODO: create a spec for this, currently this is
+  // a high level concept and does nothing
+  beforeBuild(func: () => ?mixed) {
+    set(
+      this._backing,
+      [ '_backing', this._name, 'beforeBuild' ],
+      func
+    )
   }
 }
 

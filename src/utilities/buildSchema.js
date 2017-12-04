@@ -1,14 +1,14 @@
 // @flow
 import type {
   GraphQLSchema
-} from '../types/graphql.js';
+} from 'graphql';
 import {
   buildSchema,
   GraphQLScalarType,
   GraphQLObjectType,
   GraphQLUnionType,
   GraphQLInterfaceType
-} from '../types/graphql';
+} from 'graphql';
 import {
   set
 } from '../jsutils';

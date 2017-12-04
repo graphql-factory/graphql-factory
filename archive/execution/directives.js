@@ -1,6 +1,5 @@
 /**
  * 
- * @flow
  */
 import {
   getDirectiveValues,

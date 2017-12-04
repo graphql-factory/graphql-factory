@@ -120,7 +120,7 @@ type Mutation {
   ): List
 }
 
-directive @test(value: String @fail) on SCHEMA | OBJECT | QUERY | FIELD |
+directive @test(value: String) on SCHEMA | OBJECT | QUERY | FIELD |
 FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 directive @log(value: String) on SCHEMA | OBJECT | QUERY | FIELD |
 INPUT_FIELD_DEFINITION
@@ -252,7 +252,6 @@ function logger (type, data) {
   // console.log(JSON.stringify(data, null, '  '))
 }
 */
-/*
 
 graphql({
   schema,
@@ -268,15 +267,3 @@ graphql({
   console.log(JSON.stringify(result, null, '  '))
 })
 .catch(console.error)
-*/
-/*
-
-
-const rootValue = { user: 'admin' }
-
-request({ schema, source, rootValue, variableValues, logger })
-.then(result => {
-  console.log(JSON.stringify(result, null, '  '))
-})
-.catch(console.error)
-*/

@@ -13,7 +13,6 @@
  * 
  * Modifications by Branden Horiuchi <bhoriuchi@gmail.com>
  *
- * @flow
  */
 import type {
   GraphQLField,

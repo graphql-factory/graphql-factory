@@ -74,7 +74,6 @@
  *         is the value of the field. Returning a GraphQLSkipInstruction
  *         here will remove the field from the result
  * 
- * @flow
  */
 
 import {

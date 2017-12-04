@@ -24,7 +24,8 @@ import type { SchemaBackingConfig } from '../backing/backing';
 import { deconstructSchema } from '../utilities/deconstruct';
 import { exportDefinition } from '../utilities/export';
 import buildSchema from '../utilities/buildSchema';
-import type { ObjMap } from '../types/graphql';
+import type { ObjMap } from 'graphql/jsutils/ObjMap';
+import { validateDirectives } from './validate';
 import {
   isObject,
   intersection,
@@ -52,13 +53,13 @@ const DEFINITION_FIELDS = [
  * to process it as one
  * @param {*} definition 
  */
-function isDefinitionLike(definition: ObjMap<?mixed>) {
+function isDefinitionLike(definition: any) {
   return isObject(definition) &&
     intersection(
       DEFINITION_FIELDS,
       Object.keys(definition).reduce((fields, field) => {
         if (isObject(field)) {
-          field.push(field);
+          fields.push(field);
         }
         return fields;
       }, [])
@@ -102,139 +103,6 @@ function useLanguage(
 }
 
 /**
- * Checks that a directive is included and throws an error otherwise
- * @param {*} msgPrefix 
- * @param {*} directives 
- * @param {*} def 
- * @param {*} depth 
- */
-function checkDirectives(msgPrefix, directives, def, depth = 0) {
-  const level = depth + 1;
-
-  // check for cyclical directive definitions
-  if (level > 50) {
-    throw new Error('Circular directive dependency encountered. ' +
-    'Please check that directives applied on directive arguments do not' +
-    'reference parents')
-  }
-  const dirs = get(def, [ '@directives' ]);
-
-  if (!isObject(dirs)) {
-    return;
-  }
-
-  forEach(dirs, (args, name) => {
-    const m = msgPrefix + ' directive "' + name + '"'
-    if (isObject(args)) {
-      forEach(args, (argDef, argName) => {
-        checkDirectives(
-          m + ', argument "' + argName + '"',
-          directives,
-          argDef,
-          level
-        );
-      }, true)      
-    }
-
-    if (directives.indexOf(name) === -1) {
-      throw new Error(m + ' is not included in the schema definition\'s ' +
-      'directive include declaration');
-    }
-  }, true)
-}
-
-/**
- * Validates that directives applied at locations have been
- * included in the schema definition
- * @param {*} definition 
- */
-function validateDirectives(definition) {
-  const def = definition._config;
-  const directives = get(def, [ 'schema', 'directives' ], []);
-  const dirs = map(directives, directive => {
-    if (typeof directive === 'string') {
-      return directive.replace(/^@/, '');
-    } else if (directive instanceof GraphQLDirective) {
-      return directive.name;
-    }
-    throw new Error('Invalid directive value supplied in schema definition');
-  }, true);
-
-  // check types
-  forEach(def.types, (typeDef, typeName) => {
-    const typeMsg = 'DirectiveError: type "' + typeName + '"';
-    checkDirectives(
-      typeMsg,
-      dirs,
-      typeDef
-    );
-
-    switch (typeDef.type) {
-      case 'Object':
-      case 'Input':
-      case 'Interface':
-        forEach(typeDef.fields, (fieldDef, fieldName) => {
-          const fieldMsg = typeMsg + ', field "' + fieldName + '"';
-
-          if (isObject(fieldDef.args)) {
-            forEach(fieldDef.args, (argDef, argName) => {
-              checkDirectives(
-                fieldMsg + ', argument "' + argName + '"',
-                dirs,
-                argDef
-              );
-            })
-          }
-          checkDirectives(
-            fieldMsg,
-            dirs,
-            fieldDef
-          );
-        }, true);
-        break;
-
-      case 'Enum':
-        forEach(typeDef.values, (valueDef, valueName) => {
-          checkDirectives(
-            typeMsg + ', value "' + valueName + '"',
-            dirs,
-            valueDef
-          );
-        }, true)
-        break;
-
-      default:
-        break;
-    }
-  }, true)
-
-  // check directives
-  forEach(def.directives, (dirDef, dirName) => {
-    const dirMsg = 'Directive "' + dirName + '"';
-    checkDirectives(
-      dirMsg,
-      dirs,
-      dirDef
-    );
-
-    forEach(dirDef.args, (argDef, argName) => {
-      checkDirectives(
-        dirMsg + ', argument "' + argName + '"',
-        dirs,
-        argDef
-      )
-    }, true);
-  }, true)
-
-  // check schema
-  checkDirectives(
-    'Schema',
-    dirs,
-    def.schema
-  )
-}
-
-/**
  * Creates a schema definition that has useful methods for
  * adding additional definition elements as well as validating
  * and building an executable schema
@@ -250,7 +118,7 @@ export class SchemaDefinition {
   constructor(
     options?: ?ObjMap<?mixed>
   ) {
-    this._options = isObject(options) ?
+    this._options = options !== null && typeof options === 'object' ?
       options :
       Object.create(null);
     this._config = {
@@ -307,8 +175,7 @@ export class SchemaDefinition {
    * @param {*} definition 
    */
   merge(
-    definition: ObjMap<mixed> | SchemaDefinition | SchemaDefinitionConfig
-  ) {
+    definition: any) {
     const { conflict } = this._options;
     const config = definition instanceof SchemaDefinition ?
       definition._config :

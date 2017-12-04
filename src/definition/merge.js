@@ -18,11 +18,19 @@ export const NameConflictResolution = {
 
 /**
  * Handles a type name conflict
+ * returns an object containing the type name to use
+ * and the type configuration to use. 
  * @param {*} method 
  * @param {*} name 
  * @param {*} prefix 
  */
 function handleConflict(method, name, type, tgt, src) {
+  // allow the method to be a function that returns the new name
+  // and type configuration
+  if (typeof method === 'function') {
+    return method(name, type, tgt, src);
+  }
+
   const _method = method ?
     method :
     NameConflictResolution.MERGE;

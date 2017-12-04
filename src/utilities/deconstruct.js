@@ -2,29 +2,30 @@
  * 
  * @flow
  */
+import type { ObjMap } from 'graphql/jsutils/ObjMap';
 import {
   Kind,
   GraphQLSchema,
   GraphQLNonNull,
   GraphQLList,
-  GraphQLType,
   GraphQLScalarType,
   GraphQLObjectType,
   GraphQLInputObjectType,
   GraphQLEnumType,
   GraphQLInterfaceType,
   GraphQLUnionType
-} from '../types/graphql';
+} from 'graphql';
 import type {
-  ObjMap,
+  GraphQLType,
   ASTNode,
   GraphQLField,
   GraphQLArgument,
   GraphQLInputField,
   GraphQLDirective,
   GraphQLEnumValueConfig
-} from '../types/graphql.js';
+} from 'graphql';
 import {
+  get,
   set,
   forEach,
   reduce
@@ -49,14 +50,17 @@ export const DefaultScalars = [
  * @param {*} astNode 
  */
 export function parseASTNode(astNode: ASTNode) {
-  const { kind, value, values, fields } = astNode;
+  const { kind } = astNode;
+  const value = get(astNode, [ 'value' ])
+  const values = get(astNode, [ 'values' ])
+  const fields = get(astNode, [ 'filds' ])
   switch (kind) {
     case Kind.STRING:
     case Kind.BOOLEAN:
       return value;
     case Kind.INT:
     case Kind.FLOAT:
-      return parseFloat(value);
+      return parseFloat();
     case Kind.OBJECT: {
       return reduce(fields, (val, field) => {
         val[field.name.value] = parseASTNode(field.value);
@@ -166,7 +170,7 @@ export function processEnumValue(
  * process a field into a definition
  * @param {*} definition 
  */
-export function processField(definition: GraphQLField) {
+export function processField(definition: GraphQLField<*, *>) {
   return reduce(definition, (def, value, key) => {
     if (value !== undefined) {
       switch (key) {
@@ -238,7 +242,7 @@ function processObjectType(object: GraphQLObjectType) {
           set(def, key, value, (value !== ''));
           break;
         case 'astNode':
-          const directives = extractDirectives(object.astNode);
+          const directives = extractDirectives(get(object, [ 'astNode' ]));
           set(def, '@directives', directives, Boolean(directives));
           break;
         default:
@@ -269,7 +273,7 @@ function processInputObjectType(object: GraphQLInputObjectType) {
           set(def, key, value, (value !== ''));
           break;
         case 'astNode':
-          const directives = extractDirectives(object.astNode);
+          const directives = extractDirectives(get(object, [ 'astNode' ]));
           set(def, '@directives', directives, Boolean(directives));
           break;
         default:
@@ -303,7 +307,7 @@ export function processScalarType(scalar: GraphQLScalarType) {
           set(def, key, value, (typeof value === 'function'));
           break;
         case 'astNode':
-          const directives = extractDirectives(scalar.astNode);
+          const directives = extractDirectives(get(scalar, [ 'astNode' ]));
           set(def, '@directives', directives, Boolean(directives));
           break;
         default:
@@ -342,7 +346,7 @@ export function processUnionType(union: GraphQLUnionType) {
           set(def, key, value, (value !== ''));
           break;
         case 'astNode':
-          const directives = extractDirectives(union.astNode);
+          const directives = extractDirectives(get(union, [ 'astNode' ]));
           set(def, '@directives', directives, Boolean(directives));
           break;
         default:
@@ -384,7 +388,7 @@ export function processInterfaceType(iface: GraphQLInterfaceType) {
           set(def, key, value, (value !== ''));
           break;
         case 'astNode':
-          const directives = extractDirectives(iface.astNode);
+          const directives = extractDirectives(get(iface, [ 'astNode' ]));
           set(def, '@directives', directives, Boolean(directives));
           break;
         default:
@@ -506,7 +510,7 @@ export class SchemaDeconstructor {
     const queryType = this.schema.getQueryType() || {};
     const mutationType = this.schema.getMutationType() || {};
     const subscriptionType = this.schema.getSubscriptionType() || {};
-    const directives = extractDirectives(this.schema.astNode);
+    const directives = extractDirectives(get(this.schema, [ 'astNode' ]));
     const customDirectives = this.schema.getDirectives()
       .filter(({ name }) => {
         return [ 'skip', 'include', 'deprecated' ].indexOf(name) === -1;
@@ -606,6 +610,9 @@ export function deconstructDirective(directive: GraphQLDirective) {
             set(def, key, value, (typeof value === 'function'));
             break;
           case 'resolveResult':
+            set(def, key, value, (typeof value === 'function'));
+            break;
+          case 'beforeBuild':
             set(def, key, value, (typeof value === 'function'));
             break;
           case 'astNode':

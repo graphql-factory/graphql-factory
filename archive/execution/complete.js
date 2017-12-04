@@ -7,7 +7,6 @@
  * Modified for graphql-factory to export complete functions not
  * exported by the graphql-js library
  * 
- * @flow
  */
 
 import {

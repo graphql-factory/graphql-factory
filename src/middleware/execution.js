@@ -32,13 +32,11 @@ import {
   pick
 } from '../jsutils';
 import {
-  getArgumentValues,
-  DirectiveLocation
-} from '../types/graphql';
+  getArgumentValues
+} from 'graphql/execution/values';
 import {
-  defaultFieldResolver
-} from 'graphql/execution/execute';
-import {
+  defaultFieldResolver,
+  DirectiveLocation,
   getNamedType,
   getNullableType,
   GraphQLList

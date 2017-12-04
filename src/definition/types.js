@@ -3,14 +3,14 @@
  */
 import { GraphQLSchema } from 'graphql';
 import { SchemaDefinition } from './definition';
+import type { ObjMap } from 'graphql/jsutils/ObjMap';
 import type {
-  ObjMap,
   GraphQLFieldResolver,
   GraphQLIsTypeOfFn,
   GraphQLTypeResolver,
   DirectiveLocationEnum,
   ValueNode
-} from '../types/graphql';
+} from 'graphql';
 
 export type UseArgument = string |
   SchemaDefinitionConfig |

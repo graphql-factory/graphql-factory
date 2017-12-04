@@ -1,7 +1,7 @@
 import { set, cloneDeep } from '../jsutils';
-import { getDirectiveValues } from 'graphql/execution/values';
-import { DirectiveLocation } from 'graphql/type/directives';
 import {
+  getDirectiveValues,
+  DirectiveLocation,
   GraphQLDirective,
   GraphQLObjectType,
   GraphQLScalarType,

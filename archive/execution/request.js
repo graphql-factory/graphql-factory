@@ -5,8 +5,6 @@
  * https://github.com/graphql/graphql-js/blob/master/README.md
  *
  * Modified for graphql-factory to run custom execution
- * 
- * @flow
  */
 
 import {

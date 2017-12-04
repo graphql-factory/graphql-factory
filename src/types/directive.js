@@ -7,11 +7,12 @@
    GraphQLFieldConfigArgumentMap,
    DirectiveDefinitionNode,
    GraphQLFieldResolver
- } from './graphql.js';
+ } from 'graphql';
 
  import {
    GraphQLDirective
- } from './graphql';
+ } from 'graphql';
+ import { set } from '../jsutils'
 
 export type GraphQLFactoryDirectiveConfig = {
   name: string;
@@ -19,8 +20,9 @@ export type GraphQLFactoryDirectiveConfig = {
   locations: Array<DirectiveLocationEnum>;
   args?: ?GraphQLFieldConfigArgumentMap;
   astNode?: ?DirectiveDefinitionNode;
-  resolveRequest?: ?GraphQLFieldResolver;
-  resolveResult?: ?GraphQLFieldResolver;
+  resolve?: ?GraphQLFieldResolver<*, *>;
+  resolveResult?: ?GraphQLFieldResolver<*, *>;
+  beforeBuild?: () => ?mixed;
 };
 
 export class GraphQLFactoryDirective {
@@ -31,8 +33,9 @@ export class GraphQLFactoryDirective {
       locations,
       args,
       astNode,
-      resolveRequest,
-      resolveResult
+      resolve,
+      resolveResult,
+      beforeBuild
     } = config;
 
     // create a directive
@@ -45,11 +48,16 @@ export class GraphQLFactoryDirective {
     });
 
     // add resolvers
-    if (typeof resolveRequest === 'function') {
-      directive.resolveRequest = resolveRequest;
+    if (typeof resolve === 'function') {
+      set(directive, [ 'resolve' ], resolve);
     }
     if (typeof resolveResult === 'function') {
-      directive.resolveResult = resolveResult;
+      set(directive, [ 'resolveResult' ], resolveResult);
+    }
+
+    // add hooks
+    if (typeof beforeBuild === 'function') {
+      set(directive, [ 'beforeBuild' ], beforeBuild)
     }
 
     // return the modified directive
