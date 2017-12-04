@@ -11,9 +11,9 @@
  * the graphql execution to perform the request making the schema
  * usable in any environment.
  * 
- * TODO:
- * 
- * Handle directive middleware for
+ * Unhandled middleware - The following do not have middleware applied
+ * because they represent types that should only be included or excluded
+ * which is handled by the build in directives
  * - FRAGMENT_DEFINITION
  * - FRAGMENT_SPREAD
  * - INLINE_FRAGMENT
@@ -337,16 +337,6 @@ export function resolveField(
     fieldDefDirectiveLocs
   );
 
-  // build the resolver args
-  const rargs = buildFieldResolveArgs(
-    source,
-    context,
-    info,
-    path,
-    field,
-    selection
-  );
-
   return promiseReduce(resolveRequest, (prev, r) => {
     const directiveInfo = buildDirectiveInfo(info, r);
     return instrumentResolver(
@@ -356,10 +346,29 @@ export function resolveField(
       execution.resolvers,
       directiveInfo,
       r.resolve,
-      [ undefined, r.args, context, directiveInfo ]
-    );
+      [ prev, r.args, context, directiveInfo ]
+    )
+    .then(directiveResult => {
+      return directiveResult === undefined ?
+      prev :
+      directiveResult;
+    });
   })
-  .then(() => {
+  .then(directiveResult => {
+    // allow setting of 
+    if (directiveResult !== undefined) {
+      source[key] = directiveResult;
+    }
+    // build the resolver args
+    const rargs = buildFieldResolveArgs(
+      source,
+      context,
+      info,
+      path,
+      field,
+      selection
+    );
+
     return instrumentResolver(
       ExecutionType.RESOLVE,
       pathStr,
@@ -431,10 +440,14 @@ export function resolveField(
         execution.resolvers,
         directiveInfo,
         r.resolve,
-        [ result, r.args, context, directiveInfo ]
+        [ prev, r.args, context, directiveInfo ]
       );
-    })
-    .then(() => result);
+    }, result)
+    .then(directiveResult => {
+      return directiveResult === undefined ?
+        result :
+        directiveResult;
+    });
   });
 }
 

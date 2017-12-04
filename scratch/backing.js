@@ -43,13 +43,18 @@ function find(table, key, value) {
 }
 
 export const shoppingBacking = new SchemaBacking()
+.Directive('change')
+.resolve((source, args, context, info) => {
+  console.log({source})
+  return args.value;
+})
 .Directive('test')
 .resolve(function resolveTestDirective (source, args, context, info) {
   console.log('REQUEST', args)
   //console.log(JSON.stringify(info.directives, null, '  '))
 })
 .resolveResult((source, args, context, info) => {
-  console.log('RESULT', args)
+  console.log('RESULT', args, source)
 })
 .Directive('log')
 .resolve(function resolveLogDirective (source, args, context, info) {
@@ -101,6 +106,10 @@ export const shoppingBacking = new SchemaBacking()
 })
 .Object('Query')
 .resolve('listLists', function listListsResolver (source, args, context, info) {
+  
+  if (info.path.key === 'list1') {
+    console.log(info.fragments.ListFragment.selectionSet)
+  }
   if (args.search) {
     return db.list.filter(list => {
       return list.name.match(new RegExp(args.search, 'i'));

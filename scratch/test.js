@@ -120,9 +120,11 @@ type Mutation {
   ): List
 }
 
-directive @test(value: String) on SCHEMA | OBJECT | QUERY | FIELD |
+directive @test(value: String @fail) on SCHEMA | OBJECT | QUERY | FIELD |
 FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 directive @log(value: String) on SCHEMA | OBJECT | QUERY | FIELD |
+INPUT_FIELD_DEFINITION
+directive @change(value: String) on SCHEMA | OBJECT | QUERY | FIELD |
 INPUT_FIELD_DEFINITION
 
 schema @test(value: "schemaDef") {
@@ -151,22 +153,31 @@ console.log(exported.backing)
 const multiQuery = `
 query MyQuery @log(value: "logQuery") @test(value: "queryOp") {
   list1:listLists (search: "shop") @test(value: "id field") {
-    id
-    name,
+    ...ListFragment
     items {
       id
       name,
       category {
-        name
+        ...CaregoryFragment
       }
     }
   }
   list2:listLists {
-    fName:name
+    ...ListFragment
   }
   readList (id: "1") {
-    name
+    ...ListFragment
   }
+}
+
+fragment CaregoryFragment on Category {
+  id
+  name
+}
+
+fragment ListFragment on List {
+  id
+  name @change(value: "im changed")
 }
 `
 const querySource = `
@@ -241,7 +252,7 @@ function logger (type, data) {
   // console.log(JSON.stringify(data, null, '  '))
 }
 */
-
+/*
 
 graphql({
   schema,
@@ -249,7 +260,7 @@ graphql({
   rootValue: {
     logger (event, data) {
       // console.log(event, JSON.stringify(_.omit(data, ['operation']), null, '  '))
-      console.log(event, data)
+      // console.log(event, data)
     }
   }
 })
@@ -257,7 +268,7 @@ graphql({
   console.log(JSON.stringify(result, null, '  '))
 })
 .catch(console.error)
-
+*/
 /*
 
 

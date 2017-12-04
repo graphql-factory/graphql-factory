@@ -18,7 +18,7 @@
  * @returns {boolean}
  * @flow
  */
-import { GraphQLSchema } from 'graphql';
+import { GraphQLSchema, GraphQLDirective } from 'graphql';
 import { SchemaBacking } from '../backing/backing';
 import type { SchemaBackingConfig } from '../backing/backing';
 import { deconstructSchema } from '../utilities/deconstruct';
@@ -27,7 +27,10 @@ import buildSchema from '../utilities/buildSchema';
 import type { ObjMap } from '../types/graphql';
 import {
   isObject,
-  intersection
+  intersection,
+  forEach,
+  get,
+  map
 } from '../jsutils';
 import type {
   SchemaDefinitionConfig,
@@ -96,6 +99,139 @@ function useLanguage(
     buildSchema(source, backing),
     prefix
   );
+}
+
+/**
+ * Checks that a directive is included and throws an error otherwise
+ * @param {*} msgPrefix 
+ * @param {*} directives 
+ * @param {*} def 
+ * @param {*} depth 
+ */
+function checkDirectives(msgPrefix, directives, def, depth = 0) {
+  const level = depth + 1;
+
+  // check for cyclical directive definitions
+  if (level > 50) {
+    throw new Error('Circular directive dependency encountered. ' +
+    'Please check that directives applied on directive arguments do not' +
+    'reference parents')
+  }
+  const dirs = get(def, [ '@directives' ]);
+
+  if (!isObject(dirs)) {
+    return;
+  }
+
+  forEach(dirs, (args, name) => {
+    const m = msgPrefix + ' directive "' + name + '"'
+    if (isObject(args)) {
+      forEach(args, (argDef, argName) => {
+        checkDirectives(
+          m + ', argument "' + argName + '"',
+          directives,
+          argDef,
+          level
+        );
+      }, true)      
+    }
+
+    if (directives.indexOf(name) === -1) {
+      throw new Error(m + ' is not included in the schema definition\'s ' +
+      'directive include declaration');
+    }
+  }, true)
+}
+
+/**
+ * Validates that directives applied at locations have been
+ * included in the schema definition
+ * @param {*} definition 
+ */
+function validateDirectives(definition) {
+  const def = definition._config;
+  const directives = get(def, [ 'schema', 'directives' ], []);
+  const dirs = map(directives, directive => {
+    if (typeof directive === 'string') {
+      return directive.replace(/^@/, '');
+    } else if (directive instanceof GraphQLDirective) {
+      return directive.name;
+    }
+    throw new Error('Invalid directive value supplied in schema definition');
+  }, true);
+
+  // check types
+  forEach(def.types, (typeDef, typeName) => {
+    const typeMsg = 'DirectiveError: type "' + typeName + '"';
+    checkDirectives(
+      typeMsg,
+      dirs,
+      typeDef
+    );
+
+    switch (typeDef.type) {
+      case 'Object':
+      case 'Input':
+      case 'Interface':
+        forEach(typeDef.fields, (fieldDef, fieldName) => {
+          const fieldMsg = typeMsg + ', field "' + fieldName + '"';
+
+          if (isObject(fieldDef.args)) {
+            forEach(fieldDef.args, (argDef, argName) => {
+              checkDirectives(
+                fieldMsg + ', argument "' + argName + '"',
+                dirs,
+                argDef
+              );
+            })
+          }
+          checkDirectives(
+            fieldMsg,
+            dirs,
+            fieldDef
+          );
+        }, true);
+        break;
+
+      case 'Enum':
+        forEach(typeDef.values, (valueDef, valueName) => {
+          checkDirectives(
+            typeMsg + ', value "' + valueName + '"',
+            dirs,
+            valueDef
+          );
+        }, true)
+        break;
+
+      default:
+        break;
+    }
+  }, true)
+
+  // check directives
+  forEach(def.directives, (dirDef, dirName) => {
+    const dirMsg = 'Directive "' + dirName + '"';
+    checkDirectives(
+      dirMsg,
+      dirs,
+      dirDef
+    );
+
+    forEach(dirDef.args, (argDef, argName) => {
+      checkDirectives(
+        dirMsg + ', argument "' + argName + '"',
+        dirs,
+        argDef
+      )
+    }, true);
+  }, true)
+
+  // check schema
+  checkDirectives(
+    'Schema',
+    dirs,
+    def.schema
+  )
 }
 
 /**
@@ -232,10 +368,6 @@ export class SchemaDefinition {
     return this;
   }
 
-  validate() {
-    return this;
-  }
-
   /**
    * Builds an executable schema from the current definition
    * 
@@ -256,6 +388,14 @@ export class SchemaDefinition {
     const { definition, backing } = this.export();
     const schema = buildSchema(definition, backing);
     return wrap ? wrapMiddleware(schema, opts) : schema;
+  }
+
+  /**
+   * Validates the current definition
+   */
+  validate() {
+    validateDirectives(this);
+    return this;
   }
 
   /**
