@@ -3,7 +3,13 @@ import {
   SchemaBacking
 } from '../src/index';
 import { Kind } from 'graphql';
-  
+
+import {
+  getFieldDirectives,
+  getSchemaDirectives,
+  getOperationDirectives
+} from '../src/utilities/directives';
+
 const acl = {
   admin: ['create', 'read', 'update', 'delete'],
   user: ['read']
@@ -50,15 +56,15 @@ export const shoppingBacking = new SchemaBacking()
 })
 .Directive('test')
 .resolve(function resolveTestDirective (source, args, context, info) {
-  console.log('REQUEST', args)
+  //console.log('REQUEST', args)
   //console.log(JSON.stringify(info.directives, null, '  '))
 })
 .resolveResult((source, args, context, info) => {
-  console.log('RESULT', args, source)
+  //console.log('RESULT', args, source)
 })
 .Directive('log')
 .resolve(function resolveLogDirective (source, args, context, info) {
-  console.log('LOG', args);
+  // console.log('LOG', args);
 })
 .Object('Mutation')
 .resolve('createList', (source, args, context, info) => {
@@ -108,7 +114,7 @@ export const shoppingBacking = new SchemaBacking()
 .resolve('listLists', function listListsResolver (source, args, context, info) {
   
   if (info.path.key === 'list1') {
-    console.log(info.fragments.ListFragment.selectionSet)
+    // console.log(info.fragments.ListFragment.selectionSet)
   }
   if (args.search) {
     return db.list.filter(list => {
@@ -119,6 +125,7 @@ export const shoppingBacking = new SchemaBacking()
   return db.list
 })
 .resolve('readList', function readListResolver (source, args, context, info) {
+  console.log(getSchemaDirectives(info))
   // throw new Error('ahhh')
   const results = db.list.filter(list => {
     return list.id === args.id

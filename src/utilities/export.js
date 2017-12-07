@@ -136,6 +136,7 @@ export function printFields(fields, parent, backing, tabs = 1) {
       type,
       args,
       resolve,
+      subscribe,
       deprecationReason,
       '@directives': directives
     } = field;
@@ -148,6 +149,11 @@ export function printFields(fields, parent, backing, tabs = 1) {
     // register the resolve
     if (typeof resolve === 'function') {
       backing.Object(parent).resolve(name, resolve);
+    }
+
+    // register the subscribe
+    if (typeof subscribe === 'function') {
+      backing.Object(parent).subscribe(name, subscribe);
     }
 
     // construct the field

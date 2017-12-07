@@ -24,7 +24,7 @@
  */
 import type { ObjMap } from 'graphql/jsutils/ObjMap';
 import type { ValueNode } from 'graphql';
-import { set } from '../jsutils';
+import { set, isObject } from '../jsutils';
 
 // type definitions
 export type SchemaBackingFieldConfig = ObjMap<SchemaBackingFunction>;
@@ -119,10 +119,19 @@ class ObjectBacking extends BackingChain {
     this._name = name;
   }
 
+  subscribe(fieldName: string, subscriber: () => ?mixed) {
+    set(
+      this._backing,
+      [ '_backing', this._name, fieldName, 'subscribe' ],
+      subscriber
+    )
+    return this;
+  }
+
   resolve(fieldName: string, resolver: () => ?mixed) {
     set(
       this._backing,
-      [ '_backing', this._name, fieldName ],
+      [ '_backing', this._name, fieldName, 'resolve' ],
       resolver
     );
     return this;
@@ -146,10 +155,19 @@ class InterfaceBacking extends BackingChain {
     this._name = name;
   }
 
+  subscribe(fieldName: string, subscriber: () => ?mixed) {
+    set(
+      this._backing,
+      [ '_backing', this._name, fieldName, 'subscribe' ],
+      subscriber
+    )
+    return this;
+  }
+
   resolve(fieldName: string, resolver: () => ?mixed) {
     set(
       this._backing,
-      [ '_backing', this._name, fieldName ],
+      [ '_backing', this._name, fieldName , 'resolve' ],
       resolver
     );
     return this;
@@ -255,8 +273,19 @@ function validateBacking(backing?: ?SchemaBackingConfig) {
     } else {
       // loop through the fields, they should all be functions
       for (const field of Object.keys(value)) {
-        if (typeof value[field] !== 'function') {
-          return false;
+        const back = value[field];
+        if (typeof back !== 'function') {
+          if (!isObject(back) || Array.isArray(back)) {
+            return false;
+          }
+          const { subscribe, resolve } = back;
+
+          if (subscribe && typeof subscribe !== 'function') {
+            return false;
+          }
+          if (resolve && typeof resolve !== 'function') {
+            return false;
+          }
         }
       }
     }

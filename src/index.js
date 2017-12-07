@@ -15,6 +15,6 @@ export {
   deconstructDirective,
   deconstructType
 } from './utilities/deconstruct.js';
-export {
-  exportDefinition
-} from './utilities/export';
+export { exportDefinition } from './utilities/export';
+export { request } from './utilities/request';
+export { AsyncIterator } from './utilities/asyncIterator';

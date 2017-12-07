@@ -12,6 +12,27 @@ import {
 } from 'graphql';
 
 /**
+ * Gets a directive from the schema as well as its arg values
+ * @param {*} info 
+ * @param {*} name 
+ * @param {*} astNode 
+ */
+export function getDirective(info, name, astNode) {
+  const directive = info.schema.getDirective(name);
+  return directive instanceof GraphQLDirective ?
+    {
+      name,
+      args: getDirectiveValues(
+        directive,
+        astNode,
+        info.variableValues
+      ),
+      directive
+    } :
+    null;
+}
+
+/**
  * Get the object type location
  * @param {*} object 
  */
@@ -66,27 +87,6 @@ export function buildDirectiveInfo(
     operation: resolveInfo.operation,
     variableValues: resolveInfo.variableValues
   };
-}
-
-/**
- * Gets a directive from the schema as well as its arg values
- * @param {*} info 
- * @param {*} name 
- * @param {*} astNode 
- */
-export function getDirective(info, name, astNode) {
-  const directive = info.schema.getDirective(name);
-  return directive instanceof GraphQLDirective ?
-    {
-      name,
-      args: getDirectiveValues(
-        directive,
-        astNode,
-        info.variableValues
-      ),
-      directive
-    } :
-    null;
 }
 
 /**

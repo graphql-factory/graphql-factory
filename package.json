@@ -17,7 +17,8 @@
     "build:lodash": "lodash modularize exports=es include=$npm_package_options_lodash -o src/common/lodash",
     "build": "babel src --optional runtime --ignore __tests__ --out-dir dist/ && cp package.json dist/ && npm run build-dot-flow",
     "build-dot-flow": "find ./src -name '*.js' -not -path '*/__tests__*' | while read filepath; do cp $filepath `echo $filepath | sed 's/\\/src\\//\\/dist\\//g'`.flow; done",
-    "scratch": "babel-node ./scratch/test.js"
+    "scratch": "babel-node ./scratch/test.js",
+    "sub": "babel-node ./scratch/subscribe.js"
   },
   "author": "Branden Horiuchi <bhoriuchi@gmail.com>",
   "peerDependencies": {
@@ -48,6 +49,7 @@
     "graphql": "^0.11.7",
     "isparta": "4.0.0",
     "mocha": "3.5.0",
+    "rethinkdbdash": "^2.3.31",
     "sane": "2.0.0"
   },
   "bugs": {

@@ -1,7 +1,5 @@
 // @flow
-import type {
-  GraphQLSchema
-} from 'graphql';
+import type { GraphQLSchema } from 'graphql';
 import {
   buildSchema,
   GraphQLScalarType,
@@ -9,17 +7,14 @@ import {
   GraphQLUnionType,
   GraphQLInterfaceType
 } from 'graphql';
-import {
-  set
-} from '../jsutils';
+import { request } from '../utilities/request';
+import { set, isObject } from '../jsutils';
 
 import type {
   SchemaBackingConfig,
   SchemaBackingFieldConfig
 } from '../backing/backing';
-import {
-  SchemaBacking
-} from '../backing/backing';
+import { SchemaBacking } from '../backing/backing';
 
 /**
  * Adds directive resolvers to a standard GraphQLDirective object
@@ -105,11 +100,23 @@ export function hydrateSchema(
             }
             break;
           default:
-            if ((type instanceof GraphQLObjectType ||
+            if (
+              (type instanceof GraphQLObjectType ||
               type instanceof GraphQLInterfaceType) &&
-              typeof keyBacking[fieldName] === 'function' &&
-              typeof type._fields[fieldName] === 'object') {
-              type._fields[fieldName].resolve = keyBacking[fieldName];
+              typeof type._fields[fieldName] === 'object'
+            ) {
+              const back = keyBacking[fieldName];
+              if (typeof back === 'function') {
+                type._fields[fieldName].resolve = back;
+              } else if (typeof back === 'object' && back !== null) {
+                const { resolve, subscribe } = back;
+                if (typeof resolve === 'function') {
+                  type._fields[fieldName].resolve = resolve;
+                }
+                if (typeof subscribe === 'function') {
+                  type._fields[fieldName].subscribe = subscribe;
+                }
+              }
             }
         }
       });
@@ -123,6 +130,17 @@ export default function buildFactorySchema(
   backing?: ?SchemaBackingConfig | ?SchemaBacking
 ) {
   const schema = buildSchema(source);
+
+  // add a helper method to the schema so that requests
+  // can be made with schema.request(source, ...)
+  set(schema, 'request', (...args) => {
+    if (args.length === 1 && isObject(args[0])) {
+      args[0].schema = schema;
+    } else {
+      args.splice(0, 0, schema);
+    }
+    return request(...args);
+  });
 
   // hydrate the schema if a backing is passed
   // also attempt to create a new SchemaBacking

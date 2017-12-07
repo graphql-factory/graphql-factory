@@ -26,6 +26,7 @@ import { exportDefinition } from '../utilities/export';
 import buildSchema from '../utilities/buildSchema';
 import type { ObjMap } from 'graphql/jsutils/ObjMap';
 import { validateDirectives } from './validate';
+import { JSONType, DateTimeType } from '../types';
 import {
   isObject,
   intersection,
@@ -125,7 +126,10 @@ export class SchemaDefinition {
       context: {},
       functions: {},
       directives: {},
-      types: {},
+      types: {
+        DateTime: DateTimeType,
+        JSON: JSONType
+      },
       schema: null
     };
   }

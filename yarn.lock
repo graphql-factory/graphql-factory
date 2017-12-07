@@ -725,6 +725,10 @@ block-stream@*:
   dependencies:
     inherits "~2.0.0"
 
+"bluebird@>= 3.0.1":
+  version "3.5.1"
+  resolved "https://registry.yarnpkg.com/bluebird/-/bluebird-3.5.1.tgz#d9551f9de98f1fcda1e683d17ee91a0602ee2eb9"
+
 boom@2.x.x:
   version "2.10.1"
   resolved "https://registry.yarnpkg.com/boom/-/boom-2.10.1.tgz#39c8918ceff5799f83f9492a848f625add0c766f"
@@ -2410,6 +2414,12 @@ restore-cursor@^2.0.0:
   dependencies:
     onetime "^2.0.0"
     signal-exit "^3.0.2"
+
+rethinkdbdash@^2.3.31:
+  version "2.3.31"
+  resolved "https://registry.yarnpkg.com/rethinkdbdash/-/rethinkdbdash-2.3.31.tgz#fe2f73d1fa6e6f5d96d8e881292013cf6dca914d"
+  dependencies:
+    bluebird ">= 3.0.1"
 
 right-align@^0.1.1:
   version "0.1.3"

@@ -187,6 +187,17 @@ export function processField(definition: GraphQLField<*, *>) {
             return args;
           }, Object.create(null));
           break;
+        case 'subscribe':
+          if (typeof value === 'function') {
+            set(
+              def,
+              'subscribe',
+              typeof value.__resolver === 'function' ?
+                value.__resolver :
+                value
+            );
+          }
+          break;
         case 'resolve':
           if (typeof value === 'function') {
             set(

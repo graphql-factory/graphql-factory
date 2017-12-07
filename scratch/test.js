@@ -110,7 +110,7 @@ type List {
 
 type Query @test(value: "query type") {
   listLists (search: String): [List] @test(value: "listListsDef")
-  readList (id: String!): List
+  readList (id: String!): List @test(value: "readList")
 }
 
 type Mutation {
@@ -165,7 +165,7 @@ query MyQuery @log(value: "logQuery") @test(value: "queryOp") {
   list2:listLists {
     ...ListFragment
   }
-  readList (id: "1") {
+  rl:readList (id: "1") {
     ...ListFragment
   }
 }
