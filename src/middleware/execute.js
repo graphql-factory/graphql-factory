@@ -61,11 +61,12 @@ export function buildFieldResolveArgs(
   info,
   path,
   field,
-  selection
+  selection,
+  args
 ) {
   return [
     cloneDeep(source),
-    getArgumentValues(field, selection, info.variableValues),
+    cloneDeep(args),
     context,
     Object.assign(
       Object.create(null),
@@ -158,6 +159,11 @@ export function instrumentResolver(
  * @param {*} rargs 
  */
 export function resolveSubField(field, result, parentType, rargs, isRoot) {
+  // check that result is an object, if it is not then subfields
+  // cannot be set on it so return a Promise that resolves to null
+  if (typeof result !== 'object' || result === null) {
+    return Promise.resolve(null);
+  }
   const [ source, args, context, info ] = rargs;
   const path = isRoot ?
     { prev: undefined, key: field.name } :
@@ -205,8 +211,6 @@ export function resolveSubFields(fields, result, parentType, rargs, serial) {
     });
 }
 
-
-
 /**
  * Resolve a field containing a resolver and
  * then resolve any sub fields
@@ -251,8 +255,17 @@ export function resolveField(source, path, parentType, selection, rargs) {
     }
   ]);
 
+  // get field args and allow directives to modify them
+  const fieldInfo = {
+    args: getArgumentValues(field, selection, info.variableValues),
+    fieldName: selection.name.value,
+    fieldNodes: [ selection ],
+    returnType: field.type,
+    path: cloneDeep(path)
+  };
+
   return promiseReduce(resolveRequest, (prev, r) => {
-    const directiveInfo = buildDirectiveInfo(info, r);
+    const directiveInfo = buildDirectiveInfo(info, r, { fieldInfo });
     return instrumentResolver(
       ExecutionType.DIRECTIVE,
       r.directive.name,
@@ -291,7 +304,8 @@ export function resolveField(source, path, parentType, selection, rargs) {
         info,
         path,
         field,
-        selection
+        selection,
+        fieldInfo.args
       ),
       true
     )
@@ -318,7 +332,8 @@ export function resolveField(source, path, parentType, selection, rargs) {
                 info,
                 listPath,
                 field,
-                selection
+                selection,
+                fieldInfo.args
               )
             );
           })
@@ -335,7 +350,8 @@ export function resolveField(source, path, parentType, selection, rargs) {
             info,
             path,
             field,
-            selection
+            selection,
+            fieldInfo.args
           )
         )
         .then(() => result);
@@ -343,7 +359,7 @@ export function resolveField(source, path, parentType, selection, rargs) {
   })
   .then(result => {
     return promiseReduce(resolveResult, (prev, r) => {
-      const directiveInfo = buildDirectiveInfo(info, r);
+      const directiveInfo = buildDirectiveInfo(info, r, { fieldInfo });
       return instrumentResolver(
         ExecutionType.DIRECTIVE,
         r.directive.name,
@@ -359,8 +375,6 @@ export function resolveField(source, path, parentType, selection, rargs) {
     });
   });
 }
-
-
 
 /**
  * Builds a map of fields with resolve functions to resolve
@@ -434,7 +448,7 @@ export function factoryExecute(...rargs) {
 
       // perform the entire execution from the first root resolver
       const request = promiseReduce(resolveRequest, (prev, r) => {
-        const directiveInfo = buildDirectiveInfo(info, r);
+        const directiveInfo = buildDirectiveInfo(info, r, { fieldInfo: {} });
         return instrumentResolver(
           ExecutionType.DIRECTIVE,
           r.directive.name,
@@ -456,7 +470,7 @@ export function factoryExecute(...rargs) {
       })
       .then(() => {
         return promiseReduce(resolveResult, (prev, r) => {
-          const directiveInfo = buildDirectiveInfo(info, r);
+          const directiveInfo = buildDirectiveInfo(info, r, { fieldInfo: {} });
           return instrumentResolver(
             ExecutionType.DIRECTIVE,
             r.directive.name,

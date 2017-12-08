@@ -61,16 +61,17 @@ export function objectTypeLocation(object) {
  */
 export function buildDirectiveInfo(
   resolveInfo,
-  directiveInfo
+  directiveInfo,
+  extra
 ) {
-  return {
+  return Object.assign({
     location: directiveInfo.location,
     schema: resolveInfo.schema,
     fragments: resolveInfo.fragments,
     rootValue: resolveInfo.rootValue,
     operation: resolveInfo.operation,
     variableValues: resolveInfo.variableValues
-  };
+  }, extra);
 }
 
 /**

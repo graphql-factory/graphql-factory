@@ -2,6 +2,9 @@ import _ from 'lodash';
 import {
   SchemaDefinition
 } from '../src';
+import {
+  DirectiveLocation
+} from 'graphql';
 
 import {
   makePath
@@ -15,6 +18,23 @@ const db = {
 }
 
 const definition = {
+  directives: {
+    test: {
+      locations: [
+        DirectiveLocation.QUERY,
+        DirectiveLocation.FIELD
+      ],
+      args: {
+        value: { type: 'String' }
+      },
+      resolve(source, args, context, info) {
+        info.fieldInfo.args.id= 100;
+        console.log(info.fieldInfo.args)
+        // info.fieldInfo.args.id = 2;
+        // console.log(info);
+      }
+    }
+  },
   types: {
     Foo: {
       type: 'Object',
@@ -32,13 +52,15 @@ const definition = {
             id: { type: 'String!' }
           },
           resolve(source, args, context, info) {
-            return _.find(db.foo, args);
+            console.log({args})
+            return _.find(db.foo, { id: args.id });
           }
         }
       }
     }
   },
   schema: {
+    directives: [ 'test' ],
     query: 'Query'
   }
 };
@@ -49,7 +71,7 @@ const schema = new SchemaDefinition()
 
 schema.request({
   source: `query MyQuery {
-    readFoo(id: "1") {
+    readFoo(id: "1") @test(value: "query") {
       id
       name
     }
