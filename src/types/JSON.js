@@ -1,9 +1,9 @@
-import { Kind } from 'graphql'
+import { Kind } from 'graphql';
 /*
  * Ported type from https://github.com/taion/graphql-type-json
  */
 
-function parseLiteral (ast) {
+function parseLiteral(ast) {
   switch (ast.kind) {
     case Kind.STRING:
     case Kind.BOOLEAN:
@@ -26,9 +26,10 @@ function parseLiteral (ast) {
 
 export default {
   type: 'Scalar',
-  description: 'The `JSON` scalar type represents JSON values as specified by '
-  + '[ECMA-404](http://www.ecma-international.org/ publications/files/ECMA-ST/ECMA-404.pdf).',
+  description: 'The `JSON` scalar type represents JSON values as ' +
+  'specified by [ECMA-404](http://www.ecma-international.org/' +
+  'publications/files/ECMA-ST/ECMA-404.pdf).',
   serialize: value => value,
   parseValue: value => value,
   parseLiteral
-}
+};

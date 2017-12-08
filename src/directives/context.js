@@ -24,4 +24,4 @@ export default new GraphQLFactoryDirective({
     }
     Object.assign(context, args.value);
   }
-})
+});

@@ -5,7 +5,10 @@ import {
   get,
   reduce
 } from '../jsutils';
-import { DirectiveLocation } from 'graphql';
+import {
+  DirectiveLocation,
+  GraphQLDirective
+} from 'graphql';
 /**
  * Checks that a directive is included and throws an error otherwise
  * @param {*} msgPrefix 
@@ -27,7 +30,7 @@ export function checkDirectives(
   if (level > 50) {
     throw new Error('Circular directive dependency encountered. ' +
     'Please check that directives applied on directive arguments do not' +
-    'reference parents')
+    'reference parents');
   }
   const dirs = get(def, [ '@directives' ]);
 
@@ -36,7 +39,7 @@ export function checkDirectives(
   }
 
   forEach(dirs, (args, name) => {
-    const m = msgPrefix + ' directive "' + name + '"'
+    const m = msgPrefix + ' directive "' + name + '"';
     if (isObject(args)) {
       forEach(args, (argDef, argName) => {
         checkDirectives(
@@ -47,7 +50,7 @@ export function checkDirectives(
           argDef,
           level
         );
-      }, true)      
+      }, true);
     }
 
     if (directives.indexOf(name) === -1) {
@@ -59,7 +62,7 @@ export function checkDirectives(
       throw new Error('DirectiveError: Directive @' + name +
       ' is not allowed on location ' + location);
     }
-  }, true)
+  }, true);
 }
 
 /**
@@ -81,7 +84,7 @@ export function validateDirectives(definition) {
         'prefixed with an @ symbol when including them on a schema ' +
         'definition');
       }
-      return directive
+      return directive;
     } else if (directive instanceof GraphQLDirective) {
       return directive.name;
     }
@@ -100,7 +103,7 @@ export function validateDirectives(definition) {
     }
     dmap[name] = directiveDef;
     return dmap;
-  }, {}, true)
+  }, {}, true);
 
   // check types
   forEach(def.types, (typeDef, typeName) => {
@@ -157,7 +160,7 @@ export function validateDirectives(definition) {
                 dirs,
                 argDef
               );
-            })
+            });
           }
           checkDirectives(
             DirectiveLocation.FIELD_DEFINITION,
@@ -178,13 +181,13 @@ export function validateDirectives(definition) {
             dirs,
             valueDef
           );
-        }, true)
+        }, true);
         break;
 
       default:
         break;
     }
-  }, true)
+  }, true);
 
   // check directives
   forEach(def.directives, (dirDef, dirName) => {
@@ -196,9 +199,9 @@ export function validateDirectives(definition) {
         dirMsg + ', argument "' + argName + '"',
         dirs,
         argDef
-      )
+      );
     }, true);
-  }, true)
+  }, true);
 
   // check schema
   checkDirectives(
@@ -207,5 +210,5 @@ export function validateDirectives(definition) {
     'Schema',
     dirs,
     def.schema
-  )
+  );
 }

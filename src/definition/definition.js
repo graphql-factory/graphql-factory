@@ -18,7 +18,7 @@
  * @returns {boolean}
  * @flow
  */
-import { GraphQLSchema, GraphQLDirective } from 'graphql';
+import { GraphQLSchema } from 'graphql';
 import { SchemaBacking } from '../backing/backing';
 import type { SchemaBackingConfig } from '../backing/backing';
 import { deconstructSchema } from '../utilities/deconstruct';
@@ -29,10 +29,7 @@ import { validateDirectives } from './validate';
 import { JSONType, DateTimeType } from '../types';
 import {
   isObject,
-  intersection,
-  forEach,
-  get,
-  map
+  intersection
 } from '../jsutils';
 import type {
   SchemaDefinitionConfig,

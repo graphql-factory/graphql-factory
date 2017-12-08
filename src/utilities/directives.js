@@ -3,12 +3,10 @@ import { getDirective } from '../middleware/directives';
 import { getSelection } from './info';
 import {
   Kind,
-  DirectiveLocation,
-  getDirectiveValues,
-  GraphQLDirective
+  DirectiveLocation
 } from 'graphql';
 import { getOperationRootType } from 'graphql/execution/execute';
- 
+
 export const DirectiveLocationMap = {
   // operational
   [Kind.FIELD]: DirectiveLocation.FIELD,
@@ -24,7 +22,7 @@ export const DirectiveLocationMap = {
   [Kind.UNION_TYPE_DEFINITION]: DirectiveLocation.UNION,
   [Kind.ENUM_TYPE_DEFINITION]: DirectiveLocation.ENUM,
   [Kind.FIELD_DEFINITION]: DirectiveLocation.FIELD_DEFINITION
-}
+};
 
 /**
  * Extracts directives and their argument values from
@@ -36,7 +34,7 @@ export function getDirectivesFromAST(info, astNode, locationOverride) {
   if (!isObject(astNode)) {
     return Object.create(null);
   }
-  const { kind, directives } = astNode
+  const { kind, directives } = astNode;
   const location = locationOverride || DirectiveLocationMap[kind];
   return {
     [location]: directives.reduce((loc, ast) => {
@@ -47,7 +45,7 @@ export function getDirectivesFromAST(info, astNode, locationOverride) {
       }
       return loc;
     }, Object.create(null))
-  }
+  };
 }
 
 /**

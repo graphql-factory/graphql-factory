@@ -9,9 +9,9 @@ import assert from 'assert';
  * @param {*} info 
  */
 function defaultClientIDHandler(args, context, info) {
-  return get(args, [ 'clientID' ])
-    || get(context, [ 'clientID' ])
-    || get(info, [ 'rootValue', 'clientID' ]);
+  return get(args, [ 'clientID' ]) ||
+    get(context, [ 'clientID' ]) ||
+    get(info, [ 'rootValue', 'clientID' ]);
 }
 
 /**
@@ -19,7 +19,7 @@ function defaultClientIDHandler(args, context, info) {
  */
 export class SubscriptionResolver {
   constructor(manager) {
-    this._manager = manager
+    this._manager = manager;
     this.clientIDHandler = defaultClientIDHandler;
   }
 
@@ -119,8 +119,8 @@ export class SubscribeResolver extends SubscriptionResolver {
 
     // assert a client id value is string or number
     assert(
-      (typeof clientID === 'string' || typeof clientID === 'number')
-      && clientID !== '',
+      (typeof clientID === 'string' || typeof clientID === 'number') &&
+      clientID !== '',
       'SubscriptionResolverError: clientID is invalid or was not ' +
       'provided'
     );
@@ -138,6 +138,7 @@ export class SubscribeResolver extends SubscriptionResolver {
  */
 export class UnsubscribeResolver extends SubscriptionResolver {
   constructor(manager) {
+    super();
     this._manager = manager;
   }
 
@@ -159,8 +160,8 @@ export class UnsubscribeResolver extends SubscriptionResolver {
 
     // assert a client id value is string or number
     assert(
-      (typeof clientID === 'string' || typeof clientID === 'number')
-      && clientID !== '',
+      (typeof clientID === 'string' || typeof clientID === 'number') &&
+      clientID !== '',
       'SubscriptionResolverError: clientID is invalid or was not ' +
       'provided'
     );

@@ -1,5 +1,6 @@
 // @flow
 import buildSchema from './utilities/buildSchema';
+import resolvers from './resolvers';
 
 export { SchemaDefinition } from './definition/definition';
 export { SchemaBacking } from './backing/backing';
@@ -8,7 +9,8 @@ export {
   GraphQLFactoryDirective
 } from './types';
 export {
-  buildSchema
+  buildSchema,
+  resolvers
 };
 export {
   deconstructSchema,

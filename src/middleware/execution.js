@@ -60,7 +60,7 @@ export const TRACING_VERSION = '1.0.0';
 
 // create a wrapped default field resolver and add
 // a property to identify that it is default
-function defaultResolver (...args) {
+function defaultResolver(...args) {
   return defaultFieldResolver(...args);
 }
 defaultResolver.__defaultResolver = true;
@@ -153,24 +153,24 @@ export function instrumentResolver(
     error: null
   };
 
+  const isDefault = resolver.__defaultResolver;
+
   try {
-    const isDefault = resolver.__defaultResolver;
-    
     return Promise.resolve(resolver(...args))
       .then(result => {
         calculateRun(stack, execution, result, isDefault);
-        return result
+        return result;
       }, err => {
         calculateRun(stack, execution, err, isDefault);
-        return resolveErrors
-          ? Promise.resolve(err)
-          : Promise.reject(err);
-      })
+        return resolveErrors ?
+          Promise.resolve(err) :
+          Promise.reject(err);
+      });
   } catch (err) {
     calculateRun(stack, execution, err, isDefault);
-    return resolveErrors
-      ? Promise.resolve(err)
-      : Promise.reject(err)
+    return resolveErrors ?
+      Promise.resolve(err) :
+      Promise.reject(err);
   }
 }
 
@@ -192,9 +192,9 @@ export function resolveSubField(
   isRoot
 ) {
   const [ source, args, context, info ] = req;
-  const path = isRoot
-    ? { prev: undefined, key: subField.name }
-    : { prev: cloneDeep(info.path), key: subField.name }
+  const path = isRoot ?
+    { prev: undefined, key: subField.name } :
+    { prev: cloneDeep(info.path), key: subField.name };
 
   const execContext = [
     cloneDeep(source),
@@ -335,6 +335,9 @@ export function resolveField(
     fieldDefDirectiveLocs
   );
 
+  // TODO: remove this
+  noop(fieldDirectiveLocs);
+
   return promiseReduce(resolveRequest, (prev, r) => {
     const directiveInfo = buildDirectiveInfo(info, r);
     return instrumentResolver(
@@ -382,7 +385,7 @@ export function resolveField(
           fieldType,
           selection.selectionSet
         );
-  
+
         // if there are no subfields to resolve, return the results
         if (!subFields.length) {
           return result;
@@ -390,7 +393,7 @@ export function resolveField(
           if (!Array.isArray(result)) {
             return;
           }
-  
+
           return promiseMap(result, (res, idx) => {
             const listPath = { prev: cloneDeep(path), key: idx };
             return resolveSubFields(
@@ -410,7 +413,7 @@ export function resolveField(
           })
           .then(() => result);
         }
-  
+
         return resolveSubFields(
           subFields,
           result,
@@ -459,7 +462,7 @@ export function collectFields(parent, selectionSet) {
   if (!selectionSet || typeof parent.getFields !== 'function') {
     return [];
   }
-  const fields = parent.getFields();
+  // const fields = parent.getFields();
 
   return selectionSet.selections.reduce((resolves, selection) => {
     const name = selection.name.value;
@@ -501,7 +504,7 @@ export function factoryExecutionMiddleware(req) {
     // can be resolved by all root fields before they
     // execute their code
     if (isFirst) {
-      const logger = get(info, [ 'rootValue', 'logger' ], noop)
+      const logger = get(info, [ 'rootValue', 'logger' ], noop);
       const resolveRequest = [];
       const resolveResult = [];
       const directiveLocations = Object.create(null);
@@ -546,7 +549,7 @@ export function factoryExecutionMiddleware(req) {
           Object.create(null),
           info.operation
         )
-      }
+      };
 
       info.operation._factory = {
         logger,
@@ -586,7 +589,7 @@ export function factoryExecutionMiddleware(req) {
               r.resolve,
               [ final, r.args, context, directiveInfo ]
             );
-          })
+          });
         })
         .then(() => {
           execution.end = Date.now();
@@ -596,7 +599,7 @@ export function factoryExecutionMiddleware(req) {
           execution.end = Date.now();
           execution.duration = execution.end - execution.start;
           info.operation._factory.logger('execution', execution);
-          return Promise.reject(err)
+          return Promise.reject(err);
         })
       };
     }

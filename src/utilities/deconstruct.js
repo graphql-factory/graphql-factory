@@ -51,9 +51,9 @@ export const DefaultScalars = [
  */
 export function parseASTNode(astNode: ASTNode) {
   const { kind } = astNode;
-  const value = get(astNode, [ 'value' ])
-  const values = get(astNode, [ 'values' ])
-  const fields = get(astNode, [ 'filds' ])
+  const value = get(astNode, [ 'value' ]);
+  const values = get(astNode, [ 'values' ]);
+  const fields = get(astNode, [ 'filds' ]);
   switch (kind) {
     case Kind.STRING:
     case Kind.BOOLEAN:

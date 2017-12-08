@@ -9,10 +9,8 @@
    GraphQLFieldResolver
  } from 'graphql';
 
- import {
-   GraphQLDirective
- } from 'graphql';
- import { set } from '../jsutils'
+ import { GraphQLDirective } from 'graphql';
+ import { set } from '../jsutils';
 
 export type GraphQLFactoryDirectiveConfig = {
   name: string;
@@ -57,7 +55,7 @@ export class GraphQLFactoryDirective {
 
     // add hooks
     if (typeof beforeBuild === 'function') {
-      set(directive, [ 'beforeBuild' ], beforeBuild)
+      set(directive, [ 'beforeBuild' ], beforeBuild);
     }
 
     // return the modified directive

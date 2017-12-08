@@ -23,13 +23,9 @@ export class Subscription {
       Object.keys(this.clients).forEach(client => {
         Object.keys(this.clients[client]).forEach(op => {
           this.clients[client][op].push(change);
-        })
-      })
-    }, this.metadata)
-  }
-
-  match(args, context, info) {
-
+        });
+      });
+    }, this.metadata);
   }
 
   /**
@@ -65,7 +61,7 @@ export class Subscription {
 
     // if the client has no more subscriptions, clean up the client
     if (!Object.keys(this.clients[clientID]).length) {
-      delete this.clients[clientID]
+      delete this.clients[clientID];
     }
 
     return this;

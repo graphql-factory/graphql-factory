@@ -124,7 +124,7 @@ class ObjectBacking extends BackingChain {
       this._backing,
       [ '_backing', this._name, fieldName, 'subscribe' ],
       subscriber
-    )
+    );
     return this;
   }
 
@@ -160,7 +160,7 @@ class InterfaceBacking extends BackingChain {
       this._backing,
       [ '_backing', this._name, fieldName, 'subscribe' ],
       subscriber
-    )
+    );
     return this;
   }
 
@@ -239,7 +239,7 @@ class DirectiveBacking extends BackingChain {
       this._backing,
       [ '_backing', this._name, 'beforeBuild' ],
       func
-    )
+    );
   }
 }
 
