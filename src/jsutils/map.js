@@ -5,9 +5,11 @@
  * @param {*} throwError 
  */
 export function map(collection, mapper, throwError) {
+  if (typeof collection !== 'object' || collection === null) {
+    return [];
+  }
   let error = null;
   const isArray = Array.isArray(collection);
-
   const result = Object.keys(collection).map(key => {
     try {
       const k = isArray ? Number(key) : String(key);

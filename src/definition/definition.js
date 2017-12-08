@@ -56,7 +56,7 @@ function isDefinitionLike(definition: any) {
     intersection(
       DEFINITION_FIELDS,
       Object.keys(definition).reduce((fields, field) => {
-        if (isObject(field)) {
+        if (isObject(definition[field])) {
           fields.push(field);
         }
         return fields;

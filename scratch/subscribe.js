@@ -7,7 +7,7 @@ import {
   GraphQLString
 } from 'graphql';
 import rdash from 'rethinkdbdash'
-import { AsyncIterator } from '../src/utilities/asyncIterator'
+import { AsyncIterator } from '../src/jsutils/asyncIterator'
 import { request } from '../src/utilities/request'
 import { forAwaitEach, isAsyncIterable } from 'iterall'
 

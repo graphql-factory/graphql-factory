@@ -24,6 +24,20 @@ export const DirectiveLocationMap = {
   [Kind.FIELD_DEFINITION]: DirectiveLocation.FIELD_DEFINITION
 };
 
+
+export function getOperationLocation(info) {
+  switch (info.operation.operation) {
+    case 'query':
+      return DirectiveLocation.QUERY;
+    case 'mutation':
+      return DirectiveLocation.MUTATION;
+    case 'subscription':
+      return DirectiveLocation.SUBSCRIPTION;
+    default:
+      return null;
+  }
+}
+
 /**
  * Extracts directives and their argument values from
  * and astNode

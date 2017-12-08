@@ -72,7 +72,7 @@ export function checkDirectives(
  */
 export function validateDirectives(definition) {
   const def = definition._config;
-  const directives = get(def, [ 'schema', 'directives' ], []);
+  const directives = get(def, [ 'schema', 'directives' ]) || [];
 
   // validate that the directives have been included on the schema
   // with their names and not with @ prefixing that name. Also allow

@@ -1,12 +1,6 @@
 import { forEach } from '../jsutils';
-import {
-  GraphQLObjectType,
-  GraphQLInterfaceType
-} from 'graphql';
-import {
-  factoryExecutionMiddleware,
-  graphqlExecutionMiddleware
-} from './execution';
+import { GraphQLObjectType, GraphQLInterfaceType } from 'graphql';
+import { factoryExecute, graphqlExecute } from './execute';
 
 /**
  * Main middleware function that is wrapped around all resolvers
@@ -18,10 +12,10 @@ import {
  */
 function middleware(resolver, options) {
   const customExecution = options.factoryExecution !== false;
-  const resolve = function (...req) {
+  const resolve = function (...rargs) {
     return customExecution ?
-      factoryExecutionMiddleware(req) :
-      graphqlExecutionMiddleware(req);
+      factoryExecute(...rargs) :
+      graphqlExecute(...rargs);
   };
 
   // add the resolver as a property on the resolve middleware

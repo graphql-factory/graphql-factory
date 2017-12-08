@@ -16,6 +16,7 @@ export { promiseMap } from './promiseMap';
 export { noop } from './noop';
 export { omit } from './omit';
 export { pick } from './pick';
+export { AsyncIterator } from './asyncIterator';
 
 export {
   get,

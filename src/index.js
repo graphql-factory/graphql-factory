@@ -19,4 +19,17 @@ export {
 } from './utilities/deconstruct.js';
 export { exportDefinition } from './utilities/export';
 export { request } from './utilities/request';
-export { AsyncIterator } from './utilities/asyncIterator';
+export { AsyncIterator } from './jsutils';
+export {
+  getFieldDirectives,
+  getSchemaDirectives,
+  getOperationDirectives,
+  getDirectivesFromAST,
+  DirectiveLocationMap
+} from './utilities/directives';
+export {
+  isRootResolver,
+  getSelection,
+  operationType,
+  fieldPath
+} from './utilities/info';

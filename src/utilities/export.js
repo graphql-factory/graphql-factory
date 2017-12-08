@@ -344,6 +344,9 @@ export function printInterface(definition, name, backing) {
  * @param {*} backing 
  */
 export function printType(definition, name, backing) {
+  if (!definition.type) {
+    throw new Error(`Failed to print "${name}", missing "type" field`);
+  }
   switch (definition.type) {
     case 'Object':
       return printObject(definition, name, backing);
@@ -434,7 +437,7 @@ export function exportDefinition(
   // map each of the definitions
   const languageDefinition = map(types, (typeDef, typeName) => {
     return printType(typeDef, typeName, backing);
-  })
+  }, true)
     .concat(
       map(directives, (dirDef, dirName) => {
         return printDirective(dirDef, dirName, backing);
