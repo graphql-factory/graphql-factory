@@ -28,7 +28,7 @@ const definition = {
         value: { type: 'String' }
       },
       resolve(source, args, context, info) {
-        console.log(args)
+        console.log({ context })
         // info.fieldInfo.args.id = 2;
         // console.log(info);
       }
@@ -65,6 +65,8 @@ const definition = {
 
 const schema = new SchemaDefinition()
   .use(definition)
+  .use({ context: { test: true } })
+  .use({ context: { foo: false } })
   .buildSchema();
 
 schema.request({

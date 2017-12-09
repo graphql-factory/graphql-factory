@@ -28,6 +28,7 @@ import type { ObjMap } from 'graphql/jsutils/ObjMap';
 import { validateDirectives } from './validate';
 import { JSONType, DateTimeType } from '../types';
 import {
+  set,
   isObject,
   intersection
 } from '../jsutils';
@@ -255,7 +256,8 @@ export class SchemaDefinition {
     // create the schema
     const { definition, backing } = this.export();
     const schema = buildSchema(definition, backing);
-    return wrap ? wrapMiddleware(schema, opts) : schema;
+    set(schema, 'definition', this);
+    return wrap ? wrapMiddleware(this, schema, opts) : schema;
   }
 
   /**
@@ -278,7 +280,7 @@ export class SchemaDefinition {
   /**
    * Returns the definiton config
    */
-  definition() {
+  config() {
     this.validate();
     return this._config;
   }

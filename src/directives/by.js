@@ -52,6 +52,5 @@ export default new GraphQLFactoryDirective({
     }
   },
   resolve(source, args, context, info) {
-    
   }
 });

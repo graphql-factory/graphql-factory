@@ -1,4 +1,4 @@
-import { forEach } from '../jsutils';
+import { forEach, isObject } from '../jsutils';
 import { GraphQLObjectType, GraphQLInterfaceType } from 'graphql';
 import { factoryExecute, graphqlExecute } from './execute';
 
@@ -10,12 +10,16 @@ import { factoryExecute, graphqlExecute } from './execute';
  * @param {*} context 
  * @param {*} info 
  */
-function middleware(resolver, options) {
+function middleware(definition, resolver, options) {
   const customExecution = options.factoryExecution !== false;
-  const resolve = function (...rargs) {
+  const resolve = function (source, args, context, info) {
+    // ensure that context is an object and extend it
+    const ctx = isObject(context) ? context : Object.create(null);
+    Object.assign(ctx, definition.config().context);
+
     return customExecution ?
-      factoryExecute(...rargs) :
-      graphqlExecute(...rargs);
+      factoryExecute(source, args, ctx, info) :
+      graphqlExecute(source, args, ctx, info);
   };
 
   // add the resolver as a property on the resolve middleware
@@ -31,11 +35,11 @@ function middleware(resolver, options) {
  * Wraps all of the field resolve functions in middleware handlers
  * @param {*} schema 
  */
-export function wrapMiddleware(schema, options) {
+export function wrapMiddleware(definition, schema, options) {
   const opts = typeof options === 'object' && options !== null ?
     options :
     Object.create(null);
-
+  
   forEach(schema.getTypeMap(), (type, typeName) => {
     if (typeName.match(/^__/)) {
       return true;
@@ -48,7 +52,7 @@ export function wrapMiddleware(schema, options) {
           typeof field.resolve === 'function' &&
           field.resolve.__factoryMiddleware !== true
         ) {
-          field.resolve = middleware(field.resolve, opts);
+          field.resolve = middleware(definition, field.resolve, opts);
         }
       }, true);
     }
