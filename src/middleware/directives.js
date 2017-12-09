@@ -83,7 +83,7 @@ export function buildDirectiveInfo(
 export function getDirectiveResolvers(info, directiveLocations) {
   return reduce(directiveLocations, (res, { location, astNode }) => {
     astNode.directives.forEach(ast => {
-      const dirInfo = getDirective(info, ast.name.value, ast);
+      const dirInfo = getDirective(info, ast.name.value, astNode);
       if (dirInfo) {
         const { name, args, directive } = dirInfo;
         const { locations, resolve, resolveResult } = directive;

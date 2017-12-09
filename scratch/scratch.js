@@ -28,8 +28,7 @@ const definition = {
         value: { type: 'String' }
       },
       resolve(source, args, context, info) {
-        info.fieldInfo.args.id= 100;
-        console.log(info.fieldInfo.args)
+        console.log(args)
         // info.fieldInfo.args.id = 2;
         // console.log(info);
       }
@@ -52,7 +51,6 @@ const definition = {
             id: { type: 'String!' }
           },
           resolve(source, args, context, info) {
-            console.log({args})
             return _.find(db.foo, { id: args.id });
           }
         }
