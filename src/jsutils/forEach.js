@@ -7,6 +7,9 @@
  */
 
 export function forEach(collection, iteratee, throwErrors) {
+  if (typeof collection !== 'object' || collection === null) {
+    return;
+  }
   let error = null;
   const isArray = Array.isArray(collection);
 

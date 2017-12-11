@@ -49,7 +49,7 @@ export type FactoryTypeConfig =
 * Main SchemaDefinitionConfig
 */
 export type SchemaDefinitionConfig = {
-  context?: ?ObjMap<mixed>;
+  context?: ?ObjMap<?mixed>;
   functions?: ?ObjMap<() => mixed>;
   directives?: ?ObjMap<FactoryDirectiveDefinitionConfig>;
   types?: ?ObjMap<FactoryTypeConfig>;
@@ -102,10 +102,9 @@ export type FactoryDirectiveDefinitionConfig = {
   description?: ?string;
   locations: Array<DirectiveLocationEnum>;
   args?: ?FactoryFieldConfigArgumentMap;
-  resolveRequest?: ?GraphQLFieldResolver<*, *>;
+  resolve?: ?GraphQLFieldResolver<*, *>;
   resolveResult?: ?GraphQLFieldResolver<*, *>;
-  // TODO: determine if directives should have a directives 
-  // field which acts like a dependency
+  beforeBuild?:?() => ?mixed;
 };
 
 export type FactoryDirectiveMap = ObjMap<mixed>;

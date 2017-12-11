@@ -1,7 +1,7 @@
-import { isObject } from '../jsutils';
+import { isObject, get } from '../jsutils';
 
 export function fieldPath(info, includeIndexes) {
-  let current = info.path;
+  let current = info.path || get(info, [ 'fieldInfo', 'path' ]);
   const path = [ current.key ];
   while (current.prev) {
     current = current.prev;

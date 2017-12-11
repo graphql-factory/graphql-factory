@@ -67,13 +67,14 @@ export function getDirectivesFromAST(info, astNode, locationOverride) {
  * @param {*} info 
  */
 export function getFieldDirectives(info) {
-  if (typeof info.parentType.getFields !== 'function') {
+  const nfo = info.fieldInfo || info;
+  if (typeof nfo.parentType.getFields !== 'function') {
     throw new Error('Cannot get field directive on non-field type');
   }
   const selection = getSelection(info);
   const fieldDefAST = get(
-    info.parentType.getFields(),
-    [ info.fieldName, 'astNode' ]
+    nfo.parentType.getFields(),
+    [ nfo.fieldName, 'astNode' ]
   );
 
   return Object.assign(

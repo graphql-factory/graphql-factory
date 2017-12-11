@@ -27,7 +27,9 @@ export function getType(obj) {
     if (obj.match(LITERAL_RX)) {
       return [ 'literal', obj.replace(LITERAL_RX, '$1') ];
     }
-    return [ 'string', `"${obj}"` ];
+    const str = obj.replace(/"/g, '\\"');
+
+    return [ 'string', `"${str}"` ];
   } else if (typeof obj === 'number') {
     return String(obj).indexOf('.') !== -1 ?
       [ 'float', String(obj) ] :

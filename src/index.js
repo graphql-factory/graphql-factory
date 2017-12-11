@@ -33,3 +33,9 @@ export {
   operationType,
   fieldPath
 } from './utilities/info';
+export {
+  ByDirective,
+  ContextDirective,
+  IDDirective,
+  ValidateDirective
+} from './directives';

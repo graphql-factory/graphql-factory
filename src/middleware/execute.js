@@ -1,6 +1,9 @@
 import { getArgumentValues } from 'graphql/execution/values';
 import { getOperationLocation } from '../utilities/directives';
-import { GraphQLSkipResolveInstruction } from '../types';
+import {
+  GraphQLSkipResolveInstruction,
+  GraphQLOmitTraceInstruction
+} from '../types';
 import {
   get,
   promiseReduce,
@@ -62,7 +65,8 @@ export function buildFieldResolveArgs(
   path,
   field,
   selection,
-  args
+  args,
+  parentType
 ) {
   return [
     cloneDeep(source),
@@ -72,6 +76,7 @@ export function buildFieldResolveArgs(
       Object.create(null),
       info,
       {
+        parentType,
         fieldName: selection.name.value,
         fieldNodes: [ selection ],
         returnType: field.type,
@@ -133,6 +138,10 @@ export function instrumentResolver(
   try {
     return Promise.resolve(resolver(...args))
       .then(result => {
+        // check for a trace omit instruction
+        if (result instanceof GraphQLOmitTraceInstruction) {
+          return result.source;
+        }
         calculateRun(stack, execution, result, isDefault);
         return result;
       }, err => {
@@ -258,6 +267,7 @@ export function resolveField(source, path, parentType, selection, rargs) {
   // get field args and allow directives to modify them
   const fieldInfo = {
     args: getArgumentValues(field, selection, info.variableValues),
+    parentType,
     fieldName: selection.name.value,
     fieldNodes: [ selection ],
     returnType: field.type,
@@ -305,7 +315,8 @@ export function resolveField(source, path, parentType, selection, rargs) {
         path,
         field,
         selection,
-        fieldInfo.args
+        fieldInfo.args,
+        parentType
       ),
       true
     )
@@ -333,7 +344,8 @@ export function resolveField(source, path, parentType, selection, rargs) {
                 listPath,
                 field,
                 selection,
-                fieldInfo.args
+                fieldInfo.args,
+                parentType
               )
             );
           })
@@ -351,7 +363,8 @@ export function resolveField(source, path, parentType, selection, rargs) {
             path,
             field,
             selection,
-            fieldInfo.args
+            fieldInfo.args,
+            parentType
           )
         )
         .then(() => result);

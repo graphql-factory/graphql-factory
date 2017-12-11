@@ -15,7 +15,8 @@ function middleware(definition, resolver, options) {
   const resolve = function (source, args, context, info) {
     // ensure that context is an object and extend it
     const ctx = isObject(context) ? context : Object.create(null);
-    Object.assign(ctx, definition.config().context);
+    Object.assign(ctx, definition.context);
+    info.definition = definition;
 
     return customExecution ?
       factoryExecute(source, args, ctx, info) :

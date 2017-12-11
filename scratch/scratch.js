@@ -1,6 +1,9 @@
 import _ from 'lodash';
 import {
-  SchemaDefinition
+  SchemaDefinition,
+  getFieldDirectives,
+  getSchemaDirectives,
+  getOperationDirectives
 } from '../src';
 import {
   DirectiveLocation
@@ -19,6 +22,24 @@ const db = {
 
 const definition = {
   directives: {
+    permission: {
+      locations: [
+        DirectiveLocation.OBJECT,
+        DirectiveLocation.SCHEMA,
+        DirectiveLocation.FIELD_DEFINITION
+      ],
+      args: {
+        user: { type: 'JSON' },
+        filter: { type: 'JSON' },
+        query: { type: 'String' }
+      },
+      resolve(source, args, context, info) {
+        console.log(info.location, args)
+      },
+      resolveResult(source, args, context, info) {
+
+      }
+    },
     test: {
       locations: [
         DirectiveLocation.QUERY,
@@ -28,7 +49,7 @@ const definition = {
         value: { type: 'String' }
       },
       resolve(source, args, context, info) {
-        console.log({ context })
+        console.log(getOperationDirectives(info))
         // info.fieldInfo.args.id = 2;
         // console.log(info);
       }
@@ -38,8 +59,13 @@ const definition = {
     Foo: {
       type: 'Object',
       fields: {
-        id: { type: 'String!' },
-        name: { type: 'String' }
+        id: 'String!',
+        name: 'String'
+      },
+      '@directives': {
+        permission: {
+          query: '{ \"user\": { \"id\": { \"$exists\": true } }, \"role\": { \"$in\": [\"ADMIN\"] } }'
+        }
       }
     },
     Query: {
@@ -48,7 +74,7 @@ const definition = {
         readFoo: {
           type: 'Foo',
           args: {
-            id: { type: 'String!' }
+            id: 'String!'
           },
           resolve(source, args, context, info) {
             return _.find(db.foo, { id: args.id });
@@ -58,7 +84,7 @@ const definition = {
     }
   },
   schema: {
-    directives: [ 'test' ],
+    directives: [ 'test', 'permission' ],
     query: 'Query'
   }
 };

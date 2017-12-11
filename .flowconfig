@@ -10,6 +10,7 @@
 
 [options]
 experimental.const_params=true
+unsafe.enable_getters_and_setters=true
 
 [version]
 0.59.0

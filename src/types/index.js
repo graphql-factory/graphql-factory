@@ -8,7 +8,8 @@ export {
 };
 export {
   GraphQLSkipInstruction,
-  GraphQLSkipResolveInstruction
+  GraphQLSkipResolveInstruction,
+  GraphQLOmitTraceInstruction
 } from './instruction';
 export type { ExecutionLogger } from './logger.js';
 export type { GraphQLFactoryDirective } from './directive.js';

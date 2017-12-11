@@ -26,6 +26,7 @@ import { exportDefinition } from '../utilities/export';
 import buildSchema from '../utilities/buildSchema';
 import type { ObjMap } from 'graphql/jsutils/ObjMap';
 import { validateDirectives } from './validate';
+import { fixDefinition } from './fix';
 import { JSONType, DateTimeType } from '../types';
 import {
   set,
@@ -34,7 +35,10 @@ import {
 } from '../jsutils';
 import type {
   SchemaDefinitionConfig,
-  UseArgument
+  UseArgument,
+  SchemaTypeConfig,
+  FactoryTypeConfig,
+  FactoryDirectiveDefinitionConfig
 } from './types';
 import { mergeSchema, mergeWithConflicts } from './merge';
 import { wrapMiddleware } from '../middleware/middleware';
@@ -171,6 +175,8 @@ export class SchemaDefinition {
       'GraphQLDirective, function, or GraphQLFactoryPlugin');
   }
 
+
+
   /**
    * Merges a factory definition or definition-like object into
    * the current definition
@@ -254,10 +260,19 @@ export class SchemaDefinition {
     const wrap = opts.useMiddleware !== false;
 
     // create the schema
-    const { definition, backing } = this.export();
+    const { definition, backing } = this.export(opts);
     const schema = buildSchema(definition, backing);
     set(schema, 'definition', this);
     return wrap ? wrapMiddleware(this, schema, opts) : schema;
+  }
+
+  /**
+   * Performs a check of the definition and fixes any shorthand
+   * @param {*} options 
+   */
+  fix(options?: ?ObjMap<?mixed>) {
+    fixDefinition(this._config, options);
+    return this;
   }
 
   /**
@@ -272,8 +287,8 @@ export class SchemaDefinition {
    * Exports the current definition as an object containing
    * schema language source and a SchemaBacking
    */
-  export() {
-    this.validate();
+  export(options?: ?ObjMap<?mixed>) {
+    this.fix(options).validate();
     return exportDefinition(this);
   }
 
@@ -281,7 +296,26 @@ export class SchemaDefinition {
    * Returns the definiton config
    */
   config() {
-    this.validate();
     return this._config;
+  }
+
+  get context(): ?ObjMap<() => mixed> {
+    return this._config.context;
+  }
+
+  get functions(): ?ObjMap<() => mixed> {
+    return this._config.functions;
+  }
+
+  get directives(): ?ObjMap<FactoryDirectiveDefinitionConfig> {
+    return this._config.directives;
+  }
+
+  get types(): ?ObjMap<FactoryTypeConfig> {
+    return this._config.types;
+  }
+
+  get schema(): ?SchemaTypeConfig {
+    return this._config.schema;
   }
 }
