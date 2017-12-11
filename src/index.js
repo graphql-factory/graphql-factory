@@ -1,15 +1,19 @@
 // @flow
 import buildSchema from './utilities/buildSchema';
 import resolvers from './resolvers';
-
-export { SchemaDefinition } from './definition/definition';
+import directives from './directives';
 export { SchemaBacking } from './backing/backing';
+export {
+  SchemaDefinition,
+  FactoryEvents
+} from './definition/definition';
 export {
   GraphQLSkipInstruction,
   GraphQLFactoryDirective
 } from './types';
 export {
   buildSchema,
+  directives,
   resolvers
 };
 export {
@@ -33,9 +37,3 @@ export {
   operationType,
   fieldPath
 } from './utilities/info';
-export {
-  ByDirective,
-  ContextDirective,
-  IDDirective,
-  ValidateDirective
-} from './directives';

@@ -18,6 +18,8 @@
  * @returns {boolean}
  * @flow
  */
+import EventEmitter from 'events';
+import assert from 'assert';
 import { GraphQLSchema } from 'graphql';
 import { SchemaBacking } from '../backing/backing';
 import type { SchemaBackingConfig } from '../backing/backing';
@@ -42,6 +44,14 @@ import type {
 } from './types';
 import { mergeSchema, mergeWithConflicts } from './merge';
 import { wrapMiddleware } from '../middleware/middleware';
+
+// reserved factory events
+export const FactoryEvents = {
+  EXECUTION: 'execution',
+  ERROR: 'error',
+  WARN: 'warn',
+  INFO: 'info'
+};
 
 const DEFINITION_FIELDS = [
   'context',
@@ -114,13 +124,14 @@ function useLanguage(
  * 
  * * conflict - how to resolve a type name conflict
  */
-export class SchemaDefinition {
+export class SchemaDefinition extends EventEmitter {
   _config: SchemaDefinitionConfig;
   _options: ObjMap<?mixed>;
 
   constructor(
     options?: ?ObjMap<?mixed>
   ) {
+    super();
     this._options = options !== null && typeof options === 'object' ?
       options :
       Object.create(null);
@@ -142,8 +153,8 @@ export class SchemaDefinition {
    * 
    * Signatures
    * 
-   * | use(definition)
-   * | use(definitionConfig)
+   * | use(SchemaDefinition)
+   * | use(SchemaDefinitionConfig)
    * | use(source [, backing] [, prefix])
    * | use(GraphQLSchema [, options])
    * | use(GraphQLDirective)
@@ -168,11 +179,17 @@ export class SchemaDefinition {
       // GraphQLSchema
       const prefix = typeof arg1 === 'string' ? arg1 : '';
       return useSchema(this, arg0, prefix);
+    } else if (typeof arg0 === 'function') {
+      assert(
+        typeof arg1 === 'string' && arg1 !== '',
+        'UseError: Using a function requires a name as the second argument'
+      );
+      return this.merge(set({}, [ 'functions', arg1 ], arg0));
     }
 
-    throw new Error('Invalid use arguments, must be SchemaDefinition, ' +
-      'SchemaDefinitionConfig, source, GraphQLSchema, GraphQLType, ' +
-      'GraphQLDirective, function, or GraphQLFactoryPlugin');
+    throw new Error('UseError: Invalid use arguments, must be ' +
+    'SchemaDefinition, SchemaDefinitionConfig, source, GraphQLSchema, ' +
+    'GraphQLType, GraphQLDirective, function, or GraphQLFactoryPlugin');
   }
 
 
@@ -182,8 +199,7 @@ export class SchemaDefinition {
    * the current definition
    * @param {*} definition 
    */
-  merge(
-    definition: any) {
+  merge(definition: any) {
     const { conflict } = this._options;
     const config = definition instanceof SchemaDefinition ?
       definition._config :

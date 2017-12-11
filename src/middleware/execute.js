@@ -1,17 +1,21 @@
+import assert from 'assert';
 import { getArgumentValues } from 'graphql/execution/values';
 import { getOperationLocation } from '../utilities/directives';
+import { FactoryEvents } from '../definition/definition';
 import {
   GraphQLSkipResolveInstruction,
   GraphQLOmitTraceInstruction
 } from '../types';
 import {
   get,
+  find,
   promiseReduce,
   promiseMap,
   pick,
   cloneDeep
 } from '../jsutils';
 import {
+  Kind,
   getNamedType,
   getNullableType,
   GraphQLList,
@@ -221,6 +225,77 @@ export function resolveSubFields(fields, result, parentType, rargs, serial) {
 }
 
 /**
+ * Resolves directives on arguments. Arguments are resolved in parallel
+ * but directives on each argument are resolved serially
+ * @param {*} field 
+ * @param {*} selection 
+ * @param {*} context 
+ * @param {*} info 
+ */
+export function resolveArgDirectives(
+  field,
+  selection,
+  context,
+  info,
+  parentType
+) {
+  const execution = info.operation._factory.execution;
+  const location = DirectiveLocation.INPUT_FIELD_DEFINITION;
+  const args = getArgumentValues(field, selection, info.variableValues);
+  return promiseMap(args, (value, key) => {
+    const astNode = find(field.astNode.arguments, arg => {
+      return arg.name.value === key;
+    });
+
+    assert(astNode, 'ExecuteError: Failed to find astNode for ' +
+    'argument "' + key + '"');
+
+    const { resolveRequest } = getDirectiveResolvers(info, [
+      {
+        location,
+        astNode
+      }
+    ]);
+
+    const attachInfo = {
+      kind: Kind.INPUT_VALUE_DEFINITION,
+      parentField: field,
+      parentType,
+      argName: key,
+      astNode
+    };
+
+    // directives on args only resolve before the request is made
+    // so any resolveResult middleware defined is not processed.
+    // this is because an argument is an input value and should not
+    // modify output. if output modification is needed, it should be
+    // placed on the field definition or field where resolveResult 
+    // middleware is processed
+    return promiseReduce(resolveRequest, (prev, r) => {
+      const directiveInfo = buildDirectiveInfo(info, r, { attachInfo });
+      return instrumentResolver(
+        ExecutionType.DIRECTIVE,
+        r.directive.name,
+        r.resolve.name || 'resolve',
+        execution.resolvers,
+        directiveInfo,
+        r.resolve,
+        [ prev, r.args, context, directiveInfo ]
+      )
+      .then(directiveResult => {
+        return directiveResult === undefined ? prev : directiveResult;
+      });
+    }, value)
+    .then(directiveResult => {
+      if (directiveResult !== undefined) {
+        args[key] = directiveResult;
+      }
+    });
+  })
+  .then(() => args);
+}
+
+/**
  * Resolve a field containing a resolver and
  * then resolve any sub fields
  * @param {*} source 
@@ -264,98 +339,53 @@ export function resolveField(source, path, parentType, selection, rargs) {
     }
   ]);
 
-  // get field args and allow directives to modify them
-  const fieldInfo = {
-    args: getArgumentValues(field, selection, info.variableValues),
-    parentType,
-    fieldName: selection.name.value,
-    fieldNodes: [ selection ],
-    returnType: field.type,
-    path: cloneDeep(path)
-  };
+  return resolveArgDirectives(field, selection, context, info, parentType)
+    .then(args => {
+      // get field args and allow directives to modify them
+      const attachInfo = {
+        kind: Kind.FIELD_DEFINITION,
+        args,
+        parentType,
+        fieldName: selection.name.value,
+        fieldNodes: [ selection ],
+        returnType: field.type,
+        path: cloneDeep(path)
+      };
 
-  return promiseReduce(resolveRequest, (prev, r) => {
-    const directiveInfo = buildDirectiveInfo(info, r, { fieldInfo });
-    return instrumentResolver(
-      ExecutionType.DIRECTIVE,
-      r.directive.name,
-      r.resolve.name || 'resolve',
-      execution.resolvers,
-      directiveInfo,
-      r.resolve,
-      [ prev, r.args, context, directiveInfo ]
-    )
-    .then(directiveResult => {
-      return directiveResult === undefined ? prev : directiveResult;
-    });
-  })
-  .then(directiveResult => {
-    // allow setting of source from directive result
-    if (directiveResult !== undefined) {
-      // if the result is a skip resolve instruction, use the
-      // instruction's source value and return
-      if (directiveResult instanceof GraphQLSkipResolveInstruction) {
-        source[key] = directiveResult.source;
-        return directiveResult.source;
-      }
-      source[key] = directiveResult;
-    }
-
-    return instrumentResolver(
-      ExecutionType.RESOLVE,
-      pathStr,
-      resolver.name || 'resolve',
-      info.operation._factory.execution.resolvers,
-      info,
-      resolver,
-      buildFieldResolveArgs(
-        source,
-        context,
-        info,
-        path,
-        field,
-        selection,
-        fieldInfo.args,
-        parentType
-      ),
-      true
-    )
-      .then(result => {
-        const subFields = collectFields(fieldType, selection.selectionSet);
-
-        // if there are no subfields to resolve, return the results
-        if (!subFields.length) {
-          return result;
-        } else if (isList) {
-          if (!Array.isArray(result)) {
-            return;
+      return promiseReduce(resolveRequest, (prev, r) => {
+        const directiveInfo = buildDirectiveInfo(info, r, { attachInfo });
+        return instrumentResolver(
+          ExecutionType.DIRECTIVE,
+          r.directive.name,
+          r.resolve.name || 'resolve',
+          execution.resolvers,
+          directiveInfo,
+          r.resolve,
+          [ prev, r.args, context, directiveInfo ]
+        )
+        .then(directiveResult => {
+          return directiveResult === undefined ? prev : directiveResult;
+        });
+      })
+      .then(directiveResult => {
+        // allow setting of source from directive result
+        if (directiveResult !== undefined) {
+          // if the result is a skip resolve instruction, use the
+          // instruction's source value and return
+          if (directiveResult instanceof GraphQLSkipResolveInstruction) {
+            source[key] = directiveResult.source;
+            return directiveResult.source;
           }
-
-          return promiseMap(result, (res, idx) => {
-            const listPath = { prev: cloneDeep(path), key: idx };
-            return resolveSubFields(
-              subFields,
-              result[idx],
-              fieldType,
-              buildFieldResolveArgs(
-                source,
-                context,
-                info,
-                listPath,
-                field,
-                selection,
-                fieldInfo.args,
-                parentType
-              )
-            );
-          })
-          .then(() => result);
+          source[key] = directiveResult;
         }
-
-        return resolveSubFields(
-          subFields,
-          result,
-          fieldType,
+    
+        return instrumentResolver(
+          ExecutionType.RESOLVE,
+          pathStr,
+          resolver.name || 'resolve',
+          info.operation._factory.execution.resolvers,
+          info,
+          resolver,
           buildFieldResolveArgs(
             source,
             context,
@@ -363,30 +393,79 @@ export function resolveField(source, path, parentType, selection, rargs) {
             path,
             field,
             selection,
-            fieldInfo.args,
+            attachInfo.args,
             parentType
-          )
+          ),
+          true
         )
-        .then(() => result);
+          .then(result => {
+            const subFields = collectFields(fieldType, selection.selectionSet);
+    
+            // if there are no subfields to resolve, return the results
+            if (!subFields.length) {
+              return result;
+            } else if (isList) {
+              if (!Array.isArray(result)) {
+                return;
+              }
+    
+              return promiseMap(result, (res, idx) => {
+                const listPath = { prev: cloneDeep(path), key: idx };
+                return resolveSubFields(
+                  subFields,
+                  result[idx],
+                  fieldType,
+                  buildFieldResolveArgs(
+                    source,
+                    context,
+                    info,
+                    listPath,
+                    field,
+                    selection,
+                    attachInfo.args,
+                    parentType
+                  )
+                );
+              })
+              .then(() => result);
+            }
+    
+            return resolveSubFields(
+              subFields,
+              result,
+              fieldType,
+              buildFieldResolveArgs(
+                source,
+                context,
+                info,
+                path,
+                field,
+                selection,
+                attachInfo.args,
+                parentType
+              )
+            )
+            .then(() => result);
+          });
+      })
+      .then(result => {
+        return promiseReduce(resolveResult, (prev, r) => {
+          const directiveInfo = buildDirectiveInfo(info, r, { attachInfo });
+          return instrumentResolver(
+            ExecutionType.DIRECTIVE,
+            r.directive.name,
+            r.resolve.name || 'resolveResult',
+            execution.resolvers,
+            directiveInfo,
+            r.resolve,
+            [ prev, r.args, context, directiveInfo ]
+          );
+        }, result)
+        .then(directiveResult => {
+          return directiveResult === undefined ? result : directiveResult;
+        });
       });
-  })
-  .then(result => {
-    return promiseReduce(resolveResult, (prev, r) => {
-      const directiveInfo = buildDirectiveInfo(info, r, { fieldInfo });
-      return instrumentResolver(
-        ExecutionType.DIRECTIVE,
-        r.directive.name,
-        r.resolve.name || 'resolveResult',
-        execution.resolvers,
-        directiveInfo,
-        r.resolve,
-        [ prev, r.args, context, directiveInfo ]
-      );
-    }, result)
-    .then(directiveResult => {
-      return directiveResult === undefined ? result : directiveResult;
     });
-  });
 }
 
 /**
@@ -461,7 +540,15 @@ export function factoryExecute(...rargs) {
 
       // perform the entire execution from the first root resolver
       const request = promiseReduce(resolveRequest, (prev, r) => {
-        const directiveInfo = buildDirectiveInfo(info, r, { fieldInfo: {} });
+        const attachInfo = r.location === DirectiveLocation.SCHEMA ?
+          {
+            kind: Kind.SCHEMA_DEFINITION
+          } :
+          {
+            kind: Kind.OBJECT_TYPE_DEFINITION
+          };
+
+        const directiveInfo = buildDirectiveInfo(info, r, { attachInfo });
         return instrumentResolver(
           ExecutionType.DIRECTIVE,
           r.directive.name,
@@ -483,7 +570,15 @@ export function factoryExecute(...rargs) {
       })
       .then(() => {
         return promiseReduce(resolveResult, (prev, r) => {
-          const directiveInfo = buildDirectiveInfo(info, r, { fieldInfo: {} });
+          const attachInfo = r.location === DirectiveLocation.SCHEMA ?
+          {
+            kind: Kind.SCHEMA_DEFINITION
+          } :
+          {
+            kind: Kind.OBJECT_TYPE_DEFINITION
+          };
+
+          const directiveInfo = buildDirectiveInfo(info, r, { attachInfo });
           return instrumentResolver(
             ExecutionType.DIRECTIVE,
             r.directive.name,
@@ -498,11 +593,11 @@ export function factoryExecute(...rargs) {
       .then(() => {
         execution.end = Date.now();
         execution.duration = execution.end - execution.start;
-        // info.operation._factory.logger('execution', execution);
+        info.definition.emit(FactoryEvents.EXECUTION, execution);
       }, err => {
         execution.end = Date.now();
         execution.duration = execution.end - execution.start;
-        // info.operation._factory.logger('execution', execution);
+        info.definition.emit(FactoryEvents.EXECUTION, execution);
         return Promise.reject(err);
       });
 

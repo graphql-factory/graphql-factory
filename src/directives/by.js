@@ -1,24 +1,8 @@
-import { GraphQLFactoryDirective } from '../types';
+import { get, assert } from '../jsutils';
 import { DirectiveLocation } from 'graphql';
 
-function get(object, path, defaultValue) {
-  try {
-    if (!Array.isArray(path) || !path.length) {
-      return defaultValue;
-    }
-    let obj = object;
-    let key = null;
-    while(path.length) {
-      key = path.shift();
-      if (Object.getOwnPropertyNames(obj).indexOf(String(key)) === -1) {
-      	return defaultValue;
-      }
-      obj = obj[key];
-    }
-    return obj;
-  } catch (err) {
-    return defaultValue;
-  }
+function isString(str) {
+  return typeof str === 'string' && str !== '';
 }
 
 /**
@@ -35,7 +19,18 @@ function defaultResolveUser(source, args, context, info) {
     get(info, [ 'rootValue', 'userID' ]);
 }
 
-export default new GraphQLFactoryDirective({
+function getResolveUser(info, name) {
+  if (!isString(name)) {
+    return defaultResolveUser;
+  }
+  const fn = get(info, [ 'definition', 'functions', name ]);
+  assert(typeof fn === 'function', 'DirectiveError: @by requires ' +
+  'that the resolverUser argument be a reference to a resolve ' +
+  'function that can resolve the userID from the request');
+  return fn;
+}
+
+export default {
   name: 'by',
   description: 'Adds change data to the arguments based on user',
   locations: [
@@ -43,14 +38,40 @@ export default new GraphQLFactoryDirective({
     DirectiveLocation.FIELD_DEFINITION
   ],
   args: {
-    value: {
-      resolveUser: 'String',
-      createdByField: 'String',
-      createdOnField: 'String',
-      modifiedByField: 'String',
-      modifiedOnField: 'String' 
+    resolveUser: {
+      type: 'String',
+      description: 'Reference to a resolver function that returns the ' +
+      'userID value. Uses a default function if omitted.'
+    },
+    createdByField: {
+      type: 'String',
+      description: 'Argument name to use for setting the userID ' +
+      'of the creator. If omitted, the argument will not be set. Should ' +
+      'only be set on mutations that create.'
+    },
+    modifiedByField: {
+      type: 'String',
+      description: 'Argument name to use for setting the userID ' +
+      'of the modifier. If omitted, the argument will not be set. Should ' +
+      'only be set on mutations that modify.'
     }
   },
   resolve(source, args, context, info) {
+    assert(
+      isString(args.createdByField) && isString(args.modifiedByField),
+      'DirectiveError: @by requires either createdByField and/or ' +
+      'modifiedByField arguments to be set'
+    );
+    const resolveUser = getResolveUser(info, args.resolveUser);
+    const userID = resolveUser(source, args, context, info);
+    assert(isString(userID), 'DirectiveError: @by is unable to resolve the ' +
+    'userID with the given resolveUser function');
+
+    if (isString(args.createdByField)) {
+      info.attachInfo.args[args.createdByField] = userID;
+    }
+    if (isString(args.modifiedByField)) {
+      info.attachInfo.args[args.modifiedByField] = userID;
+    }
   }
-});
+};

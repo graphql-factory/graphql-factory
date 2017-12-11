@@ -70,7 +70,8 @@ export function buildDirectiveInfo(
     fragments: resolveInfo.fragments,
     rootValue: resolveInfo.rootValue,
     operation: resolveInfo.operation,
-    variableValues: resolveInfo.variableValues
+    variableValues: resolveInfo.variableValues,
+    definition: resolveInfo.definition
   }, extra);
 }
 

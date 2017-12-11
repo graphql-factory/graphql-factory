@@ -3,7 +3,9 @@ import {
   SchemaDefinition,
   getFieldDirectives,
   getSchemaDirectives,
-  getOperationDirectives
+  getOperationDirectives,
+  FactoryEvents,
+  directives
 } from '../src';
 import {
   DirectiveLocation
@@ -41,15 +43,13 @@ const definition = {
       }
     },
     test: {
-      locations: [
-        DirectiveLocation.QUERY,
-        DirectiveLocation.FIELD
-      ],
+      locations: _.values(DirectiveLocation),
       args: {
         value: { type: 'String' }
       },
       resolve(source, args, context, info) {
-        console.log(getOperationDirectives(info))
+        // console.log(args)
+        // console.log(getOperationDirectives(info))
         // info.fieldInfo.args.id = 2;
         // console.log(info);
       }
@@ -74,7 +74,12 @@ const definition = {
         readFoo: {
           type: 'Foo',
           args: {
-            id: 'String!'
+            id: {
+              type: 'String!',
+              '@directives': {
+                validate: { validator: 'isMatch' }
+              }
+            }
           },
           resolve(source, args, context, info) {
             return _.find(db.foo, { id: args.id });
@@ -84,7 +89,7 @@ const definition = {
     }
   },
   schema: {
-    directives: [ 'test', 'permission' ],
+    directives: [ 'test', 'permission', 'validate' ],
     query: 'Query'
   }
 };
@@ -93,7 +98,14 @@ const schema = new SchemaDefinition()
   .use(definition)
   .use({ context: { test: true } })
   .use({ context: { foo: false } })
+  .use(value => {
+    return value.match(/^\d+$/) !== null
+  }, 'isMatch')
+  .use({ directives })
+  //.on(FactoryEvents.EXECUTION, console.log)
   .buildSchema();
+
+// console.log(schema.definition)
 
 schema.request({
   source: `query MyQuery {

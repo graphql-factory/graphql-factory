@@ -1,3 +1,4 @@
+import { reduce } from './reduce';
 /**
  * Implements reduce on an iterable of promise/non-promise objects
  * @param iterable
@@ -8,11 +9,11 @@
  * Do not use flow here
  */
 export default function promiseReduce(iterable, reducer, initialValue) {
-  return iterable.reduce((previousPromise, currentPromise, count) => {
+  return reduce(iterable, (previousPromise, currentPromise, count) => {
     return Promise.resolve(previousPromise).then(result => {
       return Promise.resolve(currentPromise).then(current => {
-        return reducer(result, current, count);
+        return reducer(result, current, count, iterable);
       });
     });
-  }, Promise.resolve(initialValue));
+  }, Promise.resolve(initialValue), true);
 }

@@ -104,7 +104,7 @@ export type FactoryDirectiveDefinitionConfig = {
   args?: ?FactoryFieldConfigArgumentMap;
   resolve?: ?GraphQLFieldResolver<*, *>;
   resolveResult?: ?GraphQLFieldResolver<*, *>;
-  beforeBuild?:?() => ?mixed;
+  beforeBuild?: ?() => ?mixed;
 };
 
 export type FactoryDirectiveMap = ObjMap<mixed>;

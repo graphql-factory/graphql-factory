@@ -1,23 +1,16 @@
-import { get } from '../jsutils';
+import { assert, get } from '../jsutils';
 import { DirectiveLocation } from 'graphql';
-import {
-  GraphQLFactoryDirective,
-  GraphQLOmitTraceInstruction
-} from '../types';
+import { GraphQLOmitTraceInstruction } from '../types';
 
 function getValidator(info, args) {
-  const validator = get(
-    info,
-    [ 'definition', 'functions', args.validator ]
-  );
-  if (typeof validator !== 'function') {
-    throw new Error('DirectiveError: @validate requires that the ' +
-    'validator argument reference a function in the definition');
-  }
+  const validator = get(info, [ 'definition', 'functions', args.validator ]);
+  assert(typeof validator === 'function', 'DirectiveError: @validate ' +
+  'requires that the validator argument reference a function in ' +
+  'the definition');
   return validator;
 }
 
-export default new GraphQLFactoryDirective({
+export default {
   name: 'validate',
   description: 'Validates a field using a custom validator function. ' +
   'For FIELD and FIELD_DEFINITION location the field result will be ' +
@@ -26,19 +19,31 @@ export default new GraphQLFactoryDirective({
   'fails and return nothing if valid.',
   locations: [
     DirectiveLocation.FIELD,
-    DirectiveLocation.FIELD_DEFINITION
+    DirectiveLocation.FIELD_DEFINITION,
     DirectiveLocation.INPUT_FIELD_DEFINITION
   ],
   args: {
     validator: {
-      type: 'String!'
+      type: 'String!',
+      description: 'Reference to the name of the validator function ' +
+      'registered on the SchemaDefinition. Validator function should ' +
+      'return a boolean. Returning false will throw a GraphQLError.' +
+      'The validator takes a single argument which is the value of ' +
+      'The field or argument it is validating.'
     }
   },
   resolve(source, args, context, info) {
     switch (info.location) {
       case DirectiveLocation.INPUT_FIELD_DEFINITION:
         const validator = getValidator(info, args);
+        assert(validator(source), 'Validation failed on argument "' +
+        info.attachInfo.argName + '" of field "' +
+        info.attachInfo.parentField.name + '" of type "' +
+        info.attachInfo.parentType.name + '"',
+        info.attachInfo.astNode.location);
+        break;
       default:
+        // when performing no work, omit the trace
         return new GraphQLOmitTraceInstruction();
     }
   },
@@ -47,8 +52,13 @@ export default new GraphQLFactoryDirective({
       case DirectiveLocation.FIELD:
       case DirectiveLocation.FIELD_DEFINITION:
         const validator = getValidator(info, args);
+        assert(validator(source), 'Validation failed on field "' +
+        info.attachInfo.fieldName + '" of type "' +
+        info.attachInfo.parentType.name + '"');
+        break;
       default:
+        // when performing no work, omit the trace
         return new GraphQLOmitTraceInstruction();
     }
   }
-});
+};

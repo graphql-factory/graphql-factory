@@ -1,24 +1,19 @@
 export default function get(object, path, defaultValue) {
   try {
-    if (typeof object !== 'object' || object === null) {
+    if (!path) {
       return defaultValue;
     }
-
-    const fields = typeof path === 'string' || typeof path === 'number' ?
-    [ path ] :
-    path.slice();
-    let obj = object;
-
-    while (fields.length) {
-      const prop = fields.shift();
-      if (!Object.keys(obj).indexOf(prop) === -1) {
-        return defaultValue;
-      } else if (!fields.length) {
-        return obj[prop];
-      }
-      obj = obj[prop];
+    const p = Array.isArray(path) ? path : [ path ];
+    if (!p.length) {
+      return defaultValue;
     }
-    return defaultValue;
+    let obj = object;
+    let key = null;
+    while (p.length) {
+      key = p.shift();
+      obj = obj[key];
+    }
+    return obj;
   } catch (err) {
     return defaultValue;
   }

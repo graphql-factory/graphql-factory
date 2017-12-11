@@ -38,7 +38,7 @@ export function fixDefinition(definition, options) {
       case 'directives':
         break;
       case 'types':
-        fixTypes(definition, config, options);
+        fixTypes(definition, config, opts);
         break;
       case 'schema':
         break;

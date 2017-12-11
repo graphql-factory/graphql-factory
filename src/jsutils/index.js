@@ -5,7 +5,9 @@ import promiseReduce from './promiseReduce';
 import set from './set';
 import cloneDeep from './cloneDeep';
 
+export { assert } from './assert';
 export { forEach } from './forEach';
+export { find } from './find';
 export { reduce } from './reduce';
 export { map } from './map';
 export { intersection } from './intersection.js';

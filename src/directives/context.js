@@ -1,16 +1,13 @@
-import { GraphQLFactoryDirective } from '../types';
 import { DirectiveLocation } from 'graphql';
 
-export default new GraphQLFactoryDirective({
+export default {
   name: 'context',
-  description: 'Merges an object into the context',
-  locations: [
-    DirectiveLocation.FIELD,
-    DirectiveLocation.FIELD_DEFINITION
-  ],
+  description: 'Merges an object into the context.',
+  locations: Object.keys(DirectiveLocation).map(key => DirectiveLocation[key]),
   args: {
     value: {
-      type: 'JSON!'
+      type: 'JSON!',
+      description: 'Object to merge into the context of the request.'
     }
   },
   resolve(source, args, context) {
@@ -24,4 +21,4 @@ export default new GraphQLFactoryDirective({
     }
     Object.assign(context, args.value);
   }
-});
+};

@@ -12,4 +12,4 @@ export {
   GraphQLOmitTraceInstruction
 } from './instruction';
 export type { ExecutionLogger } from './logger.js';
-export type { GraphQLFactoryDirective } from './directive.js';
+export { GraphQLFactoryDirective } from './directive.js';

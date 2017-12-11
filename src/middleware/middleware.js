@@ -40,7 +40,7 @@ export function wrapMiddleware(definition, schema, options) {
   const opts = typeof options === 'object' && options !== null ?
     options :
     Object.create(null);
-  
+
   forEach(schema.getTypeMap(), (type, typeName) => {
     if (typeName.match(/^__/)) {
       return true;

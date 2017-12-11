@@ -23,14 +23,6 @@ import { DirectiveLocation } from 'graphql';
  *       1. perform query
  *       2. run sift on results in 
  */
-
-const example = `
-type Foo @permission(filter: { id: userID, role: { $in: ['ADMIN'] } }) {
-
-}
-
-`
-
 export class GraphQLFactoryAuthPlugin extends GraphQLFactoryPlugin {
   constructor() {
     super();
@@ -73,4 +65,4 @@ export class GraphQLFactoryAuthPlugin extends GraphQLFactoryPlugin {
   install(definition) {
 
   }
-};
+}
