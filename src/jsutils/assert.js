@@ -5,6 +5,6 @@ export function assert(condition, message, location) {
     const msg = typeof message === 'string' ?
       message :
       'AssertionError';
-    throw new GraphQLError(message, location);
+    throw new GraphQLError(msg, location);
   }
 }

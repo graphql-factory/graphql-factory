@@ -45,8 +45,10 @@ import type {
 import { mergeSchema, mergeWithConflicts } from './merge';
 import { wrapMiddleware } from '../middleware/middleware';
 
+export const DEFINITION_VERSION = '3.0.0';
+
 // reserved factory events
-export const FactoryEvents = {
+export const FactoryEvent = {
   EXECUTION: 'execution',
   ERROR: 'error',
   WARN: 'warn',
@@ -125,6 +127,7 @@ function useLanguage(
  * * conflict - how to resolve a type name conflict
  */
 export class SchemaDefinition extends EventEmitter {
+  version: string;
   _config: SchemaDefinitionConfig;
   _options: ObjMap<?mixed>;
 
@@ -132,6 +135,7 @@ export class SchemaDefinition extends EventEmitter {
     options?: ?ObjMap<?mixed>
   ) {
     super();
+    this.version = DEFINITION_VERSION;
     this._options = options !== null && typeof options === 'object' ?
       options :
       Object.create(null);
@@ -218,6 +222,7 @@ export class SchemaDefinition extends EventEmitter {
 
     if (isObject(context)) {
       this._config.context = mergeWithConflicts(
+        this,
         this._config.context,
         context,
         conflict,
@@ -227,6 +232,7 @@ export class SchemaDefinition extends EventEmitter {
 
     if (isObject(functions)) {
       this._config.functions = mergeWithConflicts(
+        this,
         this._config.functions,
         functions,
         conflict,
@@ -236,6 +242,7 @@ export class SchemaDefinition extends EventEmitter {
 
     if (isObject(directives)) {
       this._config.directives = mergeWithConflicts(
+        this,
         this._config.directives,
         directives,
         conflict,
@@ -245,6 +252,7 @@ export class SchemaDefinition extends EventEmitter {
 
     if (isObject(types)) {
       this._config.types = mergeWithConflicts(
+        this,
         this._config.types,
         types,
         conflict,

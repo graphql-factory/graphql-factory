@@ -1,9 +1,11 @@
 import {
+  get,
   forEach,
   union,
   cloneDeep,
   merge
 } from '../jsutils';
+import { FactoryEvent } from './definition';
 /**
  * Defines the possible actions for type name
  * conflict resolution
@@ -17,6 +19,41 @@ export const NameConflictResolution = {
 };
 
 /**
+ * Default conflict resolver for merging root types, context, and overwriting
+ * parts of type definitions
+ * @param {*} definition 
+ * @param {*} name 
+ * @param {*} type 
+ * @param {*} tgt 
+ * @param {*} src 
+ */
+function defaultConflictResolution(definition, name, type, tgt, src) {
+  // TODO: Add support for type/field level conflict settings
+  // TODO: Add support for extending types via extend key
+  switch(type) {
+    case 'type':
+      const {
+        query,
+        mutation,
+        subscription
+      } = get(definition, [ 'schema' ]) || {};
+      // always merge a rootTypes definition
+      if ([ query, mutation, subscription].indexOf(name) !== -1) {
+        return { name, config: merge(tgt, src) };
+      }
+      break;
+    case 'context':
+      return { name, config: merge(tgt, src) };
+    default:
+      break;
+  }
+  // emit a warning
+  definition.emit(FactoryEvent.WARN, 'MergeConflict: Duplicate ' + type +
+  ' with name "' + name + '" found. Using newer value');
+  return { name, config: tgt };
+}
+
+/**
  * Handles a type name conflict
  * returns an object containing the type name to use
  * and the type configuration to use. 
@@ -24,16 +61,16 @@ export const NameConflictResolution = {
  * @param {*} name 
  * @param {*} prefix 
  */
-function handleConflict(method, name, type, tgt, src) {
-  // allow the method to be a function that returns the new name
-  // and type configuration
-  if (typeof method === 'function') {
-    return method(name, type, tgt, src);
-  }
-
+function handleConflict(definition, method, name, type, tgt, src) {
   const _method = method ?
     method :
-    NameConflictResolution.MERGE;
+    defaultConflictResolution;
+  // allow the method to be a function that returns the new name
+  // and type configuration
+  if (typeof _method === 'function') {
+    return _method(definition, name, type, tgt, src);
+  }
+
   switch (_method) {
     // merges the target and source configurations
     case NameConflictResolution.MERGE:
@@ -47,11 +84,9 @@ function handleConflict(method, name, type, tgt, src) {
 
     // prints a warning and then overwrites the existing type definition
     case NameConflictResolution.WARN:
-      /* eslint-disable */
-      console.warn('\x1b[33m%s\x1b[0m', 'GraphQLFactoryWarning: duplicate ' +
-        'type name "' + name + '" found. Merging ' + type +
-        ' configuration');
-      /* eslint-enable */
+      definition.emit(FactoryEvent.WARN, 'GraphQLFactoryWarning: duplicate ' +
+      'type name "' + name + '" found. Merging ' + type +
+      ' configuration')
       return { name, config: merge(tgt, src) };
 
     // ignores the definition
@@ -125,7 +160,13 @@ export function mergeSchema(definition, source) {
  * @param {*} conflict 
  * @param {*} type 
  */
-export function mergeWithConflicts(target, source, conflict, type) {
+export function mergeWithConflicts(
+  definition,
+  target,
+  source,
+  conflict,
+  type
+) {
   if (!target) {
     return cloneDeep(source);
   } else if (!source) {
@@ -135,6 +176,7 @@ export function mergeWithConflicts(target, source, conflict, type) {
   forEach(source, (value, key) => {
     if (target[key]) {
       const { name, config } = handleConflict(
+        definition,
         conflict,
         key,
         type,

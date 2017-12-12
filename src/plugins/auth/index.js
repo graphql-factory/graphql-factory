@@ -1,4 +1,4 @@
-import { GraphQLFactoryPlugin } from '../plugin';
+import { GraphQLFactoryPlugin } from '../../types/plugin';
 import { DirectiveLocation } from 'graphql';
 /**
  * Plugin for authentication and authorization

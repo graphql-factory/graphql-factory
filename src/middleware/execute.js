@@ -1,7 +1,7 @@
 import assert from 'assert';
 import { getArgumentValues } from 'graphql/execution/values';
 import { getOperationLocation } from '../utilities/directives';
-import { FactoryEvents } from '../definition/definition';
+import { FactoryEvent } from '../definition/definition';
 import {
   GraphQLSkipResolveInstruction,
   GraphQLOmitTraceInstruction
@@ -378,7 +378,7 @@ export function resolveField(source, path, parentType, selection, rargs) {
           }
           source[key] = directiveResult;
         }
-    
+
         return instrumentResolver(
           ExecutionType.RESOLVE,
           pathStr,
@@ -400,7 +400,7 @@ export function resolveField(source, path, parentType, selection, rargs) {
         )
           .then(result => {
             const subFields = collectFields(fieldType, selection.selectionSet);
-    
+
             // if there are no subfields to resolve, return the results
             if (!subFields.length) {
               return result;
@@ -408,7 +408,7 @@ export function resolveField(source, path, parentType, selection, rargs) {
               if (!Array.isArray(result)) {
                 return;
               }
-    
+
               return promiseMap(result, (res, idx) => {
                 const listPath = { prev: cloneDeep(path), key: idx };
                 return resolveSubFields(
@@ -429,7 +429,7 @@ export function resolveField(source, path, parentType, selection, rargs) {
               })
               .then(() => result);
             }
-    
+
             return resolveSubFields(
               subFields,
               result,
@@ -593,11 +593,11 @@ export function factoryExecute(...rargs) {
       .then(() => {
         execution.end = Date.now();
         execution.duration = execution.end - execution.start;
-        info.definition.emit(FactoryEvents.EXECUTION, execution);
+        info.definition.emit(FactoryEvent.EXECUTION, execution);
       }, err => {
         execution.end = Date.now();
         execution.duration = execution.end - execution.start;
-        info.definition.emit(FactoryEvents.EXECUTION, execution);
+        info.definition.emit(FactoryEvent.EXECUTION, execution);
         return Promise.reject(err);
       });
 
