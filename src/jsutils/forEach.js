@@ -5,25 +5,23 @@
  * @param {*} iteratee 
  * @param {*} throwErrors 
  */
+import * as _ from './lodash.custom';
 
-export function forEach(collection, iteratee, throwErrors) {
-  if (typeof collection !== 'object' || collection === null) {
-    return;
-  }
+export function forEach(collection, iteratee, throwError) {
   let error = null;
-  const isArray = Array.isArray(collection);
 
-  Object.keys(collection).some(key => {
+  const fn = (value, key, coll) => {
     try {
-      const k = isArray ? Number(key) : String(key);
-      const value = collection[k];
-      return iteratee(value, key, collection) === false;
+      return error && throwError ? false : iteratee(value, key, coll);
     } catch (err) {
       error = err;
-      return true;
     }
-  });
-  if (throwErrors && error) {
+  };
+
+  const result = _.forEach(collection, fn);
+
+  if (throwError && error) {
     throw error;
   }
+  return result;
 }

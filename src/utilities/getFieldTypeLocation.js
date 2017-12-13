@@ -20,7 +20,7 @@ import type {
 } from 'graphql';
 
 // gets the location based on the field type
-export default function getFieldTypeLocation(
+export function getFieldTypeLocation(
   type: GraphQLType
 ): ?DirectiveLocationEnum {
   const namedType = getNamedType(type);

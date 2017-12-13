@@ -11,3 +11,4 @@ coverage
 dist
 .idea
 .vscode
+src/jsutils/lodash

@@ -4,23 +4,22 @@
  * @param {*} mapper
  * @param {*} throwError 
  */
+import * as _ from './lodash.custom';
+
 export function map(collection, mapper, throwError) {
-  if (typeof collection !== 'object' || collection === null) {
-    return [];
-  }
   let error = null;
-  const isArray = Array.isArray(collection);
-  const result = Object.keys(collection).map(key => {
+
+  const fn = (value, key, coll) => {
     try {
-      const k = isArray ? Number(key) : String(key);
-      const value = collection[k];
-      return mapper(value, key, collection);
+      return error && throwError ? undefined : mapper(value, key, coll);
     } catch (err) {
       error = err;
     }
-  });
+  };
 
-  if (throwError && error) {
+  const result = _.map(collection, fn);
+
+  if (throwError && error instanceof Error) {
     throw error;
   }
   return result;

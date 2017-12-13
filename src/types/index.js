@@ -1,15 +1,10 @@
 // @flow
-import JSONType from './JSON';
-import DateTimeType from './DateTime';
-
+export { JSONType, DateTimeType } from './scalars';
+export { GraphQLFactoryDirective } from './directive.js';
+export { GraphQLFactoryPlugin } from './plugin';
 export {
-  JSONType,
-  DateTimeType
-};
-export {
+  GraphQLInstruction,
   GraphQLSkipInstruction,
   GraphQLSkipResolveInstruction,
   GraphQLOmitTraceInstruction
 } from './instruction';
-export type { ExecutionLogger } from './logger.js';
-export { GraphQLFactoryDirective } from './directive.js';

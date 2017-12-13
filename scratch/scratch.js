@@ -18,103 +18,6 @@ import {
   makePath
 } from '../src/utilities/info';
 
-
-function getIntrospectionQuery(options?: IntrospectionOptions): string {
-  const descriptions = !(options && options.descriptions === false);
-  return `
-    query IntrospectionQuery {
-      __schema {
-        queryType { name }
-        mutationType { name }
-        subscriptionType { name }
-        types {
-          ...FullType
-        }
-        directives {
-          name
-          ${descriptions ? 'description' : ''}
-          locations
-          args {
-            ...InputValue
-          }
-        },
-        astNode
-      }
-    }
-    fragment FullType on __Type {
-      kind
-      name
-      ${descriptions ? 'description' : ''}
-      fields(includeDeprecated: true) {
-        name
-        ${descriptions ? 'description' : ''}
-        args {
-          ...InputValue
-        }
-        type {
-          ...TypeRef
-        }
-        isDeprecated
-        deprecationReason
-      }
-      inputFields {
-        ...InputValue
-      }
-      interfaces {
-        ...TypeRef
-      }
-      enumValues(includeDeprecated: true) {
-        name
-        ${descriptions ? 'description' : ''}
-        isDeprecated
-        deprecationReason
-      }
-      possibleTypes {
-        ...TypeRef
-      }
-    }
-    fragment InputValue on __InputValue {
-      name
-      ${descriptions ? 'description' : ''}
-      type { ...TypeRef }
-      defaultValue
-    }
-    fragment TypeRef on __Type {
-      kind
-      name
-      ofType {
-        kind
-        name
-        ofType {
-          kind
-          name
-          ofType {
-            kind
-            name
-            ofType {
-              kind
-              name
-              ofType {
-                kind
-                name
-                ofType {
-                  kind
-                  name
-                  ofType {
-                    kind
-                    name
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  `;
-}
-
-
 const db = {
   foo: [
     { id: '1', name: 'Foo1' },
@@ -234,15 +137,10 @@ let source = `query MyQuery {
   }
 }`
 
-source = getIntrospectionQuery()
-
-
 schema.request({
   source
 })
-.then(intro => {
-  console.log(intro.data)
-  const s = buildClientSchema(intro.data)
-  console.log(printSchema(s))
+.then(result => {
+  console.log(result)
 })
 .catch(console.error)

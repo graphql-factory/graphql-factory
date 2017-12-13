@@ -4,24 +4,24 @@
  * @param {*} reducer 
  * @param {*} initialValue 
  */
+import * as _ from './lodash.custom';
+
 export function reduce(collection, reducer, initialValue, throwError) {
   let error = null;
-  const isArray = Array.isArray(collection);
 
-  const result = Object.keys(collection).reduce((accum, key) => {
+  const fn = (accum, value, key, coll) => {
     try {
-      if (error) {
-        return;
-      }
-      const k = isArray ? Number(key) : String(key);
-      const value = collection[k];
-      return reducer(accum, value, key, collection);
+      return error ? accum : reducer(accum, value, key, coll);
     } catch (err) {
       error = err;
     }
-  }, initialValue);
+  };
 
-  if (throwError && error) {
+  const result = initialValue ?
+    _.reduce(collection, fn, initialValue) :
+    _.reduce(collection, fn);
+
+  if (throwError && error instanceof Error) {
     throw error;
   }
   return result;

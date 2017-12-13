@@ -3,7 +3,9 @@ import {
   forEach,
   union,
   cloneDeep,
-  merge
+  merge,
+  isFunction,
+  isObject
 } from '../jsutils';
 import { FactoryEvent } from './definition';
 /**
@@ -42,6 +44,8 @@ function defaultConflictResolution(definition, name, type, tgt, src) {
         return { name, config: merge(tgt, src) };
       }
       break;
+    case 'function':
+      return { name, config: Object.assign(tgt, src) };
     case 'context':
       return { name, config: merge(tgt, src) };
     default:
@@ -131,6 +135,7 @@ export function mergeSchema(definition, source) {
           break;
         }
         mergeWithConflicts(
+          definition,
           defRootType.fields,
           srcRootType.fields,
           conflict,
@@ -139,6 +144,7 @@ export function mergeSchema(definition, source) {
         break;
       case '@directives':
         defSchema[name] = mergeWithConflicts(
+          definition,
           defSchema[name],
           srcSchema[name],
           conflict,
@@ -170,6 +176,7 @@ export function mergeWithConflicts(
   if (!target) {
     return cloneDeep(source);
   } else if (!source) {
+
     return target;
   }
 
@@ -185,7 +192,11 @@ export function mergeWithConflicts(
       );
       target[name] = cloneDeep(config);
     } else {
-      target[key] = cloneDeep(value);
+      target[key] = isFunction(value) ?
+        value :
+        isObject(value) ?
+          cloneDeep(value) :
+          value;
     }
   }, true);
 

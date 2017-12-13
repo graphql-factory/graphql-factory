@@ -3,7 +3,7 @@ import context from './context';
 import id from './id';
 import validate from './validate';
 
-export default {
+export const directives = {
   by,
   context,
   id,

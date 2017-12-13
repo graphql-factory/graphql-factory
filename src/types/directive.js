@@ -10,7 +10,7 @@
  } from 'graphql';
 
  import { GraphQLDirective } from 'graphql';
- import { set } from '../jsutils';
+ import { lodash as _ } from '../jsutils';
 
 export type GraphQLFactoryDirectiveConfig = {
   name: string;
@@ -46,16 +46,16 @@ export class GraphQLFactoryDirective {
     });
 
     // add resolvers
-    if (typeof resolve === 'function') {
-      set(directive, [ 'resolve' ], resolve);
+    if (_.isFunction(resolve)) {
+      _.set(directive, [ 'resolve' ], resolve);
     }
-    if (typeof resolveResult === 'function') {
-      set(directive, [ 'resolveResult' ], resolveResult);
+    if (_.isFunction(resolveResult)) {
+      _.set(directive, [ 'resolveResult' ], resolveResult);
     }
 
     // add hooks
-    if (typeof beforeBuild === 'function') {
-      set(directive, [ 'beforeBuild' ], beforeBuild);
+    if (_.isFunction(beforeBuild)) {
+      _.set(directive, [ 'beforeBuild' ], beforeBuild);
     }
 
     // return the modified directive

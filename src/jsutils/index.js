@@ -1,38 +1,11 @@
-import get from './get';
-import getFieldTypeLocation from './getFieldTypeLocation';
-import isHashLike from './isHashLike';
-import promiseReduce from './promiseReduce';
-import set from './set';
-import cloneDeep from './cloneDeep';
-
-export { assert } from './assert';
+import * as lodash from './lodash.custom';
+import * as errors from './errors';
+export { lodash, errors };
+export { assert, asrt } from './assert';
 export { forEach } from './forEach';
-export { find } from './find';
-export { reduce } from './reduce';
-export { map } from './map';
-export { intersection } from './intersection.js';
 export { indent } from './indent';
-export { union } from './union';
-export { merge } from './merge';
+export { map } from './map';
 export { promiseMap } from './promiseMap';
-export { noop } from './noop';
-export { omit } from './omit';
-export { pick } from './pick';
-export { AsyncIterator } from './asyncIterator';
-
-export {
-  get,
-  set,
-  getFieldTypeLocation,
-  isHashLike,
-  promiseReduce,
-  cloneDeep
-};
-export {
-  getPromise,
-  promiseForObject
-} from './promise';
-export {
-  isObject,
-  assertObject
-} from './assertions';
+export { promiseReduce } from './promiseReduce';
+export { reduce } from './reduce';
+export { stringMatch } from './stringMatch';

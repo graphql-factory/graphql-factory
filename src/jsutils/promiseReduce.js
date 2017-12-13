@@ -8,7 +8,7 @@ import { reduce } from './reduce';
  * 
  * Do not use flow here
  */
-export default function promiseReduce(iterable, reducer, initialValue) {
+export function promiseReduce(iterable, reducer, initialValue) {
   return reduce(iterable, (previousPromise, currentPromise, count) => {
     return Promise.resolve(previousPromise).then(result => {
       return Promise.resolve(currentPromise).then(current => {

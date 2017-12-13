@@ -1,39 +1,15 @@
-// @flow
-import buildSchema from './utilities/buildSchema';
-import resolvers from './resolvers';
-import directives from './directives';
-export { SchemaBacking } from './backing/backing';
+/**
+ * @flow
+ */
+export { SchemaBacking } from './definition';
+export { directives } from './directives';
 export {
-  SchemaDefinition,
-  FactoryEvents
-} from './definition/definition';
-export {
+  JSONType,
+  DateTimeType,
+  GraphQLFactoryDirective,
+  GraphQLFactoryPlugin,
+  GraphQLInstruction,
   GraphQLSkipInstruction,
-  GraphQLFactoryDirective
+  GraphQLSkipResolveInstruction,
+  GraphQLOmitTraceInstruction
 } from './types';
-export {
-  buildSchema,
-  directives,
-  resolvers
-};
-export {
-  deconstructSchema,
-  deconstructDirective,
-  deconstructType
-} from './utilities/deconstruct.js';
-export { exportDefinition } from './utilities/export';
-export { request } from './utilities/request';
-export { AsyncIterator } from './jsutils';
-export {
-  getFieldDirectives,
-  getSchemaDirectives,
-  getOperationDirectives,
-  getDirectivesFromAST,
-  DirectiveLocationMap
-} from './utilities/directives';
-export {
-  isRootResolver,
-  getSelection,
-  operationType,
-  fieldPath
-} from './utilities/info';
