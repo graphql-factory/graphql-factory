@@ -20,8 +20,45 @@
 import EventEmitter from 'events';
 import type { ObjMap } from 'graphql/jsutils/ObjMap';
 import type { GraphQLFieldResolver } from 'graphql';
+import { GraphQLSchema, GraphQLDirective } from 'graphql';
+import { JSONType, DateTimeType, GraphQLFactoryPlugin } from '../types';
+import { SchemaBacking } from './backing';
+import { lodash as _, stringMatch, asrt } from '../jsutils';
+import {
+  useLanguage,
+  useSchema,
+  useDirective,
+  usePlugin,
+  useBacking
+} from './use';
 
 export const DEFINITION_VERSION = '3.0.0';
+
+const DEFINITION_FIELDS = [
+  'context',
+  'functions',
+  'directives',
+  'types',
+  'schema'
+];
+
+/**
+ * Assert with SchemaDefinitionErrors
+ * @param {*} condition 
+ * @param {*} message 
+ * @param {*} metadata 
+ */
+function assert(condition, message, metadata) {
+  return asrt('definition', condition, message, metadata);
+}
+
+/**
+ * Determines if the object has one or more definition keys
+ * @param {*} obj 
+ */
+function isDefinitionLike(obj) {
+  return _.intersection(_.keys(obj), DEFINITION_FIELDS).length > 0
+}
 
 export class SchemaDefinition extends EventEmitter {
   _context: ObjMap<any>;
@@ -35,32 +72,108 @@ export class SchemaDefinition extends EventEmitter {
     this._context = {};
     this._functions = {};
     this._directives = {};
-    this._types = {};
+    this._types = {
+      DateTime: DateTimeType,
+      JSON: JSONType
+    };
     this._schema = null;
   }
 
-  use() {
+  /**
+   * Adds definition configuration from various sources
+   * @param {*} args 
+   */
+  use(...args: Array<any>) {
+    const [ arg0, arg1, arg2 ] = args;
+    
+    // .use(SchemaDefinition)
+    if (arg0 instanceof SchemaDefinition) {
+      return this.merge(arg0);
+    }
 
+    // .use(SchemaBacking)
+    if (arg0 instanceof SchemaBacking) {
+      return useBacking.call(this, arg0);
+    }
+
+    // .use(GraphQLSchema [, namePrefix])
+    if (arg0 instanceof GraphQLSchema) {
+      return useSchema.call(this, arg0, arg1);
+    }
+
+    // .use(GraphQLDirective)
+    if (arg0 instanceof GraphQLDirective) {
+      return useDirective.call(this, arg0);
+    }
+
+    // .use(GraphQLType) ??? should this be supported
+
+    // .use(GraphFactoryPlugin)
+    if (arg0 instanceof GraphQLFactoryPlugin) {
+      return usePlugin.call(this, arg0);
+    }
+    
+    // .use(languageDefinition [, SchemaBacking] [, namePrefix])
+    if (stringMatch(arg0, true)) {
+      return useLanguage.call(this, arg0, arg1, arg2);
+    }
+    
+    // .use(function, name)
+    if (_.isFunction(arg0)) {
+      assert(stringMatch(arg1, true), 'function name required');
+      return this.merge(_.set({}, [ 'functions', arg1 ], arg0));
+    }
+
+    // .use(SchemaDefinitionConfig)
+    if (isDefinitionLike(arg0)) {
+      return this.merge(arg0);
+    }
+
+    // throw error if no conditions matched
+    assert(false, 'invalid use arguments');
   }
 
-  merge() {
-
+  merge(definition: any) {
+    return this;
   }
 
   fix() {
-
+    return this;
   }
 
   validate() {
-
+    return this;
   }
 
   export() {
 
   }
 
-  buildSchema() {
+  /**
+   * Builds an executable schema from the current definition
+   * 
+   * Options
+   *   * [useMiddleware=true]: wrap each resolver in middleware
+   *   * [factoryExecution=true]: uses custom graphql-factory execution
+   *                              which takes over the resolvers
+   */
+  buildSchema(options?: ?ObjMap<?mixed>) {
+    const opts = Object.assign({}, options);
+    const wrap = opts.useMiddleware !== false;
+    /*
+    const opts = typeof options === 'object' && options !== null ?
+      options :
+      Object.create(null);
 
+    // option to bypass middleware wraping
+    const wrap = opts.useMiddleware !== false;
+
+    // create the schema
+    const { definition, backing } = this.export(opts);
+    const schema = buildSchema(definition, backing);
+    set(schema, 'definition', this);
+    return wrap ? wrapMiddleware(this, schema, opts) : schema;
+    */
   }
 
   get context(): ?ObjMap<any> {
@@ -106,7 +219,6 @@ export type FactoryDirectiveConfig = {
   resolveResult?: ?GraphQLFieldResolver<*, *>,
   beforeBuild?: ?() => any
 };
-
 
 // TODO: fully define these
 export type FactoryFieldConfigArgumentMap = ObjMap<?mixed>;

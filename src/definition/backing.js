@@ -48,8 +48,21 @@ import {
   reduce,
   errors
 } from '../jsutils';
+import { SchemaDefinition } from './definition';
 
 export const BACKING_VERSION = '1.0.0';
+
+/**
+ * Sets a function at a specific path if its actually a function
+ * @param {*} obj 
+ * @param {*} path 
+ * @param {*} fn 
+ */
+function setFn(obj: any, path: any, fn: any) {
+  if (_.isFunction(fn)) {
+    _.set(obj, path, fn);
+  }
+}
 
 /**
  * Assert errors as backing errors
@@ -347,6 +360,7 @@ export class SchemaBacking {
    */
   validate(config?: SchemaBackingConfig) {
     validate(config ? config : this.backing);
+    return this;
   }
 
   /**
@@ -362,7 +376,7 @@ export class SchemaBacking {
       _.merge(this._types, _backing.types);
       _.merge(this._directives, _backing.directives);
     }, true);
-    return this;
+    return this.validate();
   }
 
   /**
@@ -377,6 +391,52 @@ export class SchemaBacking {
       default:
         throw new errors.SchemaBackingError('invalid export format');
     }
+  }
+
+  /**
+   * Imports a SchemaBacking from a SchemaDefinition
+   * @param {*} definition 
+   */
+  import(definition: SchemaDefinition) {
+    // extract type backings
+    _.forEach(definition.types, (config, name) => {
+      _.forEach(config, (value, key) => {
+        switch (key) {
+          case 'serialize':
+          case 'parseValue':
+          case 'parseLiteral':
+          case 'isTypeOf':
+          case 'resolveType':
+            setFn(this._types, [ name, key ], value);
+            break;
+          case 'fields':
+            _.forEach(value, (field, fieldName) => {
+              if (_.isObjectLike(field)) {
+                const { resolve, subscribe } = field;
+                const base = [ name, key, fieldName ];
+                setFn(this._types, base.concat('resolve'), resolve);
+                setFn(this._types, base.concat('subscribe'), subscribe);
+              }
+            }, true);
+            break;
+          default:
+            break;
+        }
+      }, true);
+    }, true);
+
+    // extract directive backings
+    _.forEach(definition.directives, (config, name) => {
+      if (_.isObjectLike(config)) {
+        const { resolve, resolveResult, beforeBuild } = config;
+        setFn(this._directives, [ name, 'resolve' ], resolve);
+        setFn(this._directives, [ name, 'resolveResult' ], resolveResult);
+        setFn(this._directives, [ name, 'beforeBuild' ], beforeBuild);
+      }
+    }, true);
+
+    // validate and return the backing
+    return this.validate();
   }
 }
 

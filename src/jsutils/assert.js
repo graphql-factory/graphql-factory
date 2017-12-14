@@ -21,12 +21,12 @@ export function asrt(
   type: string,
   condition: boolean,
   message: string,
-  metadata: any
+  ...metadata: Array<any>
 ) {
   if (!condition) {
     const CustomError = errors[type];
     if (CustomError) {
-      throw new CustomError(message, metadata);
+      throw new CustomError(message, ...metadata);
     }
     throw new Error(message);
   }
