@@ -1,29 +1,28 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { lodash as _ } from '../../jsutils';
 import {
-  GraphQLSchema,
+  // GraphQLSchema,
   GraphQLObjectType,
   GraphQLString,
   GraphQLNonNull,
   GraphQLList
 } from 'graphql';
 import {
-  deconstructDirective,
-  deconstructSchema,
+  // deconstructDirective,
+  // deconstructSchema,
   deconstructType
 } from '../deconstruct';
 
 const fn = () => null;
 
-describe('deconstruct tests', () => {
-  it('deconstructs an Object', () => {
+describe('deconstruct tests', function () {
+  it('deconstructs an Object', function () {
     const Foo = new GraphQLObjectType({
       name: 'Foo',
       description: 'a foo',
       fields: {
         id: { type: new GraphQLNonNull(GraphQLString) },
-        name: { type: GraphQLString } 
+        name: { type: GraphQLString }
       }
     });
 
@@ -240,4 +239,4 @@ describe('deconstruct tests', () => {
     })
   })
   */
-})
+});
