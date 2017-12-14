@@ -6,6 +6,7 @@ export { SchemaBacking } from './definition';
 export { directives } from './directives';
 export {
   buildSchema,
+  printDefinition,
   request
 } from './utilities';
 export {

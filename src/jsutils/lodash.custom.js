@@ -10,6 +10,7 @@ import findIndex from './lodash/findIndex';
 import flatten from './lodash/flatten';
 import forEach from './lodash/forEach';
 import get from './lodash/get';
+import has from './lodash/has';
 import hasIn from './lodash/hasIn';
 import identity from './lodash/identity';
 import intersection from './lodash/intersection';
@@ -69,6 +70,7 @@ export {
   flatten,
   forEach,
   get,
+  has,
   hasIn,
   identity,
   intersection,

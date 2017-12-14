@@ -13,7 +13,8 @@ import {
   GraphQLInputObjectType,
   GraphQLEnumType,
   GraphQLInterfaceType,
-  GraphQLUnionType
+  GraphQLUnionType,
+  GraphQLDirective
 } from 'graphql';
 import type {
   GraphQLType,
@@ -21,13 +22,14 @@ import type {
   GraphQLField,
   GraphQLArgument,
   GraphQLInputField,
-  GraphQLDirective,
   GraphQLEnumValueConfig
 } from 'graphql';
 import {
   lodash as _,
   forEach,
-  reduce
+  reduce,
+  stringMatch,
+  setIf
 } from '../jsutils';
 
 export const DefaultDirectives = [
@@ -64,7 +66,7 @@ export function parseASTNode(astNode: ASTNode) {
       return reduce(fields, (val, field) => {
         val[field.name.value] = parseASTNode(field.value);
         return val;
-      }, Object.create(null));
+      }, Object.create(null), true);
     }
     case Kind.LIST:
       return values.map(parseASTNode);
@@ -98,10 +100,119 @@ export function extractDirectives(astNode: ASTNode) {
       config[name] = reduce(args, (argDef, node) => {
         argDef[node.name.value] = parseASTNode(node.value);
         return argDef;
-      }, Object.create(null));
+      }, Object.create(null), true);
       return config;
-    }, Object.create(null));
+    }, Object.create(null), true);
   }
+}
+
+/**
+ * Sets definition values based on key and validation
+ * @param {*} def 
+ * @param {*} key 
+ * @param {*} value
+ * @param {*} allowed
+ */
+export function setDef(
+  def: any,
+  key: string,
+  value: any,
+  allowed: Array<string>,
+  object?: ?any
+) {
+  if (value !== undefined && allowed.indexOf(key) !== -1) {
+    switch (key) {
+      case 'args':
+        const _args = reduce(value, (args, arg) => {
+          const argDef = processArg(arg);
+          args[argDef.name] = argDef.arg;
+          return args;
+        }, Object.create(null), true);
+        setIf(def, key, _args, _.keys(_args).length);
+        break;
+      case 'astNode':
+        const directives = extractDirectives(value);
+        setIf(def, '@directives', directives, Boolean(directives));
+        break;
+      case 'interfaces':
+        if (object instanceof GraphQLObjectType) {
+          const interfaces = object.getInterfaces();
+          if (interfaces.length) {
+            def.interfaces = interfaces.map(({ name }) => name);
+          }
+        }
+        break;
+      case 'locations':
+      case 'value':
+      case 'deprecationReason':
+      case 'defaultValue':
+        def[key] = value;
+        break;
+      case 'description':
+        setIf(def, key, value, stringMatch(value, true));
+        break;
+      case 'subscribe':
+      case 'resolve':
+        if (object instanceof GraphQLDirective) {
+          setIf(def, key, value, _.isFunction(value));
+        } else {
+          const resolver = _.isFunction(_.get(value, '__resolver')) ?
+          value.__resolver :
+          value;
+          setIf(def, key, resolver, _.isFunction(value));
+        }
+        break;
+      case 'type':
+        def[key] = processType(value);
+        break;
+      case 'isTypeOf':
+      case 'serialize':
+      case 'parseValue':
+      case 'parseLiteral':
+      case 'resolveResult':
+      case 'beforeBuild':
+        setIf(def, key, value, _.isFunction(value));
+        break;
+      case 'values':
+        if (object instanceof GraphQLEnumType) {
+          def[key] = reduce(object.getValues(), (valDef, val) => {
+            valDef[val.name] = processEnumValue(val);
+            return valDef;
+          }, Object.create(null), true);
+        }
+        break;
+      case 'types':
+        if (object instanceof GraphQLUnionType) {
+          def[key] = object.getTypes().map(({ name }) => name);
+        }
+        break;
+      case 'fields':
+        if (
+          object instanceof GraphQLObjectType ||
+          object instanceof GraphQLInterfaceType ||
+          object instanceof GraphQLInputObjectType
+        ) {
+          def.fields = reduce(object.getFields(), (fields, field, name) => {
+            fields[name] = object instanceof GraphQLInputObjectType ?
+              processArg(field).arg :
+              processField(field);
+            return fields;
+          }, Object.create(null), true);
+        }
+        break;
+      case 'resolveType':
+        setIf(
+          def,
+          key,
+          value,
+          _.isFunction(value) && value.name !== 'cannotExecuteSchema'
+        );
+        break;
+      default:
+        break;
+    }
+  }
+  return def;
 }
 
 /**
@@ -111,28 +222,13 @@ export function extractDirectives(astNode: ASTNode) {
 export function processArg(definition: GraphQLArgument | GraphQLInputField) {
   const { name } = definition;
   const arg = reduce(definition, (def, value, key) => {
-    if (value !== undefined) {
-      switch (key) {
-        case 'type':
-          def[key] = processType(value);
-          break;
-        case 'defaultValue':
-          def[key] = value;
-          break;
-        case 'description':
-        _.set(def, key, value, (value !== ''));
-          break;
-        case 'astNode':
-          const directives = extractDirectives(value);
-          _.set(def, '@directives', directives, Boolean(directives));
-          break;
-        default:
-          break;
-      }
-    }
-    return def;
-  }, Object.create(null));
-
+    return setDef(def, key, value, [
+      'type',
+      'defaultValue',
+      'description',
+      'astNode'
+    ]);
+  }, Object.create(null), true);
   return { name, arg };
 }
 
@@ -144,25 +240,13 @@ export function processEnumValue(
   val: GraphQLEnumValueConfig
 ) {
   return reduce(val, (def, value, key) => {
-    if (value !== undefined) {
-      switch (key) {
-        case 'description':
-          _.set(def, key, value, (value !== ''));
-          break;
-        case 'value':
-        case 'deprecationReason':
-          def[key] = value;
-          break;
-        case 'astNode':
-          const directives = extractDirectives(value);
-          _.set(def, '@directives', directives, Boolean(directives));
-          break;
-        default:
-          break;
-      }
-    }
-    return def;
-  }, Object.create(null));
+    return setDef(def, key, value, [
+      'description',
+      'value',
+      'deprecationReason',
+      'astNode'
+    ]);
+  }, Object.create(null), true);
 }
 
 /**
@@ -171,58 +255,16 @@ export function processEnumValue(
  */
 export function processField(definition: GraphQLField<*, *>) {
   return reduce(definition, (def, value, key) => {
-    if (value !== undefined) {
-      switch (key) {
-        case 'description':
-          _.set(def, key, value, (value !== ''));
-          break;
-        case 'type':
-          def[key] = processType(value);
-          break;
-        case 'args':
-          def[key] = reduce(value, (args, arg) => {
-            const argDef = processArg(arg);
-            args[argDef.name] = argDef.arg;
-            return args;
-          }, Object.create(null));
-          break;
-        case 'subscribe':
-          if (typeof value === 'function') {
-            _.set(
-              def,
-              'subscribe',
-              typeof value.__resolver === 'function' ?
-                value.__resolver :
-                value
-            );
-          }
-          break;
-        case 'resolve':
-          if (typeof value === 'function') {
-            _.set(
-              def,
-              'resolve',
-              // check for a __resolver field which is set by factory
-              // to preserve the original field resolver
-              typeof value.__resolver === 'function' ?
-                value.__resolver :
-                value
-            );
-          }
-          break;
-        case 'deprecationReason':
-          def[key] = value;
-          break;
-        case 'astNode':
-          const directives = extractDirectives(value);
-          _.set(def, '@directives', directives, Boolean(directives));
-          break;
-        default:
-          break;
-      }
-    }
-    return def;
-  }, Object.create(null));
+    return setDef(def, key, value, [
+      'description',
+      'type',
+      'args',
+      'subscribe',
+      'resolve',
+      'deprecationReason',
+      'astNode'
+    ]);
+  }, Object.create(null), true);
 }
 
 /**
@@ -231,38 +273,14 @@ export function processField(definition: GraphQLField<*, *>) {
  */
 function processObjectType(object: GraphQLObjectType) {
   return reduce(object._typeConfig, (def, value, key) => {
-    if (value !== undefined) {
-      switch (key) {
-        case 'interfaces':
-          const interfaces = object.getInterfaces();
-          if (interfaces.length) {
-            def.interfaces = interfaces.map(({ name }) => name);
-          }
-          break;
-        case 'fields':
-          def.fields = reduce(object.getFields(), (fields, field, name) => {
-            fields[name] = processField(field);
-            return fields;
-          }, Object.create(null));
-          break;
-        case 'isTypeOf':
-          _.set(def, key, value, (typeof value === 'function'));
-          break;
-        case 'description':
-          _.set(def, key, value, (value !== ''));
-          break;
-        case 'astNode':
-          const directives = extractDirectives(_.get(object, [ 'astNode' ]));
-          _.set(def, '@directives', directives, Boolean(directives));
-          break;
-        default:
-          break;
-      }
-    }
-    return def;
-  }, {
-    type: 'Object'
-  });
+    return setDef(def, key, value, [
+      'description',
+      'interfaces',
+      'fields',
+      'isTypeOf',
+      'astNode'
+    ], object);
+  }, { type: 'Object' }, true);
 }
 
 /**
@@ -271,29 +289,12 @@ function processObjectType(object: GraphQLObjectType) {
  */
 function processInputObjectType(object: GraphQLInputObjectType) {
   return reduce(object._typeConfig, (def, value, key) => {
-    if (value !== undefined) {
-      switch (key) {
-        case 'fields':
-          def.fields = reduce(object.getFields(), (fields, field, name) => {
-            fields[name] = processArg(field).arg;
-            return fields;
-          }, Object.create(null));
-          break;
-        case 'description':
-          _.set(def, key, value, (value !== ''));
-          break;
-        case 'astNode':
-          const directives = extractDirectives(_.get(object, [ 'astNode' ]));
-          _.set(def, '@directives', directives, Boolean(directives));
-          break;
-        default:
-          break;
-      }
-    }
-    return def;
-  }, {
-    type: 'Input'
-  });
+    return setDef(def, key, value, [
+      'description',
+      'fields',
+      'astNode'
+    ], object);
+  }, { type: 'Input' }, true);
 }
 
 /**
@@ -302,32 +303,14 @@ function processInputObjectType(object: GraphQLInputObjectType) {
  */
 export function processScalarType(scalar: GraphQLScalarType) {
   return reduce(scalar._scalarConfig, (def, value, key) => {
-    if (value !== undefined) {
-      switch (key) {
-        case 'description':
-          _.set(def, key, value, (value !== ''));
-          break;
-        case 'serialize':
-          _.set(def, key, value, (typeof value === 'function'));
-          break;
-        case 'parseValue':
-          _.set(def, key, value, (typeof value === 'function'));
-          break;
-        case 'parseLiteral':
-          _.set(def, key, value, (typeof value === 'function'));
-          break;
-        case 'astNode':
-          const directives = extractDirectives(_.get(scalar, [ 'astNode' ]));
-          _.set(def, '@directives', directives, Boolean(directives));
-          break;
-        default:
-          break;
-      }
-    }
-    return def;
-  }, {
-    type: 'Scalar'
-  });
+    return setDef(def, key, value, [
+      'description',
+      'serialize',
+      'parseValue',
+      'parseLiteral',
+      'astNode'
+    ]);
+  }, { type: 'Scalar' }, true);
 }
 
 /**
@@ -336,37 +319,13 @@ export function processScalarType(scalar: GraphQLScalarType) {
  */
 export function processUnionType(union: GraphQLUnionType) {
   return reduce(union._typeConfig, (def, value, key) => {
-    if (value !== undefined) {
-      switch (key) {
-        case 'types':
-          def[key] = union.getTypes().map(({ name }) => name);
-          break;
-        case 'resolveType':
-          _.set(
-            def,
-            key,
-            value,
-            (
-              typeof value === 'function' &&
-              value.name !== 'cannotExecuteSchema'
-            )
-          );
-          break;
-        case 'description':
-          _.set(def, key, value, (value !== ''));
-          break;
-        case 'astNode':
-          const directives = extractDirectives(_.get(union, [ 'astNode' ]));
-          _.set(def, '@directives', directives, Boolean(directives));
-          break;
-        default:
-          break;
-      }
-    }
-    return def;
-  }, {
-    type: 'Union'
-  });
+    return setDef(def, key, value, [
+      'description',
+      'types',
+      'resolveType',
+      'astNode'
+    ], union);
+  }, { type: 'Union' }, true);
 }
 
 /**
@@ -375,40 +334,13 @@ export function processUnionType(union: GraphQLUnionType) {
  */
 export function processInterfaceType(iface: GraphQLInterfaceType) {
   return reduce(iface._typeConfig, (def, value, key) => {
-    if (value !== undefined) {
-      switch (key) {
-        case 'fields':
-          def.fields = reduce(iface.getFields(), (fields, field, name) => {
-            fields[name] = processField(field);
-            return fields;
-          }, Object.create(null));
-          break;
-        case 'resolveType':
-          _.set(
-            def,
-            key,
-            value,
-            (
-              typeof value === 'function' &&
-              value.name !== 'cannotExecuteSchema'
-            )
-          );
-          break;
-        case 'description':
-          _.set(def, key, value, (value !== ''));
-          break;
-        case 'astNode':
-          const directives = extractDirectives(_.get(iface, [ 'astNode' ]));
-          _.set(def, '@directives', directives, Boolean(directives));
-          break;
-        default:
-            break;
-      }
-    }
-    return def;
-  }, {
-    type: 'Interface'
-  });
+    return setDef(def, key, value, [
+      'description',
+      'fields',
+      'resolveType',
+      'astNode'
+    ], iface);
+  }, { type: 'Interface' }, true);
 }
 
 /**
@@ -417,47 +349,13 @@ export function processInterfaceType(iface: GraphQLInterfaceType) {
  */
 export function processEnumType(enu: GraphQLEnumType) {
   return reduce(enu._enumConfig, (def, value, key) => {
-    if (value !== undefined) {
-      switch (key) {
-        case 'values':
-          def[key] = reduce(enu.getValues(), (valDef, val) => {
-            valDef[val.name] = processEnumValue(val);
-            return valDef;
-          }, Object.create(null));
-          break;
-        case 'description':
-          _.set(def, key, value, (value !== ''));
-          break;
-        case 'astNode':
-          const directives = extractDirectives(value);
-          _.set(def, '@directives', directives, Boolean(directives));
-          break;
-        default:
-          break;
-      }
-    }
-    return def;
-  }, {
-    type: 'Enum'
-  });
+    return setDef(def, key, value, [
+      'description',
+      'values',
+      'astNode'
+    ], enu);
+  }, { type: 'Enum' }, true);
 }
-
-export type FactoryDirectiveMap = {
-  [directiveName: string]: ?ObjMap<?mixed>
-};
-
-export type FactorySchemaDefinitionConfig = {
-  directives?: ?FactoryDirectiveMap,
-  query: string,
-  mutation?: ?string,
-  subscription?: ?string
-};
-
-export type FactoryDefinitionConfig = {
-  directives?: { [name: ?string]: ?mixed },
-  types: { [name: ?string]: ?mixed },
-  schema: FactorySchemaDefinitionConfig
-};
 
 export class SchemaDeconstructor {
   schema: GraphQLSchema;
@@ -484,7 +382,7 @@ export class SchemaDeconstructor {
       // default scalar type
       if (!name.match(/^__/) && DefaultScalars.indexOf(name) === -1) {
         const definition = deconstructType(type);
-        _.set(
+        setIf(
           this.definition.types,
           [ `${_prefix}${name}` ],
           definition,
@@ -502,7 +400,7 @@ export class SchemaDeconstructor {
     forEach(this.schema.getDirectives(), directive => {
       const { name } = directive;
       const definition = deconstructDirective(directive);
-      _.set(
+      setIf(
         this.definition,
         [ 'directives', name ],
         definition,
@@ -523,33 +421,33 @@ export class SchemaDeconstructor {
     const directives = extractDirectives(_.get(this.schema, [ 'astNode' ]));
     const customDirectives = this.schema.getDirectives()
       .filter(({ name }) => {
-        return [ 'skip', 'include', 'deprecated' ].indexOf(name) === -1;
+        return DefaultDirectives.indexOf(name) === -1;
       });
-    _.set(
+    setIf(
       this.definition.schema,
       'directives',
       customDirectives.map(dir => dir.name),
       customDirectives.length
     );
-    _.set(
+    setIf(
       this.definition.schema,
       'query',
       `${_prefix}${queryType.name}`,
       Boolean(queryType.name)
     );
-    _.set(
+    setIf(
       this.definition.schema,
       'mutation',
       `${_prefix}${mutationType.name}`,
       Boolean(mutationType.name)
     );
-    _.set(
+    setIf(
       this.definition.schema,
       'subscription',
       `${_prefix}${subscriptionType.name}`,
       Boolean(subscriptionType.name)
     );
-    _.set(
+    setIf(
       this.definition.schema,
       '@directives',
       directives,
@@ -601,40 +499,16 @@ export function deconstructDirective(directive: GraphQLDirective) {
   const { name } = directive;
   if (DefaultDirectives.indexOf(name) === -1) {
     return reduce(directive, (def, value, key) => {
-      if (value !== undefined) {
-        switch (key) {
-          case 'description':
-            _.set(def, key, value, (value !== ''));
-            break;
-          case 'locations':
-            def[key] = value;
-            break;
-          case 'args':
-            def[key] = reduce(value, (args, arg) => {
-              const argDef = processArg(arg);
-              args[argDef.name] = argDef.arg;
-              return args;
-            }, Object.create(null));
-            break;
-          case 'resolve':
-            _.set(def, key, value, (typeof value === 'function'));
-            break;
-          case 'resolveResult':
-            _.set(def, key, value, (typeof value === 'function'));
-            break;
-          case 'beforeBuild':
-            _.set(def, key, value, (typeof value === 'function'));
-            break;
-          case 'astNode':
-            const directives = extractDirectives(value);
-            _.set(def, '@directives', directives, Boolean(directives));
-            break;
-          default:
-            break;
-        }
-      }
-      return def;
-    }, Object.create(null));
+      return setDef(def, key, value, [
+        'description',
+        'locations',
+        'args',
+        'resolve',
+        'resolveResult',
+        'beforeBuild',
+        'astNode'
+      ], directive);
+    }, Object.create(null), true);
   }
 }
 
@@ -649,3 +523,20 @@ export function deconstructSchema(
   return new SchemaDeconstructor(schema)
     .deconstruct(prefix);
 }
+
+export type FactoryDirectiveMap = {
+  [directiveName: string]: ?ObjMap<?mixed>
+};
+
+export type FactorySchemaDefinitionConfig = {
+  directives?: ?FactoryDirectiveMap,
+  query: string,
+  mutation?: ?string,
+  subscription?: ?string
+};
+
+export type FactoryDefinitionConfig = {
+  directives?: { [name: ?string]: ?mixed },
+  types: { [name: ?string]: ?mixed },
+  schema: FactorySchemaDefinitionConfig
+};

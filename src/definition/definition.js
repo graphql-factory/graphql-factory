@@ -23,7 +23,11 @@ import type { GraphQLFieldResolver } from 'graphql';
 import { GraphQLSchema, GraphQLDirective } from 'graphql';
 import { JSONType, DateTimeType, GraphQLFactoryPlugin } from '../types';
 import { SchemaBacking } from './backing';
+import { fixDefinition } from './fix';
+import { mergeDefinition } from './merge';
+import { printDefinition } from '../utilities';
 import { lodash as _, stringMatch, asrt } from '../jsutils';
+import { DEFINITION_FIELDS } from './const';
 import {
   useLanguage,
   useSchema,
@@ -33,14 +37,6 @@ import {
 } from './use';
 
 export const DEFINITION_VERSION = '3.0.0';
-
-const DEFINITION_FIELDS = [
-  'context',
-  'functions',
-  'directives',
-  'types',
-  'schema'
-];
 
 /**
  * Assert with SchemaDefinitionErrors
@@ -57,25 +53,26 @@ function assert(condition, message, metadata) {
  * @param {*} obj 
  */
 function isDefinitionLike(obj) {
-  return _.intersection(_.keys(obj), DEFINITION_FIELDS).length > 0
+  return _.intersection(_.keys(obj), DEFINITION_FIELDS).length > 0;
 }
 
 export class SchemaDefinition extends EventEmitter {
+  _options: ObjMap<any>;
   _context: ObjMap<any>;
   _functions: ObjMap<?() => any>;
   _directives: ObjMap<?FactoryDirectiveConfig>;
   _types: ObjMap<?FactoryTypeConfig>;
   _schema: ?SchemaTypeConfig;
 
-  constructor() {
+  constructor(options?: ?SchemaDefinitionOptions) {
     super();
+    this._options = Object.assign({}, options);
     this._context = {};
     this._functions = {};
     this._directives = {};
-    this._types = {
-      DateTime: DateTimeType,
-      JSON: JSONType
-    };
+    this._types = this._options.noDefaultTypes !== true ?
+      { DateTime: DateTimeType, JSON: JSONType } :
+      {};
     this._schema = null;
   }
 
@@ -85,7 +82,7 @@ export class SchemaDefinition extends EventEmitter {
    */
   use(...args: Array<any>) {
     const [ arg0, arg1, arg2 ] = args;
-    
+
     // .use(SchemaDefinition)
     if (arg0 instanceof SchemaDefinition) {
       return this.merge(arg0);
@@ -112,12 +109,12 @@ export class SchemaDefinition extends EventEmitter {
     if (arg0 instanceof GraphQLFactoryPlugin) {
       return usePlugin.call(this, arg0);
     }
-    
+
     // .use(languageDefinition [, SchemaBacking] [, namePrefix])
     if (stringMatch(arg0, true)) {
       return useLanguage.call(this, arg0, arg1, arg2);
     }
-    
+
     // .use(function, name)
     if (_.isFunction(arg0)) {
       assert(stringMatch(arg1, true), 'function name required');
@@ -133,20 +130,30 @@ export class SchemaDefinition extends EventEmitter {
     assert(false, 'invalid use arguments');
   }
 
+  /**
+   * Merges a SchemaDefinition or definition like object
+   * @param {*} definition 
+   */
   merge(definition: any) {
-    return this;
+    return mergeDefinition.call(this, definition);
   }
 
-  fix() {
-    return this;
-  }
-
+  /**
+   * Validates the current definition
+   */
   validate() {
     return this;
   }
 
+  /**
+   * Exports the definition as a SchemaLanguage and backing
+   */
   export() {
-
+    fixDefinition(this).validate();
+    return {
+      definition: printDefinition(this),
+      backing: new SchemaBacking().import(this)
+    };
   }
 
   /**
@@ -203,6 +210,18 @@ export class SchemaDefinition extends EventEmitter {
 /**
  * FlowType definitions
  */
+export type ConflictResolutionResponse = {
+  name: string,
+  value: any
+};
+
+export type ConflictResolutionType = () => ConflictResolutionResponse | string;
+
+export type SchemaDefinitionOptions = {
+  onConflict?: ?ConflictResolutionType,
+  noDefaultTypes?: ?boolean
+};
+
 export type SchemaTypeConfig = {
   directives?: ?Array<string>,
   query: string,

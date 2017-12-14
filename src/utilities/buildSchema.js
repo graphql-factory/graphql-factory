@@ -6,13 +6,7 @@ import type { SchemaBackingConfig } from '../definition/backing';
 import { request } from '../utilities/request';
 import { lodash as _, forEach } from '../jsutils';
 import { SchemaBacking } from '../definition/backing';
-import {
-  buildSchema as buildGraphQLSchema,
-  GraphQLScalarType,
-  GraphQLObjectType,
-  GraphQLUnionType,
-  GraphQLInterfaceType
-} from 'graphql';
+import { buildSchema as buildGraphQLSchema } from 'graphql';
 
 /**
  * Applies backing functions and other potential extenssion data
@@ -26,18 +20,18 @@ export function hydrateSchema(
   backing: SchemaBackingConfig
 ) {
   // hydrate types
-  forEach(backing.types, (backing, name) => {
+  forEach(backing.types, (_backing, name) => {
     const type = _.get(schema, [ '_typeMap', name ]);
     if (type) {
-      _.merge(type, backing);
+      _.merge(type, _backing);
     }
   }, true);
 
   // hydrate directives
-  forEach(backing.directives, (backing, name) => {
+  forEach(backing.directives, (_backing, name) => {
     const directive = _.find(schema._directives, { name });
     if (directive) {
-      _.merge(directive, backing);
+      _.merge(directive, _backing);
     }
   }, true);
 

@@ -9,3 +9,4 @@ export { promiseMap } from './promiseMap';
 export { promiseReduce } from './promiseReduce';
 export { reduce } from './reduce';
 export { stringMatch } from './stringMatch';
+export { setIf } from './setIf';
