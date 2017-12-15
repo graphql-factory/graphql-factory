@@ -1,5 +1,11 @@
 import { lodash as _ } from '../jsutils';
 
+/**
+ * Gets the fields path of the current resolver
+ * optionally includes indexes
+ * @param {*} info 
+ * @param {*} includeIndexes 
+ */
 export function fieldPath(info, includeIndexes) {
   let current = info.path || _.get(info, [ 'fieldInfo', 'path' ]);
   const path = [ current.key ];
@@ -12,6 +18,11 @@ export function fieldPath(info, includeIndexes) {
   return path.reverse();
 }
 
+/**
+ * Makes a path object from the current field info
+ * @param {*} info 
+ * @param {*} options 
+ */
 export function makePath(info, options) {
   const opts = Object.assign({}, options);
   const prepend = Array.isArray(opts.prepend) ? opts.prepend : [];
@@ -21,20 +32,38 @@ export function makePath(info, options) {
   }, undefined);
 }
 
+/**
+ * Returns true if the field is a root field
+ * @param {*} info 
+ */
 export function isRootResolver(info) {
   return !info.path.prev;
 }
 
+/**
+ * Returns true if the resolver is a root field and the first
+ * selection of the operation
+ * @param {*} info 
+ */
 export function isFirstSelection(info) {
   const firstSel = info.operation.selectionSet.selections[0];
   return firstSel.name.value === info.path.key ||
     (firstSel.alias && firstSel.alias.value === info.path.key);
 }
 
+/**
+ * Returns the operation type
+ * @param {*} info 
+ */
 export function operationType(info) {
   return info.operation.operation;
 }
 
+/**
+ * gets the current operation selection based on the
+ * resolver field path
+ * @param {*} info 
+ */
 export function getSelection(info) {
   const path = fieldPath(info);
   let key = null;

@@ -8,3 +8,4 @@ export {
   GraphQLSkipResolveInstruction,
   GraphQLOmitTraceInstruction
 } from './instruction';
+export { RemoteSchema, RemoteSchemaHTTP } from './remote';

@@ -1,4 +1,4 @@
-import { forEach, isObject } from '../jsutils';
+import { forEach, lodash as _ } from '../jsutils';
 import { GraphQLObjectType, GraphQLInterfaceType } from 'graphql';
 import { factoryExecute, graphqlExecute } from './execute';
 
@@ -14,7 +14,7 @@ function middleware(definition, resolver, options) {
   const customExecution = options.factoryExecution !== false;
   const resolve = function (source, args, context, info) {
     // ensure that context is an object and extend it
-    const ctx = isObject(context) ? context : Object.create(null);
+    const ctx = _.isObjectLike(context) ? context : {};
     Object.assign(ctx, definition.context);
     info.definition = definition;
 
@@ -37,9 +37,7 @@ function middleware(definition, resolver, options) {
  * @param {*} schema 
  */
 export function wrapMiddleware(definition, schema, options) {
-  const opts = typeof options === 'object' && options !== null ?
-    options :
-    Object.create(null);
+  const opts = Object.assign({}, options);
 
   forEach(schema.getTypeMap(), (type, typeName) => {
     if (typeName.match(/^__/)) {

@@ -2,7 +2,7 @@
  * GraphQL Factory - A graphql toolkit
  * @flow
  */
-export { SchemaBacking } from './definition';
+export { SchemaDefinition, SchemaBacking } from './definition';
 export { directives } from './directives';
 export {
   buildSchema,
@@ -17,5 +17,7 @@ export {
   GraphQLInstruction,
   GraphQLSkipInstruction,
   GraphQLSkipResolveInstruction,
-  GraphQLOmitTraceInstruction
+  GraphQLOmitTraceInstruction,
+  RemoteSchema,
+  RemoteSchemaHTTP
 } from './types';
