@@ -2,18 +2,11 @@ import assert from 'assert';
 import { getArgumentValues } from 'graphql/execution/values';
 import { getOperationLocation } from '../utilities/directives';
 import { FactoryEvent } from '../definition/definition';
+import { promiseReduce, promiseMap, lodash as _ } from '../jsutils';
 import {
   GraphQLSkipResolveInstruction,
   GraphQLOmitTraceInstruction
 } from '../types';
-import {
-  get,
-  find,
-  promiseReduce,
-  promiseMap,
-  pick,
-  cloneDeep
-} from '../jsutils';
 import {
   Kind,
   getNamedType,
@@ -73,8 +66,8 @@ export function buildFieldResolveArgs(
   parentType
 ) {
   return [
-    cloneDeep(source),
-    cloneDeep(args),
+    _.cloneDeep(source),
+    _.cloneDeep(args),
     context,
     Object.assign(
       Object.create(null),
@@ -84,7 +77,7 @@ export function buildFieldResolveArgs(
         fieldName: selection.name.value,
         fieldNodes: [ selection ],
         returnType: field.type,
-        path: cloneDeep(path)
+        path: _.cloneDeep(path)
       }
     )
   ];
@@ -133,7 +126,7 @@ export function instrumentResolver(
     start: Date.now(),
     end: -1,
     duration: -1,
-    info: pick(info, 'location', 'path'),
+    info: _.pick(info, [ 'location', 'path' ]),
     error: null
   };
 
@@ -180,11 +173,11 @@ export function resolveSubField(field, result, parentType, rargs, isRoot) {
   const [ source, args, context, info ] = rargs;
   const path = isRoot ?
     { prev: undefined, key: field.name } :
-    { prev: cloneDeep(info.path), key: field.name };
+    { prev: _.cloneDeep(info.path), key: field.name };
 
   const execContext = [
-    cloneDeep(source),
-    cloneDeep(args),
+    _.cloneDeep(source),
+    _.cloneDeep(args),
     context,
     Object.assign(
       Object.create(null),
@@ -243,7 +236,7 @@ export function resolveArgDirectives(
   const location = DirectiveLocation.INPUT_FIELD_DEFINITION;
   const args = getArgumentValues(field, selection, info.variableValues);
   return promiseMap(args, (value, key) => {
-    const astNode = find(field.astNode.arguments, arg => {
+    const astNode = _.find(field.astNode.arguments, arg => {
       return arg.name.value === key;
     });
 
@@ -310,13 +303,13 @@ export function resolveField(source, path, parentType, selection, rargs) {
   const type = getNamedType(parentType);
   const key = selection.name.value;
   const field = typeof type.getFields === 'function' ?
-    get(type.getFields(), [ key ]) :
+    _.get(type.getFields(), [ key ]) :
     null;
-  const resolver = get(field, [ 'resolve', '__resolver' ], defaultResolver);
+  const resolver = _.get(field, [ 'resolve', '__resolver' ], defaultResolver);
 
   // if there is no resolver, return the source
   if (!field || typeof resolver !== 'function') {
-    return Promise.resolve(cloneDeep(source));
+    return Promise.resolve(_.cloneDeep(source));
   }
 
   const pathArr = fieldPath(info, true);
@@ -349,7 +342,7 @@ export function resolveField(source, path, parentType, selection, rargs) {
         fieldName: selection.name.value,
         fieldNodes: [ selection ],
         returnType: field.type,
-        path: cloneDeep(path)
+        path: _.cloneDeep(path)
       };
 
       return promiseReduce(resolveRequest, (prev, r) => {
@@ -410,7 +403,7 @@ export function resolveField(source, path, parentType, selection, rargs) {
               }
 
               return promiseMap(result, (res, idx) => {
-                const listPath = { prev: cloneDeep(path), key: idx };
+                const listPath = { prev: _.cloneDeep(path), key: idx };
                 return resolveSubFields(
                   subFields,
                   result[idx],
@@ -483,7 +476,7 @@ export function collectFields(parent, selectionSet) {
     const name = selection.name.value;
     if (fieldNames.indexOf(name) !== -1) {
       fields.push({
-        name: get(selection, [ 'alias', 'value' ]) || name,
+        name: _.get(selection, [ 'alias', 'value' ]) || name,
         selection
       });
     }
@@ -503,7 +496,7 @@ export function collectFields(parent, selectionSet) {
 export function factoryExecute(...rargs) {
   const [ source, , context, info ] = rargs;
   const selection = getSelection(info);
-  const key = get(selection, [ 'alias', 'value' ], selection.name.value);
+  const key = _.get(selection, [ 'alias', 'value' ], selection.name.value);
 
   // check for root resolver
   if (isRootResolver(info)) {
@@ -617,7 +610,7 @@ export function factoryExecute(...rargs) {
       process.nextTick(() => {
         try {
           return info.operation._factory.request.then(() => {
-            const result = get(info.operation, [ '_factory', 'result', key ]);
+            const result = _.get(info.operation, [ '_factory', 'result', key ]);
             if (result instanceof Error) {
               throw result;
             }
@@ -635,7 +628,7 @@ export function factoryExecute(...rargs) {
   // if not the root, check for errors as key values
   // this indicates that an error should be thrown so
   // that graphql can report it normally in the result
-  const resultOrError = get(source, [ key ]);
+  const resultOrError = _.get(source, [ key ]);
     if (resultOrError instanceof Error) {
       throw resultOrError;
     }

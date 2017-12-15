@@ -27,11 +27,14 @@ export function withDescription(
   splitAt = 80
 ) {
   if (stringMatch(description, true)) {
-    const rx = new RegExp('.{1,' + end + '}', 'g');
-    const prefix = indent(tabs) + '// ';
+    const prefix = indent(tabs) + '# ';
     const end = splitAt - prefix.length;
-    const comments = description.match(rx) || [];
-    return comments.map(c => `${prefix}${c}`).join('\n') + describes;
+    const rx = new RegExp('.{1,' + end + '}', 'g');
+    const comments = description
+      .replace(/(\r\n|\n|\r)/gm,' ')
+      .match(rx) || [];
+    return comments.map(c => `${prefix}${c}`).join('\n') +
+      `\n${describes}`;
   }
   return describes;
 }
@@ -106,10 +109,10 @@ export function printDirectives(directives, reason) {
     setIf(dMap, 'deprecated', { reason }, _.isString(reason));
     return _.keys(dMap).length ?
       map(dMap, (value, name) => {
-        return _.isObjectLike(value) ?
-        `@${name}(${toArgs(value, true)})` :
-        `@${name}`;
-      }).join(' ') :
+        return _.isObjectLike(value) && _.keys(value).length ?
+        ` @${name}(${toArgs(value, true)})` :
+        ` @${name}`;
+      }).join('') :
       '';
   }
   return '';
@@ -185,7 +188,7 @@ export function printObject(definition, name) {
 export function printScalar(definition, name) {
   const { description } = definition;
   const dirs = printDirectives(definition['@directives']);
-  return withDescription(description, `scalar ${name}${dirs}`);
+  return withDescription(description, `scalar ${name}${dirs}\n`);
 }
 
 /**

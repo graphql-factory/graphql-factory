@@ -2,7 +2,6 @@ import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { SchemaDefinition } from '../definition';
 import { JSONType, DateTimeType } from '../../types';
-import _ from 'lodash';
 
 describe('definition tests', function () {
   it('create an empty definition', function () {

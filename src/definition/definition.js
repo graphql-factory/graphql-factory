@@ -25,7 +25,8 @@ import { JSONType, DateTimeType, GraphQLFactoryPlugin } from '../types';
 import { SchemaBacking } from './backing';
 import { fixDefinition } from './fix';
 import { mergeDefinition } from './merge';
-import { printDefinition } from '../utilities';
+import { printDefinition, buildSchema } from '../utilities';
+import { wrapMiddleware } from '../execution/middleware';
 import { lodash as _, stringMatch, asrt } from '../jsutils';
 import { DEFINITION_FIELDS } from './const';
 import {
@@ -167,20 +168,10 @@ export class SchemaDefinition extends EventEmitter {
   buildSchema(options?: ?ObjMap<?mixed>) {
     const opts = Object.assign({}, options);
     const wrap = opts.useMiddleware !== false;
-    /*
-    const opts = typeof options === 'object' && options !== null ?
-      options :
-      Object.create(null);
-
-    // option to bypass middleware wraping
-    const wrap = opts.useMiddleware !== false;
-
-    // create the schema
-    const { definition, backing } = this.export(opts);
+    const { definition, backing } = this.export();
     const schema = buildSchema(definition, backing);
-    set(schema, 'definition', this);
+    _.set(schema, 'definition', this);
     return wrap ? wrapMiddleware(this, schema, opts) : schema;
-    */
   }
 
   get context(): ?ObjMap<any> {
@@ -244,4 +235,3 @@ export type FactoryFieldConfigArgumentMap = ObjMap<?mixed>;
 export type FactoryDirectiveAttachConfig = ObjMap<?mixed>;
 export type FactoryTypeConfig = ObjMap<?mixed>;
 export type FactoryDirectiveMap = ObjMap<mixed>;
-

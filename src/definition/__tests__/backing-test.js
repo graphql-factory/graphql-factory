@@ -4,7 +4,7 @@ import { SchemaBacking } from '../backing';
 
 const fn = () => null;
 
-describe('backing test', function () {
+describe('backing tests', function () {
   it('creates an empty backing', function () {
     const backing = new SchemaBacking();
     expect(backing.backing).to.deep.equal({
