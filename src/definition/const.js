@@ -1,3 +1,6 @@
+/**
+ * @flow
+ */
 export const DEFINITION_FIELDS = [
   'context',
   'functions',
@@ -23,4 +26,11 @@ export const ConflictResolution = {
   ERROR: 'error', // throw an error
   WARN: 'warn', // use the default resolution resolver and emit a warning
   DEFAULT: 'default' // use the default resolution resolver
+};
+
+export const PluginConflictResolution = {
+  REPLACE: 'replace', // relaces existing with new
+  SKIP: 'skip', // leaves existing
+  ERROR: 'error', // throws an error
+  WARN: 'warn' // default: replace and emit a warning
 };

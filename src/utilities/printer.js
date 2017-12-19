@@ -1,6 +1,8 @@
 /**
  * Prints a SchemaDefinition in Schema Language format
+ * @flow
  */
+import type { ObjMap } from 'graphql/jsutils/ObjMap';
 import { SchemaDefinition } from '../definition';
 import {
   map,
@@ -21,10 +23,10 @@ const LITERAL_RX = /^```([\w]+)```$/;
  * @param {*} splitAt 
  */
 export function withDescription(
-  description,
-  describes,
-  tabs = 0,
-  splitAt = 80
+  description: string,
+  describes: string,
+  tabs: number = 0,
+  splitAt: number = 80
 ) {
   if (stringMatch(description, true)) {
     const prefix = indent(tabs) + '# ';
@@ -43,7 +45,7 @@ export function withDescription(
  * Coerces a js type to a string and returns the type name
  * @param {*} obj 
  */
-export function getType(obj) {
+export function getType(obj: any) {
   if (Array.isArray(obj)) {
     return [ 'array', obj ];
   } else if (obj === 'undefined') {
@@ -77,7 +79,7 @@ export function getType(obj) {
  * @param replaceBraces
  * @returns {undefined}
  */
-export function toArgs(obj, replaceBraces = false) {
+export function toArgs(obj: any, replaceBraces: boolean = false) {
   const [ type, value ] = getType(obj);
   let result;
   switch (type) {
@@ -93,6 +95,7 @@ export function toArgs(obj, replaceBraces = false) {
       result = value;
       break;
   }
+  result = result || '';
   return replaceBraces ?
     result.replace(/^[{[]([\S\s]+)[}\]]$/, '$1') :
     result;
@@ -103,7 +106,10 @@ export function toArgs(obj, replaceBraces = false) {
  * @param {*} definition 
  * @param {*} reason 
  */
-export function printDirectives(directives, reason) {
+export function printDirectives(
+  directives?: ?ObjMap<any>,
+  reason?: ?string
+) {
   if (directives) {
     const dMap = Object.assign({}, directives);
     setIf(dMap, 'deprecated', { reason }, _.isString(reason));
@@ -124,7 +130,11 @@ export function printDirectives(directives, reason) {
  * @param {*} tabs 
  * @param {*} parenthesis 
  */
-export function printArguments(args, tabs = 2, parenthesis = true) {
+export function printArguments(
+  args: ObjMap<any>,
+  tabs: number = 2,
+  parenthesis: boolean = true
+) {
   if (_.keys(args).length) {
     const a = map(args, (arg, name) => {
       const { type, defaultValue, description } = arg;
@@ -149,7 +159,10 @@ export function printArguments(args, tabs = 2, parenthesis = true) {
  * @param {*} parent 
  * @param {*} tabs 
  */
-export function printFields(fields, parent, tabs = 1) {
+export function printFields(
+  fields: ObjMap<any>,
+  tabs: number = 1
+) {
   return map(fields, (field, name) => {
     const { description, type, args, deprecationReason } = field;
     const dirs = printDirectives(field['@directives'], deprecationReason);
@@ -167,9 +180,12 @@ export function printFields(fields, parent, tabs = 1) {
  * @param {*} definition 
  * @param {*} name 
  */
-export function printObject(definition, name) {
+export function printObject(
+  definition: ObjMap<any>,
+  name: string
+) {
   const { description, interfaces, fields } = definition;
-  const fieldStr = printFields(fields, name);
+  const fieldStr = printFields(fields);
   const dirs = printDirectives(definition['@directives']);
   const iface = _.isArray(interfaces) && interfaces.length ?
     interfaces.join(', ') :
@@ -185,7 +201,10 @@ export function printObject(definition, name) {
  * @param {*} definition 
  * @param {*} name  
  */
-export function printScalar(definition, name) {
+export function printScalar(
+  definition: ObjMap<any>,
+  name: string
+) {
   const { description } = definition;
   const dirs = printDirectives(definition['@directives']);
   return withDescription(description, `scalar ${name}${dirs}\n`);
@@ -195,7 +214,7 @@ export function printScalar(definition, name) {
  * Prints enum values
  * @param {*} values 
  */
-export function printValues(values) {
+export function printValues(values: ObjMap<any>) {
   return map(values, (value, name) => {
     const { description, deprecationReason } = value;
     const dirs = printDirectives(value['@directives'], deprecationReason);
@@ -209,7 +228,10 @@ export function printValues(values) {
  * @param {*} definition 
  * @param {*} name 
  */
-export function printEnum(definition, name) {
+export function printEnum(
+  definition: ObjMap<any>,
+  name: string
+) {
   const { values, description } = definition;
   const dirs = printDirectives(definition['@directives']);
   const vals = printValues(values);
@@ -224,7 +246,10 @@ export function printEnum(definition, name) {
  * @param {*} definition 
  * @param {*} name 
  */
-export function printInput(definition, name) {
+export function printInput(
+  definition: ObjMap<any>,
+  name: string
+) {
   const { fields, description } = definition;
   const dirs = printDirectives(definition['@directives']);
   const fieldStr = printArguments(fields, 1, false);
@@ -239,7 +264,10 @@ export function printInput(definition, name) {
  * @param {*} definition 
  * @param {*} name 
  */
-export function printUnion(definition, name) {
+export function printUnion(
+  definition: ObjMap<any>,
+  name: string
+) {
   const { types, description } = definition;
   const typeStr = _.isArray(types) && types.length ?
     types.join(' | ') :
@@ -256,9 +284,12 @@ export function printUnion(definition, name) {
  * @param {*} definition 
  * @param {*} name  
  */
-export function printInterface(definition, name) {
+export function printInterface(
+  definition: ObjMap<any>,
+  name: string
+) {
   const { description, fields } = definition;
-  const fieldStr = printFields(fields, name);
+  const fieldStr = printFields(fields);
   const dirs = printDirectives(definition['@directives']);
   return withDescription(
     description,
@@ -270,7 +301,10 @@ export function printInterface(definition, name) {
  * @param {*} definition 
  * @param {*} name 
  */
-export function printType(definition, name) {
+export function printType(
+  definition: ObjMap<any>,
+  name: string
+) {
   if (!definition.type) {
     throw new Error(`Failed to print "${name}", missing "type" field`);
   }
@@ -297,7 +331,10 @@ export function printType(definition, name) {
  * @param {*} definition 
  * @param {*} name 
  */
-export function printDirective(definition, name) {
+export function printDirective(
+  definition: ObjMap<any>,
+  name: string
+) {
   const { description, locations, args } = definition;
   const argStr = printArguments(args, 1);
   const locStr = locations.join(' | ');
@@ -311,7 +348,7 @@ export function printDirective(definition, name) {
  * Prints the schema
  * @param {*} definition 
  */
-export function printSchema(definition) {
+export function printSchema(definition: ObjMap<any>) {
   const { query, mutation, subscription } = definition;
   const dirs = printDirectives(definition['@directives']);
   const opStr = reduce({ query, mutation, subscription }, (o, value, name) => {
@@ -334,6 +371,6 @@ export function printDefinition(definition: SchemaDefinition) {
   // print each part of the definition and return a joined string
   return map(types, printType, true)
     .concat(map(directives, printDirective, true))
-    .concat(printSchema(schema))
+    .concat(printSchema(schema || {}))
     .join('\n');
 }

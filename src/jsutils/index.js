@@ -1,6 +1,7 @@
 import * as lodash from './lodash.custom';
 import * as errors from './errors';
-export { lodash, errors };
+import * as semver from './semver';
+export { lodash, errors, semver };
 export { assert, asrt } from './assert';
 export { forEach } from './forEach';
 export { indent } from './indent';

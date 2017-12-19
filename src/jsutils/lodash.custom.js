@@ -13,6 +13,7 @@ import get from './lodash/get';
 import has from './lodash/has';
 import hasIn from './lodash/hasIn';
 import identity from './lodash/identity';
+import includes from './lodash/includes';
 import intersection from './lodash/intersection';
 import isArguments from './lodash/isArguments';
 import isArray from './lodash/isArray';
@@ -56,6 +57,7 @@ import union from './lodash/union';
 import util from './lodash/util';
 import value from './lodash/value';
 import valueOf from './lodash/valueOf';
+import values from './lodash/values';
 import wrapperValue from './lodash/wrapperValue';
 
 export {
@@ -73,6 +75,7 @@ export {
   has,
   hasIn,
   identity,
+  includes,
   intersection,
   isArguments,
   isArray,
@@ -116,5 +119,6 @@ export {
   util,
   value,
   valueOf,
+  values,
   wrapperValue
 };

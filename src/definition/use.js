@@ -1,12 +1,19 @@
 /**
  * @flow
  */
-import { deconstructSchema, deconstructDirective } from './deconstruct';
 import { SchemaBacking } from './backing';
 import { GraphQLFactoryPlugin } from '../types';
 import { buildSchema } from '../utilities';
-import { lodash as _ } from '../jsutils';
+import { lodash as _, asrt } from '../jsutils';
+import { PluginConflictResolution } from './const';
 import { GraphQLDirective, GraphQLSchema } from 'graphql';
+import type { GraphQLNamedType } from 'graphql';
+import { EventType } from './const';
+import {
+  deconstructSchema,
+  deconstructDirective,
+  deconstructType
+} from './deconstruct';
 
 /**
  * Builds a schema from language definition/optional backing and
@@ -34,14 +41,31 @@ export function useSchema(schema: GraphQLSchema, prefix?: ?string) {
 }
 
 /**
- * Deconstructs a directive and
- * merges it into the definition
+ * deconstructs a directive and merges it into the definition with
+ * optional new name
  * @param {*} directive 
+ * @param {*} name 
  */
-export function useDirective(directive: GraphQLDirective) {
+export function useDirective(directive: GraphQLDirective, name?: ?string) {
+  const useName = _.isString(name) && name ? name : directive.name;
   return this.merge({
     directives: {
-      [directive.name]: deconstructDirective(directive)
+      [useName]: deconstructDirective(directive)
+    }
+  });
+}
+
+/**
+ * deconstructs a named type and merges it into the definition with
+ * optional new name
+ * @param {*} type 
+ * @param {*} name 
+ */
+export function useType(type: GraphQLNamedType, name?: ?string) {
+  const useName = _.isString(name) && name ? name : type.name;
+  return this.merge({
+    types: {
+      [useName]: deconstructType(type)
     }
   });
 }
@@ -50,7 +74,42 @@ export function useDirective(directive: GraphQLDirective) {
  * Installs a plugin and merges any definition configuration
  * @param {*} plugin 
  */
-export function usePlugin(plugin: GraphQLFactoryPlugin) {
+export function usePlugin(
+  plugin: GraphQLFactoryPlugin,
+  onConflict?: ?string
+) {
+  if (onConflict) {
+    asrt(
+      'definition',
+      _.includes(_.values(PluginConflictResolution), onConflict),
+      'invalid plugin conflict resolution'
+    );
+  }
+  const errText = 'a plugin with the name "' + plugin.name +
+  '" has already been added to the definition';
+  const oldPlugin = _.get(this._plugins, [ plugin.name ]);
+  const conflict = onConflict ?
+    onConflict :
+    PluginConflictResolution.WARN;
+
+    // handle conflict resolution
+  if (oldPlugin instanceof GraphQLFactoryPlugin) {
+    switch (conflict) {
+      case PluginConflictResolution.SKIP:
+        return this;
+      case PluginConflictResolution.ERROR:
+        this.emit(EventType.ERROR, new Error(errText));
+        return asrt('definition', false, errText);
+      case PluginConflictResolution.WARN:
+        this.emit(EventType.WARN, errText);
+        break;
+      default:
+        break;
+    }
+  }
+
+  // no conflict, or warn, or replace sets the new plugin
+  this._plugins[plugin.name] = plugin;
   return this;
 }
 

@@ -3,6 +3,7 @@
  * @flow
  */
 import type { ObjMap } from 'graphql/jsutils/ObjMap';
+import { ConflictResolution } from '../definition/const'
 import {
   Kind,
   GraphQLSchema,
@@ -45,6 +46,15 @@ export const DefaultScalars = [
   'ID',
   'Boolean'
 ];
+
+/**
+ * Determines if an onConflict value is valid
+ * @param {*} conflict 
+ */
+export function isConflictResolution(conflict: any) {
+  return _.includes(_.values(ConflictResolution), conflict) ||
+    _.isFunction(conflict);
+}
 
 /**
  * Parses an AST node for values
@@ -181,6 +191,9 @@ export function setDef(
           }, Object.create(null), true);
         }
         break;
+      case 'onConflict':
+        setIf(def, key, value, isConflictResolution(value));
+        break;
       case 'types':
         if (object instanceof GraphQLUnionType) {
           def[key] = object.getTypes().map(({ name }) => name);
@@ -278,7 +291,8 @@ function processObjectType(object: GraphQLObjectType) {
       'interfaces',
       'fields',
       'isTypeOf',
-      'astNode'
+      'astNode',
+      'onConflict'
     ], object);
   }, { type: 'Object' }, true);
 }
@@ -292,7 +306,8 @@ function processInputObjectType(object: GraphQLInputObjectType) {
     return setDef(def, key, value, [
       'description',
       'fields',
-      'astNode'
+      'astNode',
+      'onConflict'
     ], object);
   }, { type: 'Input' }, true);
 }
@@ -308,7 +323,8 @@ export function processScalarType(scalar: GraphQLScalarType) {
       'serialize',
       'parseValue',
       'parseLiteral',
-      'astNode'
+      'astNode',
+      'onConflict'
     ]);
   }, { type: 'Scalar' }, true);
 }
@@ -323,7 +339,8 @@ export function processUnionType(union: GraphQLUnionType) {
       'description',
       'types',
       'resolveType',
-      'astNode'
+      'astNode',
+      'onConflict'
     ], union);
   }, { type: 'Union' }, true);
 }
@@ -338,7 +355,8 @@ export function processInterfaceType(iface: GraphQLInterfaceType) {
       'description',
       'fields',
       'resolveType',
-      'astNode'
+      'astNode',
+      'onConflict'
     ], iface);
   }, { type: 'Interface' }, true);
 }
@@ -352,7 +370,8 @@ export function processEnumType(enu: GraphQLEnumType) {
     return setDef(def, key, value, [
       'description',
       'values',
-      'astNode'
+      'astNode',
+      'onConflict'
     ], enu);
   }, { type: 'Enum' }, true);
 }

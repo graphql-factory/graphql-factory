@@ -20,7 +20,7 @@
 import EventEmitter from 'events';
 import type { ObjMap } from 'graphql/jsutils/ObjMap';
 import type { GraphQLFieldResolver } from 'graphql';
-import { GraphQLSchema, GraphQLDirective } from 'graphql';
+import { GraphQLSchema, GraphQLDirective, isNamedType } from 'graphql';
 import { JSONType, DateTimeType, GraphQLFactoryPlugin } from '../types';
 import { SchemaBacking } from './backing';
 import { fixDefinition } from './fix';
@@ -33,6 +33,7 @@ import {
   useLanguage,
   useSchema,
   useDirective,
+  useType,
   usePlugin,
   useBacking
 } from './use';
@@ -64,6 +65,7 @@ export class SchemaDefinition extends EventEmitter {
   _directives: ObjMap<?FactoryDirectiveConfig>;
   _types: ObjMap<?FactoryTypeConfig>;
   _schema: ?SchemaTypeConfig;
+  _plugins: ObjMap<?GraphQLFactoryPlugin>;
 
   constructor(options?: ?SchemaDefinitionOptions) {
     super();
@@ -75,6 +77,7 @@ export class SchemaDefinition extends EventEmitter {
       { DateTime: DateTimeType, JSON: JSONType } :
       {};
     this._schema = null;
+    this._plugins = {};
   }
 
   /**
@@ -99,16 +102,19 @@ export class SchemaDefinition extends EventEmitter {
       return useSchema.call(this, arg0, arg1);
     }
 
-    // .use(GraphQLDirective)
+    // .use(GraphQLDirective [, name])
     if (arg0 instanceof GraphQLDirective) {
-      return useDirective.call(this, arg0);
+      return useDirective.call(this, arg0, arg1);
     }
 
-    // .use(GraphQLType) ??? should this be supported
+    // .use(GraphQLNamedType [, name])
+    if (isNamedType(arg0)) {
+      return useType.call(this, arg0, arg1)
+    }
 
     // .use(GraphFactoryPlugin)
     if (arg0 instanceof GraphQLFactoryPlugin) {
-      return usePlugin.call(this, arg0);
+      return usePlugin.call(this, arg0, arg1);
     }
 
     // .use(languageDefinition [, SchemaBacking] [, namePrefix])

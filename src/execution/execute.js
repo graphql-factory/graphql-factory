@@ -1,7 +1,7 @@
 import assert from 'assert';
 import { getArgumentValues } from 'graphql/execution/values';
 import { getOperationLocation } from '../utilities/directives';
-import { FactoryEvent } from '../definition/definition';
+import { EventType } from '../definition/const';
 import { promiseReduce, promiseMap, lodash as _ } from '../jsutils';
 import {
   GraphQLSkipResolveInstruction,
@@ -586,11 +586,11 @@ export function factoryExecute(...rargs) {
       .then(() => {
         execution.end = Date.now();
         execution.duration = execution.end - execution.start;
-        info.definition.emit(FactoryEvent.EXECUTION, execution);
+        info.definition.emit(EventType.EXECUTION, execution);
       }, err => {
         execution.end = Date.now();
         execution.duration = execution.end - execution.start;
-        info.definition.emit(FactoryEvent.EXECUTION, execution);
+        info.definition.emit(EventType.EXECUTION, execution);
         return Promise.reject(err);
       });
 

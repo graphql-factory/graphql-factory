@@ -23,7 +23,17 @@ export function hydrateSchema(
   forEach(backing.types, (_backing, name) => {
     const type = _.get(schema, [ '_typeMap', name ]);
     if (type) {
-      _.merge(type, _backing);
+      // merge non-field resolvers
+      _.merge(
+        type,
+        _.omit(_backing, [ 'fields' ])
+      );
+
+      // merge field resolvers
+      _.merge(
+        _.get(type, [ '_fields' ]),
+        _.get(_backing, [ 'fields' ], {})
+      );
     }
   }, true);
 

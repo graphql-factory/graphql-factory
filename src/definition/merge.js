@@ -33,8 +33,8 @@ export function mergeValues(target, source, method = 'merge') {
  * @param {*} source 
  */
 export function defaultSchemaConflictResolver(definition, target, source) {
-  const tgtdef = _.get(definition.types, [ target ]);
-  const srcdef = _.get(definition.types, [ source ]);
+  const tgtdef = _.get(definition, [ 'types', target ]);
+  const srcdef = _.get(definition, [ 'types', source ]);
 
   if (!_.isObjectLike(srcdef)) {
     return target;
