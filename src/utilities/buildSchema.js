@@ -21,8 +21,8 @@ export function ensureRootResolver(type?: ?GraphQLObjectType) {
     forEach(type.getFields(), field => {
       if (!_.isFunction(field, 'resolve')) {
         field.resolve = function noResolve (source, args, context, info) {
-          throw new GraphQLError('root resolver', info.path.key +
-          'has no resolver configured');
+          throw new GraphQLError('root field "' + info.fieldName +
+          '" has no resolver configured');
         };
       }
     }, true);

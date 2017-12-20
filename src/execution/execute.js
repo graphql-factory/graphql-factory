@@ -1,4 +1,5 @@
 import assert from 'assert';
+import { SchemaDefinition } from '../definition';
 import { getArgumentValues } from 'graphql/execution/values';
 import { getOperationLocation } from '../utilities/directives';
 import { EventType } from '../definition/const';
@@ -40,6 +41,22 @@ function defaultResolver(...args) {
   return defaultFieldResolver(...args);
 }
 defaultResolver.__defaultResolver = true;
+
+/**
+ * Safe emitter
+ * @param {*} info 
+ * @param {*} event 
+ * @param {*} data 
+ */
+function emit(info, event, data) {
+  const definition = _.get(info, 'schema.definition');
+  if (
+    definition instanceof SchemaDefinition &&
+    _.isFunction(definition.emit)
+  ) {
+    definition.emit(event, data);
+  }
+}
 
 /**
  * Builds a new field resolve args object by
@@ -148,6 +165,7 @@ export function instrumentResolver(
           Promise.reject(err);
       });
   } catch (err) {
+    emit(info, EventType.ERROR, err);
     calculateRun(stack, execution, err, isDefault);
     return resolveErrors ?
       Promise.resolve(err) :
@@ -302,7 +320,6 @@ export function resolveArgDirectives(
  * @param {*} req 
  */
 export function resolveField(source, path, parentType, selection, rargs) {
-  console.log('res subfield')
   const [ , , context, info ] = rargs;
   const execution = info.operation._factory.execution;
   const type = getNamedType(parentType);

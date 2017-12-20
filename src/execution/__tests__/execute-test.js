@@ -68,7 +68,6 @@ describe('execute tests', function () {
   });
 
   it('uses an @resolve directive instead of the resolver', function () {
-    console.log('----')
     const backing = new SchemaBacking()
       .Object('Query')
         .resolve('readFoo', () => {
@@ -81,7 +80,7 @@ describe('execute tests', function () {
       name: String!
     }
     type Query {
-      readFoo(id: String!): Foo
+      readFoo(id: String!): Foo @resolve(resolver: "readFoo")
     }
 
     schema {
@@ -90,7 +89,6 @@ describe('execute tests', function () {
     `;
 
     const schema = new SchemaDefinition()
-      .use(backing.backing)
       .use({
         directives: {
           resolve: directives.resolve
