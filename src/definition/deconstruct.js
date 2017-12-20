@@ -3,7 +3,7 @@
  * @flow
  */
 import type { ObjMap } from 'graphql/jsutils/ObjMap';
-import { ConflictResolution } from '../definition/const'
+import { ConflictResolution } from '../definition/const';
 import {
   Kind,
   GraphQLSchema,

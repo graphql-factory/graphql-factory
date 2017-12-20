@@ -195,6 +195,9 @@ class TypeBacking {
   Union(name: string) {
     return this._backing.Union(name);
   }
+  get backing() {
+    return this._backing;
+  }
 }
 
 /**

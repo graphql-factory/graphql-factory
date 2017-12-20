@@ -6,7 +6,28 @@ import type { SchemaBackingConfig } from '../definition/backing';
 import { request } from '../utilities/request';
 import { lodash as _, forEach } from '../jsutils';
 import { SchemaBacking } from '../definition/backing';
-import { buildSchema as buildGraphQLSchema } from 'graphql';
+import {
+  buildSchema as buildGraphQLSchema,
+  GraphQLObjectType,
+  GraphQLError
+} from 'graphql';
+
+/**
+ * Adds a root resolver if none exist
+ * @param {*} type 
+ */
+export function ensureRootResolver(type?: ?GraphQLObjectType) {
+  if (type instanceof GraphQLObjectType) {
+    forEach(type.getFields(), field => {
+      if (!_.isFunction(field, 'resolve')) {
+        field.resolve = function noResolve (source, args, context, info) {
+          throw new GraphQLError('root resolver', info.path.key +
+          'has no resolver configured');
+        };
+      }
+    }, true);
+  } 
+}
 
 /**
  * Applies backing functions and other potential extenssion data
@@ -69,6 +90,14 @@ export function buildSchema(
   // use the graphql-js buildSchema method 
   // to build an un-hydrated schema
   const schema = buildGraphQLSchema(source);
+
+  // ensure each root field has a resolver that throws an error
+  // saying that it should be defined. when using the @resolve
+  // directive these will be ignored
+  ensureRootResolver(schema.getQueryType());
+  ensureRootResolver(schema.getMutationType());
+  ensureRootResolver(schema.getSubscriptionType());
+
 
   // add a helper method to the schema so that requests
   // can be made with schema.request(source, ...)

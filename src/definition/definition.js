@@ -109,7 +109,7 @@ export class SchemaDefinition extends EventEmitter {
 
     // .use(GraphQLNamedType [, name])
     if (isNamedType(arg0)) {
-      return useType.call(this, arg0, arg1)
+      return useType.call(this, arg0, arg1);
     }
 
     // .use(GraphFactoryPlugin)

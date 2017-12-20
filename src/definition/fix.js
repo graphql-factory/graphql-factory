@@ -1,4 +1,5 @@
 import { forEach } from '../jsutils';
+import { NamedType } from './const';
 
 export function fixArg(definition, args, name) {
   if (typeof args[name] === 'string') {
@@ -18,8 +19,8 @@ export function fixField(definition, fields, name) {
 export function fixTypes(definition, types) {
   forEach(types, typeDef => {
     switch (typeDef.type) {
-      case 'Object':
-      case 'Interface':
+      case NamedType.OBJECT:
+      case NamedType.INTERFACE:
         forEach(typeDef.fields, (fieldDef, fieldName) => {
           fixField(definition, typeDef.fields, fieldName);
         }, true);

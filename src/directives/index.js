@@ -1,11 +1,13 @@
 import by from './by';
-import context from './context';
 import id from './id';
+import meta from './meta';
+import resolve from './resolve';
 import validate from './validate';
 
 export const directives = {
   by,
-  context,
   id,
+  meta,
+  resolve,
   validate
 };

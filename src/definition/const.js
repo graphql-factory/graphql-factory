@@ -34,3 +34,12 @@ export const PluginConflictResolution = {
   ERROR: 'error', // throws an error
   WARN: 'warn' // default: replace and emit a warning
 };
+
+export const NamedType = {
+  OBJECT: 'Object',
+  INPUT: 'Input',
+  SCALAR: 'Scalar',
+  ENUM: 'Enum',
+  INTERFACE: 'Interface',
+  UNION: 'Union'
+};

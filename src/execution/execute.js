@@ -207,6 +207,10 @@ export function resolveSubField(field, result, parentType, rargs, isRoot) {
  * @param {*} serial 
  */
 export function resolveSubFields(fields, result, parentType, rargs, serial) {
+  // if the result is an error resolve it instead of the subfields
+  if (result instanceof Error) {
+    return Promise.resolve(result);
+  }
   const isRoot = typeof serial === 'boolean';
   return serial ?
     promiseReduce(fields, (res, field) => {
@@ -298,6 +302,7 @@ export function resolveArgDirectives(
  * @param {*} req 
  */
 export function resolveField(source, path, parentType, selection, rargs) {
+  console.log('res subfield')
   const [ , , context, info ] = rargs;
   const execution = info.operation._factory.execution;
   const type = getNamedType(parentType);
@@ -339,6 +344,7 @@ export function resolveField(source, path, parentType, selection, rargs) {
         kind: Kind.FIELD_DEFINITION,
         args,
         parentType,
+        fieldInfo: info,
         fieldName: selection.name.value,
         fieldNodes: [ selection ],
         returnType: field.type,
@@ -360,37 +366,47 @@ export function resolveField(source, path, parentType, selection, rargs) {
           return directiveResult === undefined ? prev : directiveResult;
         });
       })
-      .then(directiveResult => {
-        // allow setting of source from directive result
-        if (directiveResult !== undefined) {
-          // if the result is a skip resolve instruction, use the
-          // instruction's source value and return
-          if (directiveResult instanceof GraphQLSkipResolveInstruction) {
-            source[key] = directiveResult.source;
-            return directiveResult.source;
-          }
-          source[key] = directiveResult;
-        }
+      .then(dResult => {
+        let skipResolve = dResult instanceof GraphQLSkipResolveInstruction;
+        const resolveValue = skipResolve ? dResult.source : dResult;
 
-        return instrumentResolver(
-          ExecutionType.RESOLVE,
-          pathStr,
-          resolver.name || 'resolve',
-          info.operation._factory.execution.resolvers,
-          info,
-          resolver,
-          buildFieldResolveArgs(
-            source,
-            context,
-            info,
-            path,
-            field,
-            selection,
-            attachInfo.args,
-            parentType
-          ),
-          true
-        )
+        // resolve the value or instruction and determine if the resolver
+        // should be skipped
+        return Promise.resolve(resolveValue)
+          .then(directiveResult => {
+            if (directiveResult instanceof GraphQLSkipResolveInstruction) {
+              skipResolve = true;
+              return Promise.resolve(directiveResult.source);
+            }
+            return directiveResult;
+          })
+          .then(directiveResult => {
+            if (skipResolve) {
+              return directiveResult;
+            }
+            if (directiveResult !== undefined) {
+              source[key] = directiveResult;
+            }
+            return instrumentResolver(
+              ExecutionType.RESOLVE,
+              pathStr,
+              resolver.name || 'resolve',
+              info.operation._factory.execution.resolvers,
+              info,
+              resolver,
+              buildFieldResolveArgs(
+                source,
+                context,
+                info,
+                path,
+                field,
+                selection,
+                attachInfo.args,
+                parentType
+              ),
+              true
+            );
+          })
           .then(result => {
             const subFields = collectFields(fieldType, selection.selectionSet);
 
