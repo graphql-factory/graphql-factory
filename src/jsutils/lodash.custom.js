@@ -54,6 +54,7 @@ import toFinite from './lodash/toFinite';
 import toInteger from './lodash/toInteger';
 import toJSON from './lodash/toJSON';
 import toNumber from './lodash/toNumber';
+import toPath from './lodash/toPath';
 import toPlainObject from './lodash/toPlainObject';
 import toString from './lodash/toString';
 import union from './lodash/union';
@@ -119,6 +120,7 @@ export {
   toInteger,
   toJSON,
   toNumber,
+  toPath,
   toPlainObject,
   toString,
   union,

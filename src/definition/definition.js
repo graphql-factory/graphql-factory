@@ -25,6 +25,7 @@ import { JSONType, DateTimeType, GraphQLFactoryPlugin } from '../types';
 import { SchemaBacking } from './backing';
 import { fixDefinition } from './fix';
 import { mergeDefinition } from './merge';
+import { beforeBuild } from './beforeBuild';
 import { printDefinition, buildSchema } from '../utilities';
 import { wrapMiddleware } from '../execution/middleware';
 import { lodash as _, stringMatch, asrt, forEach } from '../jsutils';
@@ -58,6 +59,66 @@ function isDefinitionLike(obj) {
   return _.intersection(_.keys(obj), DEFINITION_FIELDS).length > 0;
 }
 
+/**
+ * performs a filter operation on a specified store
+ * @param {*} operation 
+ * @param {*} store 
+ * @param {*} args 
+ */
+function filterStore(operation, store, args) {
+  const filter = obj => {
+    switch (operation) {
+      case 'omit':
+        return _.isFunction(args[0]) ?
+          _.omitBy(obj, args[0]) :
+          _.omit(obj, args);
+      case 'pick':
+        return _.isFunction(args[0]) ?
+          _.pickBy(obj, args[0]) :
+          _.pick(obj, args);
+      default:
+        break;
+    }
+  };
+  switch (store) {
+    case 'context':
+    case 'functions':
+    case 'directives':
+    case 'plugins':
+    case 'types':
+      _.set(this, `_${store}`, filter(_.get(this, `_${store}`)));
+      break;
+    default:
+      assert(false, `invalid store for ${operation} operation`);
+      break;
+  }
+  return this;
+}
+
+/**
+ * Attempts to install any uninstalled plugins
+ */
+function resolvePlugins() {
+  forEach(this._plugins, (p, name) => {
+    const { plugin, installed } = p;
+    if (!installed) {
+      assert(
+        plugin instanceof GraphQLFactoryPlugin,
+        `plugin ${name} is not an instance of GraphQLFactoryPlugin`
+      );
+      if (plugin.dependenciesMet(this)) {
+        this.merge(plugin);
+        plugin.install(this);
+        p.installed = true;
+      }
+    }
+  }, true);
+  return this;
+}
+
+/**
+ * Builds a new definition
+ */
 export class SchemaDefinition extends EventEmitter {
   _options: ObjMap<any>;
   _context: ObjMap<any>;
@@ -89,48 +150,57 @@ export class SchemaDefinition extends EventEmitter {
 
     // .use(SchemaDefinition)
     if (arg0 instanceof SchemaDefinition) {
-      return this.merge(arg0);
+      this.merge(arg0);
+      return resolvePlugins.call(this);
     }
 
     // .use(SchemaBacking)
     if (arg0 instanceof SchemaBacking) {
-      return useBacking.call(this, arg0);
+      useBacking.call(this, arg0);
+      return resolvePlugins.call(this);
     }
 
     // .use(GraphQLSchema [, namePrefix])
     if (arg0 instanceof GraphQLSchema) {
-      return useSchema.call(this, arg0, arg1);
+      useSchema.call(this, arg0, arg1);
+      return resolvePlugins.call(this);
     }
 
     // .use(GraphQLDirective [, name])
     if (arg0 instanceof GraphQLDirective) {
-      return useDirective.call(this, arg0, arg1);
+      useDirective.call(this, arg0, arg1);
+      return resolvePlugins.call(this);
     }
 
     // .use(GraphQLNamedType [, name])
     if (isNamedType(arg0)) {
-      return useType.call(this, arg0, arg1);
+      useType.call(this, arg0, arg1);
+      return resolvePlugins.call(this);
     }
 
     // .use(GraphFactoryPlugin)
     if (arg0 instanceof GraphQLFactoryPlugin) {
-      return usePlugin.call(this, arg0, arg1);
+      usePlugin.call(this, arg0, arg1);
+      return resolvePlugins.call(this);
     }
 
     // .use(languageDefinition [, SchemaBacking] [, namePrefix])
     if (stringMatch(arg0, true)) {
-      return useLanguage.call(this, arg0, arg1, arg2);
+      useLanguage.call(this, arg0, arg1, arg2);
+      return resolvePlugins.call(this);
     }
 
     // .use(function, name)
     if (_.isFunction(arg0)) {
       assert(stringMatch(arg1, true), 'function name required');
-      return this.merge(_.set({}, [ 'functions', arg1 ], arg0));
+      this.merge(_.set({}, [ 'functions', arg1 ], arg0));
+      return resolvePlugins.call(this);
     }
 
     // .use(SchemaDefinitionConfig)
     if (isDefinitionLike(arg0)) {
-      return this.merge(arg0);
+      this.merge(arg0);
+      return resolvePlugins.call(this);
     }
 
     // throw error if no conditions matched
@@ -138,30 +208,21 @@ export class SchemaDefinition extends EventEmitter {
   }
 
   /**
-   * Removes one or more paths from the definition
-   * Can take either an array of paths or a function
-   * as the first argument
+   * Removes paths from a specified store
+   * @param {*} store 
    * @param {*} args 
    */
-  omit(...args: Array<string>) {
-    const fields = [
-      'context',
-      'functions',
-      'directives',
-      'types',
-      'schemas'
-    ];
-    const config = _.reduce(fields, (c, key) => {
-      c[key] = _.get(this, `_${key}`);
-      return c;
-    }, {});
-    const updated = _.isFunction(args[0]) ?
-      _.omitBy(config, args[0]) :
-      _.omit(config, args);
-    forEach(fields, key => {
-      _.set(this, `_${key}`, updated[key] || {});
-    }, true);
-    return this;
+  omit(store: string, ...args: Array<string | () => ?mixed>) {
+    return filterStore.call(this, 'omit', store, args);
+  }
+
+  /**
+   * Picks paths from a specific store
+   * @param {*} store 
+   * @param {*} args 
+   */ 
+  pick(store: string, ...args: Array<string | () => ?mixed>) {
+    return filterStore.call(this, 'pick', store, args);
   }
 
   /**
@@ -201,6 +262,11 @@ export class SchemaDefinition extends EventEmitter {
   buildSchema(options?: ?ObjMap<?mixed>) {
     const opts = Object.assign({}, options);
     const wrap = opts.useMiddleware !== false;
+    forEach(this._plugins, (plugin, name) => {
+      assert(plugin.installed, 'failed to build, plugin "' + name +
+      '" has not been installed due to unmet dependencies');
+    }, true);
+    beforeBuild.call(this, options);
     const { definition, backing } = this.export();
     const schema = buildSchema(definition, backing);
     _.set(schema, 'definition', this);

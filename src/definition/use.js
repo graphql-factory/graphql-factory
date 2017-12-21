@@ -88,12 +88,21 @@ export function usePlugin(
   const errText = 'a plugin with the name "' + plugin.name +
   '" has already been added to the definition';
   const oldPlugin = _.get(this._plugins, [ plugin.name ]);
-  const conflict = onConflict ?
-    onConflict :
-    PluginConflictResolution.WARN;
 
     // handle conflict resolution
-  if (oldPlugin instanceof GraphQLFactoryPlugin) {
+  if (oldPlugin.plugin instanceof GraphQLFactoryPlugin) {
+    const conflict = onConflict ?
+      onConflict :
+      oldPlugin.onConflict ?
+        oldPlugin.onConflict :
+        PluginConflictResolution.WARN;
+    asrt(
+      'definition',
+      !oldPlugin.installed ||
+      onConflict === PluginConflictResolution.REINSTALL,
+      'a plugin with the name "' + plugin.name +
+      '" has already been installed'
+    );
     switch (conflict) {
       case PluginConflictResolution.SKIP:
         return this;
@@ -109,7 +118,10 @@ export function usePlugin(
   }
 
   // no conflict, or warn, or replace sets the new plugin
-  this._plugins[plugin.name] = plugin;
+  this._plugins[plugin.name] = {
+    installed: false,
+    plugin
+  };
   return this;
 }
 
