@@ -20,13 +20,13 @@ export function ensureRootResolver(type?: ?GraphQLObjectType) {
   if (type instanceof GraphQLObjectType) {
     forEach(type.getFields(), field => {
       if (!_.isFunction(field, 'resolve')) {
-        field.resolve = function noResolve (source, args, context, info) {
+        field.resolve = function noResolve(source, args, context, info) {
           throw new GraphQLError('root field "' + info.fieldName +
           '" has no resolver configured');
         };
       }
     }, true);
-  } 
+  }
 }
 
 /**

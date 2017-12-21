@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { SchemaDefinition, SchemaBacking } from '../../definition';
+import { SchemaDefinition } from '../../definition';
 import { directives } from '../../directives';
 import _ from 'lodash';
 
@@ -68,12 +68,6 @@ describe('execute tests', function () {
   });
 
   it('uses an @resolve directive instead of the resolver', function () {
-    const backing = new SchemaBacking()
-      .Object('Query')
-        .resolve('readFoo', () => {
-          throw new Error('this should be skipped');
-        });
-
     const def = `
     type Foo {
       id: String!
@@ -98,7 +92,7 @@ describe('execute tests', function () {
         }
       })
       .use(def)
-      .use((source, args, context, info) => {
+      .use((source, args) => {
         return data.foo.filter(({ id }) => id === args.id)[0] || null;
       }, 'readFoo')
       .buildSchema();

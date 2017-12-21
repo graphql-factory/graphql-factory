@@ -36,10 +36,13 @@ import last from './lodash/last';
 import map from './lodash/map';
 import memoize from './lodash/memoize';
 import merge from './lodash/merge';
+import negate from './lodash/negate';
 import noop from './lodash/noop';
 import object from './lodash/object';
 import omit from './lodash/omit';
+import omitBy from './lodash/omitBy';
 import pick from './lodash/pick';
+import pickBy from './lodash/pickBy';
 import property from './lodash/property';
 import reduce from './lodash/reduce';
 import seq from './lodash/seq';
@@ -98,10 +101,13 @@ export {
   map,
   memoize,
   merge,
+  negate,
   noop,
   object,
   omit,
+  omitBy,
   pick,
+  pickBy,
   property,
   reduce,
   seq,

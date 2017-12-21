@@ -27,7 +27,7 @@ import { fixDefinition } from './fix';
 import { mergeDefinition } from './merge';
 import { printDefinition, buildSchema } from '../utilities';
 import { wrapMiddleware } from '../execution/middleware';
-import { lodash as _, stringMatch, asrt } from '../jsutils';
+import { lodash as _, stringMatch, asrt, forEach } from '../jsutils';
 import { DEFINITION_FIELDS } from './const';
 import {
   useLanguage,
@@ -135,6 +135,33 @@ export class SchemaDefinition extends EventEmitter {
 
     // throw error if no conditions matched
     assert(false, 'invalid use arguments');
+  }
+
+  /**
+   * Removes one or more paths from the definition
+   * Can take either an array of paths or a function
+   * as the first argument
+   * @param {*} args 
+   */
+  omit(...args: Array<string>) {
+    const fields = [
+      'context',
+      'functions',
+      'directives',
+      'types',
+      'schemas'
+    ];
+    const config = _.reduce(fields, (c, key) => {
+      c[key] = _.get(this, `_${key}`);
+      return c;
+    }, {});
+    const updated = _.isFunction(args[0]) ?
+      _.omitBy(config, args[0]) :
+      _.omit(config, args);
+    forEach(fields, key => {
+      _.set(this, `_${key}`, updated[key] || {});
+    }, true);
+    return this;
   }
 
   /**
