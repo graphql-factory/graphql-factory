@@ -1,4 +1,4 @@
-import { lodash as _, forEach, reduce } from '../jsutils';
+import { lodash as _, forEach } from '../jsutils';
 import { getNamedTypeLocation } from '../utilities';
 import { DirectiveLocation } from 'graphql';
 
@@ -41,7 +41,7 @@ export function executeDirective(
  * @param {*} location 
  */
 export function executeDirectives(objDef, objName, location) {
-  forEach(_.get(def, '@directives'), (args, name) => {
+  forEach(_.get(objDef, '@directives'), (args, name) => {
     executeDirective.call(this, objDef, objName, name, args, location);
   }, true);
 }
@@ -85,7 +85,7 @@ export function processField(objDef, objName) {
     DirectiveLocation.FIELD_DEFINITION
   );
 
-  forEach(_.get(fieldDef, 'args'), (argDef, argName) => {
+  forEach(_.get(objDef, 'args'), (argDef, argName) => {
     processArg.call(this, argDef, argName);
   }, true);
 }
@@ -114,15 +114,15 @@ export function processType(objDef, objName) {
     this,
     objDef,
     objName,
-    getNamedTypeLocation(typeDef.type)
+    getNamedTypeLocation(objDef.type)
   );
 
-  forEach(_.get(typeDef, 'fields'), (fieldDef, fieldName) => {
-    processField.call(this, typeDef, typeName);
+  forEach(_.get(objDef, 'fields'), (fieldDef, fieldName) => {
+    processField.call(this, fieldDef, fieldName);
   }, true);
-  forEach(_.get(typeDef, 'values'), (valueDef, valueName) => {
+  forEach(_.get(objDef, 'values'), (valueDef, valueName) => {
     processValue.call(this, valueDef, valueName);
-  }, true); 
+  }, true);
 }
 
 /**
@@ -138,7 +138,7 @@ export function processDirective(dirDef) {
 /**
  * Processes all beforeBuild directive resolvers
  */
-export function beforeBuild(options) {
+export function beforeBuildResolver() {
   // process schema
   processSchema.call(this);
 

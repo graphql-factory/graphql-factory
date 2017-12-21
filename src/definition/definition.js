@@ -25,7 +25,7 @@ import { JSONType, DateTimeType, GraphQLFactoryPlugin } from '../types';
 import { SchemaBacking } from './backing';
 import { fixDefinition } from './fix';
 import { mergeDefinition } from './merge';
-import { beforeBuild } from './beforeBuild';
+import { beforeBuildResolver } from './beforeBuild';
 import { printDefinition, buildSchema } from '../utilities';
 import { wrapMiddleware } from '../execution/middleware';
 import { lodash as _, stringMatch, asrt, forEach } from '../jsutils';
@@ -266,7 +266,7 @@ export class SchemaDefinition extends EventEmitter {
       assert(plugin.installed, 'failed to build, plugin "' + name +
       '" has not been installed due to unmet dependencies');
     }, true);
-    beforeBuild.call(this, options);
+    beforeBuildResolver.call(this);
     const { definition, backing } = this.export();
     const schema = buildSchema(definition, backing);
     _.set(schema, 'definition', this);
