@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { SchemaDefinition } from '../definition';
 import { JSONType, DateTimeType } from '../../types';
 
-describe('definition tests', function () {
+describe('definition.definition tests', function () {
   it('create an empty definition', function () {
     const def = new SchemaDefinition();
     expect(def.types).to.deep.equal({

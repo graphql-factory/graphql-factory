@@ -117,6 +117,15 @@ function resolvePlugins() {
 }
 
 /**
+ * Run code after every use
+ */
+function postProcessUse() {
+  resolvePlugins.call(this);
+  fixDefinition.call(this);
+  return this;
+}
+
+/**
  * Builds a new definition
  */
 export class SchemaDefinition extends EventEmitter {
@@ -151,56 +160,56 @@ export class SchemaDefinition extends EventEmitter {
     // .use(SchemaDefinition)
     if (arg0 instanceof SchemaDefinition) {
       this.merge(arg0);
-      return resolvePlugins.call(this);
+      return postProcessUse.call(this);
     }
 
     // .use(SchemaBacking)
     if (arg0 instanceof SchemaBacking) {
       useBacking.call(this, arg0);
-      return resolvePlugins.call(this);
+      return postProcessUse.call(this);
     }
 
     // .use(GraphQLSchema [, namePrefix])
     if (arg0 instanceof GraphQLSchema) {
       useSchema.call(this, arg0, arg1);
-      return resolvePlugins.call(this);
+      return postProcessUse.call(this);
     }
 
     // .use(GraphQLDirective [, name])
     if (arg0 instanceof GraphQLDirective) {
       useDirective.call(this, arg0, arg1);
-      return resolvePlugins.call(this);
+      return postProcessUse.call(this);
     }
 
     // .use(GraphQLNamedType [, name])
     if (isNamedType(arg0)) {
       useType.call(this, arg0, arg1);
-      return resolvePlugins.call(this);
+      return postProcessUse.call(this);
     }
 
     // .use(GraphFactoryPlugin)
     if (arg0 instanceof GraphQLFactoryPlugin) {
       usePlugin.call(this, arg0, arg1);
-      return resolvePlugins.call(this);
+      return postProcessUse.call(this);
     }
 
     // .use(languageDefinition [, SchemaBacking] [, namePrefix])
     if (stringMatch(arg0, true)) {
       useLanguage.call(this, arg0, arg1, arg2);
-      return resolvePlugins.call(this);
+      return postProcessUse.call(this);
     }
 
     // .use(function, name)
     if (_.isFunction(arg0)) {
       assert(stringMatch(arg1, true), 'function name required');
       this.merge(_.set({}, [ 'functions', arg1 ], arg0));
-      return resolvePlugins.call(this);
+      return postProcessUse.call(this);
     }
 
     // .use(SchemaDefinitionConfig)
     if (isDefinitionLike(arg0)) {
       this.merge(arg0);
-      return resolvePlugins.call(this);
+      return postProcessUse.call(this);
     }
 
     // throw error if no conditions matched
@@ -244,7 +253,7 @@ export class SchemaDefinition extends EventEmitter {
    * Exports the definition as a SchemaLanguage and backing
    */
   export() {
-    fixDefinition(this).validate();
+    fixDefinition.call(this).validate();
     return {
       definition: printDefinition(this),
       backing: new SchemaBacking().import(this)

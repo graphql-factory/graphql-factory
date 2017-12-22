@@ -10,7 +10,7 @@ import {
   defaultSchemaConflictResolver
 } from '../merge';
 
-describe('merge tests', function () {
+describe('definition.merge tests', function () {
   it('tests defaultSchemaConflictResolver', function () {
     const def = {
       types: {

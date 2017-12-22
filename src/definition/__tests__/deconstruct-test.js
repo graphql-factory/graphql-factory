@@ -15,7 +15,7 @@ import {
 
 const fn = () => null;
 
-describe('deconstruct tests', function () {
+describe('definition.deconstruct tests', function () {
   it('deconstructs an Object', function () {
     const Foo = new GraphQLObjectType({
       name: 'Foo',
