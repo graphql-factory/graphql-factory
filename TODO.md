@@ -8,9 +8,7 @@ or function. Add support for default conflict resolver for this
 
 ### Definition
 
-* Add all supported argument types to use
 * add type extensions support
-* implement directive resolver beforeBuild hook
 * investigate introspection query or create something more simple and add
 it as a default query in the built factory definition. This may make it easier
 to query remote schemas built with graphql-factory for their schema ast

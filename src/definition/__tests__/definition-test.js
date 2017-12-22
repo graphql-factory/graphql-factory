@@ -35,7 +35,7 @@ describe('definition.definition tests', function () {
       Foo: {
         type: 'Object',
         fields: {
-          bar: 'String'
+          bar: { type: 'String' }
         }
       }
     });

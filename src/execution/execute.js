@@ -425,8 +425,13 @@ export function resolveField(source, path, parentType, selection, rargs) {
             );
           })
           .then(result => {
-            const subFields = collectFields(fieldType, selection.selectionSet);
-
+            const collectedFields = collectFields(
+              info,
+              fieldType,
+              selection.selectionSet
+            );
+            console.log({ collectedFields })
+            const subFields = collectedFields.fields;
             // if there are no subfields to resolve, return the results
             if (!subFields.length) {
               return result;
@@ -494,27 +499,49 @@ export function resolveField(source, path, parentType, selection, rargs) {
     });
 }
 
+export function resolveSelections(selections) {
+
+}
+
 /**
  * Builds a map of fields with resolve functions to resolve
  * @param {*} parent 
  * @param {*} selectionSet 
  * @param {*} info 
  */
-export function collectFields(parent, selectionSet) {
+export function collectFields(info, parent, selectionSet) {
+  const result = {
+    fields: [],
+    fragments: []
+  }
   if (!selectionSet || typeof parent.getFields !== 'function') {
-    return [];
+    return result;
   }
   const fieldNames = Object.keys(parent.getFields());
-  return selectionSet.selections.reduce((fields, selection) => {
+  return selectionSet.selections.reduce((r, selection) => {
+    console.log('sel', selection)
     const name = selection.name.value;
-    if (fieldNames.indexOf(name) !== -1) {
-      fields.push({
-        name: _.get(selection, [ 'alias', 'value' ]) || name,
-        selection
-      });
+    switch (selection.kind) {
+      case Kind.FIELD:
+        if (fieldNames.indexOf(name) !== -1) {
+          r.fields.push({
+            name: _.get(selection, [ 'alias', 'value' ]) || name,
+            selection
+          });
+        }
+        break;
+      case Kind.FRAGMENT_SPREAD:
+      case Kind.INLINE_FRAGMENT:
+        r.fragments.push({
+          name: _.get(selection, [ 'alias', 'value' ]) || name,
+          selection
+        });
+        break;
+      default:
+        break;
     }
-    return fields;
-  }, []);
+    return r;
+  }, result);
 }
 
 /**
@@ -535,7 +562,8 @@ export function factoryExecute(...rargs) {
   if (isRootResolver(info)) {
     if (isFirstSelection(info)) {
       // get the root fields to resolve
-      const rootFields = collectFields(
+      const { fields: rootFields, fragments:rootFragments } = collectFields(
+        info,
         info.parentType,
         info.operation.selectionSet
       );

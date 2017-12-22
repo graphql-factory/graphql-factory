@@ -103,19 +103,7 @@ export function fixDirectives(directives) {
  * configuration when possible in the definition
  */
 export function fixDefinition() {
-  forEach(this, (config, key) => {
-    switch (key) {
-      case 'directives':
-        fixDirectives.call(this, config);
-        break;
-      case 'types':
-        fixTypes.call(this, config);
-        break;
-      case 'schema':
-        break;
-      default:
-        break;
-    }
-  }, true);
+  fixDirectives.call(this, this._directives);
+  fixTypes.call(this, this._types);
   return this;
 }
