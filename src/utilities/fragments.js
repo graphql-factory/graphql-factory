@@ -14,7 +14,9 @@ export function doesFragmentConditionMatch(info, fragment, type) {
   if (!typeConditionNode) {
     return true;
   }
+
   const conditionalType = typeFromAST(info.schema, typeConditionNode);
+
   if (conditionalType === type) {
     return true;
   }
@@ -22,8 +24,4 @@ export function doesFragmentConditionMatch(info, fragment, type) {
     return info.schema.isPossibleType(conditionalType, type);
   }
   return false;
-}
-
-export function flattenFragmentSpread () {
-  
 }

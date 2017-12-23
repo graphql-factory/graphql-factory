@@ -1,12 +1,12 @@
 import assert from 'assert';
 import { SchemaDefinition } from '../definition';
 import { getArgumentValues } from 'graphql/execution/values';
+import { getOperationRootType } from 'graphql/execution/execute';
 import { EventType } from '../definition/const';
 import {
   promiseReduce,
   promiseMap,
   lodash as _,
-  reduce,
   forEach
 } from '../jsutils';
 import {
@@ -22,7 +22,8 @@ import {
   defaultFieldResolver,
   getDirectiveValues,
   GraphQLSkipDirective,
-  GraphQLIncludeDirective
+  GraphQLIncludeDirective,
+  isAbstractType
 } from 'graphql';
 import {
   getDirectiveResolvers,
@@ -36,8 +37,7 @@ import {
   fieldPath,
   getOperationLocation,
   getFragment,
-  doesFragmentConditionMatch,
-  getFieldEntryKey
+  doesFragmentConditionMatch
 } from '../utilities';
 
 export const ExecutionType = {
@@ -94,6 +94,61 @@ export function shouldIncludeNode(info, node) {
     return false;
   }
   return true;
+}
+
+function getPromise(value) {
+  if (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof value.then === 'function'
+  ) {
+    return value;
+  }
+}
+
+function defaultResolveTypeFn(
+  value,
+  context,
+  info,
+  abstractType,
+) {
+  // First, look for `__typename`.
+  if (
+    value !== null &&
+    typeof value === 'object' &&
+    typeof value.__typename === 'string'
+  ) {
+    return value.__typename;
+  }
+
+  // Otherwise, test each possible type.
+  const possibleTypes = info.schema.getPossibleTypes(abstractType);
+  const promisedIsTypeOfResults = [];
+
+  for (let i = 0; i < possibleTypes.length; i++) {
+    const type = possibleTypes[i];
+
+    if (type.isTypeOf) {
+      const isTypeOfResult = type.isTypeOf(value, context, info);
+
+      const promise = getPromise(isTypeOfResult);
+      if (promise) {
+        promisedIsTypeOfResults[i] = promise;
+      } else if (isTypeOfResult) {
+        return type;
+      }
+    }
+  }
+
+  if (promisedIsTypeOfResults.length) {
+    return Promise.all(promisedIsTypeOfResults).then(isTypeOfResults => {
+      for (let i = 0; i < isTypeOfResults.length; i++) {
+        if (isTypeOfResults[i]) {
+          return possibleTypes[i];
+        }
+      }
+    });
+  }
 }
 
 /**
@@ -471,7 +526,24 @@ export function resolveField(source, path, parentType, selection, rargs) {
             );
           })
           .then(result => {
-            const subFields = collectFields(info, selection.selectionSet);
+            // resolve abstract types
+            const resolveType = isAbstractType(fieldType) ?
+              fieldType.resolveType ?
+                fieldType.resolveType(result, context, info) :
+                defaultResolveTypeFn(result, context, info, fieldType) :
+              fieldType;
+
+            return Promise.resolve(resolveType).then(runtimeType => {
+              return { runtimeType, result };
+            });
+          })
+          .then(({ result, runtimeType }) => {
+            const subFields = collectFields(
+              info,
+              runtimeType,
+              result,
+              selection.selectionSet
+            );
 
             // if there are no subfields to resolve, return the results
             if (!subFields.length) {
@@ -486,7 +558,7 @@ export function resolveField(source, path, parentType, selection, rargs) {
                 return resolveSubFields(
                   subFields,
                   result[idx],
-                  fieldType,
+                  runtimeType,
                   buildFieldResolveArgs(
                     source,
                     context,
@@ -505,7 +577,7 @@ export function resolveField(source, path, parentType, selection, rargs) {
             return resolveSubFields(
               subFields,
               result,
-              fieldType,
+              runtimeType,
               buildFieldResolveArgs(
                 source,
                 context,
@@ -546,31 +618,63 @@ export function resolveField(source, path, parentType, selection, rargs) {
  * @param {*} selectionSet 
  * @param {*} info 
  */
-export function collectFields(info, selectionSet) {
+export function collectFields(
+  info,
+  parentType,
+  result,
+  selectionSet,
+  fields = [],
+  visitedFragments = {}
+) {
+  const type = parentType;
+  if (!_.get(selectionSet, 'selections', []).length) {
+    return [];
+  }
   return _.reduce(selectionSet.selections, (f, selection) => {
     const { kind } = selection;
     const alias = _.get(selection, 'alias.value');
-    const name = alias || _.get(selection, 'name.value');
+    const nameValue = _.get(selection, 'name.value');
+    const name = alias || nameValue;
 
-    switch (kind) {
-      case Kind.FIELD:
-        if (shouldIncludeNode(info, selection)) {
+    if (shouldIncludeNode(info, selection)) {
+      switch (kind) {
+        case Kind.FIELD:
           f.push({ name, kind, selection });
-        }
-        break;
-      case Kind.FRAGMENT_SPREAD:
-        const fragment = getFragment(info, name)
-        console.log(JSON.stringify(fragment, null, '  '))
-        break;
-      case Kind.INLINE_FRAGMENT:
-        console.log('inline', selection)
-        break;
-      default:
-        break;
+          break;
+        case Kind.FRAGMENT_SPREAD:
+          if (!visitedFragments[nameValue]) {
+            visitedFragments[nameValue] = true;
+            const fragment = getFragment(info, nameValue);
+            if (fragment && doesFragmentConditionMatch(info, fragment, type)) {
+              collectFields(
+                info,
+                type,
+                result,
+                fragment.selectionSet,
+                fields,
+                visitedFragments
+              );
+            }
+          }
+          break;
+        case Kind.INLINE_FRAGMENT:
+          if (doesFragmentConditionMatch(info, selection, type)) {
+            collectFields(
+              info,
+              type,
+              result,
+              selection.selectionSet,
+              fields,
+              visitedFragments
+            );
+          }
+          break;
+        default:
+          break;
+      }
     }
-
     return f;
-  }, []);
+  }, fields);
 }
 
 /**
@@ -620,7 +724,7 @@ export function factoryExecute(...rargs) {
         astLocations.push({
           location: DirectiveLocation.FRAGMENT_DEFINITION,
           astNode: fragmentAST
-        })
+        });
       }, true);
 
       // get the directive middleware
@@ -651,7 +755,13 @@ export function factoryExecute(...rargs) {
         );
       })
       .then(() => {
-        const fields = collectFields(info, info.operation.selectionSet);
+        const fields = collectFields(
+          info,
+          getOperationRootType(info.schema, info.operation),
+          result,
+          info.operation.selectionSet
+        );
+
         return resolveSubFields(
           fields,
           result,
