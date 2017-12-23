@@ -148,15 +148,15 @@ query Search {
 const mixedFrag = `
 query Mixed {
   search(text: "o") {
-    ... on Human {
-      ...resultName
+    ... on Human @test(value: "human inline") {
+      ...resultName @test(value: "frag spread")
       height
     }
-    ... on Droid {
+    ... on Droid @test(value: "droid inline") {
       name
       primaryFunction
     }
-    ... on Starship {
+    ... on Starship @test(value: "droid inline") {
       name
       length
     }

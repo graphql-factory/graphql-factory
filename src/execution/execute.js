@@ -7,7 +7,8 @@ import {
   promiseReduce,
   promiseMap,
   lodash as _,
-  forEach
+  forEach,
+  reduce
 } from '../jsutils';
 import {
   GraphQLSkipResolveInstruction,
@@ -36,6 +37,7 @@ import {
   isRootResolver,
   fieldPath,
   getOperationLocation,
+  getFragmentLocation,
   getFragment,
   doesFragmentConditionMatch
 } from '../utilities';
@@ -96,7 +98,11 @@ export function shouldIncludeNode(info, node) {
   return true;
 }
 
-function getPromise(value) {
+/**
+ * Ported from graphql-js/execution/execute.js
+ * @param {*} value 
+ */
+export function getPromise(value) {
   if (
     typeof value === 'object' &&
     value !== null &&
@@ -106,7 +112,14 @@ function getPromise(value) {
   }
 }
 
-function defaultResolveTypeFn(
+/**
+ * Ported from graphql-js/execution/execute.js
+ * @param {*} value 
+ * @param {*} context 
+ * @param {*} info 
+ * @param {*} abstractType 
+ */
+export function defaultResolveTypeFn(
   value,
   context,
   info,
@@ -538,15 +551,50 @@ export function resolveField(source, path, parentType, selection, rargs) {
             });
           })
           .then(({ result, runtimeType }) => {
-            const subFields = collectFields(
+            const { fields, fragments } = collectFields(
               info,
               runtimeType,
               result,
               selection.selectionSet
             );
 
+            // resolve any fragment resolvers
+            const fragLocations = fragments.map(astNode => {
+              return {
+                location: getFragmentLocation(astNode.kind),
+                astNode
+              };
+            });
+            const fragResolvers = getDirectiveResolvers(info, fragLocations);
+
+            return promiseReduce(fragResolvers.resolveRequest, (prev, r) => {
+              const directiveInfo = buildDirectiveInfo(info, r, { attachInfo });
+              return instrumentResolver(
+                ExecutionType.DIRECTIVE,
+                r.directive.name,
+                r.resolve.name || 'resolve',
+                execution.resolvers,
+                directiveInfo,
+                r.resolve,
+                [ prev, r.args, context, directiveInfo ]
+              )
+              .then(directiveResult => {
+                return directiveResult === undefined ? prev : directiveResult;
+              });
+            })
+            .then(directiveResult => {
+              return {
+                result: directiveResult === undefined ?
+                  result :
+                  directiveResult,
+                fields,
+                runtimeType
+              };
+            });
+          })
+          .then(({ result, fields, runtimeType }) => {
             // if there are no subfields to resolve, return the results
-            if (!subFields.length) {
+            if (!fields.length) {
               return result;
             } else if (isList) {
               if (!Array.isArray(result)) {
@@ -556,7 +604,7 @@ export function resolveField(source, path, parentType, selection, rargs) {
               return promiseMap(result, (res, idx) => {
                 const listPath = { prev: _.cloneDeep(path), key: idx };
                 return resolveSubFields(
-                  subFields,
+                  fields,
                   result[idx],
                   runtimeType,
                   buildFieldResolveArgs(
@@ -575,7 +623,7 @@ export function resolveField(source, path, parentType, selection, rargs) {
             }
 
             return resolveSubFields(
-              subFields,
+              fields,
               result,
               runtimeType,
               buildFieldResolveArgs(
@@ -613,24 +661,27 @@ export function resolveField(source, path, parentType, selection, rargs) {
 }
 
 /**
- * Builds a map of fields with resolve functions to resolve
- * @param {*} parent 
- * @param {*} selectionSet 
+ * Ported from graphql-js/execution/execute.js
  * @param {*} info 
+ * @param {*} parentType 
+ * @param {*} result 
+ * @param {*} selectionSet 
+ * @param {*} fields 
+ * @param {*} visitedFragments 
  */
 export function collectFields(
   info,
   parentType,
   result,
   selectionSet,
-  fields = [],
+  fieldInfo = { fields: [], fragments: [] },
   visitedFragments = {}
 ) {
   const type = parentType;
   if (!_.get(selectionSet, 'selections', []).length) {
-    return [];
+    return { fields: [], fragments: [] };
   }
-  return _.reduce(selectionSet.selections, (f, selection) => {
+  return reduce(selectionSet.selections, (f, selection) => {
     const { kind } = selection;
     const alias = _.get(selection, 'alias.value');
     const nameValue = _.get(selection, 'name.value');
@@ -639,19 +690,20 @@ export function collectFields(
     if (shouldIncludeNode(info, selection)) {
       switch (kind) {
         case Kind.FIELD:
-          f.push({ name, kind, selection });
+          f.fields.push({ name, kind, selection });
           break;
         case Kind.FRAGMENT_SPREAD:
           if (!visitedFragments[nameValue]) {
             visitedFragments[nameValue] = true;
             const fragment = getFragment(info, nameValue);
             if (fragment && doesFragmentConditionMatch(info, fragment, type)) {
+              f.fragments.push(selection);
               collectFields(
                 info,
                 type,
                 result,
                 fragment.selectionSet,
-                fields,
+                fieldInfo,
                 visitedFragments
               );
             }
@@ -659,12 +711,13 @@ export function collectFields(
           break;
         case Kind.INLINE_FRAGMENT:
           if (doesFragmentConditionMatch(info, selection, type)) {
+            f.fragments.push(selection);
             collectFields(
               info,
               type,
               result,
               selection.selectionSet,
-              fields,
+              fieldInfo,
               visitedFragments
             );
           }
@@ -674,7 +727,7 @@ export function collectFields(
       }
     }
     return f;
-  }, fields);
+  }, fieldInfo, true);
 }
 
 /**
@@ -727,6 +780,22 @@ export function factoryExecute(...rargs) {
         });
       }, true);
 
+      // get the fields and fragments
+      const fieldInfo = collectFields(
+        info,
+        getOperationRootType(info.schema, info.operation),
+        result,
+        info.operation.selectionSet
+      );
+
+      // add fragments
+      forEach(fieldInfo.fragments, astNode => {
+        astLocations.push({
+          location: getFragmentLocation(astNode.kind),
+          astNode
+        });
+      });
+
       // get the directive middleware
       const {
         resolveRequest,
@@ -755,15 +824,8 @@ export function factoryExecute(...rargs) {
         );
       })
       .then(() => {
-        const fields = collectFields(
-          info,
-          getOperationRootType(info.schema, info.operation),
-          result,
-          info.operation.selectionSet
-        );
-
         return resolveSubFields(
-          fields,
+          fieldInfo.fields,
           result,
           info.parentType,
           rargs,

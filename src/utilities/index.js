@@ -4,7 +4,8 @@ export { getFieldTypeLocation, getNamedTypeLocation } from './getTypeLocation';
 export { printDefinition } from './printer';
 export {
   getFragment,
-  doesFragmentConditionMatch
+  doesFragmentConditionMatch,
+  getFragmentLocation
 } from './fragments';
 export {
   getDirectivesFromAST,

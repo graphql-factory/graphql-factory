@@ -1,5 +1,10 @@
 import { lodash as _ } from '../jsutils';
-import { typeFromAST, isAbstractType } from 'graphql';
+import {
+  typeFromAST,
+  isAbstractType,
+  Kind,
+  DirectiveLocation
+} from 'graphql';
 
 export function getFragment(info, name) {
   return _.get(info, [ 'fragments', name ]);
@@ -24,4 +29,15 @@ export function doesFragmentConditionMatch(info, fragment, type) {
     return info.schema.isPossibleType(conditionalType, type);
   }
   return false;
+}
+
+export function getFragmentLocation(kind) {
+  switch (kind) {
+    case Kind.FRAGMENT_SPREAD:
+      return DirectiveLocation.FRAGMENT_SPREAD;
+    case Kind.INLINE_FRAGMENT:
+      return DirectiveLocation.INLINE_FRAGMENT;
+    default:
+      break;
+  }
 }
