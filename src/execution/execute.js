@@ -1,3 +1,10 @@
+/**
+ * Custom graphql execution: This execution is performed from the first
+ * field of the root type resolver and returns selections from the resolved
+ * data in each of the other fields and subfields. This allows custom 
+ * middleware to be run at different points in the execution lifecycle
+ * using directives. It also allows deep tracing data visibility.
+ */
 import assert from 'assert';
 import { SchemaDefinition } from '../definition';
 import { getArgumentValues } from 'graphql/execution/values';
@@ -567,6 +574,11 @@ export function resolveField(source, path, parentType, selection, rargs) {
             });
             const fragResolvers = getDirectiveResolvers(info, fragLocations);
 
+            // fragments only handle resolve directive middleware currently
+            // and can potentially handle resolveResult middleware given
+            // valid use cases which are currently not apparent
+            // TODO: Determine if the attachInfo is appropriate or should
+            // be modified to something other than the field attach info
             return promiseReduce(fragResolvers.resolveRequest, (prev, r) => {
               const directiveInfo = buildDirectiveInfo(info, r, { attachInfo });
               return instrumentResolver(
