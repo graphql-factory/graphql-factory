@@ -1,9 +1,14 @@
 import assert from 'assert';
 import { SchemaDefinition } from '../definition';
 import { getArgumentValues } from 'graphql/execution/values';
-import { getOperationLocation } from '../utilities/directives';
 import { EventType } from '../definition/const';
-import { promiseReduce, promiseMap, lodash as _ } from '../jsutils';
+import {
+  promiseReduce,
+  promiseMap,
+  lodash as _,
+  reduce,
+  forEach
+} from '../jsutils';
 import {
   GraphQLSkipResolveInstruction,
   GraphQLOmitTraceInstruction
@@ -14,7 +19,10 @@ import {
   getNullableType,
   GraphQLList,
   DirectiveLocation,
-  defaultFieldResolver
+  defaultFieldResolver,
+  getDirectiveValues,
+  GraphQLSkipDirective,
+  GraphQLIncludeDirective
 } from 'graphql';
 import {
   getDirectiveResolvers,
@@ -25,8 +33,12 @@ import {
   getSelection,
   isFirstSelection,
   isRootResolver,
-  fieldPath
-} from '../utilities/info';
+  fieldPath,
+  getOperationLocation,
+  getFragment,
+  doesFragmentConditionMatch,
+  getFieldEntryKey
+} from '../utilities';
 
 export const ExecutionType = {
   RESOLVE: 'RESOLVE',
@@ -56,6 +68,32 @@ function emit(info, event, data) {
   ) {
     definition.emit(event, data);
   }
+}
+
+/**
+ * Ported from graphql-js/execution/execute.js
+ * @param {*} info 
+ * @param {*} node 
+ */
+export function shouldIncludeNode(info, node) {
+  const skip = getDirectiveValues(
+    GraphQLSkipDirective,
+    node,
+    info.variableValues,
+  );
+  if (skip && skip.if === true) {
+    return false;
+  }
+
+  const include = getDirectiveValues(
+    GraphQLIncludeDirective,
+    node,
+    info.variableValues,
+  );
+  if (include && include.if === false) {
+    return false;
+  }
+  return true;
 }
 
 /**
@@ -224,12 +262,20 @@ export function resolveSubField(field, result, parentType, rargs, isRoot) {
  * @param {*} rargs
  * @param {*} serial 
  */
-export function resolveSubFields(fields, result, parentType, rargs, serial) {
+export function resolveSubFields(
+  fields,
+  result,
+  parentType,
+  rargs,
+  serial
+) {
   // if the result is an error resolve it instead of the subfields
   if (result instanceof Error) {
     return Promise.resolve(result);
   }
   const isRoot = typeof serial === 'boolean';
+
+  // resolve tge fields
   return serial ?
     promiseReduce(fields, (res, field) => {
       return resolveSubField(field, result, parentType, rargs, isRoot);
@@ -425,13 +471,8 @@ export function resolveField(source, path, parentType, selection, rargs) {
             );
           })
           .then(result => {
-            const collectedFields = collectFields(
-              info,
-              fieldType,
-              selection.selectionSet
-            );
-            console.log({ collectedFields })
-            const subFields = collectedFields.fields;
+            const subFields = collectFields(info, selection.selectionSet);
+
             // if there are no subfields to resolve, return the results
             if (!subFields.length) {
               return result;
@@ -499,49 +540,37 @@ export function resolveField(source, path, parentType, selection, rargs) {
     });
 }
 
-export function resolveSelections(selections) {
-
-}
-
 /**
  * Builds a map of fields with resolve functions to resolve
  * @param {*} parent 
  * @param {*} selectionSet 
  * @param {*} info 
  */
-export function collectFields(info, parent, selectionSet) {
-  const result = {
-    fields: [],
-    fragments: []
-  }
-  if (!selectionSet || typeof parent.getFields !== 'function') {
-    return result;
-  }
-  const fieldNames = Object.keys(parent.getFields());
-  return selectionSet.selections.reduce((r, selection) => {
-    console.log('sel', selection)
-    const name = selection.name.value;
-    switch (selection.kind) {
+export function collectFields(info, selectionSet) {
+  return _.reduce(selectionSet.selections, (f, selection) => {
+    const { kind } = selection;
+    const alias = _.get(selection, 'alias.value');
+    const name = alias || _.get(selection, 'name.value');
+
+    switch (kind) {
       case Kind.FIELD:
-        if (fieldNames.indexOf(name) !== -1) {
-          r.fields.push({
-            name: _.get(selection, [ 'alias', 'value' ]) || name,
-            selection
-          });
+        if (shouldIncludeNode(info, selection)) {
+          f.push({ name, kind, selection });
         }
         break;
       case Kind.FRAGMENT_SPREAD:
+        const fragment = getFragment(info, name)
+        console.log(JSON.stringify(fragment, null, '  '))
+        break;
       case Kind.INLINE_FRAGMENT:
-        r.fragments.push({
-          name: _.get(selection, [ 'alias', 'value' ]) || name,
-          selection
-        });
+        console.log('inline', selection)
         break;
       default:
         break;
     }
-    return r;
-  }, result);
+
+    return f;
+  }, []);
 }
 
 /**
@@ -561,12 +590,6 @@ export function factoryExecute(...rargs) {
   // check for root resolver
   if (isRootResolver(info)) {
     if (isFirstSelection(info)) {
-      // get the root fields to resolve
-      const { fields: rootFields, fragments:rootFragments } = collectFields(
-        info,
-        info.parentType,
-        info.operation.selectionSet
-      );
       const result = Object.create(null);
       const execution = {
         version: TRACING_VERSION,
@@ -580,8 +603,8 @@ export function factoryExecute(...rargs) {
         )
       };
 
-      // get the directive middleware
-      const { resolveRequest, resolveResult } = getDirectiveResolvers(info, [
+      // use the schema and operation locations
+      const astLocations = [
         {
           location: DirectiveLocation.SCHEMA,
           astNode: info.schema.astNode
@@ -590,7 +613,21 @@ export function factoryExecute(...rargs) {
           location: getOperationLocation(info),
           astNode: info.operation
         }
-      ]);
+      ];
+
+      // add any fragment definitions as well
+      forEach(info.fragments, fragmentAST => {
+        astLocations.push({
+          location: DirectiveLocation.FRAGMENT_DEFINITION,
+          astNode: fragmentAST
+        })
+      }, true);
+
+      // get the directive middleware
+      const {
+        resolveRequest,
+        resolveResult
+      } = getDirectiveResolvers(info, astLocations);
 
       // perform the entire execution from the first root resolver
       const request = promiseReduce(resolveRequest, (prev, r) => {
@@ -614,8 +651,9 @@ export function factoryExecute(...rargs) {
         );
       })
       .then(() => {
+        const fields = collectFields(info, info.operation.selectionSet);
         return resolveSubFields(
-          rootFields,
+          fields,
           result,
           info.parentType,
           rargs,
@@ -655,13 +693,8 @@ export function factoryExecute(...rargs) {
         return Promise.reject(err);
       });
 
-      // set the factory custom key
-      info.operation._factory = {
-        // logger,
-        execution,
-        result,
-        request
-      };
+      // set the factory metadata key
+      info.operation._factory = { execution, result, request };
     }
 
     // root field selections 1 to n should resolve the promise

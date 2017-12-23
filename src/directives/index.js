@@ -2,6 +2,7 @@ import by from './by';
 import id from './id';
 import meta from './meta';
 import resolve from './resolve';
+import typeDef from './typeDef';
 import validate from './validate';
 
 export const directives = {
@@ -9,5 +10,6 @@ export const directives = {
   id,
   meta,
   resolve,
+  typeDef,
   validate
 };

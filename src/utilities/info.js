@@ -85,3 +85,7 @@ export function getSelection(info) {
     selections = selection[0].selectionSet.selections;
   }
 }
+
+export function getFieldEntryKey(node) {
+  return node.alias ? node.alias.value : node.name.value;
+}
