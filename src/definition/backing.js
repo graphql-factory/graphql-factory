@@ -341,6 +341,37 @@ export class SchemaBacking {
   Directive(name: string) {
     return new DirectiveBacking(this, name);
   }
+
+  /**
+   * Shortcut method for setting a resolve
+   * @param {*} typeName 
+   * @param {*} fieldName 
+   * @param {*} resolver 
+   */
+  resolve(typeName: string, fieldName: string, resolver: () => ?mixed) {
+    assert(stringMatch(typeName, true), 'type name must be string');
+    assert(stringMatch(fieldName, true), 'field name must be string');
+    assert(_.isFunction(resolver), 'resolver must be function');
+    const path = [ typeName, 'fields', fieldName, 'resolve' ];
+    _.set(this._types, path, resolver);
+    return this;
+  }
+
+  /**
+   * Shortcut method for setting a subscribe
+   * @param {*} typeName 
+   * @param {*} fieldName 
+   * @param {*} subscriber 
+   */
+  resolve(typeName: string, fieldName: string, subscriber: () => ?mixed) {
+    assert(stringMatch(typeName, true), 'type name must be string');
+    assert(stringMatch(fieldName, true), 'field name must be string');
+    assert(_.isFunction(subscriber), 'subscriber must be function');
+    const path = [ typeName, 'fields', fieldName, 'subscribe' ];
+    _.set(this._types, path, subscriber);
+    return this;
+  }
+
   get types(): ObjMap<?TypeBackingConfig> {
     return this._types;
   }

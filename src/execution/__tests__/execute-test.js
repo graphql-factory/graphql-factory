@@ -48,6 +48,7 @@ describe('execute tests', function () {
       .buildSchema();
 
     return schema.request({
+      extensionData: false,
       source: `query MyQuery {
         readFoo(id: "1") {
           id
@@ -56,7 +57,7 @@ describe('execute tests', function () {
       }`
     })
     .then(result => {
-      expect(_.omit(result, [ 'extensions' ])).to.deep.equal({
+      expect(result).to.deep.equal({
         data: {
           readFoo: {
             id: '1',
@@ -98,6 +99,7 @@ describe('execute tests', function () {
       .buildSchema();
 
     return schema.request({
+      extensionData: false,
       source: `query MyQuery {
         readFoo(id: "1") {
           id
@@ -106,7 +108,7 @@ describe('execute tests', function () {
       }`
     })
     .then(result => {
-      expect(_.omit(result, [ 'extensions' ])).to.deep.equal({
+      expect(result).to.deep.equal({
         data: {
           readFoo: {
             id: '1',

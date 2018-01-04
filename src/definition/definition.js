@@ -28,8 +28,14 @@ import { mergeDefinition } from './merge';
 import { beforeBuildResolver } from './beforeBuild';
 import { printDefinition, buildSchema } from '../utilities';
 import { wrapMiddleware } from '../execution/middleware';
-import { lodash as _, stringMatch, asrt, forEach } from '../jsutils';
 import { DEFINITION_FIELDS } from './const';
+import {
+  lodash as _,
+  stringMatch,
+  asrt,
+  forEach,
+  promiseReduce
+} from '../jsutils';
 import {
   useLanguage,
   useSchema,
@@ -100,31 +106,33 @@ function filterStore(operation, store, args) {
 /**
  * Attempts to install any uninstalled plugins
  */
-function resolvePlugins() {
-  forEach(this._plugins, (p, name) => {
+function resolvePlugins(definition: SchemaDefinition) {
+  return promiseReduce(definition._plugins, (accum, p, name) => {
     const { plugin, installed } = p;
     if (!installed) {
       assert(
         plugin instanceof GraphQLFactoryPlugin,
         `plugin ${name} is not an instance of GraphQLFactoryPlugin`
       );
-      if (plugin.dependenciesMet(this)) {
-        this.merge(plugin);
-        plugin.install(this);
-        p.installed = true;
+      if (plugin.dependenciesMet(definition)) {
+        definition.merge(plugin);
+        return Promise.resolve(plugin.install(definition))
+          .then(() => {
+            p.installed = true;
+          });
       }
     }
-  }, true);
-  return this;
+  }, null, true);
 }
 
 /**
  * Run code after every use
  */
-function postProcessUse() {
-  resolvePlugins.call(this);
-  fixDefinition.call(this);
-  return this;
+function postProcessUse(definition: SchemaDefinition) {
+  return resolvePlugins(definition)
+    .then(() => {
+      return fixDefinition.call(definition);
+    });
 }
 
 /**
@@ -200,7 +208,7 @@ export class SchemaDefinition extends EventEmitter {
         assert(false, 'invalid use arguments');
       })
       .then(() => {
-        return postProcessUse.call(this);
+        return postProcessUse(this);
       });
     return this;
   }

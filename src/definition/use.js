@@ -30,7 +30,7 @@ export function useFile(
   definition: SchemaDefinition,
   file: string,
   backing?: ?SchemaBacking,
-  options?: ?ObjMap<any>) {
+  options?: ?ObjMap<any>): Promise<any> {
     let _backing = backing;
     let _options = options;
     if (!(backing instanceof SchemaBacking)) {
@@ -39,17 +39,31 @@ export function useFile(
     }
     const encoding = _.get(_options, 'encoding', 'utf8');
     const prefix = _.get(_options, 'prefix');
-    const source = fs.readFileSync(path.resolve(file)).toString(encoding);
-    switch (path.extname(file).toLowerCase()) {
-      case '.graphql':
-      case '.gql':
-        return useLanguage(definition, source, _backing, prefix);
-      case '.graphqlx':
-      case '.gqlx':
-        break;
-      default:
-        break;
-    }
+
+    return new Promise((resolve, reject) => {
+      fs.readFile(path.resolve(file), (error, data) => {
+        try {
+          if (error) {
+            throw error;
+          }
+          const source = data.toString(encoding);
+          switch (path.extname(file).toLowerCase()) {
+            case '.graphql':
+            case '.gql':
+              useLanguage(definition, source, _backing, prefix);
+              break;
+            case '.graphqlx':
+            case '.gqlx':
+              break;
+            default:
+              break;
+          }
+          return resolve();
+        } catch (err) {
+          return reject(err);
+        }
+      });
+    });
 }
 
 /**
