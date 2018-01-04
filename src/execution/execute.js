@@ -765,11 +765,7 @@ export function factoryExecute(...rargs) {
         start: Date.now(),
         end: -1,
         duration: -1,
-        resolvers: [],
-        operation: Object.assign(
-          Object.create(null),
-          info.operation
-        )
+        resolvers: []
       };
 
       // use the schema and operation locations
@@ -870,10 +866,16 @@ export function factoryExecute(...rargs) {
         execution.end = Date.now();
         execution.duration = execution.end - execution.start;
         info.definition.emit(EventType.EXECUTION, execution);
+        if (_.isObjectLike(info.rootValue)) {
+          _.set(info, 'rootValue.__extensions.tracing', execution);
+        }
       }, err => {
         execution.end = Date.now();
         execution.duration = execution.end - execution.start;
         info.definition.emit(EventType.EXECUTION, execution);
+        if (_.isObjectLike(info.rootValue)) {
+          _.set(info, 'rootValue.__extensions.tracing', execution);
+        }
         return Promise.reject(err);
       });
 

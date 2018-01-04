@@ -1,6 +1,9 @@
 /**
  * @flow
  */
+import path from 'path';
+import fs from 'fs';
+import { SchemaDefinition } from './definition';
 import { SchemaBacking } from './backing';
 import { GraphQLFactoryPlugin } from '../types';
 import { buildSchema } from '../utilities';
@@ -8,12 +11,46 @@ import { lodash as _, asrt } from '../jsutils';
 import { PluginConflictResolution } from './const';
 import { GraphQLDirective, GraphQLSchema } from 'graphql';
 import type { GraphQLNamedType } from 'graphql';
+import type { ObjMap } from 'graphql/jsutils/ObjMap';
 import { EventType } from './const';
 import {
   deconstructSchema,
   deconstructDirective,
   deconstructType
 } from './deconstruct';
+
+/**
+ * Imports a graphql, gql, graphqlx, or gqlx file with optional
+ * backing and prefix
+ * @param {*} file 
+ * @param {*} backing 
+ * @param {*} options
+ */
+export function useFile(
+  definition: SchemaDefinition,
+  file: string,
+  backing?: ?SchemaBacking,
+  options?: ?ObjMap<any>) {
+    let _backing = backing;
+    let _options = options;
+    if (!(backing instanceof SchemaBacking)) {
+      _options = _backing;
+      _backing = undefined;
+    }
+    const encoding = _.get(_options, 'encoding', 'utf8');
+    const prefix = _.get(_options, 'prefix');
+    const source = fs.readFileSync(path.resolve(file)).toString(encoding);
+    switch (path.extname(file).toLowerCase()) {
+      case '.graphql':
+      case '.gql':
+        return useLanguage(definition, source, _backing, prefix);
+      case '.graphqlx':
+      case '.gqlx':
+        break;
+      default:
+        break;
+    }
+}
 
 /**
  * Builds a schema from language definition/optional backing and
@@ -23,11 +60,12 @@ import {
  * @param {*} prefix 
  */
 export function useLanguage(
+  definition: SchemaDefinition,
   source: string,
   backing?: ?SchemaBacking,
   prefix?: ?string
 ) {
-  return useSchema.call(this, buildSchema(source, backing), prefix);
+  return useSchema(definition, buildSchema(source, backing), prefix);
 }
 
 /**
@@ -36,8 +74,12 @@ export function useLanguage(
  * @param {*} schema 
  * @param {*} prefix 
  */
-export function useSchema(schema: GraphQLSchema, prefix?: ?string) {
-  return this.merge(deconstructSchema(schema, prefix));
+export function useSchema(
+  definition: SchemaDefinition,
+  schema: GraphQLSchema,
+  prefix?: ?string
+) {
+  return definition.merge(deconstructSchema(schema, prefix));
 }
 
 /**
@@ -46,9 +88,13 @@ export function useSchema(schema: GraphQLSchema, prefix?: ?string) {
  * @param {*} directive 
  * @param {*} name 
  */
-export function useDirective(directive: GraphQLDirective, name?: ?string) {
+export function useDirective(
+  definition: SchemaDefinition,
+  directive: GraphQLDirective,
+  name?: ?string
+) {
   const useName = _.isString(name) && name ? name : directive.name;
-  return this.merge({
+  return definition.merge({
     directives: {
       [useName]: deconstructDirective(directive)
     }
@@ -61,9 +107,13 @@ export function useDirective(directive: GraphQLDirective, name?: ?string) {
  * @param {*} type 
  * @param {*} name 
  */
-export function useType(type: GraphQLNamedType, name?: ?string) {
+export function useType(
+  definition: SchemaDefinition,
+  type: GraphQLNamedType,
+  name?: ?string
+) {
   const useName = _.isString(name) && name ? name : type.name;
-  return this.merge({
+  return definition.merge({
     types: {
       [useName]: deconstructType(type)
     }
@@ -75,6 +125,7 @@ export function useType(type: GraphQLNamedType, name?: ?string) {
  * @param {*} plugin 
  */
 export function usePlugin(
+  definition: SchemaDefinition,
   plugin: GraphQLFactoryPlugin,
   onConflict?: ?string
 ) {
@@ -87,7 +138,7 @@ export function usePlugin(
   }
   const errText = 'a plugin with the name "' + plugin.name +
   '" has already been added to the definition';
-  const oldPlugin = _.get(this._plugins, [ plugin.name ]);
+  const oldPlugin = _.get(definition._plugins, [ plugin.name ]);
 
     // handle conflict resolution
   if (oldPlugin.plugin instanceof GraphQLFactoryPlugin) {
@@ -105,12 +156,12 @@ export function usePlugin(
     );
     switch (conflict) {
       case PluginConflictResolution.SKIP:
-        return this;
+        return definition;
       case PluginConflictResolution.ERROR:
-        this.emit(EventType.ERROR, new Error(errText));
+        definition.emit(EventType.ERROR, new Error(errText));
         return asrt('definition', false, errText);
       case PluginConflictResolution.WARN:
-        this.emit(EventType.WARN, errText);
+        definition.emit(EventType.WARN, errText);
         break;
       default:
         break;
@@ -118,21 +169,24 @@ export function usePlugin(
   }
 
   // no conflict, or warn, or replace sets the new plugin
-  this._plugins[plugin.name] = {
+  definition._plugins[plugin.name] = {
     installed: false,
     plugin
   };
-  return this;
+  return definition;
 }
 
 /**
  * Merges a backing into the definition
  * @param {*} backing 
  */
-export function useBacking(backing: SchemaBacking) {
+export function useBacking(
+  definition: SchemaDefinition,
+  backing: SchemaBacking
+) {
   const _backing = new SchemaBacking(backing);
   _backing.validate();
-  _.merge(this._types, _backing.types);
-  _.merge(this._directives, _backing.directives);
-  return this;
+  _.merge(definition._types, _backing.types);
+  _.merge(definition._directives, _backing.directives);
+  return definition;
 }

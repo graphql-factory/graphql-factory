@@ -34,6 +34,9 @@ export function request(...args) {
 
   const document = parse(source);
 
+  // if rootValue is undefined, default to an object
+  rootValue = rootValue === undefined ? {} : rootValue;
+
   // determine the operation type
   const operation = document.definitions.reduce((op, def) => {
     return typeof op === 'string' ? op : def.operation;
@@ -50,7 +53,15 @@ export function request(...args) {
         variableValues,
         operationName,
         fieldResolver
-      );
+      )
+      .then(results => {
+        // add extensions to the result
+        const extensions = _.get(rootValue, '__extensions', {});
+        return Object.assign({ extensions }, results);
+      })
+      .catch(error => {
+        return Promise.reject(error);
+      });
     case 'subscription':
       return subscribe(
         schema,

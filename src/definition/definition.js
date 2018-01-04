@@ -36,10 +36,12 @@ import {
   useDirective,
   useType,
   usePlugin,
-  useBacking
+  useBacking,
+  useFile
 } from './use';
 
 export const DEFINITION_VERSION = '3.0.0';
+export const FILE_EXT_RX = /\w\.(graphql|gql|graphqlx|gqlx)$/i;
 
 /**
  * Assert with SchemaDefinitionErrors
@@ -135,7 +137,7 @@ export class SchemaDefinition extends EventEmitter {
   _directives: ObjMap<?FactoryDirectiveConfig>;
   _types: ObjMap<?FactoryTypeConfig>;
   _schema: ?SchemaTypeConfig;
-  _plugins: ObjMap<?GraphQLFactoryPlugin>;
+  _plugins: ObjMap<?FactoryPluginResolved>;
 
   constructor(options?: ?SchemaDefinitionOptions) {
     super();
@@ -157,63 +159,42 @@ export class SchemaDefinition extends EventEmitter {
   use(...args: Array<any>) {
     const [ arg0, arg1, arg2 ] = args;
 
-    // .use(SchemaDefinition)
     if (arg0 instanceof SchemaDefinition) {
+      // .use(SchemaDefinition)
       this.merge(arg0);
-      return postProcessUse.call(this);
-    }
-
-    // .use(SchemaBacking)
-    if (arg0 instanceof SchemaBacking) {
-      useBacking.call(this, arg0);
-      return postProcessUse.call(this);
-    }
-
-    // .use(GraphQLSchema [, namePrefix])
-    if (arg0 instanceof GraphQLSchema) {
-      useSchema.call(this, arg0, arg1);
-      return postProcessUse.call(this);
-    }
-
-    // .use(GraphQLDirective [, name])
-    if (arg0 instanceof GraphQLDirective) {
-      useDirective.call(this, arg0, arg1);
-      return postProcessUse.call(this);
-    }
-
-    // .use(GraphQLNamedType [, name])
-    if (isNamedType(arg0)) {
+    } else if (arg0 instanceof SchemaBacking) {
+      // .use(SchemaBacking)
+      useBacking(this, arg0);
+    } else if (arg0 instanceof GraphQLSchema) {
+      // .use(GraphQLSchema [, namePrefix])
+      useSchema(this, arg0, arg1);
+    } else if (arg0 instanceof GraphQLDirective) {
+      // .use(GraphQLDirective [, name])
+      useDirective(this, arg0, arg1);
+    } else if (isNamedType(arg0)) {
+      // .use(GraphQLNamedType [, name])
       useType.call(this, arg0, arg1);
-      return postProcessUse.call(this);
-    }
-
-    // .use(GraphFactoryPlugin)
-    if (arg0 instanceof GraphQLFactoryPlugin) {
-      usePlugin.call(this, arg0, arg1);
-      return postProcessUse.call(this);
-    }
-
-    // .use(languageDefinition [, SchemaBacking] [, namePrefix])
-    if (stringMatch(arg0, true)) {
-      useLanguage.call(this, arg0, arg1, arg2);
-      return postProcessUse.call(this);
-    }
-
-    // .use(function, name)
-    if (_.isFunction(arg0)) {
+    } else if (arg0 instanceof GraphQLFactoryPlugin) {
+      // .use(GraphFactoryPlugin)
+      usePlugin(this, arg0, arg1);
+    } else if (stringMatch(arg0, true) && arg0.match(FILE_EXT_RX)) {
+      // .use(File [, SchemaBacking] [, options])
+      useFile(this, arg0, arg1, arg2);
+    } else if (stringMatch(arg0, true)) {
+      // .use(languageDefinition [, SchemaBacking] [, namePrefix])
+      useLanguage(this, arg0, arg1, arg2);
+    } else if (_.isFunction(arg0)) {
+      // .use(function, name)
       assert(stringMatch(arg1, true), 'function name required');
       this.merge(_.set({}, [ 'functions', arg1 ], arg0));
-      return postProcessUse.call(this);
-    }
-
-    // .use(SchemaDefinitionConfig)
-    if (isDefinitionLike(arg0)) {
+    } else if (isDefinitionLike(arg0)) {
+      // .use(SchemaDefinitionConfig)
       this.merge(arg0);
-      return postProcessUse.call(this);
+    } else {
+      // throw error if no conditions matched
+      assert(false, 'invalid use arguments');
     }
-
-    // throw error if no conditions matched
-    assert(false, 'invalid use arguments');
+    return postProcessUse.call(this);
   }
 
   /**
@@ -336,6 +317,11 @@ export type FactoryDirectiveConfig = {
   resolve?: ?GraphQLFieldResolver<*, *>,
   resolveResult?: ?GraphQLFieldResolver<*, *>,
   beforeBuild?: ?() => any
+};
+
+export type FactoryPluginResolved = {
+  installed: boolean,
+  plugin: GraphQLFactoryPlugin
 };
 
 // TODO: fully define these

@@ -56,7 +56,7 @@ describe('execute tests', function () {
       }`
     })
     .then(result => {
-      expect(result).to.deep.equal({
+      expect(_.omit(result, [ 'extensions' ])).to.deep.equal({
         data: {
           readFoo: {
             id: '1',
@@ -106,7 +106,7 @@ describe('execute tests', function () {
       }`
     })
     .then(result => {
-      expect(result).to.deep.equal({
+      expect(_.omit(result, [ 'extensions' ])).to.deep.equal({
         data: {
           readFoo: {
             id: '1',
