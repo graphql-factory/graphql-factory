@@ -131,6 +131,7 @@ function postProcessUse() {
  * Builds a new definition
  */
 export class SchemaDefinition extends EventEmitter {
+  _promise: Promise<any>;
   _options: ObjMap<any>;
   _context: ObjMap<any>;
   _functions: ObjMap<?() => any>;
@@ -141,6 +142,7 @@ export class SchemaDefinition extends EventEmitter {
 
   constructor(options?: ?SchemaDefinitionOptions) {
     super();
+    this._promise = Promise.resolve();
     this._options = Object.assign({}, options);
     this._context = {};
     this._functions = {};
@@ -158,43 +160,49 @@ export class SchemaDefinition extends EventEmitter {
    */
   use(...args: Array<any>) {
     const [ arg0, arg1, arg2 ] = args;
-
-    if (arg0 instanceof SchemaDefinition) {
-      // .use(SchemaDefinition)
-      this.merge(arg0);
-    } else if (arg0 instanceof SchemaBacking) {
-      // .use(SchemaBacking)
-      useBacking(this, arg0);
-    } else if (arg0 instanceof GraphQLSchema) {
-      // .use(GraphQLSchema [, namePrefix])
-      useSchema(this, arg0, arg1);
-    } else if (arg0 instanceof GraphQLDirective) {
-      // .use(GraphQLDirective [, name])
-      useDirective(this, arg0, arg1);
-    } else if (isNamedType(arg0)) {
-      // .use(GraphQLNamedType [, name])
-      useType.call(this, arg0, arg1);
-    } else if (arg0 instanceof GraphQLFactoryPlugin) {
-      // .use(GraphFactoryPlugin)
-      usePlugin(this, arg0, arg1);
-    } else if (stringMatch(arg0, true) && arg0.match(FILE_EXT_RX)) {
-      // .use(File [, SchemaBacking] [, options])
-      useFile(this, arg0, arg1, arg2);
-    } else if (stringMatch(arg0, true)) {
-      // .use(languageDefinition [, SchemaBacking] [, namePrefix])
-      useLanguage(this, arg0, arg1, arg2);
-    } else if (_.isFunction(arg0)) {
-      // .use(function, name)
-      assert(stringMatch(arg1, true), 'function name required');
-      this.merge(_.set({}, [ 'functions', arg1 ], arg0));
-    } else if (isDefinitionLike(arg0)) {
-      // .use(SchemaDefinitionConfig)
-      this.merge(arg0);
-    } else {
-      // throw error if no conditions matched
-      assert(false, 'invalid use arguments');
-    }
-    return postProcessUse.call(this);
+    this._promise = this._promise
+      .then(() => {
+        if (arg0 instanceof SchemaDefinition) {
+          // .use(SchemaDefinition)
+          return arg0.then(() => {
+            return this.merge(arg0);
+          });
+        } else if (arg0 instanceof SchemaBacking) {
+          // .use(SchemaBacking)
+          return useBacking(this, arg0);
+        } else if (arg0 instanceof GraphQLSchema) {
+          // .use(GraphQLSchema [, namePrefix])
+          return useSchema(this, arg0, arg1);
+        } else if (arg0 instanceof GraphQLDirective) {
+          // .use(GraphQLDirective [, name])
+          return useDirective(this, arg0, arg1);
+        } else if (isNamedType(arg0)) {
+          // .use(GraphQLNamedType [, name])
+          return useType(this, arg0, arg1);
+        } else if (arg0 instanceof GraphQLFactoryPlugin) {
+          // .use(GraphFactoryPlugin)
+          return usePlugin(this, arg0, arg1);
+        } else if (stringMatch(arg0, true) && arg0.match(FILE_EXT_RX)) {
+          // .use(File [, SchemaBacking] [, options])
+          return useFile(this, arg0, arg1, arg2);
+        } else if (stringMatch(arg0, true)) {
+          // .use(languageDefinition [, SchemaBacking] [, namePrefix])
+          return useLanguage(this, arg0, arg1, arg2);
+        } else if (_.isFunction(arg0)) {
+          // .use(function, name)
+          assert(stringMatch(arg1, true), 'function name required');
+          return this.merge(_.set({}, [ 'functions', arg1 ], arg0));
+        } else if (isDefinitionLike(arg0)) {
+          // .use(SchemaDefinitionConfig)
+          return this.merge(arg0);
+        }
+        // throw error if no conditions matched
+        assert(false, 'invalid use arguments');
+      })
+      .then(() => {
+        return postProcessUse.call(this);
+      });
+    return this;
   }
 
   /**
@@ -233,12 +241,16 @@ export class SchemaDefinition extends EventEmitter {
   /**
    * Exports the definition as a SchemaLanguage and backing
    */
-  export() {
-    fixDefinition.call(this).validate();
-    return {
-      definition: printDefinition(this),
-      backing: new SchemaBacking().import(this)
-    };
+  export(): Promise<ObjMap<any>> {
+    return this._promise.then(() => {
+      return fixDefinition.call(this).validate();
+    })
+    .then(() => {
+      return {
+        definition: printDefinition(this),
+        backing: new SchemaBacking().import(this)
+      };
+    });
   }
 
   /**
@@ -249,18 +261,40 @@ export class SchemaDefinition extends EventEmitter {
    *   * [factoryExecution=true]: uses custom graphql-factory execution
    *                              which takes over the resolvers
    */
-  buildSchema(options?: ?ObjMap<?mixed>) {
+  buildSchema(options?: ?ObjMap<?mixed>): Promise<GraphQLSchema> {
     const opts = Object.assign({}, options);
     const wrap = opts.useMiddleware !== false;
-    forEach(this._plugins, (plugin, name) => {
-      assert(plugin.installed, 'failed to build, plugin "' + name +
-      '" has not been installed due to unmet dependencies');
-    }, true);
-    beforeBuildResolver.call(this);
-    const { definition, backing } = this.export();
-    const schema = buildSchema(definition, backing);
-    _.set(schema, 'definition', this);
-    return wrap ? wrapMiddleware(this, schema, opts) : schema;
+
+    return this._promise.then(() => {
+      forEach(this._plugins, (plugin, name) => {
+        assert(plugin.installed, 'failed to build, plugin "' + name +
+        '" has not been installed due to unmet dependencies');
+      }, true);
+    })
+    .then(() => {
+      return beforeBuildResolver.call(this);
+    })
+    .then(() => {
+      return this.export();
+    })
+    .then(({ definition, backing }) => {
+      const schema = buildSchema(definition, backing);
+      _.set(schema, 'definition', this);
+      return wrap ? wrapMiddleware(this, schema, opts) : schema;
+    });
+  }
+
+  /**
+   * Resolves the current promise chain and returns the definition
+   * @param {*} executor 
+   */
+  get definition(): Promise<SchemaDefinition> {
+    return this._promise.then(() => {
+      return this;
+    })
+    .catch(error => {
+      return Promise.reject(error);
+    });
   }
 
   get context(): ?ObjMap<any> {

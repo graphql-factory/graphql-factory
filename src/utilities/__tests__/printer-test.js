@@ -5,8 +5,8 @@ import { printDefinition } from '../printer';
 import { DirectiveLocation, buildSchema } from 'graphql';
 
 describe('printer tests', function () {
-  it('print a schema', function () {
-    const def = new SchemaDefinition({
+  it('print a schema', async function () {
+    const def = await new SchemaDefinition({
       noDefaultTypes: true
     })
       .use({
@@ -67,7 +67,8 @@ describe('printer tests', function () {
           directives: [ 'test' ],
           query: 'Query'
         }
-      });
+      })
+      .definition;
       const str = printDefinition(def);
       buildSchema(str);
 

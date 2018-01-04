@@ -70,36 +70,34 @@ const backing = new SchemaBacking()
     })
   .backing()
 
-// build a schema from the definition and backing
-const schema = new SchemaDefinition()
-  .use(definition, backing)
-  .buildSchema()
+// create an async function so we can use await
+async function main() {
+  // build a schema from the definition and backing
+  const schema = await new SchemaDefinition()
+    .use(definition, backing)
+    .buildSchema()
 
-// make a request with graphql's execution
-// graphql-factory will hijack it and use
-// its own execution code
-graphql({
-  schema,
-  source: `
-    query MyQuery {
-      listLists {
-        name
-        items {
+  // make a request with the attached request method
+  // you can also use the standard graphql execution
+  // but extensions will not be returned in the result
+  const result = await schema.request({
+    source: `
+      query MyQuery {
+        listLists {
           name
+          items {
+            name
+          }
         }
       }
-    }
-  `,
-  rootValue: {
-    // create a logger that will output things like tracing data
-    logger (event, data) {
-      console.log(event, data)
-    }
-  }
-})
-.then(result => {
-  // do something with the result
-})
+    `
+  });
+
+  console.log(result);
+}
+
+// call async function to execute query
+main();
 ```
 
 ### Factory Definition Example
@@ -171,34 +169,32 @@ const definition = {
   }
 }
 
-// build a schema from the definition
-const schema = new SchemaDefinition()
-  .use(definition)
-  .buildSchema()
+// create an async function so we can use await
+async function main() {
+  // build a schema from the definition and backing
+  const schema = await new SchemaDefinition()
+    .use(definition)
+    .buildSchema()
 
-// make a request with graphql's execution
-// graphql-factory will hijack it and use
-// its own execution code
-graphql({
-  schema,
-  source: `
-    query MyQuery {
-      listLists {
-        name
-        items {
+  // make a request with the attached request method
+  // you can also use the standard graphql execution
+  // but extensions will not be returned in the result
+  const result = await schema.request({
+    source: `
+      query MyQuery {
+        listLists {
           name
+          items {
+            name
+          }
         }
       }
-    }
-  `,
-  rootValue: {
-    // create a logger that will output things like tracing data
-    logger (event, data) {
-      console.log(event, data)
-    }
-  }
-})
-.then(result => {
-  // do something with the result
-})
+    `
+  });
+
+  console.log(result);
+}
+
+// call async function to execute query
+main();
 ```

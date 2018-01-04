@@ -42,8 +42,8 @@ const definition = {
 };
 
 describe('execute tests', function () {
-  it('executes a simple query', function () {
-    const schema = new SchemaDefinition()
+  it('executes a simple query', async function () {
+    const schema = await new SchemaDefinition()
       .use(_.cloneDeep(definition))
       .buildSchema();
 
@@ -67,7 +67,7 @@ describe('execute tests', function () {
     });
   });
 
-  it('uses an @resolve directive instead of the resolver', function () {
+  it('uses an @resolve directive instead of the resolver', async function () {
     const def = `
     type Foo {
       id: String!
@@ -82,7 +82,7 @@ describe('execute tests', function () {
     }
     `;
 
-    const schema = new SchemaDefinition()
+    const schema = await new SchemaDefinition()
       .use({
         directives: {
           resolve: directives.resolve

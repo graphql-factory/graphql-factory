@@ -4,8 +4,8 @@ import { SchemaDefinition } from '../definition';
 import { JSONType, DateTimeType } from '../../types';
 
 describe('definition.definition tests', function () {
-  it('create an empty definition', function () {
-    const def = new SchemaDefinition();
+  it('create an empty definition', async function () {
+    const def = await new SchemaDefinition().definition;
     expect(def.types).to.deep.equal({
       JSON: JSONType,
       DateTime: DateTimeType
@@ -16,8 +16,8 @@ describe('definition.definition tests', function () {
     expect(def.schema).to.equal(null);
   });
 
-  it('uses type data', function () {
-    const def = new SchemaDefinition()
+  it('uses type data', async function () {
+    const def = await new SchemaDefinition()
       .use({
         types: {
           Foo: {
@@ -27,8 +27,8 @@ describe('definition.definition tests', function () {
             }
           }
         }
-      });
-
+      })
+      .definition;
     expect(def.types).to.deep.equal({
       JSON: JSONType,
       DateTime: DateTimeType,

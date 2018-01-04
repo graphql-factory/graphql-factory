@@ -60,7 +60,8 @@ function searchResolver(source, args, context, info) {
   return results[0]
 }
 
-const schema = new SchemaDefinition()
+async function main() {
+  const schema = await new SchemaDefinition()
   .use({
     directives: {
       resolve: directives.resolve,
@@ -124,70 +125,72 @@ const schema = new SchemaDefinition()
   //schema.getType('Human').isTypeOf = value => _.has(value, 'height')
   //schema.getType('Droid').isTypeOf = value => _.has(value, 'primaryFunction')
   //schema.getType('Starship').isTypeOf = value => _.has(value, 'length')
-// console.log(schema)
+  // console.log(schema)
 
-const unionQuery = `
-query Search {
-  search(text: "o") {
-    ... on Human {
-      name
-      height
-    }
-    ... on Droid {
-      name
-      primaryFunction
-    }
-    ... on Starship {
-      name
-      length
+  const unionQuery = `
+  query Search {
+    search(text: "o") {
+      ... on Human {
+        name
+        height
+      }
+      ... on Droid {
+        name
+        primaryFunction
+      }
+      ... on Starship {
+        name
+        length
+      }
     }
   }
-}
-`
+  `
 
-const mixedFrag = `
-query Mixed {
-  search(text: "o") {
-    ... on Human @test(value: "human inline") {
-      ...resultName @test(value: "frag spread")
-      height
-    }
-    ... on Droid @test(value: "droid inline") {
-      name
-      primaryFunction
-    }
-    ... on Starship @test(value: "droid inline") {
-      name
-      length
+  const mixedFrag = `
+  query Mixed {
+    search(text: "o") {
+      ... on Human @test(value: "human inline") {
+        ...resultName @test(value: "frag spread")
+        height
+      }
+      ... on Droid @test(value: "droid inline") {
+        name
+        primaryFunction
+      }
+      ... on Starship @test(value: "droid inline") {
+        name
+        length
+      }
     }
   }
-}
 
-fragment resultName on Human {
-  name
-}
-`
+  fragment resultName on Human {
+    name
+  }
+  `
 
-const fragmentQuery = `
-query Frag {
-  readFoo(id: "1") {
+  const fragmentQuery = `
+  query Frag {
+    readFoo(id: "1") {
+      id
+      ...fullFoo
+    }
+  }
+
+  fragment fullFoo on Foo {
     id
-    ...fullFoo
+    ...fooName
   }
-}
-
-fragment fullFoo on Foo {
-  id
-  ...fooName
-}
-fragment fooName on Foo {
-  name
-}
-`
+  fragment fooName on Foo {
+    name
+  }
+  `
 
 
-schema.request({
-  source: mixedFrag
-})
-.then(r => console.log(JSON.stringify(r, null, '  ')))
-.catch(console.error)
+  const r = await schema.request({
+    source: mixedFrag
+  })
+  console.log(JSON.stringify(r, null, '  '));
+}
+
+main();
