@@ -7,6 +7,9 @@ A construct for designing and building GraphQL schemas
 The `SchemaDefinition` class allows the developer to programatically
 build a schema definition in **GraphQL Factory Definition Format**
 (here on refered to as `GFD` format) using a simple yet powerful API.
+The `definition` property of a `SchemaDefinition` returns a `Promise`
+that resolves any asyncronous code required to complete the definition
+before returning a reference to the definition.
 
 ### .use()
 

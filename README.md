@@ -1,8 +1,12 @@
 # graphql-factory
 
-Tools for building `graphql`
+Tools for building `GraphQL`
 
-## Announcement
+## Announcements
+
+* Alpha releases have started...
+
+* Documentation on [graphqlfactory.io](http://graphqlfactory.io) is not currently up to date. This announcement will be removed when it is.
 
 This project is currently undergoing a major re-write for `v3.0.0`. 
 This will include

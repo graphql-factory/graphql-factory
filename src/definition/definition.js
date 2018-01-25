@@ -203,6 +203,9 @@ export class SchemaDefinition extends EventEmitter {
         } else if (isDefinitionLike(arg0)) {
           // .use(SchemaDefinitionConfig)
           return this.merge(arg0);
+        } else if (arg0 === undefined) {
+          // allow calling an empty use to resolve the promise
+          return this;
         }
         // throw error if no conditions matched
         assert(false, 'invalid use arguments');

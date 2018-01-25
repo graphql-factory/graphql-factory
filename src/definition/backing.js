@@ -363,7 +363,7 @@ export class SchemaBacking {
    * @param {*} fieldName 
    * @param {*} subscriber 
    */
-  resolve(typeName: string, fieldName: string, subscriber: () => ?mixed) {
+  subscribe(typeName: string, fieldName: string, subscriber: () => ?mixed) {
     assert(stringMatch(typeName, true), 'type name must be string');
     assert(stringMatch(fieldName, true), 'field name must be string');
     assert(_.isFunction(subscriber), 'subscriber must be function');
