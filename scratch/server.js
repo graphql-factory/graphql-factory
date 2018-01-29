@@ -1,9 +1,10 @@
 import _ from 'lodash';
-import {
-  SchemaDefinition,
-} from '../src';
+import { SchemaDefinition, RemoteSchemaHTTP } from '../src';
 import express from 'express';
+import graphqlHTTP from 'express-graphql';
 import bodyParser from 'body-parser';
+
+const remote = new RemoteSchemaHTTP('http://api.graphloc.com/graphql')
 
 
 const db = {
@@ -14,6 +15,9 @@ const db = {
 }
 
 const definition = {
+  context: {
+    db: 'MyDB'
+  },
   types: {
     Foo: {
       type: 'Object',
@@ -33,6 +37,7 @@ const definition = {
             }
           },
           resolve(source, args, context, info) {
+            console.log(context.headers, context.db)
             return _.find(db.foo, { id: args.id });
           }
         }
@@ -44,23 +49,17 @@ const definition = {
   }
 };
 
-const schema = new SchemaDefinition()
+new SchemaDefinition()
+  .use(remote)
   .use(definition)
-  .buildSchema();
-
-const app = express();
-app.use(bodyParser.text());
-app.post('/graphql', (req, res) => {
-  return schema.request({
-    source: req.body
-  })
-  .then(result => {
-    return res.json(result);
-  }, err => {
-    return res.status(500).send(err.message);
-  })
-});
-
-app.listen(3000, () => {
-  console.log('GraphQL Server Listening on 3000');
-})
+  .buildSchema()
+  .then(schema => {
+    const app = express();
+    app.use('/graphql', graphqlHTTP({
+      schema
+    }));
+    
+    app.listen(3000, () => {
+      console.log('GraphQL Server Listening on 3000');
+    })
+  });

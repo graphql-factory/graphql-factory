@@ -1,7 +1,7 @@
 /**
  * A minimal yet feature-rich Promise based http(s) client
  */
-import { merge } from '../jsutils';
+import * as _ from '../jsutils/lodash.custom';
 import http from 'http';
 import https from 'https';
 import url from 'url';
@@ -105,7 +105,7 @@ function request(method, address, body, options) {
   let timeout = null;
   return new Promise((resolve, reject) => {
     try {
-      const opts = merge(
+      const opts = _.merge(
         {},
         this.options,
         options,

@@ -10,6 +10,7 @@ export {
   request
 } from './utilities';
 export {
+  AsyncIterator,
   JSONType,
   DateTimeType,
   GraphQLFactoryDirective,

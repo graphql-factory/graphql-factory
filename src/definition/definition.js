@@ -21,7 +21,6 @@ import EventEmitter from 'events';
 import type { ObjMap } from 'graphql/jsutils/ObjMap';
 import type { GraphQLFieldResolver } from 'graphql';
 import { GraphQLSchema, GraphQLDirective, isNamedType } from 'graphql';
-import { JSONType, DateTimeType, GraphQLFactoryPlugin } from '../types';
 import { SchemaBacking } from './backing';
 import { fixDefinition } from './fix';
 import { mergeDefinition } from './merge';
@@ -29,6 +28,12 @@ import { beforeBuildResolver } from './beforeBuild';
 import { printDefinition, buildSchema } from '../utilities';
 import { wrapMiddleware } from '../execution/middleware';
 import { DEFINITION_FIELDS } from './const';
+import {
+  JSONType,
+  DateTimeType,
+  GraphQLFactoryPlugin,
+  RemoteSchema
+} from '../types';
 import {
   lodash as _,
   stringMatch,
@@ -181,6 +186,11 @@ export class SchemaDefinition extends EventEmitter {
         } else if (arg0 instanceof GraphQLSchema) {
           // .use(GraphQLSchema [, namePrefix])
           return useSchema(this, arg0, arg1);
+        } else if (arg0 instanceof RemoteSchema) {
+          // .use(RemoteSchema, [, namePrefix])
+          return arg0.buildSchema().then(remoteSchema => {
+            return useSchema(this, remoteSchema, arg1);
+          });
         } else if (arg0 instanceof GraphQLDirective) {
           // .use(GraphQLDirective [, name])
           return useDirective(this, arg0, arg1);

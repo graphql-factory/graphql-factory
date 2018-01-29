@@ -1,4 +1,7 @@
 // @flow
+import AsyncIterator from './asyncIterator';
+
+export { AsyncIterator };
 export { JSONType, DateTimeType } from './scalars';
 export { GraphQLFactoryDirective } from './directive.js';
 export { GraphQLFactoryPlugin } from './plugin';

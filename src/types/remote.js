@@ -1,10 +1,10 @@
 import {
+  GraphQLError,
   introspectionQuery,
   buildClientSchema,
   print
 } from 'graphql';
-import { getSelection } from '../utilities/info';
-import { HttpClient } from '../utilities/http';
+import { getSelection, httpPOST } from '../utilities';
 import { lodash as _ } from '../jsutils';
 
 function proxyRemoteFields(type) {
@@ -31,7 +31,6 @@ export class RemoteSchema {
       introspection: Promise.resolve()
     };
     this._introspection = this._options.introspection;
-
   }
 
   buildSchema() {
@@ -67,36 +66,40 @@ export class RemoteSchema {
   }
 }
 
+function httpOpts(options, args, context, info, headers) {
+  return _.merge(
+    {},
+    _.isFunction(options) ?
+      options({ args, context, info }) :
+      options,
+    { headers }
+  );
+}
+
 export class RemoteSchemaHTTP extends RemoteSchema {
   constructor(endpoint, options) {
     super(options);
     this._endpoint = endpoint;
-    this._client = new HttpClient(this._options);
   }
 
   _resolver(requestString, args, context, info) {
-    // TODO: determine how to pass context, rootValue, variable values, etc.
-    // content type application/json will allow variables, etc
-    // from express-graphql - If context is not provided, the request 
-    // object is passed as the context
-    return this._client
-    .post(this._endpoint, requestString, {
-      headers: {
-        'content-type': 'text/plain'
-      }
-    })
+    const opts = httpOpts(this._options, args, context, info, {
+      'content-type': 'application/json'
+    });
+    return httpPOST(this._endpoint, { query: requestString }, opts)
     .then(result => {
+      if (result.errors) {
+        throw new GraphQLError(result.errors.map(err => err.message));
+      }
       return result.data[info.path.key];
     });
   }
 
   _introspect() {
-    return this._client
-      .post(this._endpoint, introspectionQuery, {
-        headers: {
-          'content-type': 'text/plain'
-        }
-      })
+    const opts = httpOpts(this._options, {}, {}, {}, {
+      'content-type': 'application/json'
+    });
+    return httpPOST(this._endpoint, { query: introspectionQuery }, opts)
       .then(result => {
         if (result.errors) {
           this.introspection = null;

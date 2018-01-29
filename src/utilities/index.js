@@ -1,5 +1,6 @@
 export { buildSchema } from './buildSchema';
 export { request } from './request';
+export { httpPOST } from './httpPOST';
 export { getFieldTypeLocation, getNamedTypeLocation } from './getTypeLocation';
 export { printDefinition } from './printer';
 export {

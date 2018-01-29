@@ -1,6 +1,6 @@
 {
   "name": "graphql-factory",
-  "version": "3.0.0-alpha.0",
+  "version": "3.0.0-alpha.1",
   "description": "Tools for building GraphQL",
   "license": "MIT",
   "main": "index.js",
@@ -28,6 +28,7 @@
     "graphql": ">=0.9.0"
   },
   "dependencies": {
+    "express-graphql": "^0.6.11",
     "iterall": "1.1.3"
   },
   "devDependencies": {
