@@ -86,7 +86,13 @@ export class RemoteSchemaHTTP extends RemoteSchema {
     const opts = httpOpts(this._options, args, context, info, {
       'content-type': 'application/json'
     });
-    return httpPOST(this._endpoint, { query: requestString }, opts)
+    const body = {
+      query: requestString,
+      operationName: info.operation.name,
+      variables: info.variableValues,
+      raw: true
+    };
+    return httpPOST(this._endpoint, body, opts)
     .then(result => {
       if (result.errors) {
         throw new GraphQLError(result.errors.map(err => err.message));
