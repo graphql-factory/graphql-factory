@@ -21,7 +21,8 @@
     "scratch": "babel-node ./scratch/scratch.js",
     "sub": "babel-node ./scratch/subscribe.js",
     "server": "babel-node ./scratch/server.js",
-    "remote": "babel-node ./scratch/remote.js"
+    "remote": "babel-node ./scratch/remote.js",
+    "nested": "babel-node ./scratch/nestedinput.js"
   },
   "author": "Branden Horiuchi <bhoriuchi@gmail.com>",
   "peerDependencies": {
@@ -39,6 +40,7 @@
     "babel-plugin-transform-flow-strip-types": "6.22.0",
     "babel-plugin-transform-object-rest-spread": "6.23.0",
     "babel-preset-env": "^1.5.2",
+    "bluebird": "^3.5.1",
     "body-parser": "^1.18.2",
     "chai": "4.1.1",
     "chai-json-equal": "0.0.1",

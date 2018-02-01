@@ -13,7 +13,6 @@ export const DEFINITION_FIELDS = [
 ];
 
 export const EventType = {
-  EXECUTION: 'execution',
   ERROR: 'error',
   WARN: 'warn',
   INFO: 'info'

@@ -8,6 +8,9 @@ import { lodash as _ } from '../jsutils';
  */
 export function fieldPath(info, includeIndexes) {
   let current = info.path || _.get(info, [ 'fieldInfo', 'path' ]);
+  if (!current) {
+    return [];
+  }
   const path = [ current.key ];
   while (current.prev) {
     current = current.prev;

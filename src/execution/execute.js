@@ -15,7 +15,8 @@ import {
   promiseMap,
   lodash as _,
   forEach,
-  reduce
+  reduce,
+  getTime
 } from '../jsutils';
 import {
   GraphQLSkipResolveInstruction,
@@ -46,15 +47,15 @@ import {
   getOperationLocation,
   getFragmentLocation,
   getFragment,
-  doesFragmentConditionMatch
+  doesFragmentConditionMatch,
+  hasListTypeAST,
+  getBaseTypeAST
 } from '../utilities';
 
 export const ExecutionType = {
   RESOLVE: 'RESOLVE',
   DIRECTIVE: 'DIRECTIVE'
 };
-
-export const TRACING_VERSION = '1.0.0';
 
 // create a wrapped default field resolver and add
 // a property to identify that it is default
@@ -220,10 +221,13 @@ export function buildFieldResolveArgs(
  * @param {*} result 
  */
 export function calculateRun(stack, execution, result, isDefault) {
-  execution.end = Date.now();
+  execution.end = getTime();
   execution.duration = execution.end - execution.start;
   if (result instanceof Error) {
-    execution.error = result;
+    const errKeys = Object.getOwnPropertyNames(result);
+    execution.error = _.reduce(errKeys, (errObj, errKey) => {
+      return _.set(errObj, [ errKey ], result[errKey]);
+    }, {});
   }
   // do not trace default resolvers
   if (!isDefault) {
@@ -249,14 +253,26 @@ export function instrumentResolver(
   args,
   resolveErrors
 ) {
+
+  const parentType = _.get(info, 'attachInfo.fieldInfo.parentType') ||
+    info.parentType;
+  const fieldName = _.get(info, 'attachInfo.fieldInfo.fieldName') ||
+    info.fieldName;
+  const returnType = _.get(info, 'attachInfo.fieldInfo.returnType') ||
+    info.returnType;
+
   const execution = {
     type,
     name,
+    path: fieldPath(info.attachInfo || info, true),
+    location: info.location || null,
+    parentType: String(parentType),
+    fieldName,
+    returnType: String(returnType),
     resolverName,
-    start: Date.now(),
+    start: getTime(),
     end: -1,
     duration: -1,
-    info: _.pick(info, [ 'location', 'path' ]),
     error: null
   };
 
@@ -361,6 +377,50 @@ export function resolveSubFields(
 }
 
 /**
+ * TODO: Finish this
+ * Descends down the input objects executing directive middleware
+ * @param {*} values 
+ * @param {*} astNodes 
+ * @param {*} objDef 
+ * @param {*} info 
+ */
+export function resolveInputObjectDirectives(
+  values,
+  astNodes,
+  objDef,
+  location,
+  info
+) {
+  _.forEach(values, (value, key) => {
+    const astNode = _.find(astNodes, node => {
+      return node.name.value === key;
+    });
+    const def = _.find(objDef, d => {
+      return key === d.name;
+    });
+
+    const baseType = getBaseTypeAST(astNode.type);
+    const isList = hasListTypeAST(astNode.type);
+
+    if (isList) {
+      _.forEach(value, listValue => {
+
+      });
+    } else {
+      const r = getDirectiveResolvers(info, [
+        {
+          location,
+          astNode
+        }
+      ]);
+      console.log(r.resolveRequest)
+    }
+
+    // console.log({ key, value, def, astNode, baseType, isList })
+  });
+}
+
+/**
  * Resolves directives on arguments. Arguments are resolved in parallel
  * but directives on each argument are resolved serially
  * @param {*} field 
@@ -378,10 +438,21 @@ export function resolveArgDirectives(
   const execution = info.operation._factory.execution;
   const location = DirectiveLocation.INPUT_FIELD_DEFINITION;
   const args = getArgumentValues(field, selection, info.variableValues);
+
+  resolveInputObjectDirectives(
+    args,
+    field.astNode.arguments,
+    field.args,
+    DirectiveLocation.ARGUMENT_DEFINITION,
+    info
+  );
+
   return promiseMap(args, (value, key) => {
     const astNode = _.find(field.astNode.arguments, arg => {
       return arg.name.value === key;
     });
+
+    // getInputDirectives(key, value, selection, field, info);
 
     assert(astNode, 'ExecuteError: Failed to find astNode for ' +
     'argument "' + key + '"');
@@ -413,7 +484,7 @@ export function resolveArgDirectives(
         ExecutionType.DIRECTIVE,
         r.directive.name,
         r.resolve.name || 'resolve',
-        execution.resolvers,
+        execution.execution.resolvers,
         directiveInfo,
         r.resolve,
         [ prev, r.args, context, directiveInfo ]
@@ -495,7 +566,7 @@ export function resolveField(source, path, parentType, selection, rargs) {
           ExecutionType.DIRECTIVE,
           r.directive.name,
           r.resolve.name || 'resolve',
-          execution.resolvers,
+          execution.execution.resolvers,
           directiveInfo,
           r.resolve,
           [ prev, r.args, context, directiveInfo ]
@@ -529,7 +600,7 @@ export function resolveField(source, path, parentType, selection, rargs) {
               ExecutionType.RESOLVE,
               pathStr,
               resolver.name || 'resolve',
-              info.operation._factory.execution.resolvers,
+              info.operation._factory.execution.execution.resolvers,
               info,
               resolver,
               buildFieldResolveArgs(
@@ -585,7 +656,7 @@ export function resolveField(source, path, parentType, selection, rargs) {
                 ExecutionType.DIRECTIVE,
                 r.directive.name,
                 r.resolve.name || 'resolve',
-                execution.resolvers,
+                execution.execution.resolvers,
                 directiveInfo,
                 r.resolve,
                 [ prev, r.args, context, directiveInfo ]
@@ -659,7 +730,7 @@ export function resolveField(source, path, parentType, selection, rargs) {
             ExecutionType.DIRECTIVE,
             r.directive.name,
             r.resolve.name || 'resolveResult',
-            execution.resolvers,
+            execution.execution.resolvers,
             directiveInfo,
             r.resolve,
             [ prev, r.args, context, directiveInfo ]
@@ -761,11 +832,9 @@ export function factoryExecute(...rargs) {
     if (isFirstSelection(info)) {
       const result = Object.create(null);
       const execution = {
-        version: TRACING_VERSION,
-        start: Date.now(),
-        end: -1,
-        duration: -1,
-        resolvers: []
+        execution: {
+          resolvers: []
+        }
       };
 
       // use the schema and operation locations
@@ -825,7 +894,7 @@ export function factoryExecute(...rargs) {
           ExecutionType.DIRECTIVE,
           r.directive.name,
           r.resolve.name || 'resolve',
-          execution.resolvers,
+          execution.execution.resolvers,
           directiveInfo,
           r.resolve,
           [ undefined, r.args, context, directiveInfo ]
@@ -855,7 +924,7 @@ export function factoryExecute(...rargs) {
             ExecutionType.DIRECTIVE,
             r.directive.name,
             r.resolve.name || 'resolveResult',
-            execution.resolvers,
+            execution.execution.resolvers,
             directiveInfo,
             r.resolve,
             [ result, r.args, context, directiveInfo ]
@@ -863,19 +932,9 @@ export function factoryExecute(...rargs) {
         });
       })
       .then(() => {
-        execution.end = Date.now();
-        execution.duration = execution.end - execution.start;
-        info.definition.emit(EventType.EXECUTION, execution);
-        if (_.isObjectLike(info.rootValue)) {
-          _.set(info, 'rootValue.__extensions.tracing', execution);
-        }
+        completeExecution(execution, info);
       }, err => {
-        execution.end = Date.now();
-        execution.duration = execution.end - execution.start;
-        info.definition.emit(EventType.EXECUTION, execution);
-        if (_.isObjectLike(info.rootValue)) {
-          _.set(info, 'rootValue.__extensions.tracing', execution);
-        }
+        completeExecution(execution, info);
         return Promise.reject(err);
       });
 
@@ -913,6 +972,18 @@ export function factoryExecute(...rargs) {
       throw resultOrError;
     }
     return resultOrError;
+}
+
+export function completeExecution(execution, info) {
+  const resolvers = execution.execution.resolvers;
+  // calculate the overhead and resolver durations
+  execution.resolverDuration = _.reduce(resolvers, (total, r) => {
+    return total + r.duration;
+  }, 0);
+
+  if (_.isObjectLike(info.rootValue)) {
+    _.set(info, 'rootValue.__extensions.tracing', execution);
+  }
 }
 
 // runs as basic graphql execution

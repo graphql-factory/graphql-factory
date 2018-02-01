@@ -24,3 +24,9 @@ export {
   getSelection,
   getFieldEntryKey
 } from './info';
+export {
+  isListTypeAST,
+  isNonNullTypeAST,
+  hasListTypeAST,
+  getBaseTypeAST
+} from './ast';

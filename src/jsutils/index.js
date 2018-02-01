@@ -3,6 +3,7 @@ import * as errors from './errors';
 import * as semver from './semver';
 export { lodash, errors, semver };
 export { assert, asrt } from './assert';
+export { getTime } from './getTime';
 export { forEach } from './forEach';
 export { indent } from './indent';
 export { map } from './map';

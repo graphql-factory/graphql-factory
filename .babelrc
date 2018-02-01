@@ -1,16 +1,20 @@
 {
-  "presets": [["env", {
-    "targets": {
-      "node": 4,
-      "browsers": [
-        "ie 9",
-        "ios 9",
-        "last 2 chrome versions",
-        "last 2 edge versions",
-        "last 2 firefox versions",
-      ]
-    }
-  }]],
+  "presets": [
+    [
+      "env", {
+        "targets": {
+          "node": 4,
+          "browsers": [
+            "ie 9",
+            "ios 9",
+            "last 2 chrome versions",
+            "last 2 edge versions",
+            "last 2 firefox versions"
+          ]
+        }
+      }
+    ]
+  ],
   "plugins": [
     "./resources/inline-invariant",
     "syntax-async-functions",
