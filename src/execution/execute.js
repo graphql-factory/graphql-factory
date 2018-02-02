@@ -5,7 +5,6 @@
  * middleware to be run at different points in the execution lifecycle
  * using directives. It also allows deep tracing data visibility.
  */
-import assert from 'assert';
 import { SchemaDefinition } from '../definition';
 import { getArgumentValues } from 'graphql/execution/values';
 import { getOperationRootType } from 'graphql/execution/execute';
@@ -32,7 +31,9 @@ import {
   getDirectiveValues,
   GraphQLSkipDirective,
   GraphQLIncludeDirective,
-  isAbstractType
+  isAbstractType,
+  isSpecifiedScalarType,
+  GraphQLEnumType
 } from 'graphql';
 import {
   getDirectiveResolvers,
@@ -47,9 +48,7 @@ import {
   getOperationLocation,
   getFragmentLocation,
   getFragment,
-  doesFragmentConditionMatch,
-  hasListTypeAST,
-  getBaseTypeAST
+  doesFragmentConditionMatch
 } from '../utilities';
 
 export const ExecutionType = {
@@ -377,47 +376,157 @@ export function resolveSubFields(
 }
 
 /**
- * TODO: Finish this
- * Descends down the input objects executing directive middleware
- * @param {*} values 
- * @param {*} astNodes 
- * @param {*} objDef 
- * @param {*} info 
+ * Recuresively collects and resolves input object
+ * directive resolvers
+ * @param {*} path
+ * @param {*} value
+ * @param {*} fullType
+ * @param {*} exeContext
  */
 export function resolveInputObjectDirectives(
-  values,
-  astNodes,
-  objDef,
-  location,
-  info
+  path,
+  value,
+  fullType,
+  exeContext
 ) {
-  _.forEach(values, (value, key) => {
-    const astNode = _.find(astNodes, node => {
-      return node.name.value === key;
+  const { context, info } = exeContext;
+  const type = getNullableType(fullType);
+
+  if (type instanceof GraphQLList) {
+    return promiseMap(value, (val, index) => {
+      resolveInputObjectDirectives(
+        _.union(path, [ index ]),
+        val,
+        type.ofType,
+        exeContext
+      );
     });
-    const def = _.find(objDef, d => {
-      return key === d.name;
-    });
+  }
 
-    const baseType = getBaseTypeAST(astNode.type);
-    const isList = hasListTypeAST(astNode.type);
+  const attachInfo = {
+    kind: type.astNode.kind,
+    parentType: type,
+    path,
+    astNode: type.astNode
+  };
 
-    if (isList) {
-      _.forEach(value, listValue => {
+  // get main type directive resolvers
+  const typeExec = getDirectiveResolvers(info, [
+    {
+      location: objectTypeLocation(type),
+      astNode: type.astNode
+    }
+  ]);
 
-      });
-    } else {
-      const r = getDirectiveResolvers(info, [
+  if (type instanceof GraphQLEnumType) {
+    const valueDef = _.find(type.getValues(), v => v.value === value);
+    const valueExec = getDirectiveResolvers(info, [
+      {
+        location: DirectiveLocation.ENUM_VALUE,
+        astNode: valueDef.astNode
+      }
+    ]);
+    return reduceRequestDirectives(
+      value,
+      typeExec.resolveRequest,
+      context,
+      attachInfo,
+      info
+    )
+    .then(() => {
+      return reduceRequestDirectives(
+        value,
+        valueExec.resolveRequest,
+        context,
         {
-          location,
-          astNode
+          kind: valueDef.astNode.kind,
+          parentType: type,
+          path,
+          astNode: valueDef.astNode
+        },
+        info
+      );
+    });
+  } else if (_.isFunction(type.getFields)) {
+    const fields = type.getFields();
+    return promiseMap(value, (v, k) => {
+      const field = fields[k];
+      const fieldExec = getDirectiveResolvers(info, [
+        {
+          location: DirectiveLocation.INPUT_FIELD_DEFINITION,
+          astNode: field.astNode
         }
       ]);
-      console.log(r.resolveRequest)
-    }
+      return reduceRequestDirectives(
+        value,
+        typeExec.resolveRequest,
+        context,
+        attachInfo,
+        info
+      )
+      .then(() => {
+        return reduceRequestDirectives(
+          v,
+          fieldExec.resolveRequest,
+          context,
+          {
+            kind: field.astNode.kind,
+            parentType: type,
+            path,
+            astNode: field.astNode
+          },
+          info
+        );
+      })
+      .then(() => {
+        if (!isSpecifiedScalarType(getNullableType(field.type))) {
+          resolveInputObjectDirectives(
+            _.union(path, [ k ]),
+            v,
+            field.type,
+            exeContext
+          );
+        }
+      });
+    });
+  }
+}
 
-    // console.log({ key, value, def, astNode, baseType, isList })
-  });
+/**
+ * Reduces the request directives overwritting the source value
+ * if a value is returned from the directive resolver
+ * @param {*} value
+ * @param {*} resolveRequest
+ * @param {*} context
+ * @param {*} attachInfo
+ * @param {*} info
+ */
+export function reduceRequestDirectives(
+  value,
+  resolveRequest,
+  context,
+  attachInfo,
+  info
+) {
+  const execution = info.operation._factory.execution;
+  if (!_.isArray(resolveRequest) || !resolveRequest.length) {
+    return Promise.resolve(value);
+  }
+  return promiseReduce(resolveRequest, (prev, r) => {
+    const directiveInfo = buildDirectiveInfo(info, r, { attachInfo });
+    return instrumentResolver(
+      ExecutionType.DIRECTIVE,
+      r.directive.name,
+      r.resolve.name || 'resolve',
+      execution.execution.resolvers,
+      directiveInfo,
+      r.resolve,
+      [ prev, r.args, context, directiveInfo ]
+    )
+    .then(directiveResult => {
+      return directiveResult === undefined ? prev : directiveResult;
+    });
+  }, value);
 }
 
 /**
@@ -435,69 +544,54 @@ export function resolveArgDirectives(
   info,
   parentType
 ) {
-  const execution = info.operation._factory.execution;
-  const location = DirectiveLocation.INPUT_FIELD_DEFINITION;
   const args = getArgumentValues(field, selection, info.variableValues);
 
-  resolveInputObjectDirectives(
-    args,
-    field.astNode.arguments,
-    field.args,
-    DirectiveLocation.ARGUMENT_DEFINITION,
-    info
-  );
+  return promiseMap(_.mapKeys(field.args, 'name'), (arg, key) => {
+    if (_.has(args, [ key ])) {
+      const astNode = arg.astNode;
+      const value = args[key];
 
-  return promiseMap(args, (value, key) => {
-    const astNode = _.find(field.astNode.arguments, arg => {
-      return arg.name.value === key;
-    });
+      const { resolveRequest } = getDirectiveResolvers(info, [
+        {
+          location: DirectiveLocation.ARGUMENT_DEFINITION,
+          astNode
+        }
+      ]);
 
-    // getInputDirectives(key, value, selection, field, info);
-
-    assert(astNode, 'ExecuteError: Failed to find astNode for ' +
-    'argument "' + key + '"');
-
-    const { resolveRequest } = getDirectiveResolvers(info, [
-      {
-        location,
+      const attachInfo = {
+        kind: astNode.kind,
+        parentField: field,
+        parentType,
+        argName: key,
         astNode
-      }
-    ]);
+      };
 
-    const attachInfo = {
-      kind: Kind.INPUT_VALUE_DEFINITION,
-      parentField: field,
-      parentType,
-      argName: key,
-      astNode
-    };
+      const exeContext = {
+        context,
+        info
+      };
 
-    // directives on args only resolve before the request is made
-    // so any resolveResult middleware defined is not processed.
-    // this is because an argument is an input value and should not
-    // modify output. if output modification is needed, it should be
-    // placed on the field definition or field where resolveResult 
-    // middleware is processed
-    return promiseReduce(resolveRequest, (prev, r) => {
-      const directiveInfo = buildDirectiveInfo(info, r, { attachInfo });
-      return instrumentResolver(
-        ExecutionType.DIRECTIVE,
-        r.directive.name,
-        r.resolve.name || 'resolve',
-        execution.execution.resolvers,
-        directiveInfo,
-        r.resolve,
-        [ prev, r.args, context, directiveInfo ]
+      return reduceRequestDirectives(
+        value,
+        resolveRequest,
+        context,
+        attachInfo,
+        info
       )
       .then(directiveResult => {
-        return directiveResult === undefined ? prev : directiveResult;
+        if (directiveResult !== undefined) {
+          args[key] = directiveResult;
+        }
+        if (!isSpecifiedScalarType(getNullableType(arg.type))) {
+          return resolveInputObjectDirectives(
+            [ key ],
+            value,
+            arg.type,
+            exeContext
+          );
+        }
       });
-    }, value)
-    .then(directiveResult => {
-      if (directiveResult !== undefined) {
-        args[key] = directiveResult;
-      }
-    });
+    }
   })
   .then(() => args);
 }

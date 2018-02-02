@@ -10,12 +10,29 @@ import {
 import {
   // deconstructDirective,
   // deconstructSchema,
-  deconstructType
+  deconstructType,
+  processType
 } from '../deconstruct';
 
 const fn = () => null;
 
 describe('definition.deconstruct tests', function () {
+  it('converts a graphql type to a string', function () {
+    const types = {
+      nestedArray: new GraphQLList(new GraphQLList(GraphQLString)),
+      nestedNull: new GraphQLList(
+        new GraphQLNonNull(
+          new GraphQLList(
+            GraphQLString
+          )
+        )
+      )
+    };
+
+    expect(processType(types.nestedArray)).to.equal('[[String]]');
+    expect(processType(types.nestedNull)).to.equal('[[String]!]');
+  });
+
   it('deconstructs an Object', function () {
     const Foo = new GraphQLObjectType({
       name: 'Foo',

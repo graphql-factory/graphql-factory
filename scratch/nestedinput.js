@@ -11,11 +11,18 @@ new SchemaDefinition()
             value: { type: 'JSON' }
           },
           resolve(source, args, context, info) {
-            // console.log('TEST', { source, args })
+            console.log('TEST', { source, args })
           }
         }
       },
       types: {
+        Animal: {
+          type: 'Enum',
+          values: {
+            DOG: { value: 0 },
+            CAT: { value: 1 }
+          }
+        },
         Foo: {
           type: 'Object',
           fields: {
@@ -42,7 +49,7 @@ new SchemaDefinition()
           fields: {
             foo: {
               type: 'Foo',
-              resolve () {
+              resolve (source, args) {
                 return { id: 'asffjkl', name: 'foo' }
               }
             }
@@ -54,6 +61,8 @@ new SchemaDefinition()
             setFoo: {
               type: 'Foo',
               args: {
+                animal: { type: '[Animal]' },
+                basic: { type: 'String' },
                 data: {
                   type: 'FooInput!',
                   '@directives': {
@@ -67,6 +76,7 @@ new SchemaDefinition()
                 }
               },
               resolve (source, args, context, info) {
+                // console.log({ args })
                 return args.data
               }
             }
@@ -81,12 +91,15 @@ new SchemaDefinition()
     .buildSchema()
     .then(schema => {
       return schema.request({
-        extensionData: false,
+        extensionData: true,
         source: `mutation M {
           setFoo(
+            animal: [ CAT, DOG ],
+            basic: "hi",
             data: { id: "asdf", name: "foooooo" },
             datas: [
-              { id: "jkl", name: "bar" }
+              { id: "jkl", name: "bar" },
+              { id: "xyz", name: "baz" }
             ]
           ) {
             id

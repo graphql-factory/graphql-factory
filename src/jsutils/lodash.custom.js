@@ -1,5 +1,6 @@
 // auto-generated from lodash directory contents
 import array from './lodash/array';
+import castArray from './lodash/castArray';
 import cloneDeep from './lodash/cloneDeep';
 import collection from './lodash/collection';
 import constant from './lodash/constant';
@@ -34,6 +35,7 @@ import keysIn from './lodash/keysIn';
 import lang from './lodash/lang';
 import last from './lodash/last';
 import map from './lodash/map';
+import mapKeys from './lodash/mapKeys';
 import memoize from './lodash/memoize';
 import merge from './lodash/merge';
 import negate from './lodash/negate';
@@ -66,6 +68,7 @@ import wrapperValue from './lodash/wrapperValue';
 
 export {
   array,
+  castArray,
   cloneDeep,
   collection,
   constant,
@@ -100,6 +103,7 @@ export {
   lang,
   last,
   map,
+  mapKeys,
   memoize,
   merge,
   negate,
