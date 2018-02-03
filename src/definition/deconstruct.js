@@ -15,8 +15,7 @@ import {
   GraphQLEnumType,
   GraphQLInterfaceType,
   GraphQLUnionType,
-  GraphQLDirective,
-  getDirectiveValues
+  GraphQLDirective
 } from 'graphql';
 import type {
   GraphQLType,

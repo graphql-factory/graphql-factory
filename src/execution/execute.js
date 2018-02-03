@@ -387,7 +387,8 @@ export function resolveInputObjectDirectives(
   path,
   value,
   fullType,
-  exeContext
+  exeContext,
+  selection
 ) {
   const { context, info } = exeContext;
   const type = getNullableType(fullType);
@@ -398,7 +399,8 @@ export function resolveInputObjectDirectives(
         _.union(path, [ index ]),
         val,
         type.ofType,
-        exeContext
+        exeContext,
+        selection.value.values[index]
       );
     });
   }
@@ -419,7 +421,10 @@ export function resolveInputObjectDirectives(
   ]);
 
   if (type instanceof GraphQLEnumType) {
-    const valueDef = _.find(type.getValues(), v => v.value === value);
+    const enumName = selection.value;
+    const enumValues = type.getValues();
+    const valueDef = _.find(enumValues, { name: enumName }) ||
+      _.find(enumValues, { value });
     const valueExec = getDirectiveResolvers(info, [
       {
         location: DirectiveLocation.ENUM_VALUE,
@@ -449,6 +454,7 @@ export function resolveInputObjectDirectives(
     });
   } else if (_.isFunction(type.getFields)) {
     const fields = type.getFields();
+    const fieldMap = _.mapKeys(selection.value.fields, 'name.value');
     return promiseMap(value, (v, k) => {
       const field = fields[k];
       const fieldExec = getDirectiveResolvers(info, [
@@ -484,7 +490,8 @@ export function resolveInputObjectDirectives(
             _.union(path, [ k ]),
             v,
             field.type,
-            exeContext
+            exeContext,
+            fieldMap[k]
           );
         }
       });
@@ -545,12 +552,12 @@ export function resolveArgDirectives(
   parentType
 ) {
   const args = getArgumentValues(field, selection, info.variableValues);
-
+  const argMap = _.mapKeys(selection.arguments, 'name.value');
   return promiseMap(_.mapKeys(field.args, 'name'), (arg, key) => {
     if (_.has(args, [ key ])) {
       const astNode = arg.astNode;
       const value = args[key];
-
+      const selectionNode = argMap[key];
       const { resolveRequest } = getDirectiveResolvers(info, [
         {
           location: DirectiveLocation.ARGUMENT_DEFINITION,
@@ -587,7 +594,8 @@ export function resolveArgDirectives(
             [ key ],
             value,
             arg.type,
-            exeContext
+            exeContext,
+            selectionNode
           );
         }
       });

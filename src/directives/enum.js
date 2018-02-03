@@ -22,4 +22,4 @@ export default {
     }
     source.value = args.value;
   }
-}
+};

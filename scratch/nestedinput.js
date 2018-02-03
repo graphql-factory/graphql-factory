@@ -18,7 +18,7 @@ const definition = new SchemaDefinition()
           value: { type: 'JSON' }
         },
         resolve(source, args, context, info) {
-          console.log('TEST', { source, args })
+          // console.log('TEST', { source, args })
         }
       }
     },
@@ -39,6 +39,19 @@ const definition = new SchemaDefinition()
           name: { type: 'String!' }
         }
       },
+      BarInput: {
+        type: 'Input',
+        fields: {
+          foo: {
+            type: 'FooInput',
+            '@directives': {
+              test: {
+                value: 'bar input name'
+              }
+            }
+          }
+        }
+      },
       FooInput: {
         type: 'Input',
         fields: {
@@ -47,7 +60,7 @@ const definition = new SchemaDefinition()
             type: 'String!',
             '@directives': {
               test: {
-                value: 'input name'
+                value: 'foo input name'
               }
             }
           }
@@ -72,8 +85,11 @@ const definition = new SchemaDefinition()
             args: {
               animal: { type: '[Animal]' },
               basic: { type: 'String' },
+              bar: {
+                type: 'BarInput'
+              },
               data: {
-                type: 'FooInput!',
+                type: 'FooInput',
                 '@directives': {
                   test: {
                     value: 'data args'
@@ -104,13 +120,19 @@ const definition = new SchemaDefinition()
       extensionData: true,
       source: `mutation M {
         setFoo(
-          animal: [ CAT, DOG ],
-          basic: "hi",
-          data: { id: "asdf", name: "foooooo" },
-          datas: [
-            { id: "jkl", name: "bar" },
-            { id: "xyz", name: "baz" }
-          ]
+          # animal: [ CAT, DOG ]
+          # basic: "hi",
+          # data: { id: "asdf", name: "foooooo" },
+          # datas: [
+          #  { id: "jkl", name: "bar" },
+          #  { id: "xyz", name: "baz" }
+          # ]
+          bar: {
+            foo: {
+              id: "fooid",
+              name: "fooname"
+            }
+          }
         ) {
           id
           name

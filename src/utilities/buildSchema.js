@@ -11,7 +11,7 @@ import {
   buildSchema as buildGraphQLSchema,
   GraphQLObjectType,
   GraphQLError,
-  GraphQLEnumType 
+  GraphQLEnumType
 } from 'graphql';
 
 /**

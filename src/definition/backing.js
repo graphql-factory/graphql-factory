@@ -33,6 +33,11 @@
  *       beforeBuild
  *     },
  *     ...
+ *   },
+ *   enums: { // TODO: add enum support to backing
+ *     [EnumName]: {
+ *       valueName: value
+ *     }
  *   }
  * }
  * 
