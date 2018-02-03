@@ -6,10 +6,12 @@ import type { SchemaBackingConfig } from '../definition/backing';
 import { request } from '../utilities/request';
 import { lodash as _, forEach } from '../jsutils';
 import { SchemaBacking } from '../definition/backing';
+import { extractDirectives } from '../definition/deconstruct';
 import {
   buildSchema as buildGraphQLSchema,
   GraphQLObjectType,
-  GraphQLError
+  GraphQLError,
+  GraphQLEnumType 
 } from 'graphql';
 
 /**
@@ -90,6 +92,16 @@ export function buildSchema(
   // use the graphql-js buildSchema method 
   // to build an un-hydrated schema
   const schema = buildGraphQLSchema(source);
+
+  // Modify ENUM values to match @enum directive value if specified
+  forEach(schema.getTypeMap(), type => {
+    if (type instanceof GraphQLEnumType && !type.name.match(/^__/)) {
+      forEach(type.getValues(), value => {
+        const directives = extractDirectives(value.astNode);
+        value.value = _.get(directives, 'enum.value', value.value);
+      }, true);
+    }
+  }, true);
 
   // ensure each root field has a resolver that throws an error
   // saying that it should be defined. when using the @resolve

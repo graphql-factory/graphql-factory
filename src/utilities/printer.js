@@ -217,7 +217,15 @@ export function printScalar(
 export function printValues(values: ObjMap<any>) {
   return map(values, (value, name) => {
     const { description, deprecationReason } = value;
-    const dirs = printDirectives(value['@directives'], deprecationReason);
+    const directives = value['@directives'] = value['@directives'] || {};
+    // special case enum directive added to support setting values
+    // that are different from the value name
+    if (!directives.enum) {
+      directives.enum = {
+        value: value.value
+      };
+    }
+    const dirs = printDirectives(directives, deprecationReason);
     return withDescription(description, `  ${name}${dirs}`, 1);
   })
   .join('\n');

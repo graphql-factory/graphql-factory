@@ -15,7 +15,8 @@ import {
   GraphQLEnumType,
   GraphQLInterfaceType,
   GraphQLUnionType,
-  GraphQLDirective
+  GraphQLDirective,
+  getDirectiveValues
 } from 'graphql';
 import type {
   GraphQLType,
@@ -71,7 +72,7 @@ export function parseASTNode(astNode: ASTNode) {
       return value;
     case Kind.INT:
     case Kind.FLOAT:
-      return parseFloat();
+      return Number(value);
     case Kind.OBJECT: {
       return reduce(fields, (val, field) => {
         val[field.name.value] = parseASTNode(field.value);
