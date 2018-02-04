@@ -34,7 +34,7 @@
  *     },
  *     ...
  *   },
- *   enums: { // TODO: add enum support to backing
+ *   enums: {
  *     [EnumName]: {
  *       valueName: value
  *     }
@@ -149,6 +149,12 @@ function validate(backing: any) {
     isValid = true;
   }, true);
 
+  // validate the enums backing config
+  forEach(backing.enums, config => {
+    assert(_.isObjectLike(config), 'enum backing must be an object');
+    isValid = true;
+  }, true);
+
   // assert at least one config was found
   assert(isValid, 'no type or directive backing configuration was found');
 }
@@ -199,6 +205,9 @@ class TypeBacking {
   }
   Union(name: string) {
     return this._backing.Union(name);
+  }
+  Enum(name: string) {
+    return this._backing.Enum(name);
   }
   get backing() {
     return this._backing;
@@ -319,11 +328,26 @@ export class DirectiveBacking extends TypeBacking {
 }
 
 /**
+ * Provides a backing builder for enums
+ */
+export class EnumBacking extends TypeBacking {
+  constructor(backing: SchemaBacking, name: string) {
+    super(backing, name);
+  }
+  value(name: string, value: any) {
+    assert(stringMatch(name, true), 'Value name must be non-empty string');
+    _.set(this._backing, [ '_enums', this._name, name ], value);
+    return this;
+  }
+}
+
+/**
  * Provides a builder class for creating a SchemaBackingConfig
  */
 export class SchemaBacking {
   _types: any;
   _directives: any;
+  _enums: any;
   constructor(backing?: SchemaBacking | SchemaBackingConfig) {
     this._types = Object.create(null);
     this._directives = Object.create(null);
@@ -346,7 +370,9 @@ export class SchemaBacking {
   Directive(name: string) {
     return new DirectiveBacking(this, name);
   }
-
+  Enum(name: string) {
+    return new EnumBacking(this, name);
+  }
   /**
    * Shortcut method for setting a resolve
    * @param {*} typeName 
@@ -382,6 +408,9 @@ export class SchemaBacking {
   }
   get directives(): ObjMap<?DirectiveBackingConfig> {
     return this._directives;
+  }
+  get enums(): ObjMap<?ObjMap<any>> {
+    return this._enums
   }
   get backing(): SchemaBackingConfig {
     return {
@@ -481,7 +510,8 @@ export class SchemaBacking {
 
 export type SchemaBackingConfig = {
   types: ObjMap<?TypeBackingConfig>,
-  directives: ObjMap<?DirectiveBackingConfig>
+  directives: ObjMap<?DirectiveBackingConfig>,
+  enums: ObjMap<?ObjMap<any>>
 };
 
 export type FieldBackingConfig = {

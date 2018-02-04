@@ -44,7 +44,7 @@ export function hydrateSchema(
 ) {
   // hydrate types
   forEach(backing.types, (_backing, name) => {
-    const type = _.get(schema, [ '_typeMap', name ]);
+    const type = schema.getType(name);
     if (type) {
       // merge non-field resolvers
       _.merge(
@@ -62,11 +62,23 @@ export function hydrateSchema(
 
   // hydrate directives
   forEach(backing.directives, (_backing, name) => {
-    const directive = _.find(schema._directives, { name });
+    const directive = schema.getDirective(name);
     if (directive) {
       _.merge(directive, _backing);
     }
   }, true);
+
+  // hydrate enums
+  forEach(backing.enums, (_backing, name) => {
+    const enu = schema.getType(name);
+    if (enu instanceof GraphQLEnumType) {
+      forEach(enu.getValues(), value => {
+        if (_.has(_backing, [ value.name ])) {
+          value.value = _backing[value.name];
+        }
+      }, true);
+    }
+  });
 
   return schema;
 }

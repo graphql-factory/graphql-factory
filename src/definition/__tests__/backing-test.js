@@ -137,4 +137,19 @@ describe('definition.backing tests', function () {
       }
     });
   });
+
+  it('adds an enum backing', function () {
+    const backing = new SchemaBacking();
+    backing
+      .Enum('FooEnum')
+        .value('BAR', 1)
+        .value('BAZ', 2)
+      .backing
+    expect(backing.enums).to.deep.equal({
+      FooEnum: {
+        BAR: 1,
+        BAZ: 2
+      }
+    })
+  });
 });
