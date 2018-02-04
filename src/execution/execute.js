@@ -38,6 +38,7 @@ import {
 import {
   getDirectiveResolvers,
   buildDirectiveInfo,
+  buildAttachInfo,
   objectTypeLocation
 } from './directives';
 import {
@@ -396,7 +397,7 @@ export function resolveInputObjectDirectives(
   if (type instanceof GraphQLList) {
     return promiseMap(value, (val, index) => {
       resolveInputObjectDirectives(
-        _.union(path, [ index ]),
+        { prev: _.cloneDeep(path), key: index },
         val,
         type.ofType,
         exeContext,
@@ -404,13 +405,6 @@ export function resolveInputObjectDirectives(
       );
     });
   }
-
-  const attachInfo = {
-    kind: type.astNode.kind,
-    parentType: type,
-    path,
-    astNode: type.astNode
-  };
 
   // get main type directive resolvers
   const typeExec = getDirectiveResolvers(info, [
@@ -435,21 +429,18 @@ export function resolveInputObjectDirectives(
       value,
       typeExec.resolveRequest,
       context,
-      attachInfo,
-      info
+      info,
+      type,
+      path
     )
     .then(() => {
       return reduceRequestDirectives(
         value,
         valueExec.resolveRequest,
         context,
-        {
-          kind: valueDef.astNode.kind,
-          parentType: type,
-          path,
-          astNode: valueDef.astNode
-        },
-        info
+        info,
+        type,
+        path
       );
     });
   } else if (_.isFunction(type.getFields)) {
@@ -467,27 +458,24 @@ export function resolveInputObjectDirectives(
         value,
         typeExec.resolveRequest,
         context,
-        attachInfo,
-        info
+        info,
+        type,
+        path
       )
       .then(() => {
         return reduceRequestDirectives(
           v,
           fieldExec.resolveRequest,
           context,
-          {
-            kind: field.astNode.kind,
-            parentType: type,
-            path,
-            astNode: field.astNode
-          },
-          info
+          info,
+          type,
+          path
         );
       })
       .then(() => {
         if (!isSpecifiedScalarType(getNullableType(field.type))) {
           resolveInputObjectDirectives(
-            _.union(path, [ k ]),
+            { prev: _.cloneDeep(path), key: k },
             v,
             field.type,
             exeContext,
@@ -512,14 +500,21 @@ export function reduceRequestDirectives(
   value,
   resolveRequest,
   context,
-  attachInfo,
-  info
+  info,
+  parentType,
+  path
 ) {
   const execution = info.operation._factory.execution;
   if (!_.isArray(resolveRequest) || !resolveRequest.length) {
     return Promise.resolve(value);
   }
   return promiseReduce(resolveRequest, (prev, r) => {
+    const attachInfo = buildAttachInfo(
+      r,
+      path,
+      parentType,
+      info
+    );
     const directiveInfo = buildDirectiveInfo(info, r, { attachInfo });
     return instrumentResolver(
       ExecutionType.DIRECTIVE,
@@ -549,7 +544,8 @@ export function resolveArgDirectives(
   selection,
   context,
   info,
-  parentType
+  parentType,
+  path
 ) {
   const args = getArgumentValues(field, selection, info.variableValues);
   const argMap = _.mapKeys(selection.arguments, 'name.value');
@@ -565,14 +561,6 @@ export function resolveArgDirectives(
         }
       ]);
 
-      const attachInfo = {
-        kind: astNode.kind,
-        parentField: field,
-        parentType,
-        argName: key,
-        astNode
-      };
-
       const exeContext = {
         context,
         info
@@ -582,8 +570,9 @@ export function resolveArgDirectives(
         value,
         resolveRequest,
         context,
-        attachInfo,
-        info
+        info,
+        parentType,
+        path
       )
       .then(directiveResult => {
         if (directiveResult !== undefined) {
@@ -648,21 +637,29 @@ export function resolveField(source, path, parentType, selection, rargs) {
     }
   ]);
 
-  return resolveArgDirectives(field, selection, context, info, parentType)
+  return resolveArgDirectives(
+    field,
+    selection,
+    context,
+    info,
+    parentType,
+    path
+  )
     .then(args => {
-      // get field args and allow directives to modify them
-      const attachInfo = {
-        kind: Kind.FIELD_DEFINITION,
-        args,
-        parentType,
-        fieldInfo: info,
-        fieldName: selection.name.value,
-        fieldNodes: [ selection ],
-        returnType: field.type,
-        path: _.cloneDeep(path)
-      };
-
       return promiseReduce(resolveRequest, (prev, r) => {
+        const attachInfo = buildAttachInfo(
+          r,
+          path,
+          parentType,
+          info,
+          {
+            fieldArgs: args,
+            fieldName: selection.name.value,
+            fieldNodes: [ selection ],
+            returnType: field.type,
+          }
+        );
+
         const directiveInfo = buildDirectiveInfo(info, r, { attachInfo });
         return instrumentResolver(
           ExecutionType.DIRECTIVE,
@@ -712,7 +709,7 @@ export function resolveField(source, path, parentType, selection, rargs) {
                 path,
                 field,
                 selection,
-                attachInfo.args,
+                args,
                 parentType
               ),
               true
@@ -753,6 +750,18 @@ export function resolveField(source, path, parentType, selection, rargs) {
             // TODO: Determine if the attachInfo is appropriate or should
             // be modified to something other than the field attach info
             return promiseReduce(fragResolvers.resolveRequest, (prev, r) => {
+              const attachInfo = buildAttachInfo(
+                r,
+                path,
+                parentType,
+                info,
+                {
+                  fieldArgs: args,
+                  fieldName: selection.name.value,
+                  fieldNodes: [ selection ],
+                  returnType: field.type,
+                }
+              );
               const directiveInfo = buildDirectiveInfo(info, r, { attachInfo });
               return instrumentResolver(
                 ExecutionType.DIRECTIVE,
@@ -799,7 +808,7 @@ export function resolveField(source, path, parentType, selection, rargs) {
                     listPath,
                     field,
                     selection,
-                    attachInfo.args,
+                    args,
                     parentType
                   )
                 );
@@ -818,7 +827,7 @@ export function resolveField(source, path, parentType, selection, rargs) {
                 path,
                 field,
                 selection,
-                attachInfo.args,
+                args,
                 parentType
               )
             )
@@ -827,6 +836,18 @@ export function resolveField(source, path, parentType, selection, rargs) {
       })
       .then(result => {
         return promiseReduce(resolveResult, (prev, r) => {
+          const attachInfo = buildAttachInfo(
+            r,
+            path,
+            parentType,
+            info,
+            {
+              fieldArgs: args,
+              fieldName: selection.name.value,
+              fieldNodes: [ selection ],
+              returnType: field.type,
+            }
+          );
           const directiveInfo = buildDirectiveInfo(info, r, { attachInfo });
           return instrumentResolver(
             ExecutionType.DIRECTIVE,
@@ -983,14 +1004,12 @@ export function factoryExecute(...rargs) {
 
       // perform the entire execution from the first root resolver
       const request = promiseReduce(resolveRequest, (prev, r) => {
-        const attachInfo = r.location === DirectiveLocation.SCHEMA ?
-          {
-            kind: Kind.SCHEMA_DEFINITION
-          } :
-          {
-            kind: Kind.OBJECT_TYPE_DEFINITION
-          };
-
+        const attachInfo = buildAttachInfo(
+          r,
+          { prev: undefined, key: undefined },
+          null,
+          info
+        );
         const directiveInfo = buildDirectiveInfo(info, r, { attachInfo });
         return instrumentResolver(
           ExecutionType.DIRECTIVE,
@@ -1013,14 +1032,12 @@ export function factoryExecute(...rargs) {
       })
       .then(() => {
         return promiseReduce(resolveResult, (prev, r) => {
-          const attachInfo = r.location === DirectiveLocation.SCHEMA ?
-          {
-            kind: Kind.SCHEMA_DEFINITION
-          } :
-          {
-            kind: Kind.OBJECT_TYPE_DEFINITION
-          };
-
+          const attachInfo = buildAttachInfo(
+            r,
+            { prev: undefined, key: undefined },
+            null,
+            info
+          );
           const directiveInfo = buildDirectiveInfo(info, r, { attachInfo });
           return instrumentResolver(
             ExecutionType.DIRECTIVE,

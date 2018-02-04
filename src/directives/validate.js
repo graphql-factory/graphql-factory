@@ -34,6 +34,7 @@ export default {
   },
   resolve(source, args, context, info) {
     switch (info.location) {
+      case DirectiveLocation.ARGUMENT_DEFINITION:
       case DirectiveLocation.INPUT_FIELD_DEFINITION:
         const validator = getValidator(info, args);
         assert(validator(source), 'Validation failed on argument "' +

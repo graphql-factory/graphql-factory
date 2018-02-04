@@ -62,6 +62,7 @@ function searchResolver(source, args, context, info) {
 
 async function main() {
   const schema = await new SchemaDefinition()
+  .on('error', console.log)
   .use({
     directives: {
       resolve: directives.resolve,

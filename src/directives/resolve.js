@@ -30,7 +30,7 @@ export default {
       return new GraphQLSkipResolveInstruction(
         resolver(
           source,
-          info.attachInfo.args,
+          info.attachInfo.fieldArgs,
           context,
           info.attachInfo.fieldInfo
         )

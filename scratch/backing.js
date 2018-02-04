@@ -56,6 +56,7 @@ export const shoppingBacking = new SchemaBacking()
 })
 .Directive('test')
 .resolve(function resolveTestDirective (source, args, context, info) {
+  console.log('@test', info.location, info.attachInfo.kind)
   //console.log('REQUEST', args)
   //console.log(JSON.stringify(info.directives, null, '  '))
 })
@@ -157,7 +158,7 @@ export const shoppingBacking = new SchemaBacking()
   }
   return db.categories
 })
-.backing()
+.backing
 
 export const backing = new SchemaBacking()
   .Scalar('JSON')
@@ -254,4 +255,4 @@ export const backing = new SchemaBacking()
         throw new Error('Unauthorized at object')
       }
     })
-  .backing()
+  .backing

@@ -68,10 +68,10 @@ export default {
     'userID with the given resolveUser function');
 
     if (isString(args.createdByField)) {
-      info.attachInfo.args[args.createdByField] = userID;
+      info.attachInfo.fieldArgs[args.createdByField] = userID;
     }
     if (isString(args.modifiedByField)) {
-      info.attachInfo.args[args.modifiedByField] = userID;
+      info.attachInfo.fieldArgs[args.modifiedByField] = userID;
     }
   }
 };

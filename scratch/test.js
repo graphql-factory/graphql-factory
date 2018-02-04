@@ -137,7 +137,7 @@ const definition = new SchemaDefinition({ conflict: 'WARN' });
 // const schema = buildSchema(def, backing)
 
 definition.use(shoppingDef, shoppingBacking);
-const schema = definition.buildSchema({ useMiddleware: true });
+const schemaPromise = definition.buildSchema({ useMiddleware: true });
 
 //console.log(schema);
 
@@ -253,17 +253,12 @@ function logger (type, data) {
 }
 */
 
-graphql({
-  schema,
-  source: multiQuery, // querySource
-  rootValue: {
-    logger (event, data) {
-      // console.log(event, JSON.stringify(_.omit(data, ['operation']), null, '  '))
-      // console.log(event, data)
-    }
-  }
+schemaPromise.then(schema => {
+  return schema.request({
+    source: multiQuery
+  });
 })
 .then(result => {
-  console.log(JSON.stringify(result, null, '  '))
+  // console.log(JSON.stringify(result, null, '  '))
 })
 .catch(console.error)

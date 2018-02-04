@@ -1,4 +1,4 @@
-import { reduce } from '../jsutils';
+import { lodash as _, reduce } from '../jsutils';
 import {
   getDirectiveValues,
   DirectiveLocation,
@@ -64,7 +64,7 @@ export function buildDirectiveInfo(
   directiveInfo,
   extra
 ) {
-  return Object.assign({
+  return _.assign({
     location: directiveInfo.location,
     schema: resolveInfo.schema,
     fragments: resolveInfo.fragments,
@@ -95,7 +95,9 @@ export function getDirectiveResolvers(info, directiveLocations) {
               resolve,
               location,
               args,
-              directive
+              directive,
+              astNode,
+              ast
             });
           }
           if (typeof resolveResult === 'function') {
@@ -104,7 +106,9 @@ export function getDirectiveResolvers(info, directiveLocations) {
               resolve: resolveResult,
               location,
               args,
-              directive
+              directive,
+              astNode,
+              ast
             });
           }
         }
@@ -115,4 +119,29 @@ export function getDirectiveResolvers(info, directiveLocations) {
     resolveRequest: [],
     resolveResult: []
   });
+}
+
+/**
+ * Creates attachInfo which will be added on to directive info
+ * @param {*} directiveInfo
+ * @param {*} path
+ * @param {*} parentType
+ * @param {*} info
+ * @param {*} extra
+ */
+export function buildAttachInfo(
+  directiveInfo,
+  path,
+  parentType,
+  info,
+  extra
+) {
+  const attachInfo = {
+    kind: directiveInfo.astNode.kind,
+    path: _.cloneDeep(path || { prev: undefined, key: undefined }),
+    astNode: directiveInfo.ast,
+    parentType,
+    fieldInfo: info || {},
+  };
+  return _.assign(attachInfo, extra);
 }

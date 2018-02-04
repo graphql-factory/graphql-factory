@@ -1,5 +1,6 @@
 // auto-generated from lodash directory contents
 import array from './lodash/array';
+import assign from './lodash/assign';
 import castArray from './lodash/castArray';
 import cloneDeep from './lodash/cloneDeep';
 import collection from './lodash/collection';
@@ -68,6 +69,7 @@ import wrapperValue from './lodash/wrapperValue';
 
 export {
   array,
+  assign,
   castArray,
   cloneDeep,
   collection,
