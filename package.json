@@ -1,6 +1,6 @@
 {
   "name": "graphql-factory",
-  "version": "3.0.0-alpha.2",
+  "version": "3.0.0-alpha.3",
   "description": "Tools for building GraphQL",
   "license": "MIT",
   "main": "index.js",

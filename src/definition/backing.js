@@ -351,6 +351,8 @@ export class SchemaBacking {
   constructor(backing?: SchemaBacking | SchemaBackingConfig) {
     this._types = Object.create(null);
     this._directives = Object.create(null);
+    this._enums = Object.create(null);
+
     if (backing) {
       this.merge(backing);
     }
@@ -410,12 +412,13 @@ export class SchemaBacking {
     return this._directives;
   }
   get enums(): ObjMap<?ObjMap<any>> {
-    return this._enums
+    return this._enums;
   }
   get backing(): SchemaBackingConfig {
     return {
       types: this.types,
-      directives: this.directives
+      directives: this.directives,
+      enums: this.enums
     };
   }
   get version(): string {
@@ -443,6 +446,7 @@ export class SchemaBacking {
       this.validate(_backing);
       _.merge(this._types, _backing.types);
       _.merge(this._directives, _backing.directives);
+      _.merge(this._enums, _backing.enums);
     }, true);
     return this.validate();
   }
@@ -467,8 +471,14 @@ export class SchemaBacking {
    */
   import(definition: SchemaDefinition) {
     // extract type backings
-    _.forEach(definition.types, (config, name) => {
-      _.forEach(config, (value, key) => {
+    forEach(definition.types, (config, name) => {
+      if (config.type === 'enum') {
+        return forEach(config.values, (valueConfig, valueName) => {
+          _.set(this._enums, [ name, valueName ], _.get(valueConfig, 'value'));
+        }, true);
+      }
+
+      forEach(config, (value, key) => {
         switch (key) {
           case 'serialize':
           case 'parseValue':
@@ -478,7 +488,7 @@ export class SchemaBacking {
             setFn(this._types, [ name, key ], value);
             break;
           case 'fields':
-            _.forEach(value, (field, fieldName) => {
+            forEach(value, (field, fieldName) => {
               if (_.isObjectLike(field)) {
                 const { resolve, subscribe } = field;
                 const base = [ name, key, fieldName ];
@@ -494,7 +504,7 @@ export class SchemaBacking {
     }, true);
 
     // extract directive backings
-    _.forEach(definition.directives, (config, name) => {
+    forEach(definition.directives, (config, name) => {
       if (_.isObjectLike(config)) {
         const { resolve, resolveResult, beforeBuild } = config;
         setFn(this._directives, [ name, 'resolve' ], resolve);

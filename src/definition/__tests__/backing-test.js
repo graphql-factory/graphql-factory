@@ -9,6 +9,7 @@ describe('definition.backing tests', function () {
     const backing = new SchemaBacking();
     expect(backing.backing).to.deep.equal({
       types: {},
+      enums: {},
       directives: {}
     });
 
@@ -41,6 +42,7 @@ describe('definition.backing tests', function () {
       .resolveResult(fn)
       .beforeBuild(fn);
     expect(backing.backing).to.deep.equal({
+      enums: {},
       types: {
         FooObject: {
           fields: {
@@ -108,7 +110,13 @@ describe('definition.backing tests', function () {
     const backing = new SchemaBacking(typeDef);
     expect(backing.backing.types).to.deep.equal(typeDef.types);
     backing.merge(dirDef);
-    expect(backing.backing).to.deep.equal(Object.assign({}, typeDef, dirDef));
+    expect(backing.backing).to.deep.equal(
+      Object.assign(
+        { enums: {} },
+        typeDef,
+        dirDef
+      )
+    );
   });
 
   it('exports a resolverMap', function () {
@@ -139,17 +147,16 @@ describe('definition.backing tests', function () {
   });
 
   it('adds an enum backing', function () {
-    const backing = new SchemaBacking();
-    backing
+    const backing = new SchemaBacking()
       .Enum('FooEnum')
         .value('BAR', 1)
         .value('BAZ', 2)
-      .backing
+      .backing;
     expect(backing.enums).to.deep.equal({
       FooEnum: {
         BAR: 1,
         BAZ: 2
       }
-    })
+    });
   });
 });
