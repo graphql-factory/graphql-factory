@@ -64,7 +64,7 @@ export function parseASTNode(astNode: ASTNode) {
   const { kind } = astNode;
   const value = _.get(astNode, [ 'value' ]);
   const values = _.get(astNode, [ 'values' ]);
-  const fields = _.get(astNode, [ 'filds' ]);
+  const fields = _.get(astNode, [ 'fields' ]);
   switch (kind) {
     case Kind.STRING:
     case Kind.BOOLEAN:

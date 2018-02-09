@@ -198,6 +198,10 @@ export function mergeDefinition(definition) {
 
     switch (store) {
       case 'context':
+        if (!_.isObjectLike(target)) {
+          this[`_${store}`] = _.assign({}, source);
+        }
+        break;
       case 'functions':
       case 'directives':
       case 'types':

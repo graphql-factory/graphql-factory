@@ -81,7 +81,7 @@ const definition = new SchemaDefinition()
         type: 'Object',
         fields: {
           setFoo: {
-            type: 'Foo',
+            type: 'JSON',
             args: {
               animal: { type: '[Animal]' },
               basic: { type: 'String' },
@@ -102,7 +102,7 @@ const definition = new SchemaDefinition()
             },
             resolve (source, args, context, info) {
               console.log({ args })
-              return args.data
+              return args
             }
           }
         }
@@ -118,26 +118,26 @@ const definition = new SchemaDefinition()
     // console.log(printDefinition(schema.definition))
     return schema.request({
       extensionData: true,
-      source: `mutation M {
+      source: `mutation M ($animals: [Animal]) {
         setFoo(
-          # animal: [ CAT, DOG ]
+          animal: $animals
           # basic: "hi",
           # data: { id: "asdf", name: "foooooo" },
           # datas: [
           #  { id: "jkl", name: "bar" },
           #  { id: "xyz", name: "baz" }
           # ]
-          bar: {
-            foo: {
-              id: "fooid",
-              name: "fooname"
-            }
-          }
-        ) {
-          id
-          name
-        }
-      }`
+          # bar: {
+          #  foo: {
+          #    id: "fooid",
+          #    name: "fooname"
+          #  }
+          # }
+        )
+      }`,
+      variableValues: {
+        animals: [ 'CAT', 'DOG' ]
+      }
     });
   })
   .then(console.log)
