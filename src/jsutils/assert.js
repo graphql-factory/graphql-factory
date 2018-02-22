@@ -26,9 +26,9 @@ export function asrt(
   if (!condition) {
     switch (type) {
       case 'backing':
-        throw new SchemaBackingError(message);
+        throw new SchemaBackingError(message, ...metadata);
       case 'definition':
-        throw new SchemaDefinitionError(message);
+        throw new SchemaDefinitionError(message, ...metadata);
       default:
         throw new Error(message);
     }

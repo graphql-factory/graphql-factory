@@ -1,6 +1,6 @@
 {
   "name": "graphql-factory",
-  "version": "3.0.0-alpha.4",
+  "version": "3.0.0-alpha.5",
   "description": "Tools for building GraphQL",
   "license": "MIT",
   "main": "index.js",
@@ -10,7 +10,7 @@
   },
   "options": {
     "mocha": "--check-leaks --full-trace src/**/__tests__/**/*-test.js",
-    "lodash": "assign,castArray,toPath,reduce,map,mapKeys,values,keys,get,set,cloneDeep,merge,forEach,noop,union,intersection,includes,find,isObject,isObjectLike,isPlainObject,isFunction,isNumber,isArray,isString,pick,pickBy,omit,omitBy,some,has"
+    "lodash": "assign,castArray,toPath,reduce,map,mapKeys,values,keys,get,set,cloneDeep,merge,forEach,noop,union,intersection,includes,find,isEmpty,isObject,isObjectLike,isPlainObject,isFunction,isNumber,isArray,isString,pick,pickBy,omit,omitBy,some,has"
   },
   "scripts": {
     "lint": "eslint --rulesdir ./resources/lint src || (printf '\\033[33mTry: \\033[7m npm run lint -- --fix \\033[0m\\n' && exit 1)",

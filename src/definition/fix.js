@@ -10,6 +10,7 @@ export function fixArg(args, name) {
   if (_.isString(args[name])) {
     args[name] = { type: args[name] };
   }
+  fixAssignedDirectives(args[name]);
 }
 
 /**
@@ -21,6 +22,7 @@ export function fixField(fields, name) {
   if (_.isString(fields[name])) {
     fields[name] = { type: fields[name] };
   }
+  fixAssignedDirectives(fields[name]);
   forEach(fields[name].args, (argDef, argName) => {
     fixArg.call(this, fields[name].args, argName);
   }, true);
@@ -35,6 +37,7 @@ export function fixValue(values, name) {
   if (_.isString(values[name])) {
     values[name] = { value: values[name] };
   }
+  fixAssignedDirectives(values[name]);
 }
 
 /**
@@ -44,6 +47,7 @@ export function fixValue(values, name) {
  */
 export function fixTypes(types) {
   forEach(types, (typeDef, typeName) => {
+    fixAssignedDirectives(typeDef);
     // if no type is specified, try to determine it from
     // the properties of the definition
     if (!_.isString(typeDef.type)) {
@@ -87,6 +91,23 @@ export function fixTypes(types) {
 }
 
 /**
+ * Converts any directive assignments into an array
+ * @param {*} obj 
+ */
+export function fixAssignedDirectives(obj) {
+  const directives = _.get(obj, [ '@directives' ]);
+  if (directives) {
+    obj['@directives'] = _.isArray(directives) ?
+      directives :
+      _.isObject(directives) ?
+        _.map(directives, (args, name) => {
+          return { name, args };
+        }) :
+        [];  
+  }
+}
+
+/**
  * Fixes shorthand on directive args
  * @param {*} directives 
  */
@@ -99,11 +120,20 @@ export function fixDirectives(directives) {
 }
 
 /**
+ * Fix directives on schema
+ * @param {*} schema
+ */
+export function fixSchema(schema) {
+  fixAssignedDirectives(schema);
+}
+
+/**
  * Fix shorthand notations and fill in missing
  * configuration when possible in the definition
  */
 export function fixDefinition() {
   fixDirectives.call(this, this._directives);
   fixTypes.call(this, this._types);
+  fixSchema.call(this, this._schema);
   return this;
 }

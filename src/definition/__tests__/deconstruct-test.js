@@ -5,11 +5,12 @@ import {
   GraphQLObjectType,
   GraphQLString,
   GraphQLNonNull,
-  GraphQLList
+  GraphQLList,
+  buildSchema
 } from 'graphql';
 import {
   // deconstructDirective,
-  // deconstructSchema,
+  deconstructSchema,
   deconstructType,
   processType
 } from '../deconstruct';
@@ -94,6 +95,61 @@ describe('definition.deconstruct tests', function () {
     });
   });
 
+  it('deconstructs a schema with directives', function () {
+    const schema = buildSchema(`
+      type Foo @test @test(value: "one"){
+        id: ID!
+      }
+      type Query {
+        foo: Foo
+      }
+      schema {
+        query: Query
+      }
+      directive @test(value: String) on OBJECT
+    `);
+    const schemaDef = deconstructSchema(schema);
+    expect(schemaDef).to.deep.equal({
+      types: {
+        Query: {
+          type: 'Object',
+          fields: {
+            foo: { type: 'Foo' }
+          }
+        },
+        Foo: {
+          type: 'Object',
+          fields: {
+            id: { type: 'ID!' }
+          },
+          '@directives': [
+            {
+              name: 'test',
+              args: true
+            },
+            {
+              name: 'test',
+              args: {
+                value: 'one'
+              }
+            }
+          ]
+        }
+      },
+      schema: {
+        query: 'Query',
+        directives: [ 'test' ]
+      },
+      directives: {
+        test: {
+          locations: [ 'OBJECT' ],
+          args: {
+            value: { type: 'String' }
+          }
+        }
+      }
+    });
+  });
   /**
    * TODO: Write tests for
    * 

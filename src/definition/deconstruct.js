@@ -29,6 +29,7 @@ import {
   lodash as _,
   forEach,
   reduce,
+  map,
   stringMatch,
   setIf
 } from '../jsutils';
@@ -103,16 +104,20 @@ export function processType(type: GraphQLType) {
  */
 export function extractDirectives(astNode: ASTNode) {
   if (!astNode) {
-    return Object.create(null);
+    return [];
   } else if (Array.isArray(astNode.directives) && astNode.directives.length) {
-    return reduce(astNode.directives, (config, ast) => {
+    return map(astNode.directives, ast => {
       const { name: { value: name }, arguments: args } = ast;
-      config[name] = reduce(args, (argDef, node) => {
+      const nodeArgs = reduce(args, (argDef, node) => {
         argDef[node.name.value] = parseASTNode(node.value);
         return argDef;
-      }, Object.create(null), true);
-      return config;
-    }, Object.create(null), true);
+      }, {}, true);
+
+      return {
+        name,
+        args: _.isEmpty(nodeArgs) ? true : nodeArgs
+      };
+    }, true);
   }
 }
 

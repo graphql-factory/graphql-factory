@@ -6,7 +6,10 @@ declare class SchemaBackingError extends Error {
   message: string;
 }
 
-export function SchemaBackingError(message: string) {
+
+export function SchemaBackingError( // eslint-disable-line no-redeclare
+  message: string
+) {
   Object.defineProperties(this, {
     message: {
       value: message,
@@ -40,7 +43,10 @@ declare class SchemaDefinitionError extends Error {
   message: string;
 }
 
-export function SchemaDefinitionError(message: string) {
+
+export function SchemaDefinitionError( // eslint-disable-line no-redeclare
+  message: string
+) {
   Object.defineProperties(this, {
     message: {
       value: message,

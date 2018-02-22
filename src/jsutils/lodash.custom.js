@@ -22,6 +22,7 @@ import isArray from './lodash/isArray';
 import isArrayLike from './lodash/isArrayLike';
 import isArrayLikeObject from './lodash/isArrayLikeObject';
 import isBuffer from './lodash/isBuffer';
+import isEmpty from './lodash/isEmpty';
 import isFunction from './lodash/isFunction';
 import isLength from './lodash/isLength';
 import isNumber from './lodash/isNumber';
@@ -91,6 +92,7 @@ export {
   isArrayLike,
   isArrayLikeObject,
   isBuffer,
+  isEmpty,
   isFunction,
   isLength,
   isNumber,

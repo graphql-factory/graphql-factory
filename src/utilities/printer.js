@@ -8,7 +8,6 @@ import {
   map,
   reduce,
   indent,
-  setIf,
   stringMatch,
   lodash as _
 } from '../jsutils';
@@ -111,14 +110,34 @@ export function printDirectives(
   reason?: ?string
 ) {
   if (directives) {
-    const dMap = Object.assign({}, directives);
-    setIf(dMap, 'deprecated', { reason }, _.isString(reason));
-    return _.keys(dMap).length ?
-      map(dMap, (value, name) => {
-        return _.isObjectLike(value) && _.keys(value).length ?
-        ` @${name}(${toArgs(value, true)})` :
-        ` @${name}`;
-      }).join('') :
+    // ensure dirs are represented as an array
+    // of directive configs
+    const dirs = _.isArray(directives) ?
+      directives :
+      _.isObject(directives) ?
+        _.map(directives, (args, name) => {
+          return { name, args };
+        }) :
+        [];
+
+    // add deprecated is reason supplied
+    if (_.isString(reason) && !_.find(dirs, { name: 'deprecated' })) {
+      dirs.push({ name: 'deprecated', args: { reason } });
+    }
+
+    return dirs.length ?
+      _.reduce(dirs, (accum, d) => {
+        const name = _.get(d, 'name');
+        const args = _.get(d, 'args');
+
+        if (name && _.isString(name) && args !== false) {
+          const value = _.isObjectLike(args) && _.keys(args).length ?
+            ` @${name}(${toArgs(args, true)})` :
+            ` @${name}`;
+          accum.push(value);
+        }
+        return accum;
+      }, []).join('') :
       '';
   }
   return '';

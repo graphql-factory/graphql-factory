@@ -384,6 +384,11 @@ export type FactoryPluginResolved = {
 
 // TODO: fully define these
 export type FactoryFieldConfigArgumentMap = ObjMap<?mixed>;
-export type FactoryDirectiveAttachConfig = ObjMap<?mixed>;
+export type FactoryDirectiveAttachConfig = ObjMap<?mixed> |
+  Array<DirectiveItem>;
 export type FactoryTypeConfig = ObjMap<?mixed>;
 export type FactoryDirectiveMap = ObjMap<mixed>;
+export type DirectiveItem = {
+  name: String,
+  args: any
+};

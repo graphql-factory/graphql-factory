@@ -15,7 +15,7 @@ function validateResolver(args, path, info) {
 export default {
   name: 'resolve',
   description: 'Assigns a resolver function from the function store to ' +
-  'a field at execution and skips the defined resolver on the filed. ' +
+  'a field at execution and skips the defined resolver on the field. ' +
   'This can be used to assign resolvers to a field using only schema ' +
   'language.',
   locations: [
