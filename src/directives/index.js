@@ -1,9 +1,11 @@
+import { lodash as _ } from '../jsutils';
 import by from './by';
 import enumDirective from './enum';
 import id from './id';
 import meta from './meta';
 import resolve from './resolve';
 import typeDef from './typeDef';
+import unique from './unique';
 import validate from './validate';
 
 export const directives = {
@@ -13,5 +15,10 @@ export const directives = {
   meta,
   resolve,
   typeDef,
+  unique,
   validate
 };
+
+export function mapDirectives(names) {
+  return _.pick(directives, names);
+}

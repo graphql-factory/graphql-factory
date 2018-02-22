@@ -155,7 +155,7 @@ export function usePlugin(
   const oldPlugin = _.get(definition._plugins, [ plugin.name ]);
 
     // handle conflict resolution
-  if (oldPlugin.plugin instanceof GraphQLFactoryPlugin) {
+  if (oldPlugin && oldPlugin.plugin instanceof GraphQLFactoryPlugin) {
     const conflict = onConflict ?
       onConflict :
       oldPlugin.onConflict ?

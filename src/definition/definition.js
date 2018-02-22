@@ -289,7 +289,10 @@ export class SchemaDefinition extends EventEmitter {
     return this._promise.then(() => {
       forEach(this._plugins, (plugin, name) => {
         assert(plugin.installed, 'failed to build, plugin "' + name +
-        '" has not been installed due to unmet dependencies');
+        '" has not been installed due to unmet dependencies: [ ' +
+        plugin.plugin.unmetDependencies(this)
+          .map(d => `${d.type}:${d.name}`).join(', ') +
+        ' ]');
       }, true);
     })
     .then(() => {

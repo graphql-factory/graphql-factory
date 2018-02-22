@@ -3,7 +3,7 @@
  * @flow
  */
 export { SchemaDefinition, SchemaBacking } from './definition';
-export { directives } from './directives';
+export { directives, mapDirectives } from './directives';
 export {
   buildSchema,
   printDefinition,
@@ -15,6 +15,8 @@ export {
   DateTimeType,
   GraphQLFactoryDirective,
   GraphQLFactoryPlugin,
+  PluginDependency,
+  DependencyType,
   GraphQLInstruction,
   GraphQLSkipInstruction,
   GraphQLSkipResolveInstruction,
@@ -22,3 +24,7 @@ export {
   RemoteSchema,
   RemoteSchemaHTTP
 } from './types';
+export {
+  lodash,
+  forEach
+} from './jsutils';

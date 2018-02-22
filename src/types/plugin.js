@@ -103,6 +103,8 @@ export class GraphQLFactoryPlugin {
    * Determines if all the dependencies are met
    */
   dependenciesMet(definition: SchemaDefinition) {
+    return !this.unmetDependencies(definition).length;
+    /*
     return this._dependencies.length ?
       this._dependencies.reduce((result, { type, name }) => {
         const store = type === DependencyType.SCHEMA ? type : `${type}s`;
@@ -121,6 +123,37 @@ export class GraphQLFactoryPlugin {
         }
       }, true) :
       true;
+      */
+  }
+
+  unmetDependencies(definition: SchemaDefinition) {
+    return this._dependencies.reduce((result, dep) => {
+      const { type, name } = dep;
+      const store = type === DependencyType.SCHEMA ? type : `${type}s`;
+      const value = _.get(definition, [ store ].concat(_.toPath(name)));
+      switch (type) {
+        case DependencyType.DIRECTIVE:
+        case DependencyType.TYPE:
+        case DependencyType.SCHEMA:
+          if (!_.isObjectLike(value) || !_.keys(value).length) {
+            result.push(dep);
+          }
+          break;
+        case DependencyType.CONTEXT:
+          if (!_.has(this, [ type ].concat(_.toPath(name)))) {
+            result.push(dep);
+          }
+          break;
+        case DependencyType.FUNCTION:
+          if (!_.isFunction(value)) {
+            result.push(dep);
+          }
+          break;
+        default:
+          break;
+      }
+      return result;
+    }, []);
   }
 
   /**

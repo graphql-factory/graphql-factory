@@ -2,7 +2,7 @@
  * @flow
  */
 import { GraphQLError } from 'graphql';
-import errors from './errors';
+import { SchemaBackingError, SchemaDefinitionError } from './errors';
 
 export function assert(
   condition: boolean,
@@ -24,10 +24,13 @@ export function asrt(
   ...metadata: Array<any>
 ) {
   if (!condition) {
-    const CustomError = errors[type];
-    if (CustomError) {
-      throw new CustomError(message, ...metadata);
+    switch (type) {
+      case 'backing':
+        throw new SchemaBackingError(message);
+      case 'definition':
+        throw new SchemaDefinitionError(message);
+      default:
+        throw new Error(message);
     }
-    throw new Error(message);
   }
 }
