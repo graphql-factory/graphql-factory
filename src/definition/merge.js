@@ -1,11 +1,12 @@
 import { DEFINITION_FIELDS, EventType, ConflictResolution } from './const';
 import { lodash as _, forEach, asrt, stringMatch } from '../jsutils';
+import { castAppliedDirectiveList } from '../utilities';
 
 /**
  * Merges values
- * @param {*} target 
- * @param {*} source 
- * @param {*} method 
+ * @param {*} target
+ * @param {*} source
+ * @param {*} method
  */
 export function mergeValues(target, source, method = 'merge') {
   if (!_.isObjectLike(target)) {
@@ -28,13 +29,13 @@ export function mergeValues(target, source, method = 'merge') {
  * merge fields between operations and potentially repoint the
  * operation type reference. custom conflict resolution methods
  * can use this method
- * @param {*} def 
- * @param {*} target 
- * @param {*} source 
+ * @param {*} def
+ * @param {*} target
+ * @param {*} source
  */
 export function defaultSchemaConflictResolver(definition, target, source) {
-  const tgtdef = _.get(definition, [ 'types', target ]);
-  const srcdef = _.get(definition, [ 'types', source ]);
+  const tgtdef = _.get(definition, ['types', target]);
+  const srcdef = _.get(definition, ['types', source]);
 
   if (!_.isObjectLike(srcdef)) {
     return target;
@@ -43,52 +44,68 @@ export function defaultSchemaConflictResolver(definition, target, source) {
     return source;
   }
 
-  forEach(_.get(srcdef, 'fields'), (def, name) => {
-    // TODO: add some logic for field conflict merging
-    // possibly onConflict for fields
-    _.set(tgtdef, [ 'fields', name ], def);
-  }, true);
+  forEach(
+    _.get(srcdef, 'fields'),
+    (def, name) => {
+      // TODO: add some logic for field conflict merging
+      // possibly onConflict for fields
+      _.set(tgtdef, ['fields', name], def);
+    },
+    true,
+  );
 
   return target;
 }
 
 /**
  * Default conflict resolver
- * @param {*} store 
- * @param {*} name 
- * @param {*} target 
- * @param {*} source 
+ * @param {*} store
+ * @param {*} name
+ * @param {*} target
+ * @param {*} source
  */
 export function defaultConflictResolver(
   definition,
   store,
   name,
   target,
-  source
+  source,
 ) {
+  // since directives should ultimately be stored as arrays
+  // when merging they should be a union of values
+  if (name === '@directives') {
+    return {
+      name,
+      value: _.union(
+        castAppliedDirectiveList(source),
+        castAppliedDirectiveList(target),
+      ),
+    };
+  }
+
   switch (store) {
     case 'schema':
       return {
         name,
-        value: defaultSchemaConflictResolver(definition, target, source)
+        value: defaultSchemaConflictResolver(definition, target, source),
       };
     case 'functions':
     case 'context':
       return {
         name,
-        value: mergeValues(target, source, 'assign')
+        value: mergeValues(target, source, 'assign'),
       };
     default:
       return {
         name,
-        value: mergeValues(target, source)
+        value: mergeValues(target, source),
       };
   }
 }
 
 /**
  * Returns a conflict resolution method
- * @param {*} method 
+ * @param {*} method
  */
 export function getConflictResolver(method) {
   switch (method) {
@@ -98,7 +115,7 @@ export function getConflictResolver(method) {
       return (store, name, target, source) => {
         return {
           name,
-          value: _.isObjectLike(source) ? _.merge(target, source) : source
+          value: _.isObjectLike(source) ? _.merge(target, source) : source,
         };
       };
     // sets the target value to a clone of the source
@@ -106,7 +123,7 @@ export function getConflictResolver(method) {
       return (store, name, target, source) => {
         return {
           name,
-          value: _.isObjectLike(source) ? _.cloneDeep(source) : source
+          value: _.isObjectLike(source) ? _.cloneDeep(source) : source,
         };
       };
     // leaves the target unchanged
@@ -122,8 +139,10 @@ export function getConflictResolver(method) {
     // emits a warning and calls the default conflict resolver
     case ConflictResolution.WARN:
       return (store, name, target, source) => {
-        this.emit(EventType.WARN, 'MergeConflict: resolving ' + store +
-        ' name conflict for ' + name);
+        this.emit(
+          EventType.WARN,
+          'MergeConflict: resolving ' + store + ' name conflict for ' + name,
+        );
         return defaultConflictResolver(this, store, name, target, source);
       };
     // returns the default conflict resolver
@@ -147,76 +166,88 @@ export function getConflictResolver(method) {
 
 /**
  * Determines the conflict resolution and resolves any conflicts
- * @param {*} store 
- * @param {*} target 
- * @param {*} srcValue 
- * @param {*} tgtName 
+ * @param {*} store
+ * @param {*} target
+ * @param {*} srcValue
+ * @param {*} tgtName
  */
 export function conflictMerge(store, target, srcValue, tgtName) {
   // no conflict: if the target does not have the value add a clone
-  if (!_.has(target, [ tgtName ])) {
+  if (!_.has(target, [tgtName])) {
     _.set(
       target,
-      [ tgtName ],
-      _.isObjectLike(value) ? _.cloneDeep(value) : value
+      [tgtName],
+      _.isObjectLike(value) ? _.cloneDeep(value) : value,
     );
   }
 
   // check for the conflict resolution method
-  const method = store === 'context' ?
-    undefined :
-    _.get(value, 'onConflict');
+  const method = store === 'context' ? undefined : _.get(value, 'onConflict');
   const onConflict = getConflictResolver.call(
     this,
-    method || this._options.onConflict
+    method || this._options.onConflict,
   );
 
   // resolve the conflict
   const resolution = onConflict(store, tgtName, target[tgtName], srcValue);
-  asrt('definition', _.isObjectLike(resolution), 'conflict resolution ' +
-  'did not return a resolution object');
+  asrt(
+    'definition',
+    _.isObjectLike(resolution),
+    'conflict resolution ' + 'did not return a resolution object',
+  );
   const { name, value } = resolution;
-  asrt('definition', stringMatch(name, true), 'conflict resolution did ' +
-  'not return a valid name');
+  asrt(
+    'definition',
+    stringMatch(name, true),
+    'conflict resolution did ' + 'not return a valid name',
+  );
   target[name] = value;
 }
 
 /**
  * Merges a definition or definition-like object
  * into the current definition
- * @param {*} definition 
+ * @param {*} definition
  */
 export function mergeDefinition(definition) {
-  forEach(DEFINITION_FIELDS, store => {
-    const target = this[store];
-    const source = definition[store];
+  forEach(
+    DEFINITION_FIELDS,
+    store => {
+      const target = this[store];
+      const source = definition[store];
 
-    // if the source is not object-like return
-    if (!_.isObjectLike(source)) {
-      return;
-    }
+      // if the source is not object-like return
+      if (!_.isObjectLike(source)) {
+        return;
+      }
 
-    switch (store) {
-      case 'context':
-        if (!_.isObjectLike(target)) {
-          this[`_${store}`] = _.assign({}, source);
-        }
-        break;
-      case 'functions':
-      case 'directives':
-      case 'types':
-      case 'schema':
-        if (!_.isObjectLike(target)) {
-          this[`_${store}`] = _.merge({}, source);
-          return;
-        }
-        forEach(source, (value, name) => {
-          conflictMerge.call(this, store, target, value, name);
-        }, true);
-        break;
-      default:
-        break;
-    }
-  }, true);
+      switch (store) {
+        case 'context':
+          if (!_.isObjectLike(target)) {
+            this[`_${store}`] = _.assign({}, source);
+          }
+          break;
+        case 'functions':
+        case 'directives':
+        case 'types':
+        case 'schema':
+          if (!_.isObjectLike(target)) {
+            this[`_${store}`] = _.merge({}, source);
+            return;
+          }
+          forEach(
+            source,
+            (value, name) => {
+              conflictMerge.call(this, store, target, value, name);
+            },
+            true,
+          );
+          break;
+        default:
+          break;
+      }
+    },
+    true,
+  );
   return this;
 }

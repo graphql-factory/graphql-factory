@@ -6,16 +6,14 @@ declare class SchemaBackingError extends Error {
   message: string;
 }
 
-
-export function SchemaBackingError( // eslint-disable-line no-redeclare
-  message: string
-) {
+// prettier-ignore
+export function SchemaBackingError(message: string) { // eslint-disable-line no-redeclare
   Object.defineProperties(this, {
     message: {
       value: message,
       enumerable: true,
-      writable: true
-    }
+      writable: true,
+    },
   });
   if (Error.captureStackTrace) {
     Error.captureStackTrace(this, SchemaBackingError);
@@ -43,16 +41,14 @@ declare class SchemaDefinitionError extends Error {
   message: string;
 }
 
-
-export function SchemaDefinitionError( // eslint-disable-line no-redeclare
-  message: string
-) {
+// prettier-ignore
+export function SchemaDefinitionError(message: string) { // eslint-disable-line no-redeclare
   Object.defineProperties(this, {
     message: {
       value: message,
       enumerable: true,
-      writable: true
-    }
+      writable: true,
+    },
   });
   if (Error.captureStackTrace) {
     Error.captureStackTrace(this, SchemaDefinitionError);
@@ -78,5 +74,5 @@ export function SchemaDefinitionError( // eslint-disable-line no-redeclare
 export default {
   backing: SchemaBackingError,
   definition: SchemaDefinitionError,
-  graphql: GraphQLError
+  graphql: GraphQLError,
 };

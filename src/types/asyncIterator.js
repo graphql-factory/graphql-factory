@@ -8,9 +8,7 @@
 import { $$asyncIterator } from 'iterall';
 
 function isObject(obj) {
-  return typeof obj === 'object' &&
-    obj !== null &&
-    !Array.isArray(obj);
+  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
 }
 
 function call(func, ...args) {
@@ -35,7 +33,7 @@ class AsyncIteratorBacking {
       onReturn,
       onNext,
       onPush,
-      onEnd
+      onEnd,
     } = Object.assign({}, _options);
 
     this.done = false;
@@ -47,9 +45,8 @@ class AsyncIteratorBacking {
     this.timeout = null;
     this.dataQueue = Array.isArray(_values) ? _values.slice() : [];
     this.awaitQueue = [];
-    this.debounce = typeof debounce === 'number' && debounce > 0 ?
-      debounce :
-      null;
+    this.debounce =
+      typeof debounce === 'number' && debounce > 0 ? debounce : null;
 
     // modify the values array to push new data. this way when
     // data is added to the array it can be queued
@@ -78,7 +75,7 @@ class AsyncIteratorBacking {
       },
       [$$asyncIterator]() {
         return iterator;
-      }
+      },
     };
 
     // return the pushable iterator object
@@ -108,9 +105,9 @@ class AsyncIteratorBacking {
    */
   _pushValue(value) {
     call(this.onPush, value);
-    return this.awaitQueue.length ?
-      this.awaitQueue.shift()({ value, done: false }) :
-      this.dataQueue.push(value);
+    return this.awaitQueue.length
+      ? this.awaitQueue.shift()({ value, done: false })
+      : this.dataQueue.push(value);
   }
 
   /**
@@ -123,12 +120,12 @@ class AsyncIteratorBacking {
       if (this.dataQueue.length) {
         return resolve({
           value: this.dataQueue.shift(),
-          done: false
+          done: false,
         });
       } else if (this.done) {
         return resolve({
           value: undefined,
-          done: true
+          done: true,
         });
       }
       this.awaitQueue.push(resolve);
@@ -159,18 +156,18 @@ class AsyncIterator {
 }
 
 /**
-* Default, create iterator from an array
-* @param {*} array
-*/
+ * Default, create iterator from an array
+ * @param {*} array
+ */
 AsyncIterator.fromArray = (array, options) => {
   return new AsyncIterator(array, options);
 };
 
 /**
-* Create an iterator from a nodejs stream
-* @param {*} stream
-* @param {*} options
-*/
+ * Create an iterator from a nodejs stream
+ * @param {*} stream
+ * @param {*} options
+ */
 AsyncIterator.fromStream = (stream, options) => {
   const array = [];
   const opts = Object.assign({}, options);
@@ -185,11 +182,11 @@ AsyncIterator.fromStream = (stream, options) => {
 };
 
 /**
-* Create an iterator from an event emitter
-* @param {*} emitter
-* @param {*} event
-* @param {*} options
-*/
+ * Create an iterator from an event emitter
+ * @param {*} emitter
+ * @param {*} event
+ * @param {*} options
+ */
 AsyncIterator.fromEvent = (emitter, event, options) => {
   const array = [];
   const opts = Object.assign({}, options);

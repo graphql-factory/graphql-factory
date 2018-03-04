@@ -1,26 +1,25 @@
 /**
  * @flow
  */
+import type {
+  DirectiveLocationEnum,
+  GraphQLFieldConfigArgumentMap,
+  DirectiveDefinitionNode,
+  GraphQLFieldResolver,
+} from 'graphql';
 
- import type {
-   DirectiveLocationEnum,
-   GraphQLFieldConfigArgumentMap,
-   DirectiveDefinitionNode,
-   GraphQLFieldResolver
- } from 'graphql';
-
- import { GraphQLDirective } from 'graphql';
- import { lodash as _ } from '../jsutils';
+import { GraphQLDirective } from 'graphql';
+import { lodash as _ } from '../jsutils';
 
 export type GraphQLFactoryDirectiveConfig = {
-  name: string;
-  description?: ?string;
-  locations: Array<DirectiveLocationEnum>;
-  args?: ?GraphQLFieldConfigArgumentMap;
-  astNode?: ?DirectiveDefinitionNode;
-  resolve?: ?GraphQLFieldResolver<*, *>;
-  resolveResult?: ?GraphQLFieldResolver<*, *>;
-  beforeBuild?: () => ?mixed;
+  name: string,
+  description?: ?string,
+  locations: Array<DirectiveLocationEnum>,
+  args?: ?GraphQLFieldConfigArgumentMap,
+  astNode?: ?DirectiveDefinitionNode,
+  before?: ?GraphQLFieldResolver<*, *>,
+  after?: ?GraphQLFieldResolver<*, *>,
+  build?: () => ?mixed,
 };
 
 export class GraphQLFactoryDirective {
@@ -31,9 +30,9 @@ export class GraphQLFactoryDirective {
       locations,
       args,
       astNode,
-      resolve,
-      resolveResult,
-      beforeBuild
+      before,
+      after,
+      build,
     } = config;
 
     // create a directive
@@ -42,20 +41,17 @@ export class GraphQLFactoryDirective {
       description,
       locations,
       args,
-      astNode
+      astNode,
     });
 
-    // add resolvers
-    if (_.isFunction(resolve)) {
-      _.set(directive, [ 'resolve' ], resolve);
+    if (_.isFunction(before)) {
+      _.set(directive, 'before', before);
     }
-    if (_.isFunction(resolveResult)) {
-      _.set(directive, [ 'resolveResult' ], resolveResult);
+    if (_.isFunction(after)) {
+      _.set(directive, 'after', after);
     }
-
-    // add hooks
-    if (_.isFunction(beforeBuild)) {
-      _.set(directive, [ 'beforeBuild' ], beforeBuild);
+    if (_.isFunction(build)) {
+      _.set(directive, 'build', build);
     }
 
     // return the modified directive

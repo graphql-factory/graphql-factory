@@ -1,3 +1,4 @@
 src/jsutils/lodash/
 src/refactoring
+src/execution/execute-old.js
 node_modules

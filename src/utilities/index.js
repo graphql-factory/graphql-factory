@@ -6,14 +6,18 @@ export { printDefinition } from './printer';
 export {
   getFragment,
   doesFragmentConditionMatch,
-  getFragmentLocation
+  getFragmentLocation,
 } from './fragments';
 export {
   getDirectivesFromAST,
   getFieldDirectives,
   getOperationDirectives,
   getOperationLocation,
-  getSchemaDirectives
+  getSchemaDirectives,
+  castAppliedDirectiveList,
+  findAppliedDirective,
+  filterAppliedDirectives,
+  getDirectiveArgValue,
 } from './directives';
 export {
   fieldPath,
@@ -22,11 +26,19 @@ export {
   isFirstSelection,
   operationType,
   getSelection,
-  getFieldEntryKey
+  getFieldEntryKey,
+  dotPath,
+  arrayPath,
+  getFactoryFieldDefinition,
 } from './info';
 export {
   isListTypeAST,
   isNonNullTypeAST,
   hasListTypeAST,
-  getBaseTypeAST
+  getBaseTypeAST,
 } from './ast';
+export {
+  shouldIncludeNode,
+  getPromise,
+  defaultResolveTypeFn,
+} from './graphql-js';

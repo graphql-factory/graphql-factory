@@ -5,15 +5,20 @@ import { reduce } from './reduce';
  * @param reducer
  * @param initialValue
  * @returns {*}
- * 
+ *
  * Do not use flow here
  */
 export function promiseReduce(iterable, reducer, initialValue) {
-  return reduce(iterable, (previousPromise, currentPromise, count) => {
-    return Promise.resolve(previousPromise).then(result => {
-      return Promise.resolve(currentPromise).then(current => {
-        return reducer(result, current, count, iterable);
+  return reduce(
+    iterable,
+    (previousPromise, currentPromise, count) => {
+      return Promise.resolve(previousPromise).then(result => {
+        return Promise.resolve(currentPromise).then(current => {
+          return reducer(result, current, count, iterable);
+        });
       });
-    });
-  }, Promise.resolve(initialValue), true);
+    },
+    Promise.resolve(initialValue),
+    true,
+  );
 }

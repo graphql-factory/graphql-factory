@@ -4,75 +4,69 @@ import { SchemaDefinition } from '../../definition';
 import { printDefinition } from '../printer';
 import { DirectiveLocation, buildSchema } from 'graphql';
 
-describe('printer tests', function () {
-  it('print a schema', async function () {
+describe('printer tests', function() {
+  it('print a schema', async function() {
     const def = await new SchemaDefinition({
-      noDefaultTypes: true
-    })
-      .use({
-        types: {
-          Foo: {
-            type: 'Object',
-            description: 'foo type',
-            fields: {
-              id: {
-                type: 'String!',
-                description: 'id field',
-                '@directives': {
-                  test: {
-                    value: false
-                  },
-                  id: {}
-                }
+      noDefaultTypes: true,
+    }).use({
+      types: {
+        Foo: {
+          type: 'Object',
+          description: 'foo type',
+          fields: {
+            id: {
+              type: 'String!',
+              description: 'id field',
+              '@directives': {
+                test: {
+                  value: false,
+                },
+                id: {},
               },
-              bar: { type: 'String' }
             },
-            '@directives': {
-              test: {
-                value: true
-              }
-            }
+            bar: { type: 'String' },
           },
-          Query: {
-            type: 'Object',
-            fields: {
-              readFoo: {
-                type: 'Foo',
-                args: {
-                  id: {
-                    type: 'String!'
-                  }
-                }
-              }
-            }
-          }
-        },
-        directives: {
-          test: {
-            description: 'test directive',
-            locations: [
-              DirectiveLocation.OBJECT
-            ],
-            args: {
-              value: { type: 'Boolean' }
-            }
+          '@directives': {
+            test: {
+              value: true,
+            },
           },
-          id: {
-            locations: [
-              DirectiveLocation.FIELD_DEFINITION
-            ]
-          }
         },
-        schema: {
-          directives: [ 'test' ],
-          query: 'Query'
-        }
-      })
-      .definition;
-      const str = printDefinition(def);
-      buildSchema(str);
+        Query: {
+          type: 'Object',
+          fields: {
+            readFoo: {
+              type: 'Foo',
+              args: {
+                id: {
+                  type: 'String!',
+                },
+              },
+            },
+          },
+        },
+      },
+      directives: {
+        test: {
+          description: 'test directive',
+          locations: [DirectiveLocation.OBJECT],
+          args: {
+            value: { type: 'Boolean' },
+          },
+        },
+        id: {
+          locations: [DirectiveLocation.FIELD_DEFINITION],
+        },
+      },
+      schema: {
+        directives: ['test'],
+        query: 'Query',
+      },
+    }).definition;
+    const str = printDefinition(def);
+    buildSchema(str);
 
-      expect(str).to.equal(`# foo type
+    expect(str).to.equal(`# foo type
 type Foo @test(value: true) {
   # id field
   id: String! @test(value: false) @id

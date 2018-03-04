@@ -6,42 +6,38 @@ import {
   GraphQLString,
   GraphQLNonNull,
   GraphQLList,
-  buildSchema
+  buildSchema,
 } from 'graphql';
 import {
   // deconstructDirective,
   deconstructSchema,
   deconstructType,
-  processType
+  processType,
 } from '../deconstruct';
 
 const fn = () => null;
 
-describe('definition.deconstruct tests', function () {
-  it('converts a graphql type to a string', function () {
+describe('definition.deconstruct tests', function() {
+  it('converts a graphql type to a string', function() {
     const types = {
       nestedArray: new GraphQLList(new GraphQLList(GraphQLString)),
       nestedNull: new GraphQLList(
-        new GraphQLNonNull(
-          new GraphQLList(
-            GraphQLString
-          )
-        )
-      )
+        new GraphQLNonNull(new GraphQLList(GraphQLString)),
+      ),
     };
 
     expect(processType(types.nestedArray)).to.equal('[[String]]');
     expect(processType(types.nestedNull)).to.equal('[[String]!]');
   });
 
-  it('deconstructs an Object', function () {
+  it('deconstructs an Object', function() {
     const Foo = new GraphQLObjectType({
       name: 'Foo',
       description: 'a foo',
       fields: {
         id: { type: new GraphQLNonNull(GraphQLString) },
-        name: { type: GraphQLString }
-      }
+        name: { type: GraphQLString },
+      },
     });
 
     const Query = new GraphQLObjectType({
@@ -52,17 +48,17 @@ describe('definition.deconstruct tests', function () {
           args: {
             id: {
               type: new GraphQLNonNull(GraphQLString),
-              defaultValue: '1'
+              defaultValue: '1',
             },
           },
-          resolve: fn
+          resolve: fn,
         },
         listFoo: {
           type: new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(Foo))),
           resolve: fn,
-          subscribe: fn
-        }
-      }
+          subscribe: fn,
+        },
+      },
     });
 
     expect(deconstructType(Foo)).to.deep.equal({
@@ -70,8 +66,8 @@ describe('definition.deconstruct tests', function () {
       description: 'a foo',
       fields: {
         id: { type: 'String!' },
-        name: { type: 'String' }
-      }
+        name: { type: 'String' },
+      },
     });
     expect(deconstructType(Query)).to.deep.equal({
       type: 'Object',
@@ -81,21 +77,21 @@ describe('definition.deconstruct tests', function () {
           args: {
             id: {
               type: 'String!',
-              defaultValue: '1'
-            }
+              defaultValue: '1',
+            },
           },
-          resolve: fn
+          resolve: fn,
         },
         listFoo: {
           type: '[Foo!]!',
           resolve: fn,
-          subscribe: fn
-        }
-      }
+          subscribe: fn,
+        },
+      },
     });
   });
 
-  it('deconstructs a schema with directives', function () {
+  it('deconstructs a schema with directives', function() {
     const schema = buildSchema(`
       type Foo @test @test(value: "one"){
         id: ID!
@@ -114,45 +110,45 @@ describe('definition.deconstruct tests', function () {
         Query: {
           type: 'Object',
           fields: {
-            foo: { type: 'Foo' }
-          }
+            foo: { type: 'Foo' },
+          },
         },
         Foo: {
           type: 'Object',
           fields: {
-            id: { type: 'ID!' }
+            id: { type: 'ID!' },
           },
           '@directives': [
             {
               name: 'test',
-              args: true
+              args: true,
             },
             {
               name: 'test',
               args: {
-                value: 'one'
-              }
-            }
-          ]
-        }
+                value: 'one',
+              },
+            },
+          ],
+        },
       },
       schema: {
         query: 'Query',
-        directives: [ 'test' ]
+        directives: ['test'],
       },
       directives: {
         test: {
-          locations: [ 'OBJECT' ],
+          locations: ['OBJECT'],
           args: {
-            value: { type: 'String' }
-          }
-        }
-      }
+            value: { type: 'String' },
+          },
+        },
+      },
     });
   });
   /**
    * TODO: Write tests for
-   * 
+   *
    * Deconstruct Interface
    * Deconstruct Scalar
    * Deconstruct Enum

@@ -1,13 +1,8 @@
 import { lodash as _ } from '../jsutils';
-import {
-  typeFromAST,
-  isAbstractType,
-  Kind,
-  DirectiveLocation
-} from 'graphql';
+import { typeFromAST, isAbstractType, Kind, DirectiveLocation } from 'graphql';
 
 export function getFragment(info, name) {
-  return _.get(info, [ 'fragments', name ]);
+  return _.get(info, ['fragments', name]);
 }
 
 /**

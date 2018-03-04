@@ -2,7 +2,7 @@ import {
   GraphQLError,
   introspectionQuery,
   buildClientSchema,
-  print
+  print,
 } from 'graphql';
 import { getSelection, httpPOST } from '../utilities';
 import { lodash as _ } from '../jsutils';
@@ -28,7 +28,7 @@ export class RemoteSchema {
     this._options = Object.assign({}, options);
     this.schema = null;
     this._resolve = {
-      introspection: Promise.resolve()
+      introspection: Promise.resolve(),
     };
     this._introspection = this._options.introspection;
   }
@@ -47,15 +47,15 @@ export class RemoteSchema {
   resolver(source, args, context, info) {
     const selection = getSelection(info);
     const operation = _.cloneDeep(info.operation);
-    operation.selectionSet.selections = [ selection ];
+    operation.selectionSet.selections = [selection];
     const requestString = print(operation);
     return this._resolver(requestString, args, context, info);
   }
 
   introspect() {
-    this._resolve.introspection = this._introspection ?
-      Promise.resolve() :
-      this._introspect();
+    this._resolve.introspection = this._introspection
+      ? Promise.resolve()
+      : this._introspect();
     return this;
   }
 
@@ -69,10 +69,8 @@ export class RemoteSchema {
 function httpOpts(options, args, context, info, headers) {
   return _.merge(
     {},
-    _.isFunction(options) ?
-      options({ args, context, info }) :
-      options,
-    { headers }
+    _.isFunction(options) ? options({ args, context, info }) : options,
+    { headers },
   );
 }
 
@@ -84,16 +82,15 @@ export class RemoteSchemaHTTP extends RemoteSchema {
 
   _resolver(requestString, args, context, info) {
     const opts = httpOpts(this._options, args, context, info, {
-      'content-type': 'application/json'
+      'content-type': 'application/json',
     });
     const body = {
       query: requestString,
       operationName: info.operation.name,
       variables: info.variableValues,
-      raw: true
+      raw: true,
     };
-    return httpPOST(this._endpoint, body, opts)
-    .then(result => {
+    return httpPOST(this._endpoint, body, opts).then(result => {
       if (result.errors) {
         throw new GraphQLError(result.errors.map(err => err.message));
       }
@@ -102,16 +99,23 @@ export class RemoteSchemaHTTP extends RemoteSchema {
   }
 
   _introspect() {
-    const opts = httpOpts(this._options, {}, {}, {}, {
-      'content-type': 'application/json'
-    });
-    return httpPOST(this._endpoint, { query: introspectionQuery }, opts)
-      .then(result => {
+    const opts = httpOpts(
+      this._options,
+      {},
+      {},
+      {},
+      {
+        'content-type': 'application/json',
+      },
+    );
+    return httpPOST(this._endpoint, { query: introspectionQuery }, opts).then(
+      result => {
         if (result.errors) {
           this.introspection = null;
           throw new Error('RemoteSchema failed introspection');
         }
         this._introspection = result.data;
-      });
+      },
+    );
   }
 }

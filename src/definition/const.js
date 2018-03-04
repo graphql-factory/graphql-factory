@@ -9,13 +9,18 @@ export const DEFINITION_FIELDS = [
   // schema needs to remain last because conflict resolution
   // uses this array to resolve conflicts and all type conflicts
   // should be resolved before schema conflicts
-  'schema'
+  'schema',
 ];
+
+export const ExecutionType = {
+  RESOLVE: 'RESOLVE',
+  DIRECTIVE: 'DIRECTIVE',
+};
 
 export const EventType = {
   ERROR: 'error',
   WARN: 'warn',
-  INFO: 'info'
+  INFO: 'info',
 };
 
 export const ConflictResolution = {
@@ -24,7 +29,7 @@ export const ConflictResolution = {
   SKIP: 'skip', // no action, target remains unmodified
   ERROR: 'error', // throw an error
   WARN: 'warn', // use the default resolution resolver and emit a warning
-  DEFAULT: 'default' // use the default resolution resolver
+  DEFAULT: 'default', // use the default resolution resolver
 };
 
 export const PluginConflictResolution = {
@@ -32,7 +37,7 @@ export const PluginConflictResolution = {
   SKIP: 'skip', // leaves existing
   ERROR: 'error', // throws an error
   WARN: 'warn', // default: replace and emit a warning
-  REINSTALL: 'reinstall' // replace and re-install if already installed
+  REINSTALL: 'reinstall', // replace and re-install if already installed
 };
 
 export const NamedType = {
@@ -41,5 +46,5 @@ export const NamedType = {
   SCALAR: 'Scalar',
   ENUM: 'Enum',
   INTERFACE: 'Interface',
-  UNION: 'Union'
+  UNION: 'Union',
 };

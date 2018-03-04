@@ -7,12 +7,12 @@ export { GraphQLFactoryDirective } from './directive.js';
 export {
   GraphQLFactoryPlugin,
   PluginDependency,
-  DependencyType
+  DependencyType,
 } from './plugin';
 export {
   GraphQLInstruction,
   GraphQLSkipInstruction,
   GraphQLSkipResolveInstruction,
-  GraphQLOmitTraceInstruction
+  GraphQLOmitTraceInstruction,
 } from './instruction';
 export { RemoteSchema, RemoteSchemaHTTP } from './remote';

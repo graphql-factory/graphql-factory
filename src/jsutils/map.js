@@ -1,8 +1,8 @@
 /**
  * Implements a lodash-style reduce
- * @param {*} collection 
+ * @param {*} collection
  * @param {*} mapper
- * @param {*} throwError 
+ * @param {*} throwError
  */
 import * as _ from './lodash.custom';
 

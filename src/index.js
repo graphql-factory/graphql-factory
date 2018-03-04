@@ -7,7 +7,13 @@ export { directives, mapDirectives } from './directives';
 export {
   buildSchema,
   printDefinition,
-  request
+  request,
+  findAppliedDirective,
+  filterAppliedDirectives,
+  getDirectiveArgValue,
+  dotPath,
+  arrayPath,
+  getFactoryFieldDefinition,
 } from './utilities';
 export {
   AsyncIterator,
@@ -22,9 +28,6 @@ export {
   GraphQLSkipResolveInstruction,
   GraphQLOmitTraceInstruction,
   RemoteSchema,
-  RemoteSchemaHTTP
+  RemoteSchemaHTTP,
 } from './types';
-export {
-  lodash,
-  forEach
-} from './jsutils';
+export { lodash, forEach } from './jsutils';

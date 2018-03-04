@@ -2,6 +2,7 @@
 import array from './lodash/array';
 import assign from './lodash/assign';
 import castArray from './lodash/castArray';
+import clone from './lodash/clone';
 import cloneDeep from './lodash/cloneDeep';
 import collection from './lodash/collection';
 import constant from './lodash/constant';
@@ -72,6 +73,7 @@ export {
   array,
   assign,
   castArray,
+  clone,
   cloneDeep,
   collection,
   constant,
@@ -136,5 +138,5 @@ export {
   value,
   valueOf,
   values,
-  wrapperValue
+  wrapperValue,
 };

@@ -1,9 +1,9 @@
 /**
  * Implements a custom lodash-like forEach with additional
  * option to throw errors
- * @param {*} collection 
- * @param {*} iteratee 
- * @param {*} throwErrors 
+ * @param {*} collection
+ * @param {*} iteratee
+ * @param {*} throwErrors
  */
 import * as _ from './lodash.custom';
 

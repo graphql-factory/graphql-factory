@@ -4,15 +4,9 @@
 import { GraphQLError } from 'graphql';
 import { SchemaBackingError, SchemaDefinitionError } from './errors';
 
-export function assert(
-  condition: boolean,
-  message: string,
-  location: any
-) {
+export function assert(condition: boolean, message: string, location: any) {
   if (!condition) {
-    const msg = typeof message === 'string' ?
-      message :
-      'AssertionError';
+    const msg = typeof message === 'string' ? message : 'AssertionError';
     throw new GraphQLError(msg, location);
   }
 }

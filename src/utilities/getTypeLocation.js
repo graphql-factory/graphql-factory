@@ -1,6 +1,6 @@
 /**
  * Maps a graphql type to a field type. Strips list and non-nulls first
- * 
+ *
  * @flow
  */
 import { NamedType } from '../definition/const';
@@ -12,20 +12,17 @@ import {
   GraphQLEnumType,
   GraphQLInputObjectType,
   getNamedType,
-  DirectiveLocation
+  DirectiveLocation,
 } from 'graphql';
 
-import type {
-  DirectiveLocationEnum,
-  GraphQLType
-} from 'graphql';
+import type { DirectiveLocationEnum, GraphQLType } from 'graphql';
 
 /**
  * Gets the directive location based on the graphql type
- * @param {*} type 
+ * @param {*} type
  */
 export function getFieldTypeLocation(
-  type: GraphQLType
+  type: GraphQLType,
 ): ?DirectiveLocationEnum {
   const namedType = getNamedType(type);
 
@@ -46,7 +43,7 @@ export function getFieldTypeLocation(
 
 /**
  * Gets the directive location based on the factory named type
- * @param {*} type 
+ * @param {*} type
  */
 export function getNamedTypeLocation(type: string) {
   switch (type) {

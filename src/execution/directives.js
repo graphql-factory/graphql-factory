@@ -1,4 +1,5 @@
-import { lodash as _, reduce } from '../jsutils';
+import { lodash as _, reduce, promiseReduce } from '../jsutils';
+import { ExecutionType, instrumentResolver } from './instrumentation';
 import {
   getDirectiveValues,
   DirectiveLocation,
@@ -8,33 +9,26 @@ import {
   GraphQLInterfaceType,
   GraphQLUnionType,
   GraphQLEnumType,
-  GraphQLInputObjectType
+  GraphQLInputObjectType,
 } from 'graphql';
 
 /**
  * Gets a directive from the schema as well as its arg values
- * @param {*} info 
- * @param {*} name 
- * @param {*} astNode 
+ * @param {*} info
+ * @param {*} name
+ * @param {*} astNode
  */
 export function getDirective(info, name, astNode) {
   const directive = info.schema.getDirective(name);
-  return directive instanceof GraphQLDirective ?
-    {
-      name,
-      args: getDirectiveValues(
-        directive,
-        astNode,
-        info.variableValues
-      ),
-      directive
-    } :
-    null;
+  if (directive instanceof GraphQLDirective) {
+    const args = getDirectiveValues(directive, astNode, info.variableValues);
+    return { name, args, directive };
+  }
 }
 
 /**
  * Get the object type location
- * @param {*} object 
+ * @param {*} object
  */
 export function objectTypeLocation(object) {
   if (object instanceof GraphQLObjectType) {
@@ -56,69 +50,73 @@ export function objectTypeLocation(object) {
 /**
  * Builds an info object for the directive resolver
  * similar to fieldResolveInfo but with directive specific info
- * @param {*} resolveInfo 
- * @param {*} directiveInfo 
+ * @param {*} resolveInfo
+ * @param {*} directiveInfo
  */
-export function buildDirectiveInfo(
-  resolveInfo,
-  directiveInfo,
-  extra
-) {
-  return _.assign({
-    location: directiveInfo.location,
-    schema: resolveInfo.schema,
-    fragments: resolveInfo.fragments,
-    rootValue: resolveInfo.rootValue,
-    operation: resolveInfo.operation,
-    variableValues: resolveInfo.variableValues,
-    definition: resolveInfo.definition
-  }, extra);
+export function buildDirectiveInfo(resolveInfo, directiveInfo, extra) {
+  return _.assign(
+    {
+      location: directiveInfo.location,
+      schema: resolveInfo.schema,
+      fragments: resolveInfo.fragments,
+      rootValue: resolveInfo.rootValue,
+      operation: resolveInfo.operation,
+      variableValues: resolveInfo.variableValues,
+      definition: resolveInfo.definition,
+    },
+    extra,
+  );
 }
 
 /**
  * Builds an object containing directive resolvers, their
- * locations, and args
- * @param {*} info 
- * @param {*} directiveLocations 
+ * locations, args, etc
+ * @param {*} info
+ * @param {*} directiveLocations
  */
-export function getDirectiveResolvers(info, directiveLocations) {
-  return reduce(directiveLocations, (res, { location, astNode }) => {
-    astNode.directives.forEach(ast => {
-      const dirInfo = getDirective(info, ast.name.value, astNode);
-      if (dirInfo) {
-        const { name, args, directive } = dirInfo;
-        const { locations, resolve, resolveResult } = directive;
-        if (locations.indexOf(location) !== -1) {
-          if (typeof resolve === 'function') {
-            res.resolveRequest.push({
-              name,
-              resolve,
-              location,
-              args,
-              directive,
-              astNode,
-              ast
-            });
-          }
-          if (typeof resolveResult === 'function') {
-            res.resolveResult.push({
-              name,
-              resolve: resolveResult,
-              location,
-              args,
-              directive,
-              astNode,
-              ast
-            });
+export function getDirectiveContext(exeContext, directiveLocations) {
+  return reduce(
+    directiveLocations,
+    (res, { location, astNode }) => {
+      astNode.directives.forEach(ast => {
+        const dirInfo = getDirective(exeContext, ast.name.value, astNode);
+        if (dirInfo) {
+          const { name, args, directive } = dirInfo;
+          const { locations, before, after } = directive;
+          const info = {};
+          if (locations.indexOf(location) !== -1) {
+            if (_.isFunction(before)) {
+              res.resolveBefore.push({
+                name,
+                resolve: before,
+                location,
+                args,
+                directive,
+                astNode,
+                ast,
+                info,
+              });
+            }
+            if (_.isFunction(after)) {
+              res.resolveAfter.push({
+                name,
+                resolve: after,
+                location,
+                args,
+                directive,
+                astNode,
+                ast,
+                info,
+              });
+            }
           }
         }
-      }
-    });
-    return res;
-  }, {
-    resolveRequest: [],
-    resolveResult: []
-  });
+      });
+      return res;
+    },
+    { resolveBefore: [], resolveAfter: [] },
+    true,
+  );
 }
 
 /**
@@ -134,14 +132,67 @@ export function buildAttachInfo(
   path,
   parentType,
   info,
-  extra
+  selection,
+  extra,
 ) {
+  const key = selection.name.value;
+  const field = _.isFunction(parentType.getFields)
+    ? _.get(parentType.getFields(), [key])
+    : null;
+
   const attachInfo = {
     kind: directiveInfo.astNode.kind,
     path: _.cloneDeep(path || { prev: undefined, key: undefined }),
     astNode: directiveInfo.ast,
     parentType,
-    fieldInfo: info || {},
+    fieldInfo: Object.assign({}, info, {
+      fieldName: key,
+      returnType: field.type,
+      parentType,
+    }),
   };
   return _.assign(attachInfo, extra);
+}
+
+/**
+ * Reduces the request directives overwritting the source value
+ * if a value is returned from the directive resolver
+ * @param {*} value
+ * @param {*} resolveRequest
+ * @param {*} context
+ * @param {*} attachInfo
+ * @param {*} info
+ */
+export function reduceRequestDirectives(
+  value,
+  resolveBefore,
+  context,
+  info,
+  parentType,
+  path,
+  selection,
+) {
+  const execution = info.operation._factory.execution;
+  if (!_.isArray(resolveBefore) || !resolveBefore.length) {
+    return Promise.resolve(value);
+  }
+  return promiseReduce(
+    resolveBefore,
+    (prev, r) => {
+      const attachInfo = buildAttachInfo(r, path, parentType, info, selection);
+      const directiveInfo = buildDirectiveInfo(info, r, { attachInfo });
+      return instrumentResolver(
+        ExecutionType.DIRECTIVE,
+        r.directive.name,
+        r.resolve.name || 'resolve',
+        execution.execution.resolvers,
+        directiveInfo,
+        r.resolve,
+        [prev, r.args, context, directiveInfo],
+      ).then(directiveResult => {
+        return directiveResult === undefined ? prev : directiveResult;
+      });
+    },
+    value,
+  );
 }

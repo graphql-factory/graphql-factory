@@ -10,17 +10,10 @@ export function httpPOST(uri, body, options) {
   return new Promise((resolve, reject) => {
     try {
       // create the options
-      const opts = _.merge(
-        {},
-        options,
-        url.parse(uri),
-        { method: 'POST' }
-      );
+      const opts = _.merge({}, options, url.parse(uri), { method: 'POST' });
 
       // determine the protocol to use
-      const proto = opts.protocol === 'https:' ?
-        https :
-        http;
+      const proto = opts.protocol === 'https:' ? https : http;
 
       // set a timeout
       if (_.isNumber(opts.timeout)) {
@@ -33,33 +26,34 @@ export function httpPOST(uri, body, options) {
       const req = proto.request(opts, res => {
         let data = '';
         const contentType = res.headers['content-type'];
-        const types = typeof contentType === 'string' ?
-          contentType.split(';').map(h => h.trim().toLowerCase()) :
-          [];
+        const types =
+          typeof contentType === 'string'
+            ? contentType.split(';').map(h => h.trim().toLowerCase())
+            : [];
 
         const iterator = AsyncIterator.fromStream(res, {
-          closeEvent: 'end'
+          closeEvent: 'end',
         });
 
         // iterate through the data stream
         return forAwaitEach(iterator, value => {
           data += value;
         })
-        .then(() => {
-          clearTimeout(timeout);
-          if (types.indexOf('application/json') !== -1) {
-            try {
-              resolve(JSON.parse(data));
-            } catch (parseErr) {
-              clearTimeout(timeout);
-              return reject(parseErr);
+          .then(() => {
+            clearTimeout(timeout);
+            if (types.indexOf('application/json') !== -1) {
+              try {
+                resolve(JSON.parse(data));
+              } catch (parseErr) {
+                clearTimeout(timeout);
+                return reject(parseErr);
+              }
             }
-          }
-        })
-        .catch(err => {
-          clearTimeout(timeout);
-          return reject(err);
-        });
+          })
+          .catch(err => {
+            clearTimeout(timeout);
+            return reject(err);
+          });
       });
 
       // monitor errors
@@ -69,14 +63,11 @@ export function httpPOST(uri, body, options) {
       });
 
       // convert the body to string
-      const bodyStr = _.isObject(body) ?
-        JSON.stringify(body) :
-        String(body);
+      const bodyStr = _.isObject(body) ? JSON.stringify(body) : String(body);
 
       // make request
       req.write(bodyStr);
       req.end();
-
     } catch (err) {
       clearTimeout(timeout);
       return reject(err);

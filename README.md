@@ -61,7 +61,7 @@ const definition = `
 // create a schema backing that contains resolvers
 const backing = new SchemaBacking()
   .Directive('test')
-    .resolve((source, args, context, info) => {
+    .before((source, args, context, info) => {
       console.log('Testing', args)
     })
   .Object('Query')
@@ -72,36 +72,27 @@ const backing = new SchemaBacking()
     .resolve('items', (source, args, context, info) => {
       // resolve code
     })
-  .backing()
+  .backing();
 
-// create an async function so we can use await
-async function main() {
-  // build a schema from the definition and backing
-  const schema = await new SchemaDefinition()
+const schema = new SchemaDefinition()
     .use(definition, backing)
-    .buildSchema()
+    .buildSchema();
 
-  // make a request with the attached request method
-  // you can also use the standard graphql execution
-  // but extensions will not be returned in the result
-  const result = await schema.request({
-    source: `
-      query MyQuery {
-        listLists {
+schema.request({
+  source: `
+    query MyQuery {
+      listLists {
+        name
+        items {
           name
-          items {
-            name
-          }
         }
       }
-    `
-  });
-
-  console.log(result);
-}
-
-// call async function to execute query
-main();
+    }
+  `
+})
+.then(result => {
+  // code...
+});
 ```
 
 ### Factory Definition Example
@@ -121,7 +112,7 @@ const definition = {
       args: {
         value: { type: 'String' }
       },
-      resolve (source, args, context, info) {
+      before(source, args, context, info) {
         console.log('Testing', args)
       }
     }
@@ -173,32 +164,23 @@ const definition = {
   }
 }
 
-// create an async function so we can use await
-async function main() {
-  // build a schema from the definition and backing
-  const schema = await new SchemaDefinition()
-    .use(definition)
-    .buildSchema()
+const schema = new SchemaDefinition()
+    .use(definition, backing)
+    .buildSchema();
 
-  // make a request with the attached request method
-  // you can also use the standard graphql execution
-  // but extensions will not be returned in the result
-  const result = await schema.request({
-    source: `
-      query MyQuery {
-        listLists {
+schema.request({
+  source: `
+    query MyQuery {
+      listLists {
+        name
+        items {
           name
-          items {
-            name
-          }
         }
       }
-    `
-  });
-
-  console.log(result);
-}
-
-// call async function to execute query
-main();
+    }
+  `
+})
+.then(result => {
+  // code...
+});
 ```

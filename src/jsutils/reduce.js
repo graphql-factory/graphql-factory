@@ -1,8 +1,8 @@
 /**
  * Implements a lodash-style reduce
- * @param {*} collection 
- * @param {*} reducer 
- * @param {*} initialValue 
+ * @param {*} collection
+ * @param {*} reducer
+ * @param {*} initialValue
  */
 import * as _ from './lodash.custom';
 
@@ -17,9 +17,9 @@ export function reduce(collection, reducer, initialValue, throwError) {
     }
   };
 
-  const result = initialValue ?
-    _.reduce(collection, fn, initialValue) :
-    _.reduce(collection, fn);
+  const result = initialValue
+    ? _.reduce(collection, fn, initialValue)
+    : _.reduce(collection, fn);
 
   if (throwError && error instanceof Error) {
     throw error;

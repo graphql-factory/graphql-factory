@@ -4,43 +4,44 @@ import { SchemaBacking } from '../backing';
 
 const fn = () => null;
 
-describe('definition.backing tests', function () {
-  it('creates an empty backing', function () {
+describe('definition.backing tests', function() {
+  it('creates an empty backing', function() {
     const backing = new SchemaBacking();
     expect(backing.backing).to.deep.equal({
       types: {},
       enums: {},
-      directives: {}
+      directives: {},
     });
 
-    expect(backing.validate.bind(backing)).to.throw('no type or directive ' +
-    'backing configuration was found');
+    expect(backing.validate.bind(backing)).to.throw(
+      'no type or directive ' + 'backing configuration was found',
+    );
   });
 
-  it('creates a backing with all types and directives', function () {
+  it('creates a backing with all types and directives', function() {
     const backing = new SchemaBacking();
 
     // build the backing
     backing
-    .Object('FooObject')
+      .Object('FooObject')
       .resolve('readFoo', fn)
       .subscribe('readFoo', fn)
-    .Object('BarObject')
+      .Object('BarObject')
       .resolve('readBar', fn)
-    // add a field after other fields have been added
-    .Object('FooObject')
+      // add a field after other fields have been added
+      .Object('FooObject')
       .resolve('listFoo', fn)
-    .Scalar('FooScalar')
+      .Scalar('FooScalar')
       .serialize(fn)
       .parseValue(fn)
       .parseLiteral(fn)
-    .Interface('FooInterface')
+      .Interface('FooInterface')
       .resolveType(fn)
       .resolve('readIface', fn)
-    .Directive('test')
-      .resolve(fn)
-      .resolveResult(fn)
-      .beforeBuild(fn);
+      .Directive('test')
+      .before(fn)
+      .after(fn)
+      .build(fn);
     expect(backing.backing).to.deep.equal({
       enums: {},
       types: {
@@ -48,115 +49,110 @@ describe('definition.backing tests', function () {
           fields: {
             readFoo: {
               resolve: fn,
-              subscribe: fn
+              subscribe: fn,
             },
             listFoo: {
-              resolve: fn
-            }
-          }
+              resolve: fn,
+            },
+          },
         },
         BarObject: {
           fields: {
             readBar: {
-              resolve: fn
-            }
-          }
+              resolve: fn,
+            },
+          },
         },
         FooScalar: {
           serialize: fn,
           parseValue: fn,
-          parseLiteral: fn
+          parseLiteral: fn,
         },
         FooInterface: {
           resolveType: fn,
           fields: {
             readIface: {
-              resolve: fn
-            }
-          }
-        }
+              resolve: fn,
+            },
+          },
+        },
       },
       directives: {
         test: {
-          resolve: fn,
-          resolveResult: fn,
-          beforeBuild: fn
-        }
-      }
+          before: fn,
+          after: fn,
+          build: fn,
+        },
+      },
     });
   });
 
-  it('creates a backing from an object and merges', function () {
+  it('creates a backing from an object and merges', function() {
     const typeDef = {
       types: {
         Foo: {
           fields: {
             readFoo: {
-              resolve: fn
-            }
-          }
-        }
-      }
+              resolve: fn,
+            },
+          },
+        },
+      },
     };
 
     const dirDef = {
       directives: {
         test: {
-          resolve: fn
-        }
-      }
+          before: fn,
+        },
+      },
     };
 
     const backing = new SchemaBacking(typeDef);
     expect(backing.backing.types).to.deep.equal(typeDef.types);
     backing.merge(dirDef);
     expect(backing.backing).to.deep.equal(
-      Object.assign(
-        { enums: {} },
-        typeDef,
-        dirDef
-      )
+      Object.assign({ enums: {} }, typeDef, dirDef),
     );
   });
 
-  it('exports a resolverMap', function () {
+  it('exports a resolverMap', function() {
     const backing = new SchemaBacking();
     backing
-    .Object('Foo')
+      .Object('Foo')
       .resolve('readFoo', fn)
       .resolve('listFoo', fn)
-    .Object('Bar')
+      .Object('Bar')
       .resolve('readBar', fn)
-    .Interface('Iface')
+      .Interface('Iface')
       .resolve('readIface', fn)
-    .Scalar('FooScalar')
+      .Scalar('FooScalar')
       .serialize(fn);
 
     expect(backing.export('resolverMap')).to.deep.equal({
       Foo: {
         readFoo: fn,
-        listFoo: fn
+        listFoo: fn,
       },
       Bar: {
-        readBar: fn
+        readBar: fn,
       },
       Iface: {
-        readIface: fn
-      }
+        readIface: fn,
+      },
     });
   });
 
-  it('adds an enum backing', function () {
+  it('adds an enum backing', function() {
     const backing = new SchemaBacking()
       .Enum('FooEnum')
-        .value('BAR', 1)
-        .value('BAZ', 2)
-      .backing;
+      .value('BAR', 1)
+      .value('BAZ', 2).backing;
     expect(backing.enums).to.deep.equal({
       FooEnum: {
         BAR: 1,
-        BAZ: 2
-      }
+        BAZ: 2,
+      },
     });
   });
 });

@@ -1,26 +1,24 @@
 import { lodash as _ } from '../jsutils';
-import belongsTo from './belongsTo';
 import by from './by';
 import enumDirective from './enum';
-import has from './has';
 import id from './id';
 import meta from './meta';
+import relation from './relation';
 import resolve from './resolve';
 import typeDef from './typeDef';
 import unique from './unique';
 import validate from './validate';
 
 export const directives = {
-  belongsTo,
   by,
   enum: enumDirective,
-  has,
   id,
   meta,
+  relation,
   resolve,
   typeDef,
   unique,
-  validate
+  validate,
 };
 
 export function mapDirectives(names) {

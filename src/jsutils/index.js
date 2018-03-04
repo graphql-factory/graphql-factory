@@ -1,7 +1,8 @@
 import * as lodash from './lodash.custom';
 import * as errors from './errors';
 import * as semver from './semver';
-export { lodash, errors, semver };
+import isPromise from './isPromise';
+export { lodash, errors, semver, isPromise };
 export { assert, asrt } from './assert';
 export { getTime } from './getTime';
 export { forEach } from './forEach';
@@ -9,6 +10,7 @@ export { indent } from './indent';
 export { map } from './map';
 export { promiseMap } from './promiseMap';
 export { promiseReduce } from './promiseReduce';
+export { isThenable } from './isThenable';
 export { reduce } from './reduce';
 export { stringMatch } from './stringMatch';
 export { setIf } from './setIf';

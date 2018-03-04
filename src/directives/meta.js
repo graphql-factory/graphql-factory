@@ -7,7 +7,7 @@ export default {
   args: {
     data: {
       type: 'JSON!',
-      description: 'Metadata to make available to the resolver.'
-    }
-  }
+      description: 'Metadata to make available to the resolver.',
+    },
+  },
 };

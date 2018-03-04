@@ -7,28 +7,28 @@ import {
   // defaultConflictResolver,
   // getConflictResolver,
   // conflictMerge,
-  defaultSchemaConflictResolver
+  defaultSchemaConflictResolver,
 } from '../merge';
 
-describe('definition.merge tests', function () {
-  it('tests defaultSchemaConflictResolver', function () {
+describe('definition.merge tests', function() {
+  it('tests defaultSchemaConflictResolver', function() {
     const def = {
       types: {
         OldQuery: {
           name: 'OldQuery',
           fields: {
             id: { type: 'String' },
-            oldField: { type: 'String' }
-          }
+            oldField: { type: 'String' },
+          },
         },
         NewQuery: {
           name: 'NewQuery',
           fields: {
             id: { type: 'String' },
-            newField: { type: 'String' }
-          }
-        }
-      }
+            newField: { type: 'String' },
+          },
+        },
+      },
     };
 
     const def1 = _.cloneDeep(def);
@@ -40,17 +40,17 @@ describe('definition.merge tests', function () {
           fields: {
             id: { type: 'String' },
             oldField: { type: 'String' },
-            newField: { type: 'String' }
-          }
+            newField: { type: 'String' },
+          },
         },
         NewQuery: {
           name: 'NewQuery',
           fields: {
             id: { type: 'String' },
-            newField: { type: 'String' }
-          }
-        }
-      }
+            newField: { type: 'String' },
+          },
+        },
+      },
     });
 
     const def2 = {
@@ -59,15 +59,14 @@ describe('definition.merge tests', function () {
           name: 'OldQuery',
           fields: {
             id: { type: 'String' },
-            oldField: { type: 'String' }
-          }
-        }
-      }
+            oldField: { type: 'String' },
+          },
+        },
+      },
     };
     const def2c = _.cloneDeep(def2);
     defaultSchemaConflictResolver(def2c, 'OldQuery', 'NewQuery');
     expect(def2c).to.deep.equal(def2);
-
 
     const def3 = {
       types: {
@@ -75,10 +74,10 @@ describe('definition.merge tests', function () {
           name: 'NewQuery',
           fields: {
             id: { type: 'String' },
-            newField: { type: 'String' }
-          }
-        }
-      }
+            newField: { type: 'String' },
+          },
+        },
+      },
     };
     const def3c = _.cloneDeep(def3);
     defaultSchemaConflictResolver(def3c, 'OldQuery', 'NewQuery');

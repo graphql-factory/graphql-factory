@@ -15,7 +15,7 @@ import {
   GraphQLEnumType,
   GraphQLInterfaceType,
   GraphQLUnionType,
-  GraphQLDirective
+  GraphQLDirective,
 } from 'graphql';
 import type {
   GraphQLType,
@@ -23,7 +23,7 @@ import type {
   GraphQLField,
   GraphQLArgument,
   GraphQLInputField,
-  GraphQLEnumValueConfig
+  GraphQLEnumValueConfig,
 } from 'graphql';
 import {
   lodash as _,
@@ -31,41 +31,32 @@ import {
   reduce,
   map,
   stringMatch,
-  setIf
+  setIf,
 } from '../jsutils';
 
-export const DefaultDirectives = [
-  'skip',
-  'include',
-  'deprecated'
-];
+export const DefaultDirectives = ['skip', 'include', 'deprecated'];
 
-export const DefaultScalars = [
-  'String',
-  'Int',
-  'Float',
-  'ID',
-  'Boolean'
-];
+export const DefaultScalars = ['String', 'Int', 'Float', 'ID', 'Boolean'];
 
 /**
  * Determines if an onConflict value is valid
- * @param {*} conflict 
+ * @param {*} conflict
  */
 export function isConflictResolution(conflict: any) {
-  return _.includes(_.values(ConflictResolution), conflict) ||
-    _.isFunction(conflict);
+  return (
+    _.includes(_.values(ConflictResolution), conflict) || _.isFunction(conflict)
+  );
 }
 
 /**
  * Parses an AST node for values
- * @param {*} astNode 
+ * @param {*} astNode
  */
 export function parseASTNode(astNode: ASTNode) {
   const { kind } = astNode;
-  const value = _.get(astNode, [ 'value' ]);
-  const values = _.get(astNode, [ 'values' ]);
-  const fields = _.get(astNode, [ 'fields' ]);
+  const value = _.get(astNode, ['value']);
+  const values = _.get(astNode, ['values']);
+  const fields = _.get(astNode, ['fields']);
   switch (kind) {
     case Kind.STRING:
     case Kind.BOOLEAN:
@@ -74,10 +65,15 @@ export function parseASTNode(astNode: ASTNode) {
     case Kind.FLOAT:
       return Number(value);
     case Kind.OBJECT: {
-      return reduce(fields, (val, field) => {
-        val[field.name.value] = parseASTNode(field.value);
-        return val;
-      }, Object.create(null), true);
+      return reduce(
+        fields,
+        (val, field) => {
+          val[field.name.value] = parseASTNode(field.value);
+          return val;
+        },
+        Object.create(null),
+        true,
+      );
     }
     case Kind.LIST:
       return values.map(parseASTNode);
@@ -88,43 +84,50 @@ export function parseASTNode(astNode: ASTNode) {
 
 /**
  * Returns a schema language value for the type
- * @param {*} type 
+ * @param {*} type
  */
 export function processType(type: GraphQLType) {
-  return type instanceof GraphQLNonNull ?
-    `${processType(type.ofType)}!` :
-    type instanceof GraphQLList ?
-      `[${processType(type.ofType)}]` :
-      type.name;
+  return type instanceof GraphQLNonNull
+    ? `${processType(type.ofType)}!`
+    : type instanceof GraphQLList ? `[${processType(type.ofType)}]` : type.name;
 }
 
 /**
  * Creates a mapping of directive names to arguments
- * @param {*} node 
+ * @param {*} node
  */
 export function extractDirectives(astNode: ASTNode) {
   if (!astNode) {
     return [];
   } else if (Array.isArray(astNode.directives) && astNode.directives.length) {
-    return map(astNode.directives, ast => {
-      const { name: { value: name }, arguments: args } = ast;
-      const nodeArgs = reduce(args, (argDef, node) => {
-        argDef[node.name.value] = parseASTNode(node.value);
-        return argDef;
-      }, {}, true);
+    return map(
+      astNode.directives,
+      ast => {
+        const { name: { value: name }, arguments: args } = ast;
+        const nodeArgs = reduce(
+          args,
+          (argDef, node) => {
+            argDef[node.name.value] = parseASTNode(node.value);
+            return argDef;
+          },
+          {},
+          true,
+        );
 
-      return {
-        name,
-        args: _.isEmpty(nodeArgs) ? true : nodeArgs
-      };
-    }, true);
+        return {
+          name,
+          args: _.isEmpty(nodeArgs) ? true : nodeArgs,
+        };
+      },
+      true,
+    );
   }
 }
 
 /**
  * Sets definition values based on key and validation
- * @param {*} def 
- * @param {*} key 
+ * @param {*} def
+ * @param {*} key
  * @param {*} value
  * @param {*} allowed
  */
@@ -133,16 +136,21 @@ export function setDef(
   key: string,
   value: any,
   allowed: Array<string>,
-  object?: ?any
+  object?: ?any,
 ) {
   if (value !== undefined && allowed.indexOf(key) !== -1) {
     switch (key) {
       case 'args':
-        const _args = reduce(value, (args, arg) => {
-          const argDef = processArg(arg);
-          args[argDef.name] = argDef.arg;
-          return args;
-        }, Object.create(null), true);
+        const _args = reduce(
+          value,
+          (args, arg) => {
+            const argDef = processArg(arg);
+            args[argDef.name] = argDef.arg;
+            return args;
+          },
+          Object.create(null),
+          true,
+        );
         setIf(def, key, _args, _.keys(_args).length);
         break;
       case 'astNode':
@@ -166,34 +174,31 @@ export function setDef(
       case 'description':
         setIf(def, key, value, stringMatch(value, true));
         break;
-      case 'subscribe':
-      case 'resolve':
-        if (object instanceof GraphQLDirective) {
-          setIf(def, key, value, _.isFunction(value));
-        } else {
-          const resolver = _.isFunction(_.get(value, '__resolver')) ?
-          value.__resolver :
-          value;
-          setIf(def, key, resolver, _.isFunction(value));
-        }
-        break;
       case 'type':
         def[key] = processType(value);
         break;
+      case 'subscribe':
+      case 'resolve':
       case 'isTypeOf':
       case 'serialize':
       case 'parseValue':
       case 'parseLiteral':
-      case 'resolveResult':
-      case 'beforeBuild':
+      case 'before':
+      case 'after':
+      case 'build':
         setIf(def, key, value, _.isFunction(value));
         break;
       case 'values':
         if (object instanceof GraphQLEnumType) {
-          def[key] = reduce(object.getValues(), (valDef, val) => {
-            valDef[val.name] = processEnumValue(val);
-            return valDef;
-          }, Object.create(null), true);
+          def[key] = reduce(
+            object.getValues(),
+            (valDef, val) => {
+              valDef[val.name] = processEnumValue(val);
+              return valDef;
+            },
+            Object.create(null),
+            true,
+          );
         }
         break;
       case 'onConflict':
@@ -210,12 +215,18 @@ export function setDef(
           object instanceof GraphQLInterfaceType ||
           object instanceof GraphQLInputObjectType
         ) {
-          def.fields = reduce(object.getFields(), (fields, field, name) => {
-            fields[name] = object instanceof GraphQLInputObjectType ?
-              processArg(field).arg :
-              processField(field);
-            return fields;
-          }, Object.create(null), true);
+          def.fields = reduce(
+            object.getFields(),
+            (fields, field, name) => {
+              fields[name] =
+                object instanceof GraphQLInputObjectType
+                  ? processArg(field).arg
+                  : processField(field);
+              return fields;
+            },
+            Object.create(null),
+            true,
+          );
         }
         break;
       case 'resolveType':
@@ -223,7 +234,7 @@ export function setDef(
           def,
           key,
           value,
-          _.isFunction(value) && value.name !== 'cannotExecuteSchema'
+          _.isFunction(value) && value.name !== 'cannotExecuteSchema',
         );
         break;
       default:
@@ -235,119 +246,159 @@ export function setDef(
 
 /**
  * Processes a GraphQLArgument into a FactoryArgumentConfig
- * @param {*} definition 
+ * @param {*} definition
  */
 export function processArg(definition: GraphQLArgument | GraphQLInputField) {
   const { name } = definition;
-  const arg = reduce(definition, (def, value, key) => {
-    return setDef(def, key, value, [
-      'type',
-      'defaultValue',
-      'description',
-      'astNode'
-    ]);
-  }, Object.create(null), true);
+  const arg = reduce(
+    definition,
+    (def, value, key) => {
+      return setDef(def, key, value, [
+        'type',
+        'defaultValue',
+        'description',
+        'astNode',
+      ]);
+    },
+    Object.create(null),
+    true,
+  );
   return { name, arg };
 }
 
 /**
  * Creates an enum value factory definition
- * @param {*} val 
+ * @param {*} val
  */
-export function processEnumValue(
-  val: GraphQLEnumValueConfig
-) {
-  return reduce(val, (def, value, key) => {
-    return setDef(def, key, value, [
-      'description',
-      'value',
-      'deprecationReason',
-      'astNode'
-    ]);
-  }, Object.create(null), true);
+export function processEnumValue(val: GraphQLEnumValueConfig) {
+  return reduce(
+    val,
+    (def, value, key) => {
+      return setDef(def, key, value, [
+        'description',
+        'value',
+        'deprecationReason',
+        'astNode',
+      ]);
+    },
+    Object.create(null),
+    true,
+  );
 }
 
 /**
  * process a field into a definition
- * @param {*} definition 
+ * @param {*} definition
  */
 export function processField(definition: GraphQLField<*, *>) {
-  return reduce(definition, (def, value, key) => {
-    return setDef(def, key, value, [
-      'description',
-      'type',
-      'args',
-      'subscribe',
-      'resolve',
-      'deprecationReason',
-      'astNode'
-    ]);
-  }, Object.create(null), true);
+  return reduce(
+    definition,
+    (def, value, key) => {
+      return setDef(def, key, value, [
+        'description',
+        'type',
+        'args',
+        'subscribe',
+        'resolve',
+        'deprecationReason',
+        'astNode',
+      ]);
+    },
+    Object.create(null),
+    true,
+  );
 }
 
 /**
  * Converts an object type to Factory definition
- * @param {*} object 
+ * @param {*} object
  */
 function processObjectType(object: GraphQLObjectType) {
-  return reduce(object._typeConfig, (def, value, key) => {
-    return setDef(def, key, value, [
-      'description',
-      'interfaces',
-      'fields',
-      'isTypeOf',
-      'astNode',
-      'onConflict'
-    ], object);
-  }, { type: 'Object' }, true);
+  return reduce(
+    object._typeConfig,
+    (def, value, key) => {
+      return setDef(
+        def,
+        key,
+        value,
+        [
+          'description',
+          'interfaces',
+          'fields',
+          'isTypeOf',
+          'astNode',
+          'onConflict',
+        ],
+        object,
+      );
+    },
+    { type: 'Object' },
+    true,
+  );
 }
 
 /**
  * Converts an object type to Factory definition
- * @param {*} object 
+ * @param {*} object
  */
 function processInputObjectType(object: GraphQLInputObjectType) {
-  return reduce(object._typeConfig, (def, value, key) => {
-    return setDef(def, key, value, [
-      'description',
-      'fields',
-      'astNode',
-      'onConflict'
-    ], object);
-  }, { type: 'Input' }, true);
+  return reduce(
+    object._typeConfig,
+    (def, value, key) => {
+      return setDef(
+        def,
+        key,
+        value,
+        ['description', 'fields', 'astNode', 'onConflict'],
+        object,
+      );
+    },
+    { type: 'Input' },
+    true,
+  );
 }
 
 /**
  * Convert Scalar type to an Factory definition
- * @param {*} scalar 
+ * @param {*} scalar
  */
 export function processScalarType(scalar: GraphQLScalarType) {
-  return reduce(scalar._scalarConfig, (def, value, key) => {
-    return setDef(def, key, value, [
-      'description',
-      'serialize',
-      'parseValue',
-      'parseLiteral',
-      'astNode',
-      'onConflict'
-    ]);
-  }, { type: 'Scalar' }, true);
+  return reduce(
+    scalar._scalarConfig,
+    (def, value, key) => {
+      return setDef(def, key, value, [
+        'description',
+        'serialize',
+        'parseValue',
+        'parseLiteral',
+        'astNode',
+        'onConflict',
+      ]);
+    },
+    { type: 'Scalar' },
+    true,
+  );
 }
 
 /**
  * Processes a union into a factory definition
- * @param {*} union 
+ * @param {*} union
  */
 export function processUnionType(union: GraphQLUnionType) {
-  return reduce(union._typeConfig, (def, value, key) => {
-    return setDef(def, key, value, [
-      'description',
-      'types',
-      'resolveType',
-      'astNode',
-      'onConflict'
-    ], union);
-  }, { type: 'Union' }, true);
+  return reduce(
+    union._typeConfig,
+    (def, value, key) => {
+      return setDef(
+        def,
+        key,
+        value,
+        ['description', 'types', 'resolveType', 'astNode', 'onConflict'],
+        union,
+      );
+    },
+    { type: 'Union' },
+    true,
+  );
 }
 
 /**
@@ -355,30 +406,41 @@ export function processUnionType(union: GraphQLUnionType) {
  * @param {*} iface
  */
 export function processInterfaceType(iface: GraphQLInterfaceType) {
-  return reduce(iface._typeConfig, (def, value, key) => {
-    return setDef(def, key, value, [
-      'description',
-      'fields',
-      'resolveType',
-      'astNode',
-      'onConflict'
-    ], iface);
-  }, { type: 'Interface' }, true);
+  return reduce(
+    iface._typeConfig,
+    (def, value, key) => {
+      return setDef(
+        def,
+        key,
+        value,
+        ['description', 'fields', 'resolveType', 'astNode', 'onConflict'],
+        iface,
+      );
+    },
+    { type: 'Interface' },
+    true,
+  );
 }
 
 /**
  * Process an enum into a factory definition
- * @param {*} enu 
+ * @param {*} enu
  */
 export function processEnumType(enu: GraphQLEnumType) {
-  return reduce(enu._enumConfig, (def, value, key) => {
-    return setDef(def, key, value, [
-      'description',
-      'values',
-      'astNode',
-      'onConflict'
-    ], enu);
-  }, { type: 'Enum' }, true);
+  return reduce(
+    enu._enumConfig,
+    (def, value, key) => {
+      return setDef(
+        def,
+        key,
+        value,
+        ['description', 'values', 'astNode', 'onConflict'],
+        enu,
+      );
+    },
+    { type: 'Enum' },
+    true,
+  );
 }
 
 export class SchemaDeconstructor {
@@ -390,8 +452,8 @@ export class SchemaDeconstructor {
     this.definition = {
       types: {},
       schema: {
-        query: ''
-      }
+        query: '',
+      },
     };
   }
 
@@ -408,9 +470,9 @@ export class SchemaDeconstructor {
         const definition = deconstructType(type);
         setIf(
           this.definition.types,
-          [ `${_prefix}${name}` ],
+          [`${_prefix}${name}`],
           definition,
-          Boolean(definition)
+          Boolean(definition),
         );
       }
     });
@@ -426,9 +488,9 @@ export class SchemaDeconstructor {
       const definition = deconstructDirective(directive);
       setIf(
         this.definition,
-        [ 'directives', name ],
+        ['directives', name],
         definition,
-        Boolean(definition)
+        Boolean(definition),
       );
     });
     return this;
@@ -442,40 +504,39 @@ export class SchemaDeconstructor {
     const queryType = this.schema.getQueryType() || {};
     const mutationType = this.schema.getMutationType() || {};
     const subscriptionType = this.schema.getSubscriptionType() || {};
-    const directives = extractDirectives(_.get(this.schema, [ 'astNode' ]));
-    const customDirectives = this.schema.getDirectives()
-      .filter(({ name }) => {
-        return DefaultDirectives.indexOf(name) === -1;
-      });
+    const directives = extractDirectives(_.get(this.schema, ['astNode']));
+    const customDirectives = this.schema.getDirectives().filter(({ name }) => {
+      return DefaultDirectives.indexOf(name) === -1;
+    });
     setIf(
       this.definition.schema,
       'directives',
       customDirectives.map(dir => dir.name),
-      customDirectives.length
+      customDirectives.length,
     );
     setIf(
       this.definition.schema,
       'query',
       `${_prefix}${queryType.name}`,
-      Boolean(queryType.name)
+      Boolean(queryType.name),
     );
     setIf(
       this.definition.schema,
       'mutation',
       `${_prefix}${mutationType.name}`,
-      Boolean(mutationType.name)
+      Boolean(mutationType.name),
     );
     setIf(
       this.definition.schema,
       'subscription',
       `${_prefix}${subscriptionType.name}`,
-      Boolean(subscriptionType.name)
+      Boolean(subscriptionType.name),
     );
     setIf(
       this.definition.schema,
       '@directives',
       directives,
-      Boolean(directives)
+      Boolean(directives),
     );
     return this;
   }
@@ -484,18 +545,16 @@ export class SchemaDeconstructor {
    * Deconstructs a schema into a factory definition
    */
   deconstruct(prefix?: ?string) {
-    return this
-      .processSchema(prefix)
+    return this.processSchema(prefix)
       .processDirectives()
-      .processTypes(prefix)
-      .definition;
+      .processTypes(prefix).definition;
   }
 }
 
 /**
  * Determines the type do deconstruct and uses the
  * appropriate deconstruction method
- * @param {*} type 
+ * @param {*} type
  */
 export function deconstructType(type: GraphQLType) {
   if (type instanceof GraphQLObjectType) {
@@ -511,56 +570,65 @@ export function deconstructType(type: GraphQLType) {
   } else if (type instanceof GraphQLInterfaceType) {
     return processInterfaceType(type);
   }
-  throw new Error('Type deconstruction can only be performed on' +
-    'GraphQL Object, Scalar, Enum, Input, Union, and Interface types');
+  throw new Error(
+    'Type deconstruction can only be performed on' +
+      'GraphQL Object, Scalar, Enum, Input, Union, and Interface types',
+  );
 }
 
 /**
  * Deconstructs a GraphQLDirective into a FactoryDirectiveConfig
- * @param {*} directive 
+ * @param {*} directive
  */
 export function deconstructDirective(directive: GraphQLDirective) {
   const { name } = directive;
   if (DefaultDirectives.indexOf(name) === -1) {
-    return reduce(directive, (def, value, key) => {
-      return setDef(def, key, value, [
-        'description',
-        'locations',
-        'args',
-        'resolve',
-        'resolveResult',
-        'beforeBuild',
-        'astNode'
-      ], directive);
-    }, Object.create(null), true);
+    return reduce(
+      directive,
+      (def, value, key) => {
+        return setDef(
+          def,
+          key,
+          value,
+          [
+            'description',
+            'locations',
+            'args',
+            'resolve',
+            'resolveResult',
+            'beforeBuild',
+            'astNode',
+          ],
+          directive,
+        );
+      },
+      Object.create(null),
+      true,
+    );
   }
 }
 
 /**
  * Deconstructs a schema into types, directives, and schema
- * @param {*} schema 
+ * @param {*} schema
  */
-export function deconstructSchema(
-  schema: GraphQLSchema,
-  prefix?: ?string
-) {
-  return new SchemaDeconstructor(schema)
-    .deconstruct(prefix);
+export function deconstructSchema(schema: GraphQLSchema, prefix?: ?string) {
+  return new SchemaDeconstructor(schema).deconstruct(prefix);
 }
 
 export type FactoryDirectiveMap = {
-  [directiveName: string]: ?ObjMap<?mixed>
+  [directiveName: string]: ?ObjMap<?mixed>,
 };
 
 export type FactorySchemaDefinitionConfig = {
   directives?: ?FactoryDirectiveMap,
   query: string,
   mutation?: ?string,
-  subscription?: ?string
+  subscription?: ?string,
 };
 
 export type FactoryDefinitionConfig = {
   directives?: { [name: ?string]: ?mixed },
   types: { [name: ?string]: ?mixed },
-  schema: FactorySchemaDefinitionConfig
+  schema: FactorySchemaDefinitionConfig,
 };

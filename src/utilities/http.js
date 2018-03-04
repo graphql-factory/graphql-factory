@@ -10,27 +10,27 @@ const Method = {
   GET: 'GET',
   PUT: 'PUT',
   POST: 'POST',
-  DELETE: 'DELETE'
+  DELETE: 'DELETE',
 };
 
 // default deserializers for result
 const deserializers = {
   'application/json': data => {
     return JSON.parse(data);
-  }
+  },
 };
 
 // default serializers for put/post body
 const serializers = {
   'application/json': body => {
     return JSON.stringify(body);
-  }
+  },
 };
 
 /**
  * Converts the body value to a string using optional serializers
- * @param {*} opts 
- * @param {*} body 
+ * @param {*} opts
+ * @param {*} body
  */
 function processBody(opts, body) {
   if (body === undefined) {
@@ -65,9 +65,9 @@ function processBody(opts, body) {
 /**
  * Processes the response data based on content type using optional
  * deserializers
- * @param {*} res 
- * @param {*} data 
- * @param {*} options 
+ * @param {*} res
+ * @param {*} data
+ * @param {*} options
  */
 function processData(res, data, options) {
   const handlers = Object.assign({}, deserializers, options.deserializers);
@@ -96,22 +96,18 @@ function processData(res, data, options) {
 
 /**
  * Main request method to perform an http(s) request
- * @param {*} method 
- * @param {*} address 
- * @param {*} body 
- * @param {*} options 
+ * @param {*} method
+ * @param {*} address
+ * @param {*} body
+ * @param {*} options
  */
 function request(method, address, body, options) {
   let timeout = null;
   return new Promise((resolve, reject) => {
     try {
-      const opts = _.merge(
-        {},
-        this.options,
-        options,
-        url.parse(address),
-        { method }
-      );
+      const opts = _.merge({}, this.options, options, url.parse(address), {
+        method,
+      });
 
       // handle optional timeout
       if (typeof opts.timeout === 'number') {
@@ -123,9 +119,10 @@ function request(method, address, body, options) {
 
       // create some request middleware to potentially
       // add headers ahead of time for auth or set cors, etc.
-      const before = typeof opts.before === 'function' ?
-        opts.before.call(this.context, method, address, opts) :
-        () => null;
+      const before =
+        typeof opts.before === 'function'
+          ? opts.before.call(this.context, method, address, opts)
+          : () => null;
 
       const proto = opts.protocol === 'https:' ? https : http;
 
@@ -136,20 +133,20 @@ function request(method, address, body, options) {
           const req = proto.request(opts, res => {
             let data = '';
             res
-            .on('data', d => {
-              data += d;
-            })
-            .on('error', error => {
-              clearTimeout(timeout);
-              reject(error);
-            })
-            .on('end', () => {
-              clearTimeout(timeout);
-              const parsedData = processData(res, data, opts);
-              return parsedData instanceof Error ?
-                reject(parsedData) :
-                resolve(parsedData);
-            });
+              .on('data', d => {
+                data += d;
+              })
+              .on('error', error => {
+                clearTimeout(timeout);
+                reject(error);
+              })
+              .on('end', () => {
+                clearTimeout(timeout);
+                const parsedData = processData(res, data, opts);
+                return parsedData instanceof Error
+                  ? reject(parsedData)
+                  : resolve(parsedData);
+              });
           });
 
           req.on('error', error => {
@@ -166,7 +163,6 @@ function request(method, address, body, options) {
           clearTimeout(timeout);
           return reject(error);
         });
-
     } catch (error) {
       clearTimeout(timeout);
       return reject(error);

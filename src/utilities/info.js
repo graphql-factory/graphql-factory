@@ -3,15 +3,15 @@ import { lodash as _ } from '../jsutils';
 /**
  * Gets the fields path of the current resolver
  * optionally includes indexes
- * @param {*} info 
- * @param {*} includeIndexes 
+ * @param {*} info
+ * @param {*} includeIndexes
  */
 export function fieldPath(info, includeIndexes) {
-  let current = info.path || _.get(info, [ 'fieldInfo', 'path' ]);
+  let current = info.path || _.get(info, ['fieldInfo', 'path']);
   if (!current) {
     return [];
   }
-  const path = [ current.key ];
+  const path = [current.key];
   while (current.prev) {
     current = current.prev;
     if (typeof current.key !== 'number' || includeIndexes) {
@@ -23,8 +23,8 @@ export function fieldPath(info, includeIndexes) {
 
 /**
  * Makes a path object from the current field info
- * @param {*} info 
- * @param {*} options 
+ * @param {*} info
+ * @param {*} options
  */
 export function makePath(info, options) {
   const opts = Object.assign({}, options);
@@ -37,7 +37,7 @@ export function makePath(info, options) {
 
 /**
  * Returns true if the field is a root field
- * @param {*} info 
+ * @param {*} info
  */
 export function isRootResolver(info) {
   return !info.path.prev;
@@ -46,17 +46,16 @@ export function isRootResolver(info) {
 /**
  * Returns true if the resolver is a root field and the first
  * selection of the operation
- * @param {*} info 
+ * @param {*} info
  */
 export function isFirstSelection(info) {
   const firstSel = info.operation.selectionSet.selections[0];
-  return firstSel.name.value === info.path.key ||
-    (firstSel.alias && firstSel.alias.value === info.path.key);
+  return getFieldEntryKey(firstSel) === info.path.key;
 }
 
 /**
  * Returns the operation type
- * @param {*} info 
+ * @param {*} info
  */
 export function operationType(info) {
   return info.operation.operation;
@@ -65,7 +64,7 @@ export function operationType(info) {
 /**
  * gets the current operation selection based on the
  * resolver field path
- * @param {*} info 
+ * @param {*} info
  */
 export function getSelection(info) {
   const path = fieldPath(info);
@@ -75,8 +74,7 @@ export function getSelection(info) {
   while (path.length) {
     key = path.shift();
     const selection = selections.filter(s => {
-      return s.name.value === key ||
-        (s.alias && s.alias.value === key);
+      return s.name.value === key || (s.alias && s.alias.value === key);
     });
 
     if (!selection.length) {
@@ -91,4 +89,13 @@ export function getSelection(info) {
 
 export function getFieldEntryKey(node) {
   return node.alias ? node.alias.value : node.name.value;
+}
+
+export function arrayPath(path, arrPath = []) {
+  arrPath.push(path.key);
+  return path.prev ? arrayPath(path.prev, arrPath) : arrPath.reverse();
+}
+
+export function dotPath(path) {
+  return arrayPath(path).join('.');
 }
