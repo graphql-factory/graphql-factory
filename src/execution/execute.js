@@ -58,9 +58,10 @@ import type { MaybePromise } from 'graphql/jsutils/MaybePromise';
 
 import isPromise from '../jsutils/isPromise';
 
-import { lodash as _ } from '../jsutils';
+import { lodash as _, getTime } from '../jsutils';
 import { getDirectiveContext } from './directives';
-import { getOperationLocation } from '../utilities';
+import { getOperationLocation, pathToArray } from '../utilities';
+import { completeTrace } from './instrumentation';
 
 /**
  * Terminology
@@ -193,7 +194,9 @@ function executeImpl(
   fieldResolver,
   tracing,
 ) {
-  _.noop(tracing);
+  // setup the tracingExtensions
+  const tracingExtension = _.isObject(tracing) ? tracing : {};
+  _.set(tracingExtension, 'execution.resolvers', []);
 
   // If arguments are missing or incorrect, throw an error.
   assertValidExecutionArguments(schema, document, variableValues);
@@ -247,8 +250,13 @@ function executeImpl(
   );
 
   const performOperation = () => {
-    const data = executeOperation(context, context.operation, rootValue);
-    return buildResponse(context, data);
+    const data = executeOperation(
+      context,
+      context.operation,
+      rootValue,
+      tracingExtension,
+    );
+    return buildResponse(context, data, tracing);
   };
 
   // if no directive resolvers, perform the operation
@@ -297,10 +305,14 @@ function executeImpl(
 function buildResponse(
   context: ExecutionContext,
   data: MaybePromise<ObjMap<mixed> | null>,
+  tracing: ObjMap<any>,
 ) {
   if (isPromise(data)) {
-    return data.then(resolved => buildResponse(context, resolved));
+    return data.then(resolved => {
+      return buildResponse(context, resolved, tracing);
+    });
   }
+  completeTrace(tracing);
   return context.errors.length === 0
     ? { data }
     : { errors: context.errors, data };
@@ -449,16 +461,17 @@ function executeOperation(
   exeContext: ExecutionContext,
   operation: OperationDefinitionNode,
   rootValue: mixed,
+  tracing: ObjMap<any>,
 ): MaybePromise<ObjMap<mixed> | null> {
   const type = getOperationRootType(exeContext.schema, operation);
-  const fields = collectFields(
+  const { fields, fragments } = collectFields(
     exeContext,
     type,
     operation.selectionSet,
     Object.create(null),
     Object.create(null),
   );
-
+  _.noop(fragments); // TODO: resolve fragment mw
   const path = undefined;
 
   // Errors from sub-fields of a NonNull type may propagate to the top level,
@@ -469,8 +482,15 @@ function executeOperation(
   try {
     const result =
       operation.operation === 'mutation'
-        ? executeFieldsSerially(exeContext, type, rootValue, path, fields)
-        : executeFields(exeContext, type, rootValue, path, fields);
+        ? executeFieldsSerially(
+            exeContext,
+            type,
+            rootValue,
+            path,
+            fields,
+            tracing,
+          )
+        : executeFields(exeContext, type, rootValue, path, fields, tracing);
     if (isPromise(result)) {
       return result.then(undefined, error => {
         exeContext.errors.push(error);
@@ -535,6 +555,7 @@ function executeFieldsSerially(
   sourceValue: mixed,
   path: ResponsePath | void,
   fields: ObjMap<Array<FieldNode>>,
+  tracing: ObjMap<any>,
 ): MaybePromise<ObjMap<mixed>> {
   return promiseReduce(
     Object.keys(fields),
@@ -547,6 +568,7 @@ function executeFieldsSerially(
         sourceValue,
         fieldNodes,
         fieldPath,
+        tracing,
       );
       if (result === undefined) {
         return results;
@@ -574,6 +596,7 @@ function executeFields(
   sourceValue: mixed,
   path: ResponsePath | void,
   fields: ObjMap<Array<FieldNode>>,
+  tracing: ObjMap<any>,
 ): MaybePromise<ObjMap<mixed>> {
   let containsPromise = false;
 
@@ -586,6 +609,7 @@ function executeFields(
       sourceValue,
       fieldNodes,
       fieldPath,
+      tracing,
     );
     if (result === undefined) {
       return results;
@@ -608,7 +632,10 @@ function executeFields(
   // promises replaced with the values they resolved to.
   return promiseForObject(finalResults);
 }
-
+export type CollectedFieldInfo = {
+  fields: ObjMap<Array<FieldNode>>,
+  fragments: ObjMap<FragmentDefinitionNode>,
+};
 /**
  * Given a selectionSet, adds all of the fields in that selection to
  * the passed in map of fields, and returns it at the end.
@@ -622,8 +649,8 @@ export function collectFields(
   runtimeType: GraphQLObjectType,
   selectionSet: SelectionSetNode,
   fields: ObjMap<Array<FieldNode>>,
-  visitedFragmentNames: ObjMap<boolean>,
-): ObjMap<Array<FieldNode>> {
+  fragments: ObjMap<FragmentDefinitionNode>,
+): CollectedFieldInfo {
   for (let i = 0; i < selectionSet.selections.length; i++) {
     const selection = selectionSet.selections[i];
     switch (selection.kind) {
@@ -649,19 +676,16 @@ export function collectFields(
           runtimeType,
           selection.selectionSet,
           fields,
-          visitedFragmentNames,
+          fragments,
         );
         break;
       case Kind.FRAGMENT_SPREAD:
         const fragName = selection.name.value;
-        if (
-          visitedFragmentNames[fragName] ||
-          !shouldIncludeNode(exeContext, selection)
-        ) {
+        if (fragments[fragName] || !shouldIncludeNode(exeContext, selection)) {
           continue;
         }
-        visitedFragmentNames[fragName] = true;
         const fragment = exeContext.fragments[fragName];
+        fragments[fragName] = fragment;
         if (
           !fragment ||
           !doesFragmentConditionMatch(exeContext, fragment, runtimeType)
@@ -673,12 +697,12 @@ export function collectFields(
           runtimeType,
           fragment.selectionSet,
           fields,
-          visitedFragmentNames,
+          fragments,
         );
         break;
     }
   }
-  return fields;
+  return { fields, fragments };
 }
 
 /**
@@ -750,6 +774,7 @@ function resolveField(
   source: mixed,
   fieldNodes: $ReadOnlyArray<FieldNode>,
   path: ResponsePath,
+  tracing: ObjMap<any>,
 ): MaybePromise<mixed> {
   const fieldNode = fieldNodes[0];
   const fieldName = fieldNode.name.value;
@@ -769,6 +794,24 @@ function resolveField(
     path,
   );
 
+  // start a field trace
+  const fieldTrace = {
+    type: 'FIELD',
+    resolver: resolveFn.name,
+    path: pathToArray(path),
+    location: null,
+    parentType: String(parentType),
+    fieldName,
+    returnType: String(fieldDef.type),
+    start: getTime(),
+    end: -1,
+    duration: -1,
+    error: null,
+  };
+
+  // add the field trace to the resolvers
+  tracing.execution.resolvers.push(fieldTrace);
+
   // Get the resolve function, regardless of if its result is normal
   // or abrupt (error).
   const result = resolveFieldValueOrError(
@@ -778,6 +821,7 @@ function resolveField(
     resolveFn,
     source,
     info,
+    tracing,
   );
 
   return completeValueCatchingError(
@@ -787,6 +831,8 @@ function resolveField(
     info,
     path,
     result,
+    tracing,
+    fieldTrace,
   );
 }
 
@@ -822,6 +868,7 @@ export function resolveFieldValueOrError<TSource>(
   resolveFn: GraphQLFieldResolver<TSource, *>,
   source: TSource,
   info: GraphQLResolveInfo,
+  tracing: ObjMap<any>,
 ): Error | mixed {
   try {
     // Build a JS object of arguments from the field.arguments AST, using the
@@ -860,6 +907,8 @@ function completeValueCatchingError(
   info: GraphQLResolveInfo,
   path: ResponsePath,
   result: mixed,
+  tracing: ObjMap<any>,
+  fieldTrace: ObjMap<any>,
 ): MaybePromise<mixed> {
   // If the field type is non-nullable, then it is resolved without any
   // protection from errors, however it still properly locates the error.
@@ -871,6 +920,8 @@ function completeValueCatchingError(
       info,
       path,
       result,
+      tracing,
+      fieldTrace
     );
   }
 
@@ -884,21 +935,27 @@ function completeValueCatchingError(
       info,
       path,
       result,
+      tracing,
+      fieldTrace
     );
     if (isPromise(completed)) {
       // If `completeValueWithLocatedError` returned a rejected promise, log
       // the rejection error and resolve to null.
       // Note: we don't rely on a `catch` method, but we do expect "thenable"
       // to take a second callback for the error case.
-      return completed.then(undefined, error => {
-        exeContext.errors.push(error);
-        return Promise.resolve(null);
-      });
+      return completed.then(undefined,
+        error => {
+          completeTrace(fieldTrace, error);
+          exeContext.errors.push(error);
+          return Promise.resolve(null);
+        },
+      );
     }
     return completed;
   } catch (error) {
     // If `completeValueWithLocatedError` returned abruptly (threw an error),
     // log the error and return null.
+    completeTrace(fieldTrace, error);
     exeContext.errors.push(error);
     return null;
   }
@@ -913,6 +970,8 @@ function completeValueWithLocatedError(
   info: GraphQLResolveInfo,
   path: ResponsePath,
   result: mixed,
+  tracing: ObjMap<any>,
+  fieldTrace: ObjMap<any>,
 ): MaybePromise<mixed> {
   try {
     const completed = completeValue(
@@ -922,18 +981,23 @@ function completeValueWithLocatedError(
       info,
       path,
       result,
+      tracing,
     );
     if (isPromise(completed)) {
-      return completed.then(undefined, error =>
-        Promise.reject(
-          locatedError(
-            asErrorInstance(error),
-            fieldNodes,
-            responsePathAsArray(path),
-          ),
-        ),
-      );
+      return completed.then(result => {
+        completeTrace(fieldTrace);
+        return result;
+      }, error => {
+        const locErr = locatedError(
+          asErrorInstance(error),
+          fieldNodes,
+          responsePathAsArray(path),
+        );
+        completeTrace(fieldTrace, locErr);
+        return Promise.reject(locErr);
+      });
     }
+    completeTrace(fieldTrace);
     return completed;
   } catch (error) {
     throw locatedError(
@@ -972,11 +1036,20 @@ function completeValue(
   info: GraphQLResolveInfo,
   path: ResponsePath,
   result: mixed,
+  tracing: ObjMap<any>,
 ): MaybePromise<mixed> {
   // If result is a Promise, apply-lift over completeValue.
   if (isPromise(result)) {
     return result.then(resolved =>
-      completeValue(exeContext, returnType, fieldNodes, info, path, resolved),
+      completeValue(
+        exeContext,
+        returnType,
+        fieldNodes,
+        info,
+        path,
+        resolved,
+        tracing,
+      ),
     );
   }
 
@@ -995,6 +1068,7 @@ function completeValue(
       info,
       path,
       result,
+      tracing,
     );
     if (completed === null) {
       throw new Error(
@@ -1021,13 +1095,14 @@ function completeValue(
       info,
       path,
       result,
+      tracing,
     );
   }
 
   // If field type is a leaf type, Scalar or Enum, serialize to a valid value,
   // returning null if serialization is not possible.
   if (isLeafType(returnType)) {
-    return completeLeafValue(returnType, result);
+    return completeLeafValue(returnType, result, tracing);
   }
 
   // If field type is an abstract type, Interface or Union, determine the
@@ -1041,6 +1116,7 @@ function completeValue(
       info,
       path,
       result,
+      tracing,
     );
   }
 
@@ -1054,6 +1130,7 @@ function completeValue(
       info,
       path,
       result,
+      tracing,
     );
   }
 
@@ -1077,6 +1154,7 @@ function completeListValue(
   info: GraphQLResolveInfo,
   path: ResponsePath,
   result: mixed,
+  tracing: ObjMap<any>,
 ): MaybePromise<$ReadOnlyArray<mixed>> {
   invariant(
     isCollection(result),
@@ -1094,6 +1172,23 @@ function completeListValue(
     // No need to modify the info object containing the path,
     // since from here on it is not ever accessed by resolver functions.
     const fieldPath = addPath(path, index);
+
+    // start a field trace
+    const fieldTrace = {
+      type: 'FIELD',
+      resolver: exeContext.fieldResolver.name,
+      path: pathToArray(fieldPath),
+      location: null,
+      parentType: String(info.parentType),
+      fieldName: info.fieldName,
+      returnType: String(returnType),
+      start: getTime(),
+      end: -1,
+      duration: -1,
+      error: null,
+    };
+    tracing.execution.resolvers.push(fieldTrace);
+
     const completedItem = completeValueCatchingError(
       exeContext,
       itemType,
@@ -1101,6 +1196,8 @@ function completeListValue(
       info,
       fieldPath,
       item,
+      tracing,
+      fieldTrace
     );
 
     if (!containsPromise && isPromise(completedItem)) {
@@ -1116,7 +1213,12 @@ function completeListValue(
  * Complete a Scalar or Enum by serializing to a valid value, returning
  * null if serialization is not possible.
  */
-function completeLeafValue(returnType: GraphQLLeafType, result: mixed): mixed {
+function completeLeafValue(
+  returnType: GraphQLLeafType,
+  result: mixed,
+  tracing: ObjMap<any>,
+): mixed {
+  _.noop(tracing);
   invariant(returnType.serialize, 'Missing serialize method on type');
   const serializedResult = returnType.serialize(result);
   if (isInvalid(serializedResult)) {
@@ -1139,6 +1241,7 @@ function completeAbstractValue(
   info: GraphQLResolveInfo,
   path: ResponsePath,
   result: mixed,
+  tracing: ObjMap<any>,
 ): MaybePromise<ObjMap<mixed>> {
   const runtimeType = returnType.resolveType
     ? returnType.resolveType(result, exeContext.contextValue, info)
@@ -1160,6 +1263,7 @@ function completeAbstractValue(
         info,
         path,
         result,
+        tracing,
       ),
     );
   }
@@ -1178,6 +1282,7 @@ function completeAbstractValue(
     info,
     path,
     result,
+    tracing,
   );
 }
 
@@ -1227,6 +1332,7 @@ function completeObjectValue(
   info: GraphQLResolveInfo,
   path: ResponsePath,
   result: mixed,
+  tracing: ObjMap<any>,
 ): MaybePromise<ObjMap<mixed>> {
   // If there is an isTypeOf predicate function, call it with the
   // current result. If isTypeOf returns false, then raise an error rather
@@ -1246,6 +1352,7 @@ function completeObjectValue(
           info,
           path,
           result,
+          tracing,
         );
       });
     }
@@ -1262,6 +1369,7 @@ function completeObjectValue(
     info,
     path,
     result,
+    tracing,
   );
 }
 
@@ -1283,10 +1391,18 @@ function collectAndExecuteSubfields(
   info: GraphQLResolveInfo,
   path: ResponsePath,
   result: mixed,
+  tracing: ObjMap<any>,
 ): MaybePromise<ObjMap<mixed>> {
   // Collect sub-fields to execute to complete this value.
   const subFieldNodes = collectSubfields(exeContext, returnType, fieldNodes);
-  return executeFields(exeContext, returnType, result, path, subFieldNodes);
+  return executeFields(
+    exeContext,
+    returnType,
+    result,
+    path,
+    subFieldNodes,
+    tracing,
+  );
 }
 
 /**
@@ -1305,13 +1421,15 @@ function _collectSubfields(
   for (let i = 0; i < fieldNodes.length; i++) {
     const selectionSet = fieldNodes[i].selectionSet;
     if (selectionSet) {
-      subFieldNodes = collectFields(
+      const { fields, fragments } = collectFields(
         exeContext,
         returnType,
         selectionSet,
         subFieldNodes,
         visitedFragmentNames,
       );
+      _.noop(fragments);
+      subFieldNodes = fields;
     }
   }
   return subFieldNodes;

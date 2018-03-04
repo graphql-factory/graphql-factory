@@ -21,6 +21,19 @@ export function fieldPath(info, includeIndexes) {
   return path.reverse();
 }
 
+export function pathToArray(path) {
+  let current = path;
+  if (!_.isObject(current) || !current.key) {
+    return [];
+  }
+  const arrPath = [current.key];
+  while (current.prev) {
+    current = current.prev;
+    arrPath.push(current.key);
+  }
+  return arrPath.reverse();
+}
+
 /**
  * Makes a path object from the current field info
  * @param {*} info

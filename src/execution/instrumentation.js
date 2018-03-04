@@ -3,6 +3,14 @@ import { GraphQLOmitTraceInstruction } from '../types/instruction';
 import { fieldPath } from '../utilities';
 import { EventType } from '../definition/const';
 
+export function completeTrace(trace, error) {
+  trace.end = getTime();
+  trace.duration = trace.end - trace.start;
+  if (error) {
+    trace.error = error;
+  }
+}
+
 /**
  * Safe emitter
  * @param {*} info
@@ -91,7 +99,7 @@ export function instrumentResolver(
  * @param {*} result
  */
 export function calculateRun(stack, execution, result, isDefault) {
-  execution.end = getTime();
+  execution.end = Date.now();
   execution.duration = execution.end - execution.start;
   if (result instanceof Error) {
     const errKeys = Object.getOwnPropertyNames(result);

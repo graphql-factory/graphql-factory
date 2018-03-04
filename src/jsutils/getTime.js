@@ -1,4 +1,7 @@
-export function getTime() {
-  const [, time] = process.hrtime();
-  return time;
+export function getTime(nano) {
+  if (nano) {
+    const [, time] = process.hrtime();
+    return time;
+  }
+  return Date.now();
 }

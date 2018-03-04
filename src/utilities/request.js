@@ -2,7 +2,7 @@
  * Determines if the operation is a subscription and uses
  * subscribe method, otherwise regular graphql request
  */
-import { lodash as _, getTime, isPromise } from '../jsutils';
+import { lodash as _, isPromise, getTime } from '../jsutils';
 import { subscribe, parse, validateSchema, validate } from 'graphql';
 import { execute } from '../execution/execute';
 
@@ -19,13 +19,11 @@ function resolveBuild(schema) {
 export function request(...args) {
   return new Promise((resolve, reject) => {
     try {
-      const start = getTime();
-
       // tracing extensions loosely follows apollo tracing spec
       // https://github.com/apollographql/apollo-tracing
       const tracing = {
         version: '1.0.0',
-        start,
+        start: getTime(),
         end: -1,
         duration: -1,
         resolverDuration: -1,
@@ -40,7 +38,9 @@ export function request(...args) {
           end: -1,
           duration: -1,
         },
-        execution: {},
+        execution: {
+          resolvers: [],
+        },
       };
 
       let [

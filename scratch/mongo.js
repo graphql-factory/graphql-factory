@@ -180,10 +180,12 @@ const definition = new SchemaDefinition()
   // .use(schemaDef);
 
 const schema = definition.buildSchema();
+const extensions = {};
 
-schema.request({ source }).then(result => {
+schema.request({ source, extensions }).then(result => {
   console.log('--Factory Execution--');
-  console.log(JSON.stringify(result.data, null, '  '));
+  result.extensions = extensions;
+  console.log(JSON.stringify(result, null, '  '));
   gschema.getType('Query')
     .getFields()
     .findOneFoo

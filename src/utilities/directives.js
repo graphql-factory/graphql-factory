@@ -1,8 +1,20 @@
 import { lodash as _ } from '../jsutils';
 import { getDirective } from '../execution/directives';
 import { getSelection } from './info';
-import { Kind, DirectiveLocation } from 'graphql';
+import {
+  Kind,
+  GraphQLScalarType,
+  GraphQLObjectType,
+  GraphQLInterfaceType,
+  GraphQLUnionType,
+  GraphQLEnumType,
+  GraphQLInputObjectType,
+  getNamedType,
+  DirectiveLocation,
+} from 'graphql';
 import { getOperationRootType } from 'graphql/execution/execute';
+import { NamedType } from '../definition/const';
+import type { DirectiveLocationEnum, GraphQLType } from 'graphql';
 
 export const DirectiveLocationMap = {
   // operational
@@ -149,4 +161,51 @@ export function filterAppliedDirectives(obj, filter) {
 export function getDirectiveArgValue(obj, name, argName) {
   const directive = findAppliedDirective(obj, name);
   return _.get(directive, ['args', argName]);
+}
+
+/**
+ * Gets the directive location based on the graphql type
+ * @param {*} type
+ */
+export function getFieldTypeLocation(
+  type: GraphQLType,
+): ?DirectiveLocationEnum {
+  const namedType = getNamedType(type);
+
+  if (namedType instanceof GraphQLScalarType) {
+    return DirectiveLocation.SCALAR;
+  } else if (namedType instanceof GraphQLObjectType) {
+    return DirectiveLocation.OBJECT;
+  } else if (namedType instanceof GraphQLInterfaceType) {
+    return DirectiveLocation.INTERFACE;
+  } else if (namedType instanceof GraphQLUnionType) {
+    return DirectiveLocation.UNION;
+  } else if (namedType instanceof GraphQLEnumType) {
+    return DirectiveLocation.ENUM;
+  } else if (namedType instanceof GraphQLInputObjectType) {
+    return DirectiveLocation.INPUT_OBJECT;
+  }
+}
+
+/**
+ * Gets the directive location based on the factory named type
+ * @param {*} type
+ */
+export function getNamedTypeLocation(type: string) {
+  switch (type) {
+    case NamedType.ENUM:
+      return DirectiveLocation.ENUM;
+    case NamedType.OBJECT:
+      return DirectiveLocation.OBJECT;
+    case NamedType.SCALAR:
+      return DirectiveLocation.SCALAR;
+    case NamedType.INTERFACE:
+      return DirectiveLocation.INTERFACE;
+    case NamedType.UNION:
+      return DirectiveLocation.UNION;
+    case NamedType.INPUT:
+      return DirectiveLocation.INPUT_OBJECT;
+    default:
+      break;
+  }
 }
