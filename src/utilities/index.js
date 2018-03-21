@@ -1,46 +1,24 @@
-export { buildSchema } from './buildSchema';
-export { request } from './request';
+export { castAppliedDirectiveList } from './castAppliedDirectiveList';
+export { getOperationNode } from './getOperationNode';
+export { getSelection } from './getSelection';
 export { httpPOST } from './httpPOST';
-export { printDefinition } from './printer';
+export { printAndParse, parseSchemaIntoAST } from './parse';
+export { pathArray } from './pathArray';
+export { printSchemaWithDirectives } from './print';
 export {
-  getFragment,
-  doesFragmentConditionMatch,
-  getFragmentLocation,
-} from './fragments';
-export {
-  getDirectivesFromAST,
-  getFieldDirectives,
-  getOperationDirectives,
-  getOperationLocation,
-  getSchemaDirectives,
-  castAppliedDirectiveList,
-  findAppliedDirective,
-  filterAppliedDirectives,
-  getDirectiveArgValue,
-  getFieldTypeLocation,
-  getNamedTypeLocation,
-} from './directives';
-export {
-  pathToArray,
-  fieldPath,
-  makePath,
-  isRootResolver,
-  isFirstSelection,
-  operationType,
-  getSelection,
-  getFieldEntryKey,
-  dotPath,
-  arrayPath,
-  getFactoryFieldDefinition,
-} from './info';
-export {
-  isListTypeAST,
-  isNonNullTypeAST,
-  hasListTypeAST,
-  getBaseTypeAST,
-} from './ast';
-export {
-  shouldIncludeNode,
-  getPromise,
-  defaultResolveTypeFn,
-} from './graphql-js';
+  printArguments,
+  printDefinition,
+  printDirective,
+  printDirectives,
+  printEnum,
+  printFields,
+  printInput,
+  printInterface,
+  printObject,
+  printScalar,
+  printSchema,
+  printType,
+  printUnion,
+  printValues,
+} from './printer';
+export { request } from './request';

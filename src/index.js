@@ -1,33 +1,37 @@
-/**
- * GraphQL Factory - A graphql toolkit
- * @flow
- */
-export { SchemaDefinition, SchemaBacking } from './definition';
-export { directives, mapDirectives } from './directives';
 export {
-  buildSchema,
-  printDefinition,
+  DEFINITION_FIELDS,
+  ExecutionType,
+  EventType,
+  ConflictResolution,
+  PluginConflictResolution,
+  NamedType,
+  SchemaDeconstructor,
+  deconstructDirective,
+  deconstructSchema,
+  deconstructType,
+  SchemaBacking,
+  SchemaDefinition,
+} from './definition';
+export { FactoryDirective } from './directives';
+export {
+  FactoryExtension,
+  FactoryExtensionMap,
+  FactoryTracingExtension,
+} from './extensions';
+export { RemoteSchema, RemoteSchemaHTTP } from './remote';
+export {
+  DirectiveMiddleware,
+  getDirectiveLocationFromAST,
+  getDirectiveByLocation,
+  directiveEnter,
+  applyDirectiveVisitors,
+  extendResolve,
+  makeExecutableRuntimeSchema,
+} from './middleware';
+export { GraphQLDateTime, GraphQLJSON } from './types';
+export {
   request,
-  findAppliedDirective,
-  filterAppliedDirectives,
-  getDirectiveArgValue,
-  dotPath,
-  arrayPath,
-  getFactoryFieldDefinition,
+  printSchemaWithDirectives,
+  parseSchemaIntoAST,
+  getOperationNode,
 } from './utilities';
-export {
-  AsyncIterator,
-  JSONType,
-  DateTimeType,
-  GraphQLFactoryDirective,
-  GraphQLFactoryPlugin,
-  PluginDependency,
-  DependencyType,
-  GraphQLInstruction,
-  GraphQLSkipInstruction,
-  GraphQLSkipResolveInstruction,
-  GraphQLOmitTraceInstruction,
-  RemoteSchema,
-  RemoteSchemaHTTP,
-} from './types';
-export { lodash, forEach } from './jsutils';

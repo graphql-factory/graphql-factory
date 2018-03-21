@@ -1,25 +1,22 @@
-/**
- * Implements a lodash-style reduce
- * @param {*} collection
- * @param {*} mapper
- * @param {*} throwError
- */
-import * as _ from './lodash.custom';
-
-export function map(collection, mapper, throwError) {
+export function map(collection, iteratee, throwErrors) {
   let error = null;
-
-  const fn = (value, key, coll) => {
+  const mapper = (value, key) => {
     try {
-      return error && throwError ? undefined : mapper(value, key, coll);
+      return error && throwErrors
+        ? undefined
+        : iteratee(value, key, collection);
     } catch (err) {
       error = err;
     }
   };
-
-  const result = _.map(collection, fn);
-
-  if (throwError && error instanceof Error) {
+  const result = Array.isArray(collection)
+    ? collection.map(mapper)
+    : collection && typeof collection === 'object'
+      ? Object.keys(collection).map(key => {
+          return mapper(collection[key], key);
+        })
+      : [];
+  if (error && throwErrors) {
     throw error;
   }
   return result;

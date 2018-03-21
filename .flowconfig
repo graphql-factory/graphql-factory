@@ -3,7 +3,7 @@
 .*/dist/.*
 .*/coverage/.*
 .*/resources/.*
-.*/refactoring/.*
+.*/node_modules/.*
 
 [include]
 
@@ -12,6 +12,8 @@
 [options]
 experimental.const_params=true
 unsafe.enable_getters_and_setters=true
+suppress_comment=\\(.\\|\n\\)*\\$FlowFixMe\\($\\|[^(]\\|(\\(<VERSION>\\)?)\\)
+suppress_comment=\\(.\\|\n\\)*\\$FlowIssue\\((\\(<VERSION>\\)?)\\)?:? #[0-9]+
 
 [version]
-0.59.0
+^0.68.0

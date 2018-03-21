@@ -4,7 +4,14 @@
  */
 import type { ObjMap } from 'graphql/jsutils/ObjMap';
 import { SchemaDefinition } from '../definition';
-import { map, reduce, indent, stringMatch, lodash as _ } from '../jsutils';
+import {
+  isObject,
+  map,
+  reduce,
+  indent,
+  stringMatch,
+  lodash as _,
+} from '../jsutils';
 import { castAppliedDirectiveList } from '../utilities';
 
 const LITERAL_RX = /^```([\w]+)```$/;
@@ -102,20 +109,20 @@ export function printDirectives(directives?: ?ObjMap<any>, reason?: ?string) {
     const dirs = castAppliedDirectiveList(directives);
 
     // add deprecated is reason supplied
-    if (_.isString(reason) && !_.find(dirs, { name: 'deprecated' })) {
+    if (typeof reason === 'string' && !_.find(dirs, { name: 'deprecated' })) {
       dirs.push({ name: 'deprecated', args: { reason } });
     }
 
     return dirs.length
-      ? _.reduce(
+      ? reduce(
           dirs,
           (accum, d) => {
             const name = _.get(d, 'name');
             const args = _.get(d, 'args');
 
-            if (name && _.isString(name) && args !== false) {
+            if (name && typeof name === 'string' && args !== false) {
               const value =
-                _.isObjectLike(args) && _.keys(args).length
+                isObject(args) && Object.keys(args).length
                   ? ` @${name}(${toArgs(args, true)})`
                   : ` @${name}`;
               accum.push(value);
@@ -140,7 +147,7 @@ export function printArguments(
   tabs: number = 2,
   parenthesis: boolean = true,
 ) {
-  if (_.keys(args).length) {
+  if (isObject(args) && Object.keys(args).length) {
     const a = map(
       args,
       (arg, name) => {
@@ -194,7 +201,7 @@ export function printObject(definition: ObjMap<any>, name: string) {
   const fieldStr = printFields(fields);
   const dirs = printDirectives(definition['@directives']);
   const iface =
-    _.isArray(interfaces) && interfaces.length ? interfaces.join(', ') : '';
+    Array.isArray(interfaces) && interfaces.length ? interfaces.join(', ') : '';
   return withDescription(
     description,
     `type ${name}${iface}${dirs} {\n${fieldStr}\n}\n`,
@@ -266,7 +273,7 @@ export function printInput(definition: ObjMap<any>, name: string) {
  */
 export function printUnion(definition: ObjMap<any>, name: string) {
   const { types, description } = definition;
-  const typeStr = _.isArray(types) && types.length ? types.join(' | ') : '';
+  const typeStr = Array.isArray(types) && types.length ? types.join(' | ') : '';
   const dirs = printDirectives(definition['@directives']);
   return withDescription(description, `union ${name}${dirs} = ${typeStr}\n`);
 }

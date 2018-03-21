@@ -105,27 +105,35 @@ type Query {
 schema {
   query: Query
 }
+directive @fragDef on FRAGMENT_DEFINITION
+directive @fragSpread on FRAGMENT_SPREAD
 `;
 
 const source = `
 query HI {
   findOneFoo (filter:{ name:"baz"}) {
-    id
-    name
+    ...fooFragment @fragSpread
     bar {
-      id
-      name
+      ...barFragment
     }
   }
   findOneFoo (filter:{ name:"baz"}) {
-    id
-    name
+    ...fooFragment
     car:bar {
-      id
-      name
+      ...barFragment
     }
   }
-}`
+}
+
+fragment fooFragment on Foo @fragDef {
+  id
+  name
+}
+fragment barFragment on Bar {
+  id
+  name
+}
+`
 
 export const JSONType = new GraphQLScalarType({
   type: 'Scalar',
@@ -164,6 +172,14 @@ const definition = new SchemaDefinition()
   .use({
     directives: {
       ...mapDirectives([ 'unique', 'resolve', 'id' ]),
+      fragDef: {
+        name: 'fragDef',
+        locations: [ 'FRAGMENT_DEFINITION' ]
+      },
+      fragSpread: {
+        name: 'fragSpread',
+        locations: [ 'FRAGMENT_SPREAD' ]
+      },
       test: {
         name: 'test',
         locations: _.values(DirectiveLocation),
@@ -186,6 +202,13 @@ schema.request({ source, extensions }).then(result => {
   console.log('--Factory Execution--');
   result.extensions = extensions;
   console.log(JSON.stringify(result, null, '  '));
+  /*
+  if (result.errors) {
+    console.log(result.errors);
+  } else {
+    console.log(JSON.stringify(result, null, '  '));
+  }
+  */
   gschema.getType('Query')
     .getFields()
     .findOneFoo

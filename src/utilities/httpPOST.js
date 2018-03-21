@@ -1,8 +1,7 @@
-import * as _ from '../jsutils/lodash.custom';
 import http from 'http';
 import https from 'https';
 import url from 'url';
-import AsyncIterator from '../types/asyncIterator';
+import { lodash as _, AsyncIterator, isObject } from '../jsutils';
 import { forAwaitEach } from 'iterall';
 
 export function httpPOST(uri, body, options) {
@@ -16,7 +15,7 @@ export function httpPOST(uri, body, options) {
       const proto = opts.protocol === 'https:' ? https : http;
 
       // set a timeout
-      if (_.isNumber(opts.timeout)) {
+      if (typeof opts.timeout === 'number') {
         setTimeout(() => {
           reject(new Error(`POST ${uri} timed out`));
         }, Math.floor(opts.timeout));
@@ -63,7 +62,7 @@ export function httpPOST(uri, body, options) {
       });
 
       // convert the body to string
-      const bodyStr = _.isObject(body) ? JSON.stringify(body) : String(body);
+      const bodyStr = isObject(body) ? JSON.stringify(body) : String(body);
 
       // make request
       req.write(bodyStr);

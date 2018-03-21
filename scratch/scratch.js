@@ -1,4 +1,4 @@
-import { SchemaDefinition, directives } from '../src'
+import { SchemaDefinition, SchemaBacking, directives } from '../src'
 import {
   printSchema,
   DirectiveLocation
@@ -60,138 +60,140 @@ function searchResolver(source, args, context, info) {
   return results[0]
 }
 
-async function main() {
-  const schema = await new SchemaDefinition()
-  .on('error', console.log)
-  .use({
-    directives: {
-      resolve: directives.resolve,
-      typeDef: directives.typeDef,
-      test: {
-        locations: _.values(DirectiveLocation),
-        args: {
-          value: { type: 'String' }
-        },
-        resolve(source, args, context, info) {
-          console.log('TEST', info.location, args)
-        }
-      }
-    }
-  })
-  .use({
-    functions: {
-      readFoo: (source, args) => {
-        return _.find(data, args);
+const backing = new SchemaBacking()
+  .Object('Human')
+  .isTypeOf(value => _.has(value, 'height'))
+  .Object('Droid')
+  .isTypeOf(value => _.has(value, 'primaryFunction'))
+  .Object('Starship')
+  .isTypeOf(value => _.has(value, 'length'))
+  .Object('Query')
+  .resolve('search', searchResolver)
+  .resolve('readFoo', (source, args) => {
+    return _.find(data, args);
+  });
+
+const schema = new SchemaDefinition()
+.on('error', console.log)
+.use({
+  directives: {
+    resolve: directives.resolve,
+    typeDef: directives.typeDef,
+    test: {
+      locations: _.values(DirectiveLocation),
+      args: {
+        value: { type: 'String' }
       },
-      searchResolver,
-      isHuman: value => _.has(value, 'height'),
-      isDroid: value => _.has(value, 'primaryFunction'),
-      isStarship: value => _.has(value, 'length')
-    }
-  })
-  .use(`
-    type Foo {
-      id: String!
-      name: String
-    }
-    type Human @typeDef(isTypeOf: "isHuman") {
-      id: String!
-      name: String!
-      height: Float
-    }
-    type Droid @typeDef(isTypeOf: "isDroid") {
-      id: String!
-      name: String!
-      primaryFunction: String
-    }
-    type Starship @typeDef(isTypeOf: "isStarship") {
-      id: String!
-      name: String!
-      length: Float
-    }
-    union SearchResult = Human | Droid | Starship
-
-    type Query {
-      search(text: String!): SearchResult
-        @resolve(resolver: "searchResolver")
-      readFoo(id: String!): Foo @resolve(resolver: "readFoo")
-    }
-    schema {
-      query: Query
-    }
-  `)
-  .use({ schema: { directives: [ 'resolve', 'test', 'typeDef' ] } })
-  .buildSchema({ useMiddleware: true })
-  //schema.getType('Query').getFields().search.resolve = searchResolver
-  //schema.getType('Human').isTypeOf = value => _.has(value, 'height')
-  //schema.getType('Droid').isTypeOf = value => _.has(value, 'primaryFunction')
-  //schema.getType('Starship').isTypeOf = value => _.has(value, 'length')
-  // console.log(schema)
-
-  const unionQuery = `
-  query Search {
-    search(text: "o") {
-      ... on Human {
-        name
-        height
-      }
-      ... on Droid {
-        name
-        primaryFunction
-      }
-      ... on Starship {
-        name
-        length
+      resolve(source, args, context, info) {
+        console.log('TEST', info.location, args)
       }
     }
   }
-  `
+})
+.use(`
+  type Foo {
+    id: String!
+    name: String
+  }
+  type Human {
+    id: String!
+    name: String!
+    height: Float
+  }
+  type Droid {
+    id: String!
+    name: String!
+    primaryFunction: String
+  }
+  type Starship {
+    id: String!
+    name: String!
+    length: Float
+  }
+  union SearchResult = Human | Droid | Starship
 
-  const mixedFrag = `
-  query Mixed {
-    search(text: "o") {
-      ... on Human @test(value: "human inline") {
-        ...resultName @test(value: "frag spread")
-        height
-      }
-      ... on Droid @test(value: "droid inline") {
-        name
-        primaryFunction
-      }
-      ... on Starship @test(value: "droid inline") {
-        name
-        length
-      }
+  type Query {
+    search(text: String!): SearchResult
+    readFoo(id: String!): Foo
+  }
+  schema {
+    query: Query
+  }
+`)
+.use(backing)
+.use({ schema: { directives: [ 'resolve', 'test', 'typeDef' ] } })
+.buildSchema()
+//schema.getType('Query').getFields().search.resolve = searchResolver
+//schema.getType('Human').isTypeOf = value => _.has(value, 'height')
+//schema.getType('Droid').isTypeOf = value => _.has(value, 'primaryFunction')
+//schema.getType('Starship').isTypeOf = value => _.has(value, 'length')
+// console.log(schema)
+
+const unionQuery = `
+query Search {
+  search(text: "o") {
+    ... on Human {
+      name
+      height
+    }
+    ... on Droid {
+      name
+      primaryFunction
+    }
+    ... on Starship {
+      name
+      length
     }
   }
+}
+`
 
-  fragment resultName on Human {
-    name
-  }
-  `
-
-  const fragmentQuery = `
-  query Frag {
-    readFoo(id: "1") {
-      id
-      ...fullFoo
+const mixedFrag = `
+query Mixed {
+  search(text: "o") {
+    ... on Human @test(value: "human inline") {
+      ...resultName @test(value: "frag spread")
+      height
+    }
+    ... on Droid @test(value: "droid inline") {
+      name
+      primaryFunction
+    }
+    ... on Starship @test(value: "droid inline") {
+      name
+      length
     }
   }
-
-  fragment fullFoo on Foo {
-    id
-    ...fooName
-  }
-  fragment fooName on Foo {
-    name
-  }
-  `
-
-
-  const r = await schema.request({
-    source: mixedFrag
-  })
-  console.log(JSON.stringify(r, null, '  '));
 }
 
-main();
+fragment resultName on Human {
+  name
+}
+`
+
+const fragmentQuery = `
+query Frag {
+  readFoo(id: "1") {
+    id
+    ...fullFoo
+  }
+}
+
+fragment fullFoo on Foo {
+  id
+  ...fooName
+}
+fragment fooName on Foo {
+  name
+}
+`
+
+
+schema.request({
+  source: mixedFrag
+})
+.then(r => {
+  console.log(JSON.stringify(r, null, '  '));
+})
+.catch(console.error)
+

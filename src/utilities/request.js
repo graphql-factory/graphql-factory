@@ -1,169 +1,229 @@
-/**
- * Determines if the operation is a subscription and uses
- * subscribe method, otherwise regular graphql request
- */
-import { lodash as _, isPromise, getTime } from '../jsutils';
-import { subscribe, parse, validateSchema, validate } from 'graphql';
-import { execute } from '../execution/execute';
+import {
+  promiseReduce,
+  isArray,
+  isObject,
+  filterKeys,
+  hasOwn,
+} from '../jsutils';
+import { FactoryExtensionMap } from '../extensions/FactoryExtensionMap';
+import { applyDirectiveVisitors } from '../middleware/directive';
+import {
+  Kind,
+  execute,
+  subscribe,
+  validateSchema,
+  validate,
+  GraphQLError,
+} from 'graphql';
 
-/**
- * Resolves the schema definition build before
- * performing the request
- * @param {*} schema
- */
-function resolveBuild(schema) {
-  const build = _.get(schema, 'definition._build');
-  return isPromise(build) ? build : Promise.resolve();
+function isWellFormedResponse(response) {
+  return (
+    isObject(response) &&
+    !filterKeys(response, ['errors', 'data', 'extensions']).length &&
+    (!isArray(response, 'errors') || isArray(response, 'errors', 1))
+  );
+}
+
+function addExtensions(response, extensionMap, extensions) {
+  return extensions
+    ? Object.assign(response, { extensions: extensionMap.data })
+    : response;
 }
 
 export function request(...args) {
-  return new Promise((resolve, reject) => {
-    try {
-      // tracing extensions loosely follows apollo tracing spec
-      // https://github.com/apollographql/apollo-tracing
-      const tracing = {
-        version: '1.0.0',
-        start: getTime(),
-        end: -1,
-        duration: -1,
-        resolverDuration: -1,
-        overheadDuration: -1,
-        parsing: {
-          start: -1,
-          end: -1,
-          duration: -1,
-        },
-        validation: {
-          start: -1,
-          end: -1,
-          duration: -1,
-        },
-        execution: {
-          resolvers: [],
-        },
-      };
+  let executionResult;
+  let [
+    schema,
+    source,
+    rootValue,
+    contextValue,
+    variableValues,
+    operationName,
+    fieldResolver,
+    subscriptionFieldResolver,
+    extensions,
+    extensionData,
+  ] = args;
 
-      let [
-        schema,
-        source,
-        rootValue,
-        contextValue,
-        variableValues,
-        operationName,
-        fieldResolver,
-        subscriptionFieldResolver,
-        extensions,
-      ] = args;
+  if (args.length === 1) {
+    if (!isObject(schema) || Array.isArray(schema)) {
+      return Promise.resolve({
+        errors: [
+          new GraphQLError(
+            'first argument must be GraphQLSchema ' + 'or an arguments object',
+          ),
+        ],
+      });
+    }
 
-      if (args.length === 1) {
-        if (!_.isObjectLike(schema) || _.isArray(schema)) {
-          throw new Error(
-            'First argument must be GraphQLSchema ' + 'or an arguments object',
+    // standard
+    source = schema.source;
+    rootValue = schema.rootValue;
+    contextValue = schema.contextValue;
+    variableValues = schema.variableValues;
+    operationName = schema.operationName;
+    fieldResolver = schema.fieldResolver;
+    subscriptionFieldResolver = schema.subscriptionFieldResolver;
+    extensions = schema.extensions;
+    extensionData = schema.extensionData;
+
+    // set schema to the actual schema value, this must always go last
+    // because it will overwrite the execution arguments object variable
+    schema = schema.schema;
+  }
+
+  const malformedError = new GraphQLError(
+    'malformed response, ' +
+      'verify middleware returns correclty structured ' +
+      'response data',
+  );
+  const extensionMap = new FactoryExtensionMap(extensions, extensionData);
+  extensionMap.requestStarted();
+  extensionMap.parsingStarted();
+
+  const {
+    errors,
+    runtimeSchema,
+    document,
+    before,
+    after,
+  } = applyDirectiveVisitors(schema, source, variableValues, extensionMap);
+  extensionMap.parsingEnded();
+
+  if (errors) {
+    extensionMap.requestEnded();
+    return !extensions ? { errors } : { errors, extensions: extensionMap.data };
+  }
+
+  extensionMap.validationStarted();
+  const schemaValidationErrors = validateSchema(runtimeSchema);
+  if (schemaValidationErrors.length > 0) {
+    extensionMap.validationEnded();
+    extensionMap.requestEnded();
+    return Promise.resolve(
+      !extensions
+        ? { errors: schemaValidationErrors }
+        : { errors: schemaValidationErrors, extensions: extensionMap.data },
+    );
+  }
+  const validationErrors = validate(runtimeSchema, document);
+  if (validationErrors.length > 0) {
+    extensionMap.validationEnded();
+    extensionMap.requestEnded();
+    return Promise.resolve(
+      !extensions
+        ? { errors: validationErrors }
+        : { errors: validationErrors, extensions: extensionMap.data },
+    );
+  }
+  extensionMap.validationEnded();
+  extensionMap.executionStarted();
+  const operation = document.definitions[0].operation;
+  const execution =
+    operation === 'subscription'
+      ? () => {
+          return subscribe(
+            runtimeSchema,
+            document,
+            rootValue,
+            contextValue,
+            variableValues,
+            operationName,
+            fieldResolver,
+            subscriptionFieldResolver,
           );
         }
+      : () => {
+          return execute(
+            runtimeSchema,
+            document,
+            rootValue,
+            contextValue,
+            variableValues,
+            operationName,
+            fieldResolver,
+          );
+        };
 
-        // standard
-        source = schema.source;
-        rootValue = schema.rootValue;
-        contextValue = schema.contextValue;
-        variableValues = schema.variableValues;
-        operationName = schema.operationName;
-        fieldResolver = schema.fieldResolver;
-        subscriptionFieldResolver = schema.subscriptionFieldResolver;
-        extensions = schema.extensions;
+  const resolveQueue = before
+    .concat({
+      type: operation,
+      resolve: execution,
+      args: {},
+    })
+    .concat(after);
 
-        // set schema to the actual schema value, this must always go last
-        // because it will overwrite the execution arguments object variable
-        schema = schema.schema;
+  const fragments = document.definitions.reduce((frags, definition) => {
+    if (definition.kind === Kind.FRAGMENT_DEFINITION) {
+      frags[definition.name.value] = definition;
+    }
+    return frags;
+  }, {});
+
+  const result = promiseReduce(
+    resolveQueue,
+    (src, current) => {
+      if (current.type === 'after' && isWellFormedResponse(src)) {
+        executionResult = source;
       }
 
-      const parsing = tracing.parsing;
-      const validation = tracing.validation;
+      try {
+        return current.resolve(
+          executionResult || src,
+          current.args,
+          contextValue,
+          {
+            fieldName: undefined,
+            fieldNodes: [],
+            returnType: undefined,
+            parentType: undefined,
+            schema: runtimeSchema,
+            fragments,
+            rootValue,
+            operation: document.definitions[0],
+            variableValues,
+          },
+        );
+      } catch (err) {
+        return Promise.reject(err);
+      }
+    },
+    rootValue,
+  );
 
-      // now resolve the build
-      return resolveBuild(schema)
-        .then(() => {
-          // trace document parse
-          parsing.start = getTime();
-          const document = parse(source);
-          parsing.end = getTime();
-          parsing.duration = parsing.end - parsing.start;
+  return Promise.resolve(result)
+    .then(finalResult => {
+      extensionMap.executionEnded();
+      extensionMap.requestEnded();
 
-          // trace validation
-          // https://github.com/graphql/graphql-js/blob/master/src/graphql.js
-          validation.start = getTime();
-          const schemaValidationErrors = validateSchema(schema);
-          if (schemaValidationErrors.length > 0) {
-            return resolve({ errors: schemaValidationErrors });
-          }
-          const validationErrors = validate(schema, document);
-          if (validationErrors.length > 0) {
-            return resolve({ errors: validationErrors });
-          }
-          validation.end = getTime();
-          validation.duration = validation.end - validation.start;
+      if (isWellFormedResponse(finalResult)) {
+        return addExtensions(finalResult, extensionMap, extensions);
+      }
 
-          // determine the operation type
-          const operation = document.definitions.reduce((op, def) => {
-            return typeof op === 'string' ? op : def.operation;
-          }, null);
+      const correctedResult = {
+        data: hasOwn(finalResult, 'data')
+          ? finalResult.data
+          : hasOwn(executionResult, 'data') ? executionResult.data : null,
+        errors: isArray(finalResult, 'errors')
+          ? finalResult.errors
+          : isArray(executionResult, 'errors') ? executionResult.errors : [],
+      };
+      correctedResult.errors.push(malformedError);
+      return addExtensions(correctedResult, extensionMap, extensions);
+    })
+    .catch(err => {
+      extensionMap.executionEnded();
+      extensionMap.requestEnded();
 
-          switch (operation) {
-            case 'query':
-            case 'mutation':
-              return Promise.resolve(
-                execute(
-                  schema,
-                  document,
-                  rootValue,
-                  contextValue,
-                  variableValues,
-                  operationName,
-                  fieldResolver,
-                  tracing,
-                ),
-              )
-                .then(results => {
-                  // inject the tracing extension if an extensions
-                  // object was passed as a parameter
-                  if (_.isObject(extensions) && !_.has(extensions, 'tracing')) {
-                    extensions.tracing = tracing;
-                  }
-                  return resolve(results);
-                })
-                .catch(error => {
-                  return resolve({
-                    errors: [error],
-                  });
-                });
-            case 'subscription':
-              return Promise.resolve(
-                subscribe(
-                  schema,
-                  document,
-                  rootValue,
-                  contextValue,
-                  variableValues,
-                  operationName,
-                  fieldResolver,
-                  subscriptionFieldResolver,
-                ),
-              )
-                .then(resolve)
-                .catch(err => {
-                  resolve({
-                    errors: [err],
-                  });
-                });
-            default:
-              throw new Error(
-                'Unable to determine valid operation from source',
-              );
-          }
-        })
-        .catch(reject);
-    } catch (err) {
-      return reject({ errors: [err] });
-    }
-  });
+      if (isWellFormedResponse(executionResult)) {
+        executionResult.errors = isArray(executionResult, 'errors')
+          ? executionResult.errors
+          : [];
+        executionResult.errors.push(err);
+        return Promise.resolve(executionResult);
+      }
+      return Promise.resolve({
+        errors: [err, malformedError],
+      });
+    });
 }

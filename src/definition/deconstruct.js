@@ -3,7 +3,7 @@
  * @flow
  */
 import type { ObjMap } from 'graphql/jsutils/ObjMap';
-import { ConflictResolution } from '../definition/const';
+import { ConflictResolution } from './const';
 import {
   Kind,
   GraphQLSchema,
@@ -24,6 +24,8 @@ import type {
   GraphQLArgument,
   GraphQLInputField,
   GraphQLEnumValueConfig,
+  isSpecifiedDirective,
+  isSpecifiedScalarType,
 } from 'graphql';
 import {
   lodash as _,
@@ -32,11 +34,8 @@ import {
   map,
   stringMatch,
   setIf,
+  isObject,
 } from '../jsutils';
-
-export const DefaultDirectives = ['skip', 'include', 'deprecated'];
-
-export const DefaultScalars = ['String', 'Int', 'Float', 'ID', 'Boolean'];
 
 /**
  * Determines if an onConflict value is valid
@@ -44,7 +43,8 @@ export const DefaultScalars = ['String', 'Int', 'Float', 'ID', 'Boolean'];
  */
 export function isConflictResolution(conflict: any) {
   return (
-    _.includes(_.values(ConflictResolution), conflict) || _.isFunction(conflict)
+    _.includes(_.values(ConflictResolution), conflict) ||
+    typeof conflict === 'function'
   );
 }
 
@@ -151,7 +151,7 @@ export function setDef(
           Object.create(null),
           true,
         );
-        setIf(def, key, _args, _.keys(_args).length);
+        setIf(def, key, _args, isObject(_args) && Object.keys(_args).length);
         break;
       case 'astNode':
         const directives = extractDirectives(value);
@@ -186,7 +186,7 @@ export function setDef(
       case 'before':
       case 'after':
       case 'build':
-        setIf(def, key, value, _.isFunction(value));
+        setIf(def, key, value, typeof value === 'function');
         break;
       case 'values':
         if (object instanceof GraphQLEnumType) {
@@ -234,7 +234,7 @@ export function setDef(
           def,
           key,
           value,
-          _.isFunction(value) && value.name !== 'cannotExecuteSchema',
+          typeof value === 'function' && value.name !== 'cannotExecuteSchema',
         );
         break;
       default:
@@ -466,7 +466,7 @@ export class SchemaDeconstructor {
       // determine if the type can be processed
       // it should not be prefixed with __ or be a known
       // default scalar type
-      if (!name.match(/^__/) && DefaultScalars.indexOf(name) === -1) {
+      if (!name.match(/^__/) && !isSpecifiedScalarType(type)) {
         const definition = deconstructType(type);
         setIf(
           this.definition.types,
@@ -505,8 +505,8 @@ export class SchemaDeconstructor {
     const mutationType = this.schema.getMutationType() || {};
     const subscriptionType = this.schema.getSubscriptionType() || {};
     const directives = extractDirectives(_.get(this.schema, ['astNode']));
-    const customDirectives = this.schema.getDirectives().filter(({ name }) => {
-      return DefaultDirectives.indexOf(name) === -1;
+    const customDirectives = this.schema.getDirectives().filter(directive => {
+      return !isSpecifiedDirective(directive);
     });
     setIf(
       this.definition.schema,
@@ -581,8 +581,7 @@ export function deconstructType(type: GraphQLType) {
  * @param {*} directive
  */
 export function deconstructDirective(directive: GraphQLDirective) {
-  const { name } = directive;
-  if (DefaultDirectives.indexOf(name) === -1) {
+  if (!isSpecifiedDirective(directive)) {
     return reduce(
       directive,
       (def, value, key) => {
