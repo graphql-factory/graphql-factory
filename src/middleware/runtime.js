@@ -12,10 +12,10 @@ import { SchemaDefinition } from '../definition';
 
 export function extendResolve(resolve, params, extensionMap) {
   const [source, args, context, info] = params;
+  const extDataMap = extensionMap.resolveStarted(info);
   const extendedInfo = Object.assign({}, info, {
     fieldArgs: args,
   });
-  const extDataMap = extensionMap.resolveStarted(info);
   const beforeMiddleware = [];
   const afterMiddleware = [];
 

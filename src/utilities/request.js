@@ -8,7 +8,7 @@ import {
   lodash as _,
 } from '../jsutils';
 import { FactoryExtensionMap } from '../extensions/FactoryExtensionMap';
-import { applyDirectiveVisitors } from '../middleware/directive';
+import { applyDirectiveVisitors } from '../middleware';
 import {
   Kind,
   execute,

@@ -28,9 +28,8 @@
  *   },
  *   directives: {
  *     [DirectiveName]: {
- *       before,
- *       after,
- *       build
+ *       [middlewareName]: resolver,
+ *       ...
  *     },
  *     ...
  *   },

@@ -20,10 +20,6 @@ export {
 } from './extensions';
 export { RemoteSchema, RemoteSchemaHTTP } from './remote';
 export {
-  DirectiveMiddleware,
-  getDirectiveLocationFromAST,
-  getDirectiveExecByLocation,
-  directiveVisitNode,
   applyDirectiveVisitors,
   extendResolve,
   makeExecutableRuntimeSchema,
