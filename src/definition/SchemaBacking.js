@@ -55,7 +55,7 @@ import {
   isObject,
   SchemaBackingError,
 } from '../jsutils';
-import { SchemaDefinition } from './definition';
+import { SchemaDefinition } from './SchemaDefinition';
 
 export const BACKING_VERSION = '1.0.0';
 

@@ -1,4 +1,5 @@
 export { castAppliedDirectiveList } from './castAppliedDirectiveList';
+export { getGraphQLTypeName } from './getGraphQLTypeName';
 export { getOperationNode } from './getOperationNode';
 export { getSelection } from './getSelection';
 export { httpPOST } from './httpPOST';

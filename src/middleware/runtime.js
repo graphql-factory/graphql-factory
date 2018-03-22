@@ -6,8 +6,9 @@ import {
 import { forEach, isPromise, promiseReduce, isObject } from '../jsutils';
 import {
   getDirectiveLocationFromAST,
-  getDirectiveByLocation,
+  getDirectiveExecByLocation,
 } from './directive';
+import { SchemaDefinition } from '../definition';
 
 export function extendResolve(resolve, params, extensionMap) {
   const [source, args, context, info] = params;
@@ -29,7 +30,7 @@ export function extendResolve(resolve, params, extensionMap) {
     const location = getDirectiveLocationFromAST(node);
     for (let i = 0; i < node.directives.length; i++) {
       const ast = node.directives[i];
-      const directiveInfo = getDirectiveByLocation(
+      const directiveExec = getDirectiveExecByLocation(
         location,
         node,
         ast,
@@ -37,18 +38,26 @@ export function extendResolve(resolve, params, extensionMap) {
         info.variableValues,
       );
 
-      if (directiveInfo) {
-        const { before, after, directiveArgs } = directiveInfo;
+      if (directiveExec) {
+        const { before, after, directiveArgs, directive } = directiveExec;
         if (typeof before === 'function') {
           beforeMiddleware.push({
+            level: 'field',
             type: 'before',
+            class: 'directive',
+            location,
+            name: directive.name,
             resolve: before,
             args: directiveArgs,
           });
         }
         if (typeof after === 'function') {
           afterMiddleware.push({
+            level: 'field',
             type: 'after',
+            class: 'directive',
+            location,
+            name: directive.name,
             resolve: after,
             args: directiveArgs,
           });
@@ -58,12 +67,24 @@ export function extendResolve(resolve, params, extensionMap) {
   });
 
   const resolveQueue = beforeMiddleware
-    .concat({ type: 'resolve', resolve, args })
+    .concat({
+      level: 'field',
+      type: 'resolve',
+      class: 'resolve',
+      name: resolve.name || 'resolve',
+      resolve,
+      args,
+    })
     .concat(afterMiddleware);
 
+  let detailedMap;
   const result = promiseReduce(
     resolveQueue,
     (src, current) => {
+      if (detailedMap) {
+        extensionMap.resolverEnded(detailedMap);
+      }
+      detailedMap = extensionMap.resolverStarted(extDataMap, current);
       try {
         if (
           current.type === 'resolve' &&
@@ -85,7 +106,6 @@ export function extendResolve(resolve, params, extensionMap) {
         }
         return current.resolve(src, current.args, context, extendedInfo);
       } catch (err) {
-        extensionMap.resolveEnded(extDataMap, err);
         return Promise.reject(err);
       }
     },
@@ -95,14 +115,17 @@ export function extendResolve(resolve, params, extensionMap) {
   if (isPromise(result)) {
     return Promise.resolve(result)
       .then(fieldResult => {
+        extensionMap.resolverEnded(detailedMap);
         extensionMap.resolveEnded(extDataMap);
         return fieldResult;
       })
       .catch(err => {
+        extensionMap.resolverEnded(detailedMap);
         extensionMap.resolveEnded(extDataMap, err);
         return Promise.reject(err);
       });
   }
+  extensionMap.resolverEnded(detailedMap);
   extensionMap.resolveEnded(extDataMap);
   return result;
 }
@@ -165,12 +188,18 @@ export function makeExecutableRuntimeSchema(
     }
   });
 
+  // apply directive resolvers
   forEach(runtimeSchema.getDirectives(), directive => {
     const masterDirective = schema.getDirective(directive.name);
     if (!isSpecifiedDirective(directive) && masterDirective) {
       directive._ext = masterDirective._ext;
     }
   });
+
+  // look for a definition
+  if (schema.definition instanceof SchemaDefinition) {
+    runtimeSchema.definition = schema.definition;
+  }
 
   return errors.length
     ? { errors, runtimeSchema: undefined }

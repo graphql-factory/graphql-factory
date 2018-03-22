@@ -4,8 +4,9 @@ import { pathArray } from '../utilities';
 export class FactoryTracingExtension extends FactoryExtension {
   constructor(options) {
     super();
-    const { getTime } = Object.assign({}, options);
+    const { getTime, detailed } = Object.assign({}, options);
     this._getTime = typeof getTime === 'function' ? getTime : Date.now;
+    this._detailed = detailed;
     this.data = {
       version: 1,
       startTime: null,
@@ -78,6 +79,30 @@ export class FactoryTracingExtension extends FactoryExtension {
     data.duration = data.endTime - data.startTime;
     if (error) {
       data.error = error;
+    }
+  }
+  resolverStarted(data, info) {
+    if (this._detailed) {
+      const exec = {
+        name: `${info.class === 'directive' ? '@' : ''}${info.name}`,
+        location: info.location,
+        startTime: this._getTime(),
+      };
+
+      if (info.level === 'global') {
+        this.data.execution.middleware = this.data.execution.middleware || [];
+        this.data.execution.middleware.push(exec);
+      } else if (info.level === 'field') {
+        data.detailed = data.detailed || [];
+        data.detailed.push(exec);
+      }
+      return exec;
+    }
+  }
+  resolverEnded(data) {
+    if (this._detailed) {
+      data.endTime = this._getTime();
+      data.duration = data.endTime - data.startTime;
     }
   }
 }

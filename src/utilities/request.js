@@ -2,8 +2,10 @@ import {
   promiseReduce,
   isArray,
   isObject,
+  isPromise,
   filterKeys,
   hasOwn,
+  lodash as _,
 } from '../jsutils';
 import { FactoryExtensionMap } from '../extensions/FactoryExtensionMap';
 import { applyDirectiveVisitors } from '../middleware/directive';
@@ -147,11 +149,22 @@ export function request(...args) {
 
   const resolveQueue = before
     .concat({
+      level: 'execution',
       type: operation,
+      class: 'execution',
+      name: execution.name || operation,
       resolve: execution,
       args: {},
     })
     .concat(after);
+
+  // check for pending build tasks in the definition
+  // if there are, set the initial value to resolve
+  // them first, otherwise use the rootValue
+  const build = _.get(runtimeSchema, 'definition._build');
+  const initialValue = isPromise(build)
+    ? build.then(() => rootValue)
+    : rootValue;
 
   const fragments = document.definitions.reduce((frags, definition) => {
     if (definition.kind === Kind.FRAGMENT_DEFINITION) {
@@ -160,9 +173,15 @@ export function request(...args) {
     return frags;
   }, {});
 
+  let detailedMap;
   const result = promiseReduce(
     resolveQueue,
     (src, current) => {
+      if (detailedMap) {
+        extensionMap.resolverEnded(detailedMap);
+      }
+      detailedMap = extensionMap.resolverStarted(undefined, current);
+
       if (current.type === 'after' && isWellFormedResponse(src)) {
         executionResult = source;
       }
@@ -188,11 +207,12 @@ export function request(...args) {
         return Promise.reject(err);
       }
     },
-    rootValue,
+    initialValue,
   );
 
   return Promise.resolve(result)
     .then(finalResult => {
+      extensionMap.resolverEnded(detailedMap);
       extensionMap.executionEnded();
       extensionMap.requestEnded();
 
@@ -212,6 +232,7 @@ export function request(...args) {
       return addExtensions(correctedResult, extensionMap, extensions);
     })
     .catch(err => {
+      extensionMap.resolverEnded(detailedMap);
       extensionMap.executionEnded();
       extensionMap.requestEnded();
 

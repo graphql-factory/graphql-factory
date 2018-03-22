@@ -7,12 +7,17 @@ import {
 } from '../src';
 import _ from 'lodash';
 
-const source = `query MyQ ($value: String) {
+const source = `
+query MyQ ($value: String) {
   foos @test(value: $value) {
-    id
-    name
+    id @test(value:"non frag id")
+    ...fooFields
   }
-}`
+}
+fragment fooFields on Foo {
+  name @test(value:"name in frag")
+}
+`
 
 const definition = `
 type Foo {
@@ -35,37 +40,50 @@ schema @test(value: "schemadef") {
 
 directive @test(value: String) on SCHEMA | FIELD_DEFINITION | FIELD | ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION
 directive @resolve on FIELD_DEFINITION
+directive @rename(name: String!) on OBJECT
 `
 
 const schema = buildSchema(definition);
 const testDirective = schema.getDirective('test');
-
+const renameDirective = schema.getDirective('rename');
 testDirective._ext = {
-  visitSchema(args, info) {
-    console.log('visited schema node, args:', args)
+  visitSchemaNode(args, info) {
+    //console.log('visited schema node, args:', args)
   },
-  visitField(args, info) {
+  visitFieldNode(args, info) {
     console.log('visited field', args)
   },
-  visitArgumentDefinition(args) {
-    console.log('visited argdef', args)
+  visitArgumentDefinitionNode(args) {
+    //console.log('visited argdef', args)
   },
-  visitInputFieldDefinition(args) {
-    console.log('visited fielddef', args)
+  visitInputFieldDefinitionNode(args) {
+    //console.log('visited fielddef', args)
+  },
+  beforeField(source, args) {
+    console.log('@test - beforeField', args);
   },
   beforeFieldDefinition(source, args) {
-    console.log('before mw', args)
+    //console.log('before mw', args)
   },
   beforeSchema() {
-    console.log('@test - SCHEMA')
+    //console.log('@test - SCHEMA')
   }
 }
+
+renameDirective._ext = {
+  visitObject(obj, args) {
+    obj.name = args.name;
+  }
+}
+
 const variableValues = {
   value: 'testvalue'
 };
 
 const extensions = {
-  tracing: FactoryTracingExtension,
+  tracing: new FactoryTracingExtension({
+    detailed: true,
+  }),
 }
 
 const rootValue = {

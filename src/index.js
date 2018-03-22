@@ -22,8 +22,8 @@ export { RemoteSchema, RemoteSchemaHTTP } from './remote';
 export {
   DirectiveMiddleware,
   getDirectiveLocationFromAST,
-  getDirectiveByLocation,
-  directiveEnter,
+  getDirectiveExecByLocation,
+  directiveVisitNode,
   applyDirectiveVisitors,
   extendResolve,
   makeExecutableRuntimeSchema,
@@ -31,6 +31,7 @@ export {
 export { GraphQLDateTime, GraphQLJSON } from './types';
 export {
   request,
+  getGraphQLTypeName,
   printSchemaWithDirectives,
   parseSchemaIntoAST,
   getOperationNode,

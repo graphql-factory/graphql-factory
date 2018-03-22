@@ -10,6 +10,8 @@ export class FactoryExtension {
   validationEnded() {}
   resolveStarted() {}
   resolveEnded() {}
+  resolverStarted() {}
+  resolverEnded() {}
   executionStarted() {}
   executionEnded() {}
   warning() {}

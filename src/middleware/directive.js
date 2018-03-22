@@ -5,57 +5,78 @@ import {
   buildSchema,
   DirectiveLocation,
   Kind,
+  isSpecifiedScalarType,
 } from 'graphql';
 import {
   getVariableValues,
   getDirectiveValues,
 } from 'graphql/execution/values';
+import { isArray, forEach } from '../jsutils';
 import {
   getOperationNode,
   printAndParse,
   parseSchemaIntoAST,
+  getGraphQLTypeName,
 } from '../utilities';
 import { makeExecutableRuntimeSchema } from './runtime';
 
 export const DirectiveMiddleware = Object.freeze({
-  visitQuery: 'visitQuery',
+  visitQueryNode: 'visitQueryNode',
   beforeQuery: 'beforeQuery',
   afterQuery: 'afterQuery',
 
-  visitMutation: 'visitMutation',
+  visitMutationNode: 'visitMutationNode',
   beforeMutation: 'beforeMutation',
   afterMutation: 'afterMutation',
 
-  visitSubscription: 'visitSubscription',
+  visitSubscriptionNode: 'visitSubscriptionNode',
   beforeSubscription: 'beforeSubscription',
   afterSubscription: 'afterSubscription',
 
-  visitField: 'visitField',
+  visitFieldNode: 'visitFieldNode',
   beforeField: 'beforeField',
   afterField: 'afterField',
 
-  visitFragmentDefinition: 'visitFragmentDefinition',
-  visitFragmentSpread: 'visitFragmentSpread',
-  visitInlineFragment: 'visitInlineFragment',
+  visitFragmentDefinitionNode: 'visitFragmentDefinitionNode',
+  visitFragmentSpreadNode: 'visitFragmentSpreadNode',
+  visitInlineFragmentNode: 'visitInlineFragmentNode',
 
   visitSchema: 'visitSchema',
+  visitSchemaNode: 'visitSchemaNode',
   beforeSchema: 'beforeSchema',
   afterSchema: 'afterSchema',
 
   visitScalar: 'visitScalar',
+  visitScalarNode: 'visitScalarNode',
+
   visitObject: 'visitObject',
+  visitObjectNode: 'visitObjectNode',
 
   visitFieldDefinition: 'visitFieldDefinition',
+  visitFieldDefinitionNode: 'visitFieldDefinitionNode',
   beforeFieldDefinition: 'beforeFieldDefinition',
   afterFieldDefinition: 'afterFieldDefinition',
 
   visitArgumentDefinition: 'visitArgumentDefinition',
+  visitArgumentDefinitionNode: 'visitArgumentDefinitionNode',
+
   visitInterface: 'visitInterface',
+  visitInterfaceNode: 'visitInterfaceNode',
+
   visitUnion: 'visitUnion',
+  visitUnionNode: 'visitUnionNode',
+
   visitEnum: 'visitEnum',
+  visitEnumNode: 'visitEnumNode',
+
   visitEnumValue: 'visitEnumValue',
+  visitEnumValueNode: 'visitEnumValueNode',
+
   visitInputObject: 'visitInputObject',
+  visitInputObjectNode: 'visitInputObjectNode',
+
   visitInputFieldDefinition: 'visitInputFieldDefinition',
+  visitInputFieldDefinitionNode: 'visitInputFieldDefinitionNode',
 });
 
 export function getDirectiveLocationFromAST(node, ancestors) {
@@ -123,7 +144,7 @@ export function camel(str) {
     .join('');
 }
 
-export function getDirectiveByLocation(
+export function getDirectiveExecByLocation(
   location,
   node,
   ast,
@@ -132,15 +153,55 @@ export function getDirectiveByLocation(
 ) {
   const directive = schema.getDirective(ast.name.value);
   if (directive && directive._ext) {
-    const visitFn = directive._ext[camel(`VISIT_${location}`)];
+    const visitNode = directive._ext[camel(`VISIT_${location}_NODE`)];
+    const visitDef = directive._ext[camel(`VISIT_${location}`)];
     const before = directive._ext[camel(`BEFORE_${location}`)];
     const after = directive._ext[camel(`AFTER_${location}`)];
     const directiveArgs = getDirectiveValues(directive, node, variableValues);
-    return { visit: visitFn, before, after, directiveArgs };
+    return {
+      visit: visitDef,
+      visitNode,
+      before,
+      after,
+      directiveArgs,
+      directive,
+      location,
+    };
   }
 }
 
-export function directiveEnter(schema, globalMiddleware, variableValues) {
+export function forEachDirective(
+  location,
+  node,
+  schema,
+  variableValues,
+  iteratee,
+) {
+  if (isArray(node, 'directives', 1)) {
+    // look at each directive attached to the location
+    for (let i = 0; i < node.directives.length; i++) {
+      const ast = node.directives[i];
+      const directiveExec = getDirectiveExecByLocation(
+        location,
+        node,
+        ast,
+        schema,
+        variableValues,
+      );
+      if (directiveExec) {
+        iteratee(directiveExec);
+      }
+    }
+  }
+}
+
+/**
+ * Visits the schema AST and applying any directives
+ * @param {*} schema
+ * @param {*} globalMiddleware
+ * @param {*} variableValues
+ */
+export function directiveVisitNode(schema, globalMiddleware, variableValues) {
   return function enter(node, key, parent, path, ancestors) {
     const info = {
       node,
@@ -156,57 +217,158 @@ export function directiveEnter(schema, globalMiddleware, variableValues) {
       return;
     }
 
-    // look at each directive attached to the location
-    for (let i = 0; i < node.directives.length; i++) {
-      const ast = node.directives[i];
-      const directiveInfo = getDirectiveByLocation(
-        location,
-        node,
-        ast,
-        schema,
-        variableValues,
-      );
-      if (directiveInfo) {
-        const { visit: visitFn, before, after, directiveArgs } = directiveInfo;
-        if (typeof visitFn === 'function') {
-          const visitValue = visitFn(directiveArgs, info);
-          if (visitValue !== undefined) {
-            return visitValue;
-          }
-        }
-
-        let middlewareKey = null;
-        switch (location) {
-          case DirectiveLocation.SCHEMA:
-            middlewareKey = 'schema';
-            break;
-          case DirectiveLocation.QUERY:
-          case DirectiveLocation.MUTATION:
-          case DirectiveLocation.SUBSCRIPTION:
-            middlewareKey = 'operation';
-            break;
-          default:
-            break;
-        }
-
-        if (middlewareKey && typeof before === 'function') {
-          globalMiddleware[middlewareKey].before.push({
-            type: 'before',
-            resolve: before,
-            args: directiveArgs,
-          });
-        }
-
-        if (middlewareKey && typeof after === 'function') {
-          globalMiddleware[middlewareKey].after.push({
-            type: 'after',
-            resolve: after,
-            args: directiveArgs,
-          });
+    forEachDirective(location, node, schema, variableValues, directiveExec => {
+      const {
+        visitNode,
+        before,
+        after,
+        directiveArgs,
+        directive,
+      } = directiveExec;
+      if (typeof visitNode === 'function') {
+        const visitValue = visitNode(directiveArgs, info);
+        if (visitValue !== undefined) {
+          return visitValue;
         }
       }
-    }
+
+      let middlewareKey = null;
+      switch (location) {
+        case DirectiveLocation.SCHEMA:
+          middlewareKey = 'schema';
+          break;
+        case DirectiveLocation.QUERY:
+        case DirectiveLocation.MUTATION:
+        case DirectiveLocation.SUBSCRIPTION:
+          middlewareKey = 'operation';
+          break;
+        default:
+          break;
+      }
+
+      if (middlewareKey && typeof before === 'function') {
+        globalMiddleware[middlewareKey].before.push({
+          level: 'global',
+          type: 'before',
+          class: 'directive',
+          location,
+          name: directive.name,
+          resolve: before,
+          args: directiveArgs,
+        });
+      }
+
+      if (middlewareKey && typeof after === 'function') {
+        globalMiddleware[middlewareKey].after.push({
+          level: 'global',
+          type: 'after',
+          class: 'directive',
+          location,
+          name: directive.name,
+          resolve: after,
+          args: directiveArgs,
+        });
+      }
+    });
   };
+}
+
+export function visitDefinition(location, definition, schema, variableValues) {
+  return forEachDirective(
+    location,
+    definition.astNode,
+    schema,
+    variableValues,
+    exec => {
+      if (typeof exec.visit === 'function') {
+        exec.visit(definition, exec.directiveArgs);
+      }
+    },
+  );
+}
+
+export function visitValueDefinition(def, schema, vars) {
+  visitDefinition(DirectiveLocation.ENUM_VALUE, def, schema, vars);
+}
+
+export function visitArgDefinition(def, schema, vars) {
+  visitDefinition(DirectiveLocation.ARGUMENT_DEFINITION, def, schema, vars);
+}
+
+export function visitFieldDefinition(def, schema, vars) {
+  visitDefinition(DirectiveLocation.FIELD_DEFINITION, def, schema, vars);
+  forEach(def.args, arg => {
+    visitArgDefinition(arg, schema, vars);
+  });
+}
+
+export function visitInputFieldDefinition(def, schema, vars) {
+  visitDefinition(DirectiveLocation.INPUT_FIELD_DEFINITION, def, schema, vars);
+}
+
+export function visitSchemaDefinition(def, schema, vars) {
+  visitDefinition(DirectiveLocation.SCHEMA, def, schema, vars);
+}
+
+export function visitScalarDefinition(def, schema, vars) {
+  visitDefinition(DirectiveLocation.SCALAR, def, schema, vars);
+}
+
+export function visitObjectDefinition(def, schema, vars) {
+  visitDefinition(DirectiveLocation.OBJECT, def, schema, vars);
+  forEach(def.getFields(), field => {
+    visitFieldDefinition(field, schema, vars);
+  });
+}
+
+export function visitInterfaceDefinition(def, schema, vars) {
+  visitDefinition(DirectiveLocation.INTERFACE, def, schema, vars);
+  forEach(def.getFields(), field => {
+    visitFieldDefinition(field, schema, vars);
+  });
+}
+
+export function visitUnionDefinition(def, schema, vars) {
+  visitDefinition(DirectiveLocation.UNION, def, schema, vars);
+}
+
+export function visitEnumDefinition(def, schema, vars) {
+  visitDefinition(DirectiveLocation.ENUM, def, schema, vars);
+  forEach(def.getValues(), value => {
+    visitValueDefinition(value, schema, vars);
+  });
+}
+
+export function visitInputDefinition(def, schema, vars) {
+  visitDefinition(DirectiveLocation.INPUT_OBJECT, def, schema, vars);
+  forEach(def.getFields(), field => {
+    visitInputFieldDefinition(field, schema, vars);
+  });
+}
+
+export function visitAllDefinitions(schema, variableValues) {
+  visitSchemaDefinition(schema, schema, variableValues);
+
+  forEach(schema.getTypeMap(), (type, name) => {
+    if (!name.startsWith('__') && !isSpecifiedScalarType(type)) {
+      switch (getGraphQLTypeName(type, true)) {
+        case 'GraphQLScalarType':
+          return visitScalarDefinition(type, schema, variableValues);
+        case 'GraphQLObjectType':
+          return visitObjectDefinition(type, schema, variableValues);
+        case 'GraphQLInterfaceType':
+          return visitInterfaceDefinition(type, schema, variableValues);
+        case 'GraphQLUnionType':
+          return visitUnionDefinition(type, schema, variableValues);
+        case 'GraphQLEnumType':
+          return visitEnumDefinition(type, schema, variableValues);
+        case 'GraphQLInputObjectType':
+          return visitInputDefinition(type, schema, variableValues);
+        default:
+          break;
+      }
+    }
+  });
 }
 
 export function applyDirectiveVisitors(
@@ -229,6 +391,7 @@ export function applyDirectiveVisitors(
   const schemaAST = parseSchemaIntoAST(schema);
   const sourceAST = parse(source);
   const op = getOperationNode(sourceAST, operationName);
+
   if (op.errors) {
     return {
       errors: op.errors,
@@ -238,6 +401,15 @@ export function applyDirectiveVisitors(
       after: undefined,
     };
   }
+
+  const _document = printAndParse({
+    kind: Kind.DOCUMENT,
+    definitions: [op.operation].concat(
+      sourceAST.definitions.filter(definition => {
+        return definition.kind !== Kind.OPERATION_DEFINITION;
+      }),
+    ),
+  });
 
   const vars = getVariableValues(
     schema,
@@ -260,7 +432,7 @@ export function applyDirectiveVisitors(
     buildSchema(
       print(
         visit(schemaAST, {
-          enter: directiveEnter(schema, globalMiddleware, vars.coerced),
+          enter: directiveVisitNode(schema, globalMiddleware, vars.coerced),
         }),
       ),
     ),
@@ -277,6 +449,9 @@ export function applyDirectiveVisitors(
     };
   }
 
+  // visit the definitions
+  visitAllDefinitions(runtime.runtimeSchema, vars.coerced);
+
   // concatenate the before and after global middleware
   const before = globalMiddleware.schema.before.concat(
     globalMiddleware.operation.before,
@@ -285,21 +460,14 @@ export function applyDirectiveVisitors(
     globalMiddleware.operation.after,
   );
 
-  const operationDefinition = visit(op.operation, {
-    enter: directiveEnter(schema, globalMiddleware, vars.coerced),
-  });
-
   return {
     errors: undefined,
     runtimeSchema: runtime.runtimeSchema,
-    document: printAndParse({
-      kind: Kind.DOCUMENT,
-      definitions: [operationDefinition].concat(
-        sourceAST.definitions.filter(definition => {
-          return definition.kind !== Kind.OPERATION_DEFINITION;
-        }),
-      ),
-    }),
+    document: printAndParse(
+      visit(_document, {
+        enter: directiveVisitNode(schema, globalMiddleware, vars.coerced),
+      }),
+    ),
     before,
     after,
   };

@@ -53,6 +53,21 @@ export class FactoryExtensionMap {
       ext.resolveEnded(dataMap[i], error);
     });
   }
+  resolverStarted(dataMap, resolverInfo) {
+    return Object.keys(this.extensions).map((name, i) => {
+      const ext = this.extensions[name];
+      return ext.resolverStarted(
+        dataMap && typeof dataMap === 'object' ? dataMap[i] : dataMap,
+        resolverInfo,
+      );
+    });
+  }
+  resolverEnded(dataMap) {
+    Object.keys(this.extensions).forEach((name, i) => {
+      const ext = this.extensions[name];
+      ext.resolverEnded(dataMap[i]);
+    });
+  }
   executionStarted() {
     _.forEach(this.extensions, ext => ext.executionStarted());
   }

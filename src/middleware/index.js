@@ -1,8 +1,8 @@
 export {
   DirectiveMiddleware,
   getDirectiveLocationFromAST,
-  getDirectiveByLocation,
-  directiveEnter,
+  getDirectiveExecByLocation,
+  directiveVisitNode,
   applyDirectiveVisitors,
 } from './directive';
 export { extendResolve, makeExecutableRuntimeSchema } from './runtime';
