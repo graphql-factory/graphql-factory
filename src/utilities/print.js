@@ -2,7 +2,7 @@ import { print, isSpecifiedScalarType, isSpecifiedDirective } from 'graphql';
 
 export function printSchemaWithDirectives(schema) {
   const str = Object.keys(schema.getTypeMap())
-    .filter(k => !k.match(/^__/))
+    .filter(k => !k.startsWith('__'))
     .reduce((accum, name) => {
       const type = schema.getType(name);
       return !isSpecifiedScalarType(type)

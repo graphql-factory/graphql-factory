@@ -15,7 +15,7 @@ export function reduce(collection, iteratee, initialValue, throwErrors) {
       ? Object.keys(collection).reduce((accum, key) => {
           return reducer(accum, collection[key], key);
         }, initialValue)
-      : undefined;
+      : undefined || initialValue;
   if (error && throwErrors) {
     throw error;
   }

@@ -1,4 +1,20 @@
+export {
+  astFromType,
+  astKindToFactoryType,
+  astToFactoryDefinition,
+  astToTypeString,
+} from './ast';
 export { castAppliedDirectiveList } from './castAppliedDirectiveList';
+export {
+  extractDirectiveBacking,
+  extractEnumBacking,
+  extractInterfaceBacking,
+  extractNamedTypeBacking,
+  extractObjectBacking,
+  extractScalarBacking,
+  extractUnionBacking,
+  extractSchemaBacking,
+} from './extract';
 export { getGraphQLTypeName } from './getGraphQLTypeName';
 export { getOperationNode } from './getOperationNode';
 export { getSelection } from './getSelection';

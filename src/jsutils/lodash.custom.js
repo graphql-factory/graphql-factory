@@ -10,6 +10,7 @@ import get from './lodash/get';
 import hasIn from './lodash/hasIn';
 import identity from './lodash/identity';
 import includes from './lodash/includes';
+import intersection from './lodash/intersection';
 import isArguments from './lodash/isArguments';
 import isArray from './lodash/isArray';
 import isArrayLike from './lodash/isArrayLike';
@@ -54,6 +55,7 @@ export {
   hasIn,
   identity,
   includes,
+  intersection,
   isArguments,
   isArray,
   isArrayLike,

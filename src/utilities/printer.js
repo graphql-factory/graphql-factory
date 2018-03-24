@@ -201,7 +201,9 @@ export function printObject(definition: ObjMap<any>, name: string) {
   const fieldStr = printFields(fields);
   const dirs = printDirectives(definition['@directives']);
   const iface =
-    Array.isArray(interfaces) && interfaces.length ? interfaces.join(', ') : '';
+    Array.isArray(interfaces) && interfaces.length
+      ? 'implements' + interfaces.join(' & ')
+      : '';
   return withDescription(
     description,
     `type ${name}${iface}${dirs} {\n${fieldStr}\n}\n`,

@@ -1,6 +1,8 @@
 /**
  * @flow
  */
+export const FILE_EXT_RX = /\w\.(graphql|gql|graphqlx|gqlx)$/i;
+
 export const DEFINITION_FIELDS = [
   'context',
   'functions',

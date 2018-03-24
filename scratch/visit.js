@@ -1,11 +1,37 @@
 import {
   buildSchema,
+  parse,
+  print,
+  GraphQLObjectType,
+  GraphQLID,
+  printType,
 } from 'graphql';
 import {
   request,
   FactoryTracingExtension,
 } from '../src';
+import { astFromType, astToFactoryDefinition } from '../src/utilities/ast';
 import _ from 'lodash';
+
+
+const qux = new GraphQLObjectType({
+  name: 'qux',
+  fields: {
+    id: { type: GraphQLID }
+  }
+})
+
+const d = `
+input Stuff {
+  id: ID!
+}
+`
+
+const ast = parse(d);
+// console.log(astFromType(qux));
+console.log(JSON.stringify(astToFactoryDefinition(ast), null, 2))
+
+process.exit();
 
 const source = `
 query MyQ ($value: String) {

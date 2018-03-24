@@ -548,6 +548,7 @@ export class SchemaBacking {
     );
 
     // extract directive backings
+    /*
     forEach(
       definition.directives,
       (config, name) => {
@@ -560,6 +561,7 @@ export class SchemaBacking {
       },
       true,
     );
+    */
 
     // validate and return the backing
     return this.validate();

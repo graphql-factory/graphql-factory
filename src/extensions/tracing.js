@@ -5,11 +5,10 @@ export class FactoryTracingExtension extends FactoryExtension {
   constructor(options) {
     super();
     const { getTime, detailed, nanoseconds } = Object.assign({}, options);
-    this._getTime = typeof getTime === 'function'
-      ? getTime
-      : nanoseconds
-        ? () => process.hrtime()[1]
-        : () => new Date().getTime();
+    this._getTime =
+      typeof getTime === 'function'
+        ? getTime
+        : nanoseconds ? () => process.hrtime()[1] : () => new Date().getTime();
     this._detailed = detailed;
     this.data = {
       version: 1,
