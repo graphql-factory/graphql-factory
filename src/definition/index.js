@@ -12,5 +12,5 @@ export {
   deconstructSchema,
   deconstructType,
 } from './deconstruct';
-export { SchemaBacking } from './SchemaBacking';
+export { SchemaBacking } from './backing/SchemaBacking';
 export { SchemaDefinition } from './SchemaDefinition';

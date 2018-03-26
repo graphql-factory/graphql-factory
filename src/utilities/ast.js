@@ -10,8 +10,13 @@ import {
 export function astFromType(type) {
   if (!isNamedType(type)) {
     throw new Error('ast cannot be extracted from non-named types');
+  } else if (type.astNode) {
+    return type.astNode;
   }
-  return _.get(parse(printType(type)), 'definitions[0]');
+  const description = type.description;
+  const ast = _.get(parse(printType(type)), 'definitions[0]');
+  ast.description = ast.description || description;
+  return ast;
 }
 
 export function astToTypeString(ast) {

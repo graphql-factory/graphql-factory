@@ -6,9 +6,9 @@ export class FactoryDirective {
   constructor(config) {
     const directive = new GraphQLDirective(config);
     directive._ext = {};
-    forEach(config, (fn, method) => {
+    forEach(config.middleware, (fn, method) => {
       if (DirectiveMiddleware[method] && typeof fn === 'function') {
-        directive._ext[method] = fn;
+        directive._middleware[method] = fn;
       }
     });
     return directive;

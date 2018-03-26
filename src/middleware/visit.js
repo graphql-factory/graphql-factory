@@ -105,7 +105,11 @@ export function visitDefinition(location, definition, schema, variableValues) {
     variableValues,
     exec => {
       if (typeof exec.visit === 'function') {
-        exec.visit(definition, exec.directiveArgs);
+        exec.visit(definition, exec.directiveArgs, {
+          schema,
+          variableValues,
+          directive: exec.directive,
+        });
       }
     },
   );

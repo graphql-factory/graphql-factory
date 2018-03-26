@@ -79,11 +79,11 @@ export function getDirectiveExecByLocation(
   variableValues,
 ) {
   const directive = schema.getDirective(ast.name.value);
-  if (directive && directive._ext) {
-    const visitNode = directive._ext[camel(`VISIT_${location}_NODE`)];
-    const visitDef = directive._ext[camel(`VISIT_${location}`)];
-    const before = directive._ext[camel(`BEFORE_${location}`)];
-    const after = directive._ext[camel(`AFTER_${location}`)];
+  if (directive && directive._middleware) {
+    const visitNode = directive._middleware[camel(`VISIT_${location}_NODE`)];
+    const visitDef = directive._middleware[camel(`VISIT_${location}`)];
+    const before = directive._middleware[camel(`BEFORE_${location}`)];
+    const after = directive._middleware[camel(`AFTER_${location}`)];
     const directiveArgs = getDirectiveValues(directive, node, variableValues);
     return {
       visit: visitDef,

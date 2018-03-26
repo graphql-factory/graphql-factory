@@ -10,6 +10,7 @@ import {
   UndefinedUseable,
   UseableUseable,
 } from './use';
+import { merge } from './merge';
 
 export class SchemaDefinition extends EventEmitter {
   constructor(options) {
@@ -48,8 +49,47 @@ export class SchemaDefinition extends EventEmitter {
     throw new Error('Cannot use arguments');
   }
 
-  buildSchema() {}
-  merge() {}
+  merge(definition) {
+    return merge(this, definition);
+  }
+
   validate() {}
+
   export() {}
+
+  buildSchema() {}
+
+  toObject() {
+    return {
+      context: this.context,
+      functions: this.functions,
+      types: this.types,
+      directives: this.directives,
+      schema: this.schema,
+    };
+  }
+
+  toJSON() {
+    return this.toObject();
+  }
+
+  get context() {
+    return this._context;
+  }
+
+  get functions() {
+    return this._functions;
+  }
+
+  get types() {
+    return this._types;
+  }
+
+  get directives() {
+    return this._directives;
+  }
+
+  get schema() {
+    return this._schema;
+  }
 }

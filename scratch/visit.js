@@ -22,6 +22,7 @@ const qux = new GraphQLObjectType({
 })
 
 const d = `
+# input for stuff
 input Stuff {
   id: ID!
 }

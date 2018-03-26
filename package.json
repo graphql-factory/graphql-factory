@@ -10,7 +10,7 @@
   },
   "options": {
     "mocha": "--check-leaks --full-trace src/**/__tests__/**/*-test.js",
-    "lodash": "cloneDeep,find,includes,intersection,isEmpty,keys,get,merge,set,values"
+    "lodash": "cloneDeep,find,includes,intersection,isEmpty,keys,get,merge,noop,set,values"
   },
   "scripts": {
     "lint": "eslint --rulesdir ./resources/lint src || (printf '\\033[33mTry: \\033[7m npm run lint -- --fix \\033[0m\\n' && exit 1)",

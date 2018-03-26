@@ -30,6 +30,7 @@ import keysIn from './lodash/keysIn';
 import lang from './lodash/lang';
 import memoize from './lodash/memoize';
 import merge from './lodash/merge';
+import noop from './lodash/noop';
 import object from './lodash/object';
 import property from './lodash/property';
 import set from './lodash/set';
@@ -75,6 +76,7 @@ export {
   lang,
   memoize,
   merge,
+  noop,
   object,
   property,
   set,

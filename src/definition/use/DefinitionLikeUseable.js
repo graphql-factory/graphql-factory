@@ -1,13 +1,12 @@
 import { Useable } from './Useable';
-import { lodash as _ } from '../../jsutils';
-import { DEFINITION_FIELDS } from '../const';
+import { isDefinitionLike } from '../../utilities';
 
 export class DefinitionLikeUseable extends Useable {
   constructor(definition) {
     super(definition);
   }
   _isUsable(object) {
-    return _.intersection(_.keys(object), DEFINITION_FIELDS).length > 0;
+    return isDefinitionLike(object);
   }
   _use(object) {
     this.definition.merge(object);
