@@ -6,6 +6,7 @@ import constant from './lodash/constant';
 import eq from './lodash/eq';
 import find from './lodash/find';
 import findIndex from './lodash/findIndex';
+import flatten from './lodash/flatten';
 import get from './lodash/get';
 import hasIn from './lodash/hasIn';
 import identity from './lodash/identity';
@@ -28,10 +29,12 @@ import isTypedArray from './lodash/isTypedArray';
 import keys from './lodash/keys';
 import keysIn from './lodash/keysIn';
 import lang from './lodash/lang';
+import last from './lodash/last';
 import memoize from './lodash/memoize';
 import merge from './lodash/merge';
 import noop from './lodash/noop';
 import object from './lodash/object';
+import omit from './lodash/omit';
 import property from './lodash/property';
 import set from './lodash/set';
 import stubArray from './lodash/stubArray';
@@ -52,6 +55,7 @@ export {
   eq,
   find,
   findIndex,
+  flatten,
   get,
   hasIn,
   identity,
@@ -74,10 +78,12 @@ export {
   keys,
   keysIn,
   lang,
+  last,
   memoize,
   merge,
   noop,
   object,
+  omit,
   property,
   set,
   stubArray,

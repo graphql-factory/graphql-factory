@@ -88,8 +88,11 @@ export function extractDirectiveBacking(type, backing) {
       ? backing.Directive(type.name)
       : new SchemaBacking().Directive(type.name);
   if (!isSpecifiedDirective(type)) {
-    forEach(type._middleware, (middleware, middlewareName) => {
-      dir[middlewareName](middleware);
+    forEach(type.middleware, (middleware, middlewareName) => {
+      const method = dir[middlewareName];
+      if (typeof method === 'function') {
+        method(middleware);
+      }
     });
   }
   return dir.backing;

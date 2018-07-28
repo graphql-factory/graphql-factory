@@ -27,7 +27,7 @@ export class SchemaBacking {
     this._directives = {};
 
     if (backing) {
-      this.import(backing);
+      this.use(backing);
     }
   }
 
@@ -65,7 +65,7 @@ export class SchemaBacking {
     return new EnumBacking(this, name);
   }
 
-  import(object: any) {
+  use(object: any) {
     if (
       object instanceof SchemaBacking ||
       object instanceof SchemaDefinition ||
@@ -80,7 +80,16 @@ export class SchemaBacking {
   }
 
   merge(backing) {
-    return merge(this, backing);
+    merge(this, backing);
+    return this;
+  }
+
+  validate() {
+    return this;
+  }
+
+  fix() {
+    return this;
   }
 
   toObject() {

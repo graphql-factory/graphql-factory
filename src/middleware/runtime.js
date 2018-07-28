@@ -192,7 +192,7 @@ export function makeExecutableRuntimeSchema(
   forEach(runtimeSchema.getDirectives(), directive => {
     const masterDirective = schema.getDirective(directive.name);
     if (!isSpecifiedDirective(directive) && masterDirective) {
-      directive._middleware = masterDirective._middleware;
+      directive.middleware = masterDirective.middleware;
     }
   });
 
